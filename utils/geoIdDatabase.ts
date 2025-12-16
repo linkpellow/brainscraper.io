@@ -26,6 +26,28 @@ export interface GeoIdEntry {
   usageCount: number; // How many times this ID has been used
 }
 
+/**
+ * Legacy entry format found in existing database files
+ * These entries use 'id' instead of 'locationId', 'name' instead of 'locationName', etc.
+ */
+interface LegacyGeoIdEntry {
+  id?: string; // Legacy: numeric ID
+  locationId?: string; // Current: numeric ID
+  fullId?: string; // URN format
+  name?: string; // Legacy: location name
+  locationName?: string; // Current: location name
+  locationText?: string; // Current: original search text
+  city?: string;
+  state?: string;
+  country?: string;
+  abbr?: string; // Legacy: state abbreviation
+  source?: 'profile' | 'company' | 'harvest' | 'saleleads' | 'json_to_url' | 'manual' | string;
+  timestamp?: string; // Legacy: ISO timestamp
+  discoveredAt?: string; // Current: ISO timestamp
+  verifiedAt?: string;
+  usageCount?: number;
+}
+
 export interface GeoIdDatabase {
   version: string;
   lastUpdated: string;
@@ -108,7 +130,41 @@ export function parseLocationComponents(locationText: string): {
 }
 
 /**
- * Loads the geo ID database from disk
+ * Normalizes a legacy entry to the current GeoIdEntry format
+ */
+function normalizeLegacyEntry(
+  rawEntry: LegacyGeoIdEntry,
+  normalizedKey: string
+): GeoIdEntry {
+  const locationId = rawEntry.locationId || rawEntry.id || '';
+  const locationName = rawEntry.locationName || rawEntry.name || normalizedKey;
+  const locationText = rawEntry.locationText || rawEntry.name || normalizedKey;
+  const fullId = rawEntry.fullId || (locationId ? `urn:li:fs_geo:${locationId}` : '');
+  const discoveredAt = rawEntry.discoveredAt || rawEntry.timestamp || new Date().toISOString();
+  
+  // Normalize source to valid type
+  const validSources: GeoIdEntry['source'][] = ['profile', 'company', 'harvest', 'saleleads', 'json_to_url', 'manual'];
+  const source = (validSources.includes(rawEntry.source as GeoIdEntry['source']) 
+    ? rawEntry.source 
+    : 'manual') as GeoIdEntry['source'];
+  
+  return {
+    locationId,
+    fullId,
+    locationName,
+    locationText,
+    city: rawEntry.city,
+    state: rawEntry.state || rawEntry.name,
+    country: rawEntry.country,
+    source,
+    discoveredAt,
+    verifiedAt: rawEntry.verifiedAt,
+    usageCount: rawEntry.usageCount ?? 0
+  };
+}
+
+/**
+ * Loads the geo ID database from disk and normalizes legacy entries
  */
 export function loadGeoIdDatabase(): GeoIdDatabase {
   try {
@@ -118,7 +174,28 @@ export function loadGeoIdDatabase(): GeoIdDatabase {
     // Load existing database
     const data = safeReadFile(dbFilePath);
     if (data) {
-      return JSON.parse(data);
+      const rawDb = JSON.parse(data);
+      
+      // Handle both {entries: {}} and direct {} database formats
+      const rawEntries = rawDb.entries || rawDb;
+      
+      // Normalize all entries to current format
+      const normalizedEntries: Record<string, GeoIdEntry> = {};
+      for (const [key, rawEntry] of Object.entries(rawEntries)) {
+        // Skip metadata fields
+        if (key === 'version' || key === 'lastUpdated') {
+          continue;
+        }
+        
+        const entry = normalizeLegacyEntry(rawEntry as LegacyGeoIdEntry, key);
+        normalizedEntries[key] = entry;
+      }
+      
+      return {
+        version: rawDb.version || DB_VERSION,
+        lastUpdated: rawDb.lastUpdated || new Date().toISOString(),
+        entries: normalizedEntries
+      };
     }
   } catch (error) {
     console.error('Error loading geo ID database:', error);
@@ -195,33 +272,13 @@ export function lookupGeoId(locationText: string): GeoIdEntry | null {
   const db = loadGeoIdDatabase();
   const normalizedKey = normalizeLocationText(locationText);
   
-  // Handle both {entries: {}} and direct {} database formats
-  const entries = db.entries || db;
-  
-  const rawEntry = entries[normalizedKey] as any; // Allow legacy formats with 'id' instead of 'locationId'
-  if (rawEntry) {
-    // Normalize entry structure (some entries use 'id' instead of 'locationId')
-    const entry: GeoIdEntry = {
-      locationId: rawEntry.locationId || rawEntry.id || '',
-      fullId: rawEntry.fullId || `urn:li:fs_geo:${rawEntry.id || rawEntry.locationId}`,
-      locationName: rawEntry.locationName || rawEntry.name || locationText,
-      locationText: rawEntry.locationText || locationText,
-      city: rawEntry.city,
-      state: rawEntry.state || rawEntry.name,
-      country: rawEntry.country,
-      source: (rawEntry.source as GeoIdEntry['source']) || 'manual',
-      discoveredAt: rawEntry.discoveredAt || rawEntry.timestamp || new Date().toISOString(),
-      verifiedAt: rawEntry.verifiedAt,
-      usageCount: (rawEntry.usageCount || 0) + 1
-    };
+  const entry = db.entries[normalizedKey];
+  if (entry) {
+    // Increment usage count
+    entry.usageCount = (entry.usageCount || 0) + 1;
     
-    // Update usage count in database
-    entries[normalizedKey] = { ...rawEntry, usageCount: entry.usageCount };
-    
-    // Save back to database (preserve structure)
-    if (db.entries) {
-      db.entries = entries;
-    }
+    // Save updated usage count back to database
+    db.entries[normalizedKey] = entry;
     saveGeoIdDatabase(db);
     
     return entry;
@@ -355,5 +412,52 @@ export function getGeoIdDatabaseStats(): {
  */
 export function exportGeoIdDatabaseToCSV(): string {
   const db = loadGeoIdDatabase();
-  const entries = Object.values(db.entries);}
+  const entries = Object.values(db.entries);
+  
+  // CSV header
+  const headers = [
+    'locationId',
+    'fullId',
+    'locationName',
+    'locationText',
+    'city',
+    'state',
+    'country',
+    'source',
+    'discoveredAt',
+    'verifiedAt',
+    'usageCount'
+  ];
+  
+  // CSV rows
+  const rows = entries.map(entry => [
+    entry.locationId,
+    entry.fullId,
+    entry.locationName,
+    entry.locationText,
+    entry.city || '',
+    entry.state || '',
+    entry.country || '',
+    entry.source,
+    entry.discoveredAt,
+    entry.verifiedAt || '',
+    entry.usageCount.toString()
+  ]);
+  
+  // Escape CSV values (handle commas and quotes)
+  const escapeCsv = (value: string): string => {
+    if (value.includes(',') || value.includes('"') || value.includes('\n')) {
+      return `"${value.replace(/"/g, '""')}"`;
+    }
+    return value;
+  };
+  
+  // Build CSV
+  const csvLines = [
+    headers.map(escapeCsv).join(','),
+    ...rows.map(row => row.map(escapeCsv).join(','))
+  ];
+  
+  return csvLines.join('\n');
+}
 
