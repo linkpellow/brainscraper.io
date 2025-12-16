@@ -1,0 +1,1450 @@
+{
+  "totalApiCalls": 27,
+  "passed": 24,
+  "failed": 3,
+  "warnings": 2,
+  "results": [
+    {
+      "name": "Location Suggestions",
+      "success": true,
+      "resultsCount": 1,
+      "responseStructure": {
+        "data": [
+          {
+            "displayValue": "Maryland, United States",
+            "id": "100809221",
+            "headline": "Maryland, United States",
+            "headlineV2": {
+              "attributes": [
+                {
+                  "start": 0,
+                  "length": 8,
+                  "type": {
+                    "com.linkedin.pemberly.text.Bold": {}
+                  },
+                  "attributeKindUnion": {
+                    "bold": {}
+                  }
+                }
+              ],
+              "text": "Maryland, United States"
+            }
+          },
+          {
+            "displayValue": "Montgomery County, Maryland, United States",
+            "id": "106178152",
+            "headline": "Montgomery County, Maryland, United States",
+            "headlineV2": {
+              "attributes": [
+                {
+                  "start": 19,
+                  "length": 8,
+                  "type": {
+                    "com.linkedin.pemberly.text.Bold": {}
+                  },
+                  "attributeKindUnion": {
+                    "bold": {}
+                  }
+                }
+              ],
+              "text": "Montgomery County, Maryland, United States"
+            }
+          },
+          {
+            "displayValue": "Prince George's County, Maryland, United States",
+            "id": "104190862",
+            "headline": "Prince George's County, Maryland, United States",
+            "headlineV2": {
+              "attributes": [
+                {
+                  "start": 24,
+                  "length": 8,
+                  "type": {
+                    "com.linkedin.pemberly.text.Bold": {}
+                  },
+                  "attributeKindUnion": {
+                    "bold": {}
+                  }
+                }
+              ],
+              "text": "Prince George's County, Maryland, United States"
+            }
+          },
+          {
+            "displayValue": "Baltimore, Maryland, United States",
+            "id": "106330734",
+            "headline": "Baltimore, Maryland, United States",
+            "headlineV2": {
+              "attributes": [
+                {
+                  "start": 11,
+                  "length": 8,
+                  "type": {
+                    "com.linkedin.pemberly.text.Bold": {}
+                  },
+                  "attributeKindUnion": {
+                    "bold": {}
+                  }
+                }
+              ],
+              "text": "Baltimore, Maryland, United States"
+            }
+          },
+          {
+            "displayValue": "Baltimore City County, Maryland, United States",
+            "id": "106727848",
+            "headline": "Baltimore City County, Maryland, United States",
+            "headlineV2": {
+              "attributes": [
+                {
+                  "start": 23,
+                  "length": 8,
+                  "type": {
+                    "com.linkedin.pemberly.text.Bold": {}
+                  },
+                  "attributeKindUnion": {
+                    "bold": {}
+                  }
+                }
+              ],
+              "text": "Baltimore City County, Maryland, United States"
+            }
+          },
+          {
+            "displayValue": "Baltimore County, Maryland, United States",
+            "id": "104767401",
+            "headline": "Baltimore County, Maryland, United States",
+            "headlineV2": {
+              "attributes": [
+                {
+                  "start": 18,
+                  "length": 8,
+                  "type": {
+                    "com.linkedin.pemberly.text.Bold": {}
+                  },
+                  "attributeKindUnion": {
+                    "bold": {}
+                  }
+                }
+              ],
+              "text": "Baltimore County, Maryland, United States"
+            }
+          },
+          {
+            "displayValue": "Anne Arundel County, Maryland, United States",
+            "id": "102256821",
+            "headline": "Anne Arundel County, Maryland, United States",
+            "headlineV2": {
+              "attributes": [
+                {
+                  "start": 21,
+                  "length": 8,
+                  "type": {
+                    "com.linkedin.pemberly.text.Bold": {}
+                  },
+                  "attributeKindUnion": {
+                    "bold": {}
+                  }
+                }
+              ],
+              "text": "Anne Arundel County, Maryland, United States"
+            }
+          },
+          {
+            "displayValue": "Howard County, Maryland, United States",
+            "id": "104488064",
+            "headline": "Howard County, Maryland, United States",
+            "headlineV2": {
+              "attributes": [
+                {
+                  "start": 15,
+                  "length": 8,
+                  "type": {
+                    "com.linkedin.pemberly.text.Bold": {}
+                  },
+                  "attributeKindUnion": {
+                    "bold": {}
+                  }
+                }
+              ],
+              "text": "Howard County, Maryland, United States"
+            }
+          },
+          {
+            "displayValue": "Silver Spring, Maryland, United States",
+            "id": "106026178",
+            "headline": "Silver Spring, Maryland, United States",
+            "headlineV2": {
+              "attributes": [
+                {
+                  "start": 15,
+                  "length": 8,
+                  "type": {
+                    "com.linkedin.pemberly.text.Bold": {}
+                  },
+                  "attributeKindUnion": {
+                    "bold": {}
+                  }
+                }
+              ],
+              "text": "Silver Spring, Maryland, United States"
+            }
+          },
+          {
+            "displayValue": "Frederick County, Maryland, United States",
+            "id": "104600205",
+            "headline": "Frederick County, Maryland, United States",
+            "headlineV2": {
+              "attributes": [
+                {
+                  "start": 18,
+                  "length": 8,
+                  "type": {
+                    "com.linkedin.pemberly.text.Bold": {}
+                  },
+                  "attributeKindUnion": {
+                    "bold": {}
+                  }
+                }
+              ],
+              "text": "Frederick County, Maryland, United States"
+            }
+          }
+        ]
+      },
+      "apiCallsUsed": 1
+    },
+    {
+      "name": "Company Suggestions",
+      "success": true,
+      "resultsCount": 1,
+      "responseStructure": {
+        "data": [
+          {
+            "displayValue": "Apple",
+            "employeeCountRange": "10,001+ employees",
+            "address": {
+              "country": "United States",
+              "geographicArea": "California",
+              "city": "Cupertino",
+              "postalCode": "95014",
+              "line1": "1 Apple Park Way"
+            },
+            "displayImage": "https://media.licdn.com/dms/image/v2/C560BAQHdAaarsO-eyA/company-logo_200_200/company-logo_200_200/0/1630637844948/apple_logo?e=1767225600&v=beta&t=o3H0ze2DLmAhkFQYiJDet5uUG8NF67VZtmCmM9XRm-w",
+            "industry": "Computers and Electronics Manufacturing",
+            "companyId": "162479",
+            "headline": "Apple"
+          },
+          {
+            "displayValue": "Apple Bank",
+            "employeeCountRange": "1001-5000 employees",
+            "address": {
+              "country": "United States",
+              "geographicArea": "New York",
+              "city": "New York",
+              "postalCode": "10168",
+              "line1": "122 East 42nd Street"
+            },
+            "displayImage": "https://media.licdn.com/dms/image/v2/D4E0BAQFjg_rkE1JVXA/company-logo_200_200/company-logo_200_200/0/1714570628432/apple_bank_for_savings_logo?e=1767225600&v=beta&t=ZB1pYo4MbCRdMC95Fu2wYe13ij3jUh2JKUp4OaoYMM0",
+            "industry": "Financial Services",
+            "companyId": "1356007",
+            "headline": "Apple Bank"
+          },
+          {
+            "displayValue": "APPLE TREE",
+            "employeeCountRange": "51-200 employees",
+            "address": {
+              "country": "Spain",
+              "geographicArea": "Barcelona",
+              "city": "Barcelona",
+              "postalCode": "08003",
+              "line1": "Avinguda Marquès de l'Argentera, 17"
+            },
+            "displayImage": "https://media.licdn.com/dms/image/v2/C4E0BAQHi1XLZRH3FTg/company-logo_200_200/company-logo_200_200/0/1630640439968/apple_tree_communications_logo?e=1767225600&v=beta&t=-ypyLkJr6EVhPcxjP2k-tC0MW5wafPlsKve120q-5-E",
+            "industry": "Advertising Services",
+            "companyId": "126164",
+            "headline": "APPLE TREE"
+          },
+          {
+            "displayValue": "Applecart",
+            "employeeCountRange": "201-500 employees",
+            "address": {
+              "country": "United States",
+              "geographicArea": "NY",
+              "city": "New York",
+              "postalCode": "10001",
+              "line1": "132 W 31st St"
+            },
+            "displayImage": "https://media.licdn.com/dms/image/v2/D4D0BAQGt5MMhu-nWBg/company-logo_200_200/company-logo_200_200/0/1698702588116/applecart_logo?e=1767225600&v=beta&t=IXLMLWhxX2eghBtBE9f5-NYl0giAS0PEXclOptoeU54",
+            "industry": "Technology, Information and Internet",
+            "companyId": "6424709",
+            "headline": "Applecart"
+          },
+          {
+            "displayValue": "Apple Rehab",
+            "employeeCountRange": "1001-5000 employees",
+            "address": {
+              "country": "United States",
+              "geographicArea": "CT",
+              "city": "Avon",
+              "postalCode": "06001",
+              "line1": "21 Waterville Rd"
+            },
+            "displayImage": "https://media.licdn.com/dms/image/v2/D4E0BAQEt1FvGWaMPGQ/company-logo_200_200/company-logo_200_200/0/1708527239401/applerehab_logo?e=1767225600&v=beta&t=tlvcEtNgYjFhUBqzLdK-b1nkOfaxxvlTmi3h4H-qJZo",
+            "industry": "Hospitals and Health Care",
+            "companyId": "1923913",
+            "headline": "Apple Rehab"
+          },
+          {
+            "displayValue": "AppleOne Employment Services",
+            "employeeCountRange": "1001-5000 employees",
+            "address": {
+              "country": "United States",
+              "geographicArea": "CA",
+              "city": "Glendale",
+              "postalCode": "91204",
+              "line1": "327 W. Broadway"
+            },
+            "displayImage": "https://media.licdn.com/dms/image/v2/D560BAQEEp28cH9aSHw/company-logo_200_200/company-logo_200_200/0/1719845909507/appleone_logo?e=1767225600&v=beta&t=dNgE2ePUcXY9USQAi6_HmMpus_PV6pms4bPS2ddmh78",
+            "industry": "Staffing and Recruiting",
+            "companyId": "6088",
+            "headline": "AppleOne Employment Services"
+          },
+          {
+            "displayValue": "Apple Hospital",
+            "employeeCountRange": "51-200 employees",
+            "address": {
+              "country": "India",
+              "geographicArea": "madhya Pradesh",
+              "city": "Indore",
+              "postalCode": "452008",
+              "line1": "15/1, Bhawarkua Main Road"
+            },
+            "displayImage": "https://media.licdn.com/dms/image/v2/D560BAQFECqwoV8WTag/company-logo_200_200/company-logo_200_200/0/1697548464067?e=1767225600&v=beta&t=aFfANmKNdJ4IWfRwOCGcWMWqODbB08vxcnFahDAhrls",
+            "industry": "Hospitals and Health Care",
+            "companyId": "97457267",
+            "headline": "Apple Hospital"
+          },
+          {
+            "displayValue": "Applegreen",
+            "employeeCountRange": "10,001+ employees",
+            "address": {
+              "country": "Ireland",
+              "city": "Dublin 12.",
+              "line2": "Parkwest,",
+              "line1": "17 Joyce Way,"
+            },
+            "displayImage": "https://media.licdn.com/dms/image/v2/D4E0BAQHuSj3BTOdUVw/company-logo_400_400/B4EZcQm0ZtHIAc-/0/1748330301417/applegreen_logo?e=1767225600&v=beta&t=U2ynJ7dte6JfUBR_bVucWNObtqFPMu5GHYsr9tuKr6c",
+            "industry": "Retail",
+            "companyId": "1842111",
+            "headline": "Applegreen"
+          },
+          {
+            "displayValue": "Apple Gadgets",
+            "employeeCountRange": "201-500 employees",
+            "address": {
+              "country": "Bangladesh",
+              "city": "Dhaka",
+              "postalCode": "1229",
+              "line1": "Level #4, Zone #A (West Court), Shop -028D, Jamuna Future Park "
+            },
+            "displayImage": "https://media.licdn.com/dms/image/v2/D560BAQE8-NG4jb7_eQ/company-logo_200_200/company-logo_200_200/0/1730888923204/applegadgetsltd_logo?e=1767225600&v=beta&t=ljRLX37w4iOoVvWlGe8EUFjK-UsK6-ir-ekpRBEyUGU",
+            "industry": "Retail",
+            "companyId": "31092876",
+            "headline": "Apple Gadgets"
+          },
+          {
+            "displayValue": "Appleby",
+            "employeeCountRange": "201-500 employees",
+            "address": {
+              "country": "Cayman Islands",
+              "geographicArea": "PO Box 190",
+              "city": "Cayman Islands",
+              "postalCode": "KY1-1104",
+              "line2": "71 Fort Street",
+              "line1": "Clifton House"
+            },
+            "displayImage": "https://media.licdn.com/dms/image/v2/D4E0BAQHsXZbiGxBtEg/company-logo_400_400/B4EZfGWkx9HYAY-/0/1751379496609/appleby_logo?e=1767225600&v=beta&t=vR5OqrXWaNWoLFYXxUNQFCdc1R6_uAur_21IXgfaR1U",
+            "industry": "Law Practice",
+            "companyId": "54380",
+            "headline": "Appleby"
+          }
+        ]
+      },
+      "apiCallsUsed": 1
+    },
+    {
+      "name": "Industry Suggestions",
+      "success": true,
+      "resultsCount": 1,
+      "responseStructure": {
+        "data": [
+          {
+            "displayValue": "Technology, Information and Internet",
+            "id": "6",
+            "headline": "Technology, Information and Internet",
+            "headlineV2": {
+              "text": "Technology, Information and Internet"
+            }
+          },
+          {
+            "displayValue": "Technology, Information and Media",
+            "id": "1594",
+            "headline": "Technology, Information and Media",
+            "headlineV2": {
+              "text": "Technology, Information and Media"
+            }
+          },
+          {
+            "displayValue": "Technical and Vocational Training",
+            "id": "2018",
+            "headline": "Technical and Vocational Training",
+            "headlineV2": {
+              "text": "Technical and Vocational Training"
+            }
+          },
+          {
+            "displayValue": "Biotechnology Research",
+            "id": "12",
+            "headline": "Biotechnology Research",
+            "headlineV2": {
+              "text": "Biotechnology Research"
+            }
+          },
+          {
+            "displayValue": "Space Research and Technology",
+            "id": "3089",
+            "headline": "Space Research and Technology",
+            "headlineV2": {
+              "text": "Space Research and Technology"
+            }
+          },
+          {
+            "displayValue": "Nanotechnology Research",
+            "id": "114",
+            "headline": "Nanotechnology Research",
+            "headlineV2": {
+              "text": "Nanotechnology Research"
+            }
+          },
+          {
+            "displayValue": "Information Technology & Services",
+            "id": "3231",
+            "headline": "Information Technology & Services",
+            "headlineV2": {
+              "text": "Information Technology & Services"
+            }
+          },
+          {
+            "displayValue": "Biotechnology",
+            "id": "3238",
+            "headline": "Biotechnology",
+            "headlineV2": {
+              "text": "Biotechnology"
+            }
+          },
+          {
+            "displayValue": "Climate Technology Product Manufacturing",
+            "id": "3251",
+            "headline": "Climate Technology Product Manufacturing",
+            "headlineV2": {
+              "text": "Climate Technology Product Manufacturing"
+            }
+          },
+          {
+            "displayValue": "Energy Technology",
+            "id": "3259",
+            "headline": "Energy Technology",
+            "headlineV2": {
+              "text": "Energy Technology"
+            }
+          }
+        ]
+      },
+      "apiCallsUsed": 1
+    },
+    {
+      "name": "Job Title Suggestions",
+      "success": true,
+      "resultsCount": 1,
+      "responseStructure": {
+        "data": [
+          {
+            "displayValue": "Director",
+            "id": "5",
+            "headline": "Director",
+            "headlineV2": {
+              "attributes": [
+                {
+                  "start": 0,
+                  "length": 8,
+                  "type": {
+                    "com.linkedin.pemberly.text.Bold": {}
+                  },
+                  "attributeKindUnion": {
+                    "bold": {}
+                  }
+                }
+              ],
+              "text": "Director"
+            }
+          },
+          {
+            "displayValue": "Managing Director",
+            "id": "16",
+            "headline": "Managing Director",
+            "headlineV2": {
+              "attributes": [
+                {
+                  "start": 9,
+                  "length": 8,
+                  "type": {
+                    "com.linkedin.pemberly.text.Bold": {}
+                  },
+                  "attributeKindUnion": {
+                    "bold": {}
+                  }
+                }
+              ],
+              "text": "Managing Director"
+            }
+          },
+          {
+            "displayValue": "Director of Operations",
+            "id": "81",
+            "headline": "Director of Operations",
+            "headlineV2": {
+              "attributes": [
+                {
+                  "start": 0,
+                  "length": 8,
+                  "type": {
+                    "com.linkedin.pemberly.text.Bold": {}
+                  },
+                  "attributeKindUnion": {
+                    "bold": {}
+                  }
+                }
+              ],
+              "text": "Director of Operations"
+            }
+          },
+          {
+            "displayValue": "Executive Director",
+            "id": "60",
+            "headline": "Executive Director",
+            "headlineV2": {
+              "attributes": [
+                {
+                  "start": 10,
+                  "length": 8,
+                  "type": {
+                    "com.linkedin.pemberly.text.Bold": {}
+                  },
+                  "attributeKindUnion": {
+                    "bold": {}
+                  }
+                }
+              ],
+              "text": "Executive Director"
+            }
+          },
+          {
+            "displayValue": "Sales Director",
+            "id": "48",
+            "headline": "Sales Director",
+            "headlineV2": {
+              "attributes": [
+                {
+                  "start": 6,
+                  "length": 8,
+                  "type": {
+                    "com.linkedin.pemberly.text.Bold": {}
+                  },
+                  "attributeKindUnion": {
+                    "bold": {}
+                  }
+                }
+              ],
+              "text": "Sales Director"
+            }
+          },
+          {
+            "displayValue": "Marketing Director",
+            "id": "63",
+            "headline": "Marketing Director",
+            "headlineV2": {
+              "attributes": [
+                {
+                  "start": 10,
+                  "length": 8,
+                  "type": {
+                    "com.linkedin.pemberly.text.Bold": {}
+                  },
+                  "attributeKindUnion": {
+                    "bold": {}
+                  }
+                }
+              ],
+              "text": "Marketing Director"
+            }
+          },
+          {
+            "displayValue": "Director of Business Development",
+            "id": "119",
+            "headline": "Director of Business Development",
+            "headlineV2": {
+              "attributes": [
+                {
+                  "start": 0,
+                  "length": 8,
+                  "type": {
+                    "com.linkedin.pemberly.text.Bold": {}
+                  },
+                  "attributeKindUnion": {
+                    "bold": {}
+                  }
+                }
+              ],
+              "text": "Director of Business Development"
+            }
+          },
+          {
+            "displayValue": "Creative Director",
+            "id": "117",
+            "headline": "Creative Director",
+            "headlineV2": {
+              "attributes": [
+                {
+                  "start": 9,
+                  "length": 8,
+                  "type": {
+                    "com.linkedin.pemberly.text.Bold": {}
+                  },
+                  "attributeKindUnion": {
+                    "bold": {}
+                  }
+                }
+              ],
+              "text": "Creative Director"
+            }
+          },
+          {
+            "displayValue": "Financial Director",
+            "id": "127",
+            "headline": "Financial Director",
+            "headlineV2": {
+              "attributes": [
+                {
+                  "start": 10,
+                  "length": 8,
+                  "type": {
+                    "com.linkedin.pemberly.text.Bold": {}
+                  },
+                  "attributeKindUnion": {
+                    "bold": {}
+                  }
+                }
+              ],
+              "text": "Financial Director"
+            }
+          },
+          {
+            "displayValue": "Human Resources Director",
+            "id": "105",
+            "headline": "Human Resources Director",
+            "headlineV2": {
+              "attributes": [
+                {
+                  "start": 16,
+                  "length": 8,
+                  "type": {
+                    "com.linkedin.pemberly.text.Bold": {}
+                  },
+                  "attributeKindUnion": {
+                    "bold": {}
+                  }
+                }
+              ],
+              "text": "Human Resources Director"
+            }
+          }
+        ]
+      },
+      "apiCallsUsed": 1
+    },
+    {
+      "name": "Technology Options",
+      "success": true,
+      "resultsCount": 1,
+      "responseStructure": {
+        "data": []
+      },
+      "apiCallsUsed": 1
+    },
+    {
+      "name": "School Suggestions",
+      "success": false,
+      "resultsCount": 0,
+      "responseStructure": {
+        "success": false,
+        "status": 400,
+        "message": "\"query\" is missing in params"
+      },
+      "apiCallsUsed": 1
+    },
+    {
+      "name": "Years of Experience",
+      "success": true,
+      "resultsCount": 1,
+      "responseStructure": {
+        "data": [
+          {
+            "displayValue": "Less than 1 year",
+            "id": "1"
+          },
+          {
+            "displayValue": "1 to 2 years",
+            "id": "2"
+          },
+          {
+            "displayValue": "3 to 5 years",
+            "id": "3"
+          },
+          {
+            "displayValue": "6 to 10 years",
+            "id": "4"
+          },
+          {
+            "displayValue": "More than 10 years",
+            "id": "5"
+          }
+        ]
+      },
+      "apiCallsUsed": 1
+    },
+    {
+      "name": "Company Headcount",
+      "success": true,
+      "resultsCount": 1,
+      "responseStructure": {
+        "data": [
+          {
+            "displayValue": "Self-employed",
+            "id": "A"
+          },
+          {
+            "displayValue": "1-10",
+            "id": "B"
+          },
+          {
+            "displayValue": "11-50",
+            "id": "C"
+          },
+          {
+            "displayValue": "51-200",
+            "id": "D"
+          },
+          {
+            "displayValue": "201-500",
+            "id": "E"
+          },
+          {
+            "displayValue": "501-1,000",
+            "id": "F"
+          },
+          {
+            "displayValue": "1,001-5,000",
+            "id": "G"
+          },
+          {
+            "displayValue": "5,001-10,000",
+            "id": "H"
+          },
+          {
+            "displayValue": "10,001+",
+            "id": "I"
+          }
+        ]
+      },
+      "apiCallsUsed": 1
+    },
+    {
+      "name": "Annual Revenue",
+      "success": true,
+      "resultsCount": 1,
+      "responseStructure": {
+        "data": {
+          "currencies": [
+            "USD",
+            "AED",
+            "AUD",
+            "BRL",
+            "CAD",
+            "CNY",
+            "DKK",
+            "EUR",
+            "GBP",
+            "HKD",
+            "IDR",
+            "ILS",
+            "INR",
+            "JPY",
+            "NOK",
+            "NZD",
+            "RUB",
+            "SEK",
+            "SGD",
+            "THB",
+            "TRY",
+            "TWD"
+          ],
+          "values": [
+            0,
+            0.5,
+            1,
+            2.5,
+            5,
+            10,
+            20,
+            50,
+            100,
+            500,
+            1000
+          ]
+        }
+      },
+      "apiCallsUsed": 1
+    },
+    {
+      "name": "Followers Count",
+      "success": true,
+      "resultsCount": 1,
+      "responseStructure": {
+        "data": [
+          {
+            "displayValue": "1-50",
+            "id": "NFR1"
+          },
+          {
+            "displayValue": "51-100",
+            "id": "NFR2"
+          },
+          {
+            "displayValue": "101-1000",
+            "id": "NFR3"
+          },
+          {
+            "displayValue": "1001-5000",
+            "id": "NFR4"
+          },
+          {
+            "displayValue": "5001+",
+            "id": "NFR5"
+          }
+        ]
+      },
+      "apiCallsUsed": 1
+    },
+    {
+      "name": "Department Headcount",
+      "success": true,
+      "resultsCount": 1,
+      "responseStructure": {
+        "data": [
+          {
+            "Accounting": 1
+          },
+          {
+            "Administrative": 2
+          },
+          {
+            "Arts and Design": 3
+          },
+          {
+            "Business Development": 4
+          },
+          {
+            "Community and Social Services ": 5
+          },
+          {
+            "Consulting": 6
+          },
+          {
+            "Education": 7
+          },
+          {
+            "Engineering": 8
+          },
+          {
+            "Entrepreneurship": 9
+          },
+          {
+            "Finance": 10
+          },
+          {
+            "Healthcare Services": 11
+          },
+          {
+            "Human Resources": 12
+          },
+          {
+            "Information Technology": 13
+          },
+          {
+            "Legal": 14
+          },
+          {
+            "Marketing": 15
+          },
+          {
+            "Media and Communication": 16
+          },
+          {
+            "Military and Protective Services": 17
+          },
+          {
+            "Operations": 18
+          },
+          {
+            "Product Management": 19
+          },
+          {
+            "Program and Project Management": 20
+          },
+          {
+            "Purchasing": 21
+          },
+          {
+            "Quality Assurance": 22
+          },
+          {
+            "Real Estate": 23
+          },
+          {
+            "Research": 24
+          },
+          {
+            "Sales": 25
+          },
+          {
+            "Support": 26
+          }
+        ]
+      },
+      "apiCallsUsed": 1
+    },
+    {
+      "name": "Recent Activities",
+      "success": true,
+      "resultsCount": 1,
+      "responseStructure": {
+        "data": [
+          {
+            "displayValue": "Senior leadership changes in last 3 months",
+            "id": "SLC"
+          },
+          {
+            "displayValue": "Funding events in past 12 months",
+            "id": "RFE"
+          }
+        ]
+      },
+      "apiCallsUsed": 1
+    },
+    {
+      "name": "Job Opportunities",
+      "success": true,
+      "resultsCount": 1,
+      "responseStructure": {
+        "data": [
+          {
+            "displayValue": "Hiring on Linkedin",
+            "id": "JO1"
+          }
+        ]
+      },
+      "apiCallsUsed": 1
+    },
+    {
+      "name": "Fortune",
+      "success": true,
+      "resultsCount": 1,
+      "responseStructure": {
+        "data": [
+          {
+            "displayValue": "Fortune 50",
+            "id": "1"
+          },
+          {
+            "displayValue": "Fortune 51-100",
+            "id": "2"
+          },
+          {
+            "displayValue": "Fortune 101-250",
+            "id": "3"
+          },
+          {
+            "displayValue": "Fortune 251-500",
+            "id": "4"
+          }
+        ]
+      },
+      "apiCallsUsed": 1
+    },
+    {
+      "name": "Languages",
+      "success": true,
+      "resultsCount": 1,
+      "responseStructure": {
+        "data": [
+          {
+            "displayValue": "Arabic",
+            "id": "ar"
+          },
+          {
+            "displayValue": "English",
+            "id": "en"
+          },
+          {
+            "displayValue": "Spanish",
+            "id": "es"
+          },
+          {
+            "displayValue": "Portuguese",
+            "id": "pt"
+          },
+          {
+            "displayValue": "Chinese",
+            "id": "zh"
+          },
+          {
+            "displayValue": "French",
+            "id": "fr"
+          },
+          {
+            "displayValue": "Italian",
+            "id": "it"
+          },
+          {
+            "displayValue": "Russian",
+            "id": "ru"
+          },
+          {
+            "displayValue": "German",
+            "id": "de"
+          },
+          {
+            "displayValue": "Dutch",
+            "id": "nl"
+          },
+          {
+            "displayValue": "Turkish",
+            "id": "tr"
+          },
+          {
+            "displayValue": "Tagalog",
+            "id": "tl"
+          },
+          {
+            "displayValue": "Polish",
+            "id": "pl"
+          },
+          {
+            "displayValue": "Korean",
+            "id": "ko"
+          },
+          {
+            "displayValue": "Japanese",
+            "id": "ja"
+          },
+          {
+            "displayValue": "Malay",
+            "id": "ms"
+          },
+          {
+            "displayValue": "Norwegian",
+            "id": "no"
+          },
+          {
+            "displayValue": "Danish",
+            "id": "da"
+          },
+          {
+            "displayValue": "Romanian",
+            "id": "ro"
+          },
+          {
+            "displayValue": "Swedish",
+            "id": "sv"
+          },
+          {
+            "displayValue": "Bahasa Indonesia",
+            "id": "in"
+          },
+          {
+            "displayValue": "Czech",
+            "id": "cs"
+          }
+        ]
+      },
+      "apiCallsUsed": 1
+    },
+    {
+      "name": "Seniority Level",
+      "success": true,
+      "resultsCount": 1,
+      "responseStructure": {
+        "data": [
+          {
+            "displayValue": "Owner / Partner",
+            "id": "320"
+          },
+          {
+            "displayValue": "CXO",
+            "id": "310"
+          },
+          {
+            "displayValue": "Vice President",
+            "id": "300"
+          },
+          {
+            "displayValue": "Director",
+            "id": "220"
+          },
+          {
+            "displayValue": "Experienced Manager",
+            "id": "210"
+          },
+          {
+            "displayValue": "Entry Level Manager",
+            "id": "200"
+          },
+          {
+            "displayValue": "Strategic",
+            "id": "130"
+          },
+          {
+            "displayValue": "Senior",
+            "id": "120"
+          },
+          {
+            "displayValue": "Entry Level",
+            "id": "110"
+          },
+          {
+            "displayValue": "In Training",
+            "id": "100"
+          }
+        ]
+      },
+      "apiCallsUsed": 1
+    },
+    {
+      "name": "Company Type",
+      "success": true,
+      "resultsCount": 1,
+      "responseStructure": {
+        "data": [
+          {
+            "displayValue": "Public Company",
+            "id": "C"
+          },
+          {
+            "displayValue": "Privately Held",
+            "id": "P"
+          },
+          {
+            "displayValue": "Non Profit",
+            "id": "N"
+          },
+          {
+            "displayValue": "Educational Institution",
+            "id": "D"
+          },
+          {
+            "displayValue": "Partnership",
+            "id": "S"
+          },
+          {
+            "displayValue": "Self Employed",
+            "id": "E"
+          },
+          {
+            "displayValue": "Self Owned",
+            "id": "O"
+          },
+          {
+            "displayValue": "Government Agency",
+            "id": "G"
+          }
+        ]
+      },
+      "apiCallsUsed": 1
+    },
+    {
+      "name": "Search Suggestions",
+      "success": false,
+      "resultsCount": 0,
+      "responseStructure": {
+        "success": false,
+        "status": 400,
+        "message": "\"query\" is missing in params"
+      },
+      "apiCallsUsed": 1
+    },
+    {
+      "name": "LOCATION Filter - Maryland",
+      "success": true,
+      "resultsCount": 25,
+      "accuracy": 0,
+      "filterAccuracy": {
+        "location": 0
+      },
+      "requestBody": {
+        "filters": [
+          {
+            "type": "LOCATION",
+            "values": [
+              {
+                "id": "urn:li:fs_geo:103644278",
+                "text": "Maryland",
+                "selectionType": "INCLUDED"
+              }
+            ]
+          }
+        ],
+        "keywords": "",
+        "page": 1,
+        "limit": 10,
+        "account_number": 1
+      },
+      "responseStructure": {
+        "path": "response.data",
+        "hasPagination": true
+      },
+      "apiCallsUsed": 1
+    },
+    {
+      "name": "CURRENT_COMPANY - Format A (normalized)",
+      "success": true,
+      "resultsCount": 0,
+      "requestBody": {
+        "filters": [
+          {
+            "type": "CURRENT_COMPANY",
+            "values": [
+              {
+                "id": "apple",
+                "text": "Apple",
+                "selectionType": "INCLUDED"
+              }
+            ]
+          }
+        ],
+        "keywords": "",
+        "page": 1,
+        "limit": 10,
+        "account_number": 1
+      },
+      "responseStructure": {
+        "path": "response.data",
+        "hasPagination": true
+      },
+      "apiCallsUsed": 1
+    },
+    {
+      "name": "CURRENT_COMPANY - Format B (URN)",
+      "success": true,
+      "resultsCount": 25,
+      "accuracy": 0,
+      "filterAccuracy": {
+        "company": 0
+      },
+      "requestBody": {
+        "filters": [
+          {
+            "type": "CURRENT_COMPANY",
+            "values": [
+              {
+                "id": "urn:li:organization:1586",
+                "text": "Apple",
+                "selectionType": "INCLUDED"
+              }
+            ]
+          }
+        ],
+        "keywords": "",
+        "page": 1,
+        "limit": 10,
+        "account_number": 1
+      },
+      "responseStructure": {
+        "path": "response.data",
+        "hasPagination": true
+      },
+      "apiCallsUsed": 1
+    },
+    {
+      "name": "COMPANY_HEADCOUNT - Format A (numeric)",
+      "success": true,
+      "resultsCount": 0,
+      "requestBody": {
+        "filters": [
+          {
+            "type": "COMPANY_HEADCOUNT",
+            "values": [
+              {
+                "id": "100",
+                "text": "Min: 100",
+                "selectionType": "INCLUDED"
+              }
+            ]
+          }
+        ],
+        "keywords": "",
+        "page": 1,
+        "limit": 10,
+        "account_number": 1
+      },
+      "responseStructure": {
+        "path": "response.data",
+        "hasPagination": true
+      },
+      "apiCallsUsed": 1
+    },
+    {
+      "name": "COMPANY_HEADCOUNT - Format B (letter)",
+      "success": true,
+      "resultsCount": 25,
+      "requestBody": {
+        "filters": [
+          {
+            "type": "COMPANY_HEADCOUNT",
+            "values": [
+              {
+                "id": "B",
+                "text": "1-10",
+                "selectionType": "INCLUDED"
+              }
+            ]
+          }
+        ],
+        "keywords": "",
+        "page": 1,
+        "limit": 10,
+        "account_number": 1
+      },
+      "responseStructure": {
+        "path": "response.data",
+        "hasPagination": true
+      },
+      "apiCallsUsed": 1
+    },
+    {
+      "name": "Combined: LOCATION + CURRENT_COMPANY",
+      "success": true,
+      "resultsCount": 0,
+      "requestBody": {
+        "filters": [
+          {
+            "type": "LOCATION",
+            "values": [
+              {
+                "id": "urn:li:fs_geo:103644278",
+                "text": "Maryland",
+                "selectionType": "INCLUDED"
+              }
+            ]
+          },
+          {
+            "type": "CURRENT_COMPANY",
+            "values": [
+              {
+                "id": "apple",
+                "text": "Apple",
+                "selectionType": "INCLUDED"
+              }
+            ]
+          }
+        ],
+        "keywords": "",
+        "page": 1,
+        "limit": 10,
+        "account_number": 1
+      },
+      "responseStructure": {
+        "path": "response.data",
+        "hasPagination": true
+      },
+      "apiCallsUsed": 1
+    },
+    {
+      "name": "json_to_url Generation",
+      "success": false,
+      "error": "No URL in response",
+      "apiCallsUsed": 1
+    },
+    {
+      "name": "CHANGED_JOBS_90_DAYS",
+      "success": true,
+      "resultsCount": 25,
+      "requestBody": {
+        "filters": [
+          {
+            "type": "CHANGED_JOBS_90_DAYS",
+            "values": [
+              {
+                "id": "true",
+                "text": "Changed jobs in last 90 days",
+                "selectionType": "INCLUDED"
+              }
+            ]
+          }
+        ],
+        "keywords": "",
+        "page": 1,
+        "limit": 10,
+        "account_number": 1
+      },
+      "responseStructure": {
+        "path": "response.data",
+        "hasPagination": true
+      },
+      "apiCallsUsed": 1
+    },
+    {
+      "name": "INDUSTRY Filter",
+      "success": true,
+      "resultsCount": 0,
+      "requestBody": {
+        "filters": [
+          {
+            "type": "INDUSTRY",
+            "values": [
+              {
+                "id": "technology",
+                "text": "Technology",
+                "selectionType": "INCLUDED"
+              }
+            ]
+          }
+        ],
+        "keywords": "",
+        "page": 1,
+        "limit": 10,
+        "account_number": 1
+      },
+      "responseStructure": {
+        "path": "unknown",
+        "hasPagination": false
+      },
+      "apiCallsUsed": 1
+    }
+  ],
+  "recommendations": [
+    "✅ Use URN format for companies (Format B) - returns more results",
+    "✅ Use letter codes for COMPANY_HEADCOUNT (Format B)",
+    "❌ LOCATION filter accuracy is low - API may not be applying filter correctly"
+  ]
+}

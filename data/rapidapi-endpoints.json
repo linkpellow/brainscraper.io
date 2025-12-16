@@ -1,0 +1,22 @@
+[
+  {
+    "name": "Search leads V2",
+    "url": "https://rapidapi.com/freshdata-freshdata-default/api/fresh-linkedin-profile-data/playground/apiendpoint_7d0b8ed7-d025-446f-a16b-1e07ae90dd7a?_rsc=3br5k",
+    "method": "POST",
+    "host": "unknown.rapidapi.com",
+    "path": "/search-employees-by-sales-nav-url",
+    "target": "node.js",
+    "client": "fetch",
+    "codeSnippet": "const url = 'https://rapidapi.com/freshdata-freshdata-default/api/fresh-linkedin-profile-data/playground/apiendpoint_7d0b8ed7-d025-446f-a16b-1e07ae90dd7a?_rsc=3br5k';\n\nconst options = {\n  method: 'POST',\n  headers: {\n    'x-rapidapi-key': 'YOUR_RAPIDAPI_KEY',\n    'x-rapidapi-host': 'unknown.rapidapi.com',\n    'Content-Type': 'application/json'\n  },\n  body: JSON.stringify({\n    // Add your request body here\n  })\n};\n\ntry {\n  const response = await fetch(url, options);\n  const result = await response.text();\n  console.log(result);\n} catch (error) {\n  console.error(error);\n}"
+  },
+  {
+    "name": "Search Leads",
+    "url": "https://rapidapi.com/freshdata-freshdata-default/api/fresh-linkedin-profile-data/playground/apiendpoint_f015adcb-0126-4ca6-8260-9912c1b9da5a?_rsc=1la0n",
+    "method": "POST",
+    "host": "unknown.rapidapi.com",
+    "path": "/search-employees",
+    "target": "node.js",
+    "client": "fetch",
+    "codeSnippet": "const url = 'https://rapidapi.com/freshdata-freshdata-default/api/fresh-linkedin-profile-data/playground/apiendpoint_f015adcb-0126-4ca6-8260-9912c1b9da5a?_rsc=1la0n';\n\nconst options = {\n  method: 'POST',\n  headers: {\n    'x-rapidapi-key': 'YOUR_RAPIDAPI_KEY',\n    'x-rapidapi-host': 'unknown.rapidapi.com',\n    'Content-Type': 'application/json'\n  },\n  body: JSON.stringify({\n    // Add your request body here\n  })\n};\n\ntry {\n  const response = await fetch(url, options);\n  const result = await response.text();\n  console.log(result);\n} catch (error) {\n  console.error(error);\n}"
+  }
+]

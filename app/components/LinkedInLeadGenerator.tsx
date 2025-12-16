@@ -1,0 +1,2370 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { 
+  Rocket, Users, Building2, Link2, ClipboardList, Eye, Zap, 
+  CheckCircle, XCircle, Loader2, Download, DollarSign, Play,
+  Search, Filter, FileDown, ArrowRight
+} from 'lucide-react';
+import { ParsedData } from '@/utils/parseFile';
+import { enrichData, EnrichedData, EnrichedRow, EnrichmentProgress } from '@/utils/enrichData';
+import { extractLeadSummary, leadSummariesToCSV, LeadSummary } from '@/utils/extractLeadSummary';
+import { DNCResult } from './USHAScrubber';
+import LeadListViewer from './LeadListViewer';
+import type { LeadListItem } from '@/types/leadList';
+
+interface LeadResult {
+  [key: string]: unknown;
+}
+
+interface APIProgress {
+  apiName: string;
+  status: 'pending' | 'running' | 'completed' | 'error';
+  progress: number;
+    total: number;
+  dataFields: string[];
+  error?: string;
+}
+
+interface ScrapingProgress {
+  currentPage: number;
+  totalPages: number;
+  leadsCollected: number;
+  estimatedTotal: number;
+  status: 'idle' | 'discovering-location' | 'fetching' | 'filtering' | 'completed' | 'error';
+  currentOperation: string;
+  startTime?: number;
+  leadsPerSecond: number;
+  estimatedTimeRemaining: number;
+  leadsThisPage: number;
+  averageLeadsPerPage: number;
+  elapsedTime: number;
+}
+
+type WorkflowStep = 'search' | 'results' | 'enriching' | 'complete';
+
+/**
+ * Normalizes a name by removing credentials and suffixes after commas
+ * Example: "Mona Baset, MBA, MA, CHCIO, CDH-E" -> "Mona Baset"
+ */
+function normalizeName(name: string): string {
+  if (!name) return '';
+  
+  // Split by comma and take the first part (the actual name)
+  const namePart = name.split(',')[0].trim();
+  
+  // Remove any trailing periods that might be from abbreviations
+  return namePart.replace(/\.$/, '').trim();
+}
+
+export default function LinkedInLeadGenerator() {
+  const [workflowStep, setWorkflowStep] = useState<WorkflowStep>('search');
+  const [searchType, setSearchType] = useState<'person' | 'company' | 'person_via_url'>('person');
+  const [searchParams, setSearchParams] = useState<Record<string, unknown>>({});
+  const [isSearching, setIsSearching] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [results, setResults] = useState<LeadResult[] | null>(null);
+  
+  // Check for imported leads from enriched page on mount
+  useEffect(() => {
+    try {
+      const importedLeadsStr = sessionStorage.getItem('importedLeads');
+      if (importedLeadsStr) {
+        const importedLeads = JSON.parse(importedLeadsStr);
+        if (Array.isArray(importedLeads) && importedLeads.length > 0) {
+          // Convert imported leads to LeadListItem format and add to leadList
+          const newLeads: LeadListItem[] = importedLeads.map((lead: any, idx: number) => {
+            const rawFullName = lead.fullName || lead.name || lead.full_name || 
+              (lead.firstName || lead.first_name ? 
+                `${lead.firstName || lead.first_name} ${lead.lastName || lead.last_name || ''}`.trim() : 
+                'Unknown');
+            const fullName = normalizeName(rawFullName);
+            const nameParts = fullName.split(' ');
+            const location = lead.geoRegion || lead.location || '';
+      const locationParts = location.split(',').map((s: string) => s.trim());
+      
+            // Generate search filter from saved params
+            const searchFilter = lead._searchParams ? 
+              Object.entries(lead._searchParams)
+                .filter(([k, v]) => v && k !== 'rapidApiKey' && k !== 'RAPIDAPI_KEY' && k !== 'endpoint')
+                .map(([k, v]) => `${k}: ${v}`)
+                .join(' | ') : 
+              'From Saved Results';
+            
+      return {
+        id: `${Date.now()}-${idx}-${Math.random().toString(36).substr(2, 9)}`,
+        name: fullName,
+              firstName: nameParts[0] || lead.first_name || '',
+              lastName: nameParts.slice(1).join(' ') || lead.last_name || '',
+              title: lead.currentPosition?.title || lead.title || lead.job_title || lead.headline || '',
+              company: lead.currentPosition?.companyName || lead.company || lead.company_name || '',
+        location,
+        linkedinUrl: lead.navigationUrl || lead.linkedin_url || lead.profile_url || lead.url || '',
+              phone: lead.phone || lead.phone_number || undefined,
+        email: lead.email || undefined,
+              city: lead.city || locationParts[0] || undefined,
+              state: lead.state || locationParts[1] || undefined,
+              zipCode: lead.zipCode || lead.zip_code || locationParts[2] || undefined,
+        dateOfBirth: undefined,
+        age: undefined,
+        income: undefined,
+        dncStatus: undefined,
+        dncReason: undefined,
+        canContact: undefined,
+              addedAt: lead._sourceTimestamp || new Date().toISOString(),
+              source: searchFilter,
+        enriched: false,
+        dncChecked: false,
+      };
+    });
+
+          // Add to leadList
+          setLeadList(prev => {
+            const existingUrls = new Set(prev.map(l => l.linkedinUrl).filter(Boolean));
+    const uniqueNewLeads = newLeads.filter(lead => {
+      if (lead.linkedinUrl && existingUrls.has(lead.linkedinUrl)) return false;
+      return true;
+    });
+            return [...prev, ...uniqueNewLeads];
+          });
+
+          // Clear sessionStorage
+          sessionStorage.removeItem('importedLeads');
+          
+          alert(`Imported ${newLeads.length} leads from saved results! They are now in your lead list. Click "Enrich All" to enrich them.`);
+        }
+      }
+    } catch (error) {
+      console.error('Error importing leads:', error);
+    }
+  }, []);
+  const [paginationInfo, setPaginationInfo] = useState<{
+    total: number;
+    count: number;
+    start: number;
+    hasMore: boolean;
+  } | null>(null);
+  
+  const [scrapingProgress, setScrapingProgress] = useState<ScrapingProgress>({
+    currentPage: 0,
+    totalPages: 0,
+    leadsCollected: 0,
+    estimatedTotal: 0,
+    status: 'idle',
+    currentOperation: '',
+    leadsPerSecond: 0,
+    estimatedTimeRemaining: 0,
+    leadsThisPage: 0,
+    averageLeadsPerPage: 0,
+    elapsedTime: 0
+  });
+  
+  const [isEnriching, setIsEnriching] = useState(false);
+  const [enrichedData, setEnrichedData] = useState<EnrichedData | null>(null);
+  const [enrichmentProgress, setEnrichmentProgress] = useState({ current: 0, total: 0 });
+  const [detailedProgress, setDetailedProgress] = useState<EnrichmentProgress | null>(null);
+  const [enrichmentErrors, setEnrichmentErrors] = useState<Array<{ lead: string; error: string; timestamp: number }>>([]);
+  const [apiProgress, setApiProgress] = useState<APIProgress[]>([]);
+  const [isScrubbing, setIsScrubbing] = useState(false);
+  const [dncResults, setDncResults] = useState<DNCResult[]>([]);
+  const [ushaToken, setUshaToken] = useState<string>('');
+  const [jobLogID, setJobLogID] = useState<string | null>(null);
+  const [leadSummaries, setLeadSummaries] = useState<LeadSummary[]>([]);
+  const [sortField, setSortField] = useState<'state' | 'none'>('none');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  const [enableDNCScrub, setEnableDNCScrub] = useState<boolean>(false);
+  const [locationDiscoveryStatus, setLocationDiscoveryStatus] = useState<string | null>(null);
+  const [fetchAllPages, setFetchAllPages] = useState<boolean>(true);
+  const [maxPagesToFetch, setMaxPagesToFetch] = useState<number>(100);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [leadList, setLeadList] = useState<LeadListItem[]>([]);
+  const [showLeadList, setShowLeadList] = useState<boolean>(false);
+
+  // Update elapsed time every second when searching
+  useEffect(() => {
+    if (!isSearching || !scrapingProgress.startTime) return;
+
+    const interval = setInterval(() => {
+      const elapsed = Math.floor((Date.now() - (scrapingProgress.startTime || Date.now())) / 1000);
+      const leadsPerSecond = elapsed > 0 ? scrapingProgress.leadsCollected / elapsed : 0;
+      const remainingLeads = Math.max(0, scrapingProgress.estimatedTotal - scrapingProgress.leadsCollected);
+      const estimatedTimeRemaining = leadsPerSecond > 0 ? Math.floor(remainingLeads / leadsPerSecond) : 0;
+
+      setScrapingProgress(prev => ({
+        ...prev,
+        elapsedTime: elapsed,
+        leadsPerSecond: leadsPerSecond,
+        estimatedTimeRemaining: estimatedTimeRemaining
+      }));
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [isSearching, scrapingProgress.startTime, scrapingProgress.leadsCollected, scrapingProgress.estimatedTotal]);
+
+  const initializeAPIProgress = () => {
+    const apis: APIProgress[] = [
+      { apiName: 'LinkedIn Sales Navigator', status: 'pending', progress: 0, total: 0, dataFields: ['Name', 'Title', 'Company', 'Location', 'LinkedIn URL'] },
+      { apiName: 'Skip Tracing v1', status: 'pending', progress: 0, total: 0, dataFields: ['Email', 'Phone', 'Address'] },
+      { apiName: 'Skip Tracing v2', status: 'pending', progress: 0, total: 0, dataFields: ['Address', 'Property Data'] },
+      { apiName: 'Income by Zip', status: 'pending', progress: 0, total: 0, dataFields: ['Income'] },
+      { apiName: 'Website Extractor', status: 'pending', progress: 0, total: 0, dataFields: ['Email', 'Social Links'] },
+      { apiName: 'Website Contacts', status: 'pending', progress: 0, total: 0, dataFields: ['Contacts'] },
+      { apiName: 'LinkedIn Profile', status: 'pending', progress: 0, total: 0, dataFields: ['Profile Data'] },
+      { apiName: 'Fresh LinkedIn', status: 'pending', progress: 0, total: 0, dataFields: ['Detailed Profile'] },
+      { apiName: 'Facebook Profile', status: 'pending', progress: 0, total: 0, dataFields: ['Photos'] },
+    ];
+    setApiProgress(apis);
+  };
+
+  const updateAPIProgress = (apiName: string, updates: Partial<APIProgress>) => {
+    setApiProgress(prev => prev.map(api => 
+      api.apiName === apiName ? { ...api, ...updates } : api
+    ));
+  };
+
+  const addToLeadList = () => {
+    if (!results || results.length === 0) {
+      alert('No results to add');
+      return;
+    }
+
+    const newLeads: LeadListItem[] = results.map((lead: any, idx) => {
+      // Extract name - check camelCase first (API format), then snake_case, then construct
+      const rawFullName = lead.fullName || lead.name || lead.full_name || 
+        (lead.firstName || lead.first_name ? 
+          `${lead.firstName || lead.first_name} ${lead.lastName || lead.last_name || ''}`.trim() : 
+          'Unknown');
+      // Normalize name to remove credentials (e.g., "Mona Baset, MBA, MA" -> "Mona Baset")
+      const fullName = normalizeName(rawFullName);
+      const nameParts = fullName.split(' ');
+      const location = lead.geoRegion || lead.location || '';
+      const locationParts = location.split(',').map((s: string) => s.trim());
+      
+      return {
+        id: `${Date.now()}-${idx}-${Math.random().toString(36).substr(2, 9)}`,
+        name: fullName,
+        firstName: nameParts[0] || lead.first_name || '',
+        lastName: nameParts.slice(1).join(' ') || lead.last_name || '',
+        title: lead.title || lead.job_title || lead.headline || lead.currentPosition?.title || '',
+        company: lead.company || lead.company_name || lead.currentPosition?.companyName || '',
+        location,
+        linkedinUrl: lead.navigationUrl || lead.linkedin_url || lead.profile_url || lead.url || '',
+        phone: undefined,
+        email: lead.email || undefined,
+        city: locationParts[0] || undefined,
+        state: locationParts[1] || undefined,
+        zipCode: undefined,
+        dateOfBirth: undefined,
+        age: undefined,
+        income: undefined,
+        dncStatus: undefined,
+        dncReason: undefined,
+        canContact: undefined,
+        addedAt: new Date().toISOString(),
+        source: `Search: ${searchParams.location || 'All'}`,
+        enriched: false,
+        dncChecked: false,
+      };
+    });
+
+    const existingUrls = new Set(leadList.map(l => l.linkedinUrl).filter(Boolean));
+    const uniqueNewLeads = newLeads.filter(lead => {
+      if (lead.linkedinUrl && existingUrls.has(lead.linkedinUrl)) return false;
+      return true;
+    });
+
+    setLeadList(prev => [...prev, ...uniqueNewLeads]);
+    alert(`Added ${uniqueNewLeads.length} new leads! (${newLeads.length - uniqueNewLeads.length} duplicates skipped)`);
+  };
+
+  const removeFromLeadList = (id: string) => {
+    setLeadList(prev => prev.filter(lead => lead.id !== id));
+  };
+
+  const clearLeadList = () => {
+    if (confirm(`Clear all ${leadList.length} leads?`)) {
+      setLeadList([]);
+    }
+  };
+
+  const testEnrichmentSingleLead = async () => {
+    if (leadList.length === 0) {
+      alert('No leads in the list to test. Add at least one lead first.');
+      return;
+    }
+
+    const testLead = leadList[0];
+    console.log('🧪 [TEST_ENRICH] Testing enrichment with single lead:', testLead.name);
+
+    if (!confirm(`Test enrichment with "${testLead.name}"?\n\nThis will make real API calls but only for this one lead.`)) {
+      return;
+    }
+
+    setIsEnriching(true);
+    setError(null);
+    setEnrichedData(null);
+    setDncResults([]);
+    setLeadSummaries([]);
+    setWorkflowStep('enriching');
+    initializeAPIProgress();
+
+    try {
+      // Convert single lead to ParsedData format
+      const headers = ['Name', 'Title', 'Company', 'Location', 'LinkedIn URL', 'Email', 'Phone', 'First Name', 'Last Name', 'City', 'State', 'Zip', 'Search Filter'];
+      const location = testLead.location || '';
+      const locationParts = location.split(',').map((s: string) => s.trim());
+      
+      const row = {
+        'Name': testLead.name || '',
+        'Title': testLead.title || '',
+        'Company': testLead.company || '',
+        'Location': location,
+        'LinkedIn URL': testLead.linkedinUrl || '',
+        'Email': testLead.email || '',
+        'Phone': testLead.phone || '',
+        'First Name': testLead.firstName || '',
+        'Last Name': testLead.lastName || '',
+        'City': testLead.city || locationParts[0] || '',
+        'State': testLead.state || locationParts[1] || '',
+        'Zip': testLead.zipCode || locationParts[2] || '',
+        'Search Filter': testLead.source || 'Test Lead',
+      };
+
+      const parsedData = {
+        headers,
+        rows: [row],
+        rowCount: 1,
+        columnCount: headers.length,
+      };
+
+      console.log('🧪 [TEST_ENRICH] Converted test lead to parsed data:', {
+        rowCount: parsedData.rowCount,
+        hasEmail: !!row['Email'],
+        hasPhone: !!row['Phone'],
+        hasName: !!row['Name'],
+      });
+
+      updateAPIProgress('LinkedIn Sales Navigator', { status: 'completed', progress: 1, total: 1 });
+
+      console.log('🧪 [TEST_ENRICH] Calling enrichData...');
+      const enriched = await enrichData(parsedData, (current, total) => {
+        console.log(`🧪 [TEST_ENRICH] Progress: ${current}/${total} (${Math.round((current/total)*100)}%)`);
+        setEnrichmentProgress({ current, total });
+        updateAPIProgress('Skip Tracing v1', { status: 'running', progress: current, total });
+      });
+
+      console.log('🧪 [TEST_ENRICH] ✅ Enrichment completed');
+      setApiProgress(prev => prev.map(api => ({
+        ...api,
+        status: api.status === 'running' ? 'completed' : api.status,
+        progress: api.status === 'running' ? api.total : api.progress
+      })));
+
+      setEnrichedData(enriched);
+
+      // Extract lead summary
+      const summary: LeadSummary = extractLeadSummary(enriched.rows[0], enriched.rows[0]._enriched);
+      setLeadSummaries([summary]);
+
+      // Show results in alert
+      const results = [
+        `Name: ${summary.name || 'N/A'}`,
+        `Phone: ${summary.phone || 'N/A'} ${summary.phone ? '✅' : '❌'}`,
+        `Email: ${summary.email || 'N/A'} ${summary.email ? '✅' : '❌'}`,
+        `Zipcode: ${summary.zipcode || 'N/A'} ${summary.zipcode ? '✅' : '❌'}`,
+        `Age/DOB: ${summary.dobOrAge || 'N/A'} ${summary.dobOrAge ? '✅' : '❌'}`,
+        `Line Type: ${summary.lineType || 'N/A'} ${summary.lineType ? '✅' : '❌'}`,
+        `Carrier: ${summary.carrier || 'N/A'} ${summary.carrier ? '✅' : '❌'}`,
+      ].join('\n');
+
+      alert(`🧪 Test Enrichment Results:\n\n${results}\n\n✅ Check browser console for detailed logs.`);
+
+      // Save to localStorage for viewing on enriched page
+      try {
+        const existingLeads = localStorage.getItem('enrichedLeads');
+        const existing = existingLeads ? JSON.parse(existingLeads) : [];
+        const combined = [...existing, summary];
+        localStorage.setItem('enrichedLeads', JSON.stringify(combined));
+        console.log('🧪 [TEST_ENRICH] Saved test result to localStorage');
+        window.dispatchEvent(new Event('enrichedLeadsUpdated'));
+      } catch (error) {
+        console.error('🧪 [TEST_ENRICH] Failed to save to localStorage:', error);
+      }
+
+      setWorkflowStep('complete');
+      console.log('🧪 [TEST_ENRICH] ✅ Test complete');
+    } catch (err) {
+      console.error('🧪 [TEST_ENRICH] ❌ Error:', err);
+      setError(err instanceof Error ? err.message : 'Failed to test enrichment');
+      setApiProgress(prev => prev.map(api => 
+        api.status === 'running' ? { ...api, status: 'error' } : api
+      ));
+    } finally {
+      setIsEnriching(false);
+    }
+  };
+
+  const enrichAllLeadsFromList = async () => {
+    if (leadList.length === 0) {
+      alert('No leads in the list to enrich. Add leads first.');
+      return;
+    }
+
+    if (!confirm(`Enrich all ${leadList.length} leads from your list? This may take a while.`)) {
+      return;
+    }
+
+    console.log('✨ [ENRICH_LIST] Starting enrichment of leadList leads');
+    setIsEnriching(true);
+    setError(null);
+    setEnrichedData(null);
+    setDncResults([]);
+    setLeadSummaries([]);
+    setWorkflowStep('enriching');
+    initializeAPIProgress();
+
+    try {
+      // Convert leadList items to ParsedData format
+      const headers = ['Name', 'Title', 'Company', 'Location', 'LinkedIn URL', 'Email', 'Phone', 'First Name', 'Last Name', 'City', 'State', 'Zip', 'Search Filter'];
+      const rows = leadList.map((lead) => {
+        const location = lead.location || '';
+        const locationParts = location.split(',').map((s: string) => s.trim());
+        
+        return {
+          'Name': lead.name || '',
+          'Title': lead.title || '',
+          'Company': lead.company || '',
+          'Location': location,
+          'LinkedIn URL': lead.linkedinUrl || '',
+          'Email': lead.email || '',
+          'Phone': lead.phone || '',
+          'First Name': lead.firstName || '',
+          'Last Name': lead.lastName || '',
+          'City': lead.city || locationParts[0] || '',
+          'State': lead.state || locationParts[1] || '',
+          'Zip': lead.zipCode || locationParts[2] || '',
+          'Search Filter': lead.source || 'From Lead List',
+        };
+      });
+
+    const parsedData = {
+      headers,
+      rows,
+        rowCount: rows.length,
+        columnCount: headers.length,
+      };
+
+      console.log('✨ [ENRICH_LIST] Converted leadList to parsed data:', {
+        rowCount: parsedData.rowCount,
+        headers: parsedData.headers,
+      });
+
+      updateAPIProgress('LinkedIn Sales Navigator', { status: 'completed', progress: leadList.length, total: leadList.length });
+
+      console.log('✨ [ENRICH_LIST] Calling enrichData...');
+      const enriched = await enrichData(parsedData, (current, total) => {
+        console.log(`✨ [ENRICH_LIST] Progress: ${current}/${total} (${Math.round((current/total)*100)}%)`);
+        setEnrichmentProgress({ current, total });
+        const phase = Math.floor((current / total) * 9);
+        if (phase >= 1) updateAPIProgress('Skip Tracing v1', { status: 'running', progress: current, total });
+        if (phase >= 2) updateAPIProgress('Skip Tracing v2', { status: 'running', progress: current, total });
+        if (phase >= 3) updateAPIProgress('Income by Zip', { status: 'running', progress: current, total });
+        if (phase >= 4) updateAPIProgress('Website Extractor', { status: 'running', progress: current, total });
+        if (phase >= 5) updateAPIProgress('Website Contacts', { status: 'running', progress: current, total });
+        if (phase >= 6) updateAPIProgress('LinkedIn Profile', { status: 'running', progress: current, total });
+        if (phase >= 7) updateAPIProgress('Fresh LinkedIn', { status: 'running', progress: current, total });
+        if (phase >= 8) updateAPIProgress('Facebook Profile', { status: 'running', progress: current, total });
+      });
+
+      console.log('✨ [ENRICH_LIST] ✅ Enrichment completed');
+      setApiProgress(prev => prev.map(api => ({
+        ...api,
+        status: api.status === 'running' ? 'completed' : api.status,
+        progress: api.status === 'running' ? api.total : api.progress
+      })));
+
+      setEnrichedData(enriched);
+
+      // Extract lead summaries
+      const summaries: LeadSummary[] = enriched.rows.map((row: EnrichedRow) => extractLeadSummary(row, row._enriched));
+      setLeadSummaries(summaries);
+
+      // Save enriched leads to localStorage for the enriched leads page
+      try {
+        const existingLeads = localStorage.getItem('enrichedLeads');
+        const existing = existingLeads ? JSON.parse(existingLeads) : [];
+        const combined = [...existing, ...summaries];
+        localStorage.setItem('enrichedLeads', JSON.stringify(combined));
+        console.log('✨ [ENRICH_LIST] Saved enriched leads to localStorage:', combined.length);
+        
+        // Dispatch custom event to notify other components
+        window.dispatchEvent(new Event('enrichedLeadsUpdated'));
+      } catch (error) {
+        console.error('✨ [ENRICH_LIST] Failed to save enriched leads to localStorage:', error);
+      }
+
+      // Update leadList to mark leads as enriched
+      setLeadList(prev => prev.map(lead => ({ ...lead, enriched: true })));
+
+      setWorkflowStep('complete');
+      alert(`Successfully enriched ${summaries.length} leads! They are now available on the Enriched Leads page.`);
+      console.log('✨ [ENRICH_LIST] ✅ Successfully completed enrichment');
+    } catch (err) {
+      console.error('✨ [ENRICH_LIST] ❌ Error:', err);
+      setError(err instanceof Error ? err.message : 'Failed to enrich leads');
+      setApiProgress(prev => prev.map(api => 
+        api.status === 'running' ? { ...api, status: 'error' } : api
+      ));
+    } finally {
+      setIsEnriching(false);
+    }
+  };
+
+  const exportLeadList = () => {
+    if (leadList.length === 0) {
+      alert('No leads to export');
+      return;
+    }
+
+    const headers = ['Name', 'First Name', 'Last Name', 'Phone', 'Email', 'Date of Birth', 'Age', 'City', 'State', 'Zip Code', 'Income', 'DNC Status', 'Can Contact', 'Title', 'Company', 'LinkedIn URL', 'Added At', 'Source', 'Enriched', 'DNC Checked'];
+    const rows = leadList.map(lead => [
+      lead.name, lead.firstName || '', lead.lastName || '', lead.phone || '', lead.email || '',
+      lead.dateOfBirth || '', lead.age || '', lead.city || '', lead.state || '', lead.zipCode || '',
+      lead.income || '', lead.dncStatus || '', lead.canContact !== undefined ? (lead.canContact ? 'Yes' : 'No') : '',
+      lead.title || '', lead.company || '', lead.linkedinUrl || '', lead.addedAt, lead.source,
+      lead.enriched ? 'Yes' : 'No', lead.dncChecked ? 'Yes' : 'No'
+    ]);
+
+    const csv = [headers.join(','), ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `lead-list-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleSearch = async () => {
+    console.log('🔍 [SEARCH] Starting handleSearch');
+    console.log('🔍 [SEARCH] Search params:', JSON.stringify(searchParams, null, 2));
+    console.log('🔍 [SEARCH] Search type:', searchType);
+    console.log('🔍 [SEARCH] Fetch all pages:', fetchAllPages);
+    
+    setIsSearching(true);
+    setError(null);
+    setResults(null);
+    setWorkflowStep('search');
+    setScrapingProgress({
+      currentPage: 0,
+      totalPages: 0,
+      leadsCollected: 0,
+      estimatedTotal: 0,
+      status: 'fetching',
+      currentOperation: 'Initializing search...',
+      leadsPerSecond: 0,
+      estimatedTimeRemaining: 0,
+      leadsThisPage: 0,
+      averageLeadsPerPage: 0,
+      elapsedTime: 0
+    });
+
+    try {
+      if (searchParams.location) {
+        console.log('🔍 [SEARCH] Location provided:', searchParams.location);
+        setScrapingProgress(prev => ({
+          ...prev,
+          status: 'discovering-location',
+          currentOperation: `Discovering location ID for: ${searchParams.location}`
+        }));
+      }
+
+      if (fetchAllPages) {
+        console.log('🔍 [SEARCH] Using fetchAllPagesSequentially');
+        await fetchAllPagesSequentially();
+        return;
+      }
+      
+      console.log('🔍 [SEARCH] Using single page fetch');
+      
+      let endpoint: string;
+      let requestBody: Record<string, unknown>;
+
+      if (searchType === 'person_via_url') {
+        endpoint = 'premium_search_person_via_url';
+        if (!searchParams.url || typeof searchParams.url !== 'string') {
+          throw new Error('URL parameter is required');
+        }
+        requestBody = { endpoint, url: searchParams.url };
+      } else {
+        endpoint = searchType === 'person' ? 'premium_search_person' : 'premium_search_company';
+        const params: Record<string, unknown> = { ...searchParams };
+        if (!params.page) params.page = 1;
+        // Set limit to 100 per page if not specified (API defaults to 25, but we want more)
+        if (!params.limit) params.limit = 100;
+        requestBody = { endpoint, ...params };
+        console.log('🔍 [SEARCH] Built request body:', JSON.stringify(requestBody, null, 2));
+      }
+
+      const startTime = Date.now();
+      setScrapingProgress(prev => ({
+        ...prev,
+        status: 'fetching',
+        currentOperation: 'Fetching leads from LinkedIn...',
+        startTime: startTime,
+        leadsPerSecond: 0,
+        estimatedTimeRemaining: 0,
+        leadsThisPage: 0,
+        averageLeadsPerPage: 0,
+        elapsedTime: 0
+      }));
+
+      console.log('🔍 [SEARCH] Making API request to /api/linkedin-sales-navigator');
+      console.log('🔍 [SEARCH] Request body:', JSON.stringify(requestBody, null, 2));
+
+      const response = await fetch('/api/linkedin-sales-navigator', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody),
+      });
+
+      console.log('🔍 [SEARCH] API response status:', response.status);
+      console.log('🔍 [SEARCH] API response ok:', response.ok);
+
+      const result = await response.json();
+      console.log('🔍 [SEARCH] API response result keys:', Object.keys(result));
+      console.log('🔍 [SEARCH] API response result:', JSON.stringify(result, null, 2).substring(0, 1000));
+
+      if (!response.ok) {
+        console.error('🔍 [SEARCH] ❌ API response not ok');
+        console.error('🔍 [SEARCH] Response status:', response.status);
+        console.error('🔍 [SEARCH] Response result:', JSON.stringify(result, null, 2));
+        
+        if (response.status === 429 || result.isRateLimit) {
+          const retryAfter = result.retryAfter || 60;
+          console.error('🔍 [SEARCH] Rate limit exceeded, retry after:', retryAfter);
+          setError(`Rate limit exceeded. Please wait ${retryAfter} seconds.`);
+          setScrapingProgress(prev => ({ ...prev, status: 'error', currentOperation: 'Rate limited' }));
+          return;
+        }
+        const errorMsg = result.message || result.error || 'Failed to process request';
+        console.error('🔍 [SEARCH] Setting error:', errorMsg);
+        setError(errorMsg);
+        setScrapingProgress(prev => ({ ...prev, status: 'error', currentOperation: 'Error occurred' }));
+          return;
+        }
+
+      if (result.data) {
+        console.log('🔍 [SEARCH] Result has data property');
+        console.log('🔍 [SEARCH] Result.data type:', typeof result.data);
+        console.log('🔍 [SEARCH] Result.data is array:', Array.isArray(result.data));
+        console.log('🔍 [SEARCH] Result.data keys:', result.data && typeof result.data === 'object' ? Object.keys(result.data) : 'N/A');
+        
+        let rawResults: any[] = [];
+        let paginationInfo: any = null;
+        
+        if (result.data.response?.data && Array.isArray(result.data.response.data)) {
+          console.log('🔍 [SEARCH] Found results in result.data.response.data');
+          rawResults = result.data.response.data;
+          paginationInfo = result.data.response.pagination || result.pagination;
+          console.log('🔍 [SEARCH] Raw results count:', rawResults.length);
+          console.log('🔍 [SEARCH] Pagination info:', JSON.stringify(paginationInfo, null, 2));
+        } else if (result.data.data && Array.isArray(result.data.data)) {
+          console.log('🔍 [SEARCH] Found results in result.data.data');
+          rawResults = result.data.data;
+          paginationInfo = result.data.pagination || result.pagination;
+          console.log('🔍 [SEARCH] Raw results count:', rawResults.length);
+          console.log('🔍 [SEARCH] Pagination info:', JSON.stringify(paginationInfo, null, 2));
+        } else if (Array.isArray(result.data)) {
+          console.log('🔍 [SEARCH] Found results in result.data (direct array)');
+          rawResults = result.data;
+          paginationInfo = result.pagination;
+          console.log('🔍 [SEARCH] Raw results count:', rawResults.length);
+          console.log('🔍 [SEARCH] Pagination info:', JSON.stringify(paginationInfo, null, 2));
+        } else {
+          console.log('🔍 [SEARCH] ⚠️ No results found in expected locations');
+          console.log('🔍 [SEARCH] Result.data structure:', JSON.stringify(result.data, null, 2).substring(0, 500));
+        }
+
+        console.log('🔍 [SEARCH] Processing results...');
+        console.log('🔍 [SEARCH] Raw results count:', rawResults.length);
+        console.log('🔍 [SEARCH] Has location filter:', !!searchParams.location);
+        
+        if (searchParams.location && rawResults.length > 0) {
+          console.log('🔍 [SEARCH] Filtering results by location:', searchParams.location);
+          setScrapingProgress(prev => ({
+            ...prev,
+            status: 'filtering',
+            currentOperation: `Filtering ${rawResults.length} leads by location...`
+          }));
+
+          const { filterLeadsByLocation } = await import('@/utils/locationValidation');
+          const requestedLocation = String(searchParams.location);
+          const { filtered, stats } = filterLeadsByLocation(rawResults, requestedLocation);
+          
+          console.log('🔍 [SEARCH] Filtered results:', filtered.length, 'of', rawResults.length);
+          console.log('🔍 [SEARCH] Filter stats:', stats);
+          
+          setResults(filtered);
+          setLocationValidationStats(stats);
+          setLocationDiscoveryStatus(`${stats.kept} leads match "${requestedLocation}"`);
+            } else {
+          console.log('🔍 [SEARCH] No location filter, setting all results');
+          setResults(rawResults);
+        }
+
+        console.log('🔍 [SEARCH] Setting pagination info:', JSON.stringify(paginationInfo, null, 2));
+        setPaginationInfo(paginationInfo);
+        
+        // Calculate final metrics for single page fetch
+        const elapsed = Math.floor((Date.now() - startTime) / 1000);
+        const leadsPerSecond = elapsed > 0 ? rawResults.length / elapsed : 0;
+        const leadsThisPage = rawResults.length;
+        
+        setScrapingProgress(prev => ({
+          ...prev,
+          status: 'completed',
+          leadsCollected: rawResults.length,
+          currentOperation: `Complete: ${rawResults.length} leads`,
+          leadsPerSecond: leadsPerSecond,
+          estimatedTimeRemaining: 0,
+          leadsThisPage: leadsThisPage,
+          averageLeadsPerPage: leadsThisPage,
+          elapsedTime: elapsed
+        }));
+        // Always move to results step, even if empty
+        console.log('🔍 [SEARCH] Setting workflow step to "results"');
+        setWorkflowStep('results');
+        console.log('🔍 [SEARCH] ✅ Successfully completed single page search');
+          } else {
+        console.log('🔍 [SEARCH] ⚠️ No data in result.data');
+        console.log('🔍 [SEARCH] Result structure:', JSON.stringify(result, null, 2).substring(0, 500));
+        // No data returned - still show results step with empty state
+        setResults([]);
+        setWorkflowStep('results');
+        setScrapingProgress(prev => ({
+          ...prev,
+          status: 'completed',
+          currentOperation: 'No results found'
+        }));
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error');
+      setScrapingProgress(prev => ({ ...prev, status: 'error', currentOperation: 'Error occurred' }));
+      // Still show results step even on error, with empty results
+      setResults([]);
+      setWorkflowStep('results');
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const fetchAllPagesSequentially = async () => {
+    console.log('📄 [PAGINATION] Starting fetchAllPagesSequentially');
+    console.log('📄 [PAGINATION] Max pages to fetch:', maxPagesToFetch);
+    console.log('📄 [PAGINATION] Search params limit:', searchParams.limit);
+    
+    const allResults: LeadResult[] = [];
+    let page = 1;
+    let hasMore = true;
+    const maxPages = maxPagesToFetch;
+    const maxResults = parseInt(String(searchParams.limit || '2500')) || 2500;
+    
+    console.log('📄 [PAGINATION] Max results target:', maxResults);
+    
+    const startTime = Date.now();
+    setScrapingProgress({
+      currentPage: 0,
+      totalPages: maxPages,
+      leadsCollected: 0,
+      estimatedTotal: maxResults,
+      status: 'fetching',
+      currentOperation: 'Starting multi-page fetch...',
+      startTime: startTime,
+      leadsPerSecond: 0,
+      estimatedTimeRemaining: 0,
+      leadsThisPage: 0,
+      averageLeadsPerPage: 0,
+      elapsedTime: 0
+    });
+    
+    try {
+      while (hasMore && page <= maxPages && allResults.length < maxResults) {
+        console.log(`📄 [PAGINATION] === Fetching page ${page} ===`);
+        console.log(`📄 [PAGINATION] Has more: ${hasMore}, Page: ${page}, Max pages: ${maxPages}, Results so far: ${allResults.length}, Max results: ${maxResults}`);
+        
+        setCurrentPage(page);
+        setScrapingProgress(prev => ({
+          ...prev,
+          currentPage: page,
+          currentOperation: `Fetching page ${page}/${maxPages}...`
+        }));
+        
+        if (page > 1) {
+          console.log('📄 [PAGINATION] Waiting 2 seconds before next page...');
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+        
+        console.log(`📄 [PAGINATION] Calling fetchSinglePage(${page})`);
+        const pageResults = await fetchSinglePage(page);
+        console.log(`📄 [PAGINATION] Page ${page} results:`, pageResults ? {
+          leadsCount: pageResults.leads?.length || 0,
+          hasPagination: !!pageResults.pagination,
+          pagination: pageResults.pagination
+        } : 'null');
+        
+        if (!pageResults || !pageResults.leads || pageResults.leads.length === 0) {
+          console.log(`📄 [PAGINATION] ⚠️ No results for page ${page}, stopping`);
+          break;
+        }
+        
+        allResults.push(...pageResults.leads);
+        console.log(`📄 [PAGINATION] Page ${page} added ${pageResults.leads.length} leads. Total: ${allResults.length}`);
+        
+        // Calculate real-time metrics
+        const elapsed = Math.floor((Date.now() - startTime) / 1000);
+        const leadsPerSecond = elapsed > 0 ? allResults.length / elapsed : 0;
+        const remainingLeads = Math.max(0, maxResults - allResults.length);
+        const estimatedTimeRemaining = leadsPerSecond > 0 ? Math.floor(remainingLeads / leadsPerSecond) : 0;
+        const averageLeadsPerPage = page > 0 ? allResults.length / page : 0;
+        const leadsThisPage = pageResults.leads.length;
+        
+        setScrapingProgress(prev => ({
+          ...prev,
+          currentPage: page,
+          leadsCollected: allResults.length,
+          currentOperation: `Page ${page}: ${leadsThisPage} leads (Total: ${allResults.length})`,
+          leadsPerSecond: leadsPerSecond,
+          estimatedTimeRemaining: estimatedTimeRemaining,
+          leadsThisPage: leadsThisPage,
+          averageLeadsPerPage: averageLeadsPerPage,
+          elapsedTime: elapsed
+        }));
+        
+          hasMore = pageResults.pagination?.hasMore || false;
+        console.log(`📄 [PAGINATION] Has more after page ${page}: ${hasMore}`);
+        console.log(`📄 [PAGINATION] Pagination info:`, JSON.stringify(pageResults.pagination, null, 2));
+        
+        if (allResults.length >= maxResults || !hasMore) {
+          console.log(`📄 [PAGINATION] Stopping: allResults.length (${allResults.length}) >= maxResults (${maxResults}) OR !hasMore (${!hasMore})`);
+          break;
+        }
+        page++;
+      }
+      
+      console.log(`📄 [PAGINATION] Finished fetching. Total pages: ${page - 1}, Total results: ${allResults.length}`);
+      
+      console.log(`📄 [PAGINATION] Processing ${allResults.length} total results`);
+      
+      if (searchParams.location && allResults.length > 0) {
+        console.log(`📄 [PAGINATION] Filtering results by location: ${searchParams.location}`);
+        const { filterLeadsByLocation } = await import('@/utils/locationValidation');
+        const { filtered, stats } = filterLeadsByLocation(allResults, String(searchParams.location));
+        console.log(`📄 [PAGINATION] Filtered results: ${filtered.length} of ${allResults.length}`, stats);
+        setResults(filtered);
+        setLocationValidationStats(stats);
+          } else {
+        console.log(`📄 [PAGINATION] No location filter, setting all ${allResults.length} results`);
+        setResults(allResults);
+      }
+      
+      console.log(`📄 [PAGINATION] Setting workflow step to 'results'`);
+      setScrapingProgress(prev => ({
+        ...prev,
+        status: 'completed',
+        currentOperation: `Complete: ${allResults.length} leads`,
+        leadsCollected: allResults.length
+      }));
+      // Always move to results step, even if empty
+      setWorkflowStep('results');
+      console.log(`📄 [PAGINATION] ✅ Successfully completed fetchAllPagesSequentially`);
+    } catch (err) {
+      console.error('📄 [PAGINATION] ❌ Error in fetchAllPagesSequentially:', err);
+      console.error('📄 [PAGINATION] Error details:', {
+        message: err instanceof Error ? err.message : String(err),
+        stack: err instanceof Error ? err.stack : undefined
+      });
+      setError(err instanceof Error ? err.message : 'Unknown error');
+      setScrapingProgress(prev => ({ ...prev, status: 'error', currentOperation: 'Error occurred' }));
+      // Still show results step even on error, with empty results
+      setResults([]);
+      setWorkflowStep('results');
+    } finally {
+      console.log('📄 [PAGINATION] Finished fetchAllPagesSequentially, setting isSearching to false');
+      setIsSearching(false);
+    }
+  };
+
+  const fetchSinglePage = async (pageNumber: number): Promise<{
+    leads: LeadResult[];
+    pagination: any;
+  } | null> => {
+    console.log(`📄 [FETCH_PAGE] === Fetching page ${pageNumber} ===`);
+    console.log(`📄 [FETCH_PAGE] Search type: ${searchType}`);
+    console.log(`📄 [FETCH_PAGE] Search params:`, JSON.stringify(searchParams, null, 2));
+    
+    const endpoint = searchType === 'person' ? 'premium_search_person' : 'premium_search_company';
+    const params: Record<string, unknown> = { ...searchParams, page: pageNumber };
+    // Set limit to 100 per page if not specified (API defaults to 25, but we want more)
+    if (!params.limit) params.limit = 100;
+    const requestBody = { endpoint, ...params };
+    
+    console.log(`📄 [FETCH_PAGE] Request body:`, JSON.stringify(requestBody, null, 2));
+
+    console.log(`📄 [FETCH_PAGE] Making API request...`);
+    const response = await fetch('/api/linkedin-sales-navigator', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(requestBody),
+    });
+
+    console.log(`📄 [FETCH_PAGE] Response status: ${response.status}, ok: ${response.ok}`);
+
+    const result = await response.json();
+    console.log(`📄 [FETCH_PAGE] Response result keys:`, Object.keys(result));
+    console.log(`📄 [FETCH_PAGE] Response result (first 500 chars):`, JSON.stringify(result, null, 2).substring(0, 500));
+
+    if (!response.ok) {
+      console.error(`📄 [FETCH_PAGE] ❌ API error:`, result);
+      if (response.status === 429) {
+        const retryAfter = result.retryAfter || 60;
+        throw new Error(`RATE_LIMIT:${retryAfter}:Rate limit exceeded`);
+      }
+      throw new Error(result.message || 'Failed to fetch page');
+    }
+
+    let rawResults: LeadResult[] = [];
+    let paginationInfo: any = null;
+
+    console.log(`📄 [FETCH_PAGE] Parsing response data...`);
+    console.log(`📄 [FETCH_PAGE] result.data exists:`, !!result.data);
+    console.log(`📄 [FETCH_PAGE] result.data type:`, typeof result.data);
+    console.log(`📄 [FETCH_PAGE] result.data is array:`, Array.isArray(result.data));
+
+    if (result.data?.response?.data && Array.isArray(result.data.response.data)) {
+      console.log(`📄 [FETCH_PAGE] ✅ Found results in result.data.response.data`);
+      rawResults = result.data.response.data;
+      paginationInfo = result.data.response.pagination || result.pagination;
+      console.log(`📄 [FETCH_PAGE] Results count: ${rawResults.length}`);
+      console.log(`📄 [FETCH_PAGE] Pagination info:`, JSON.stringify(paginationInfo, null, 2));
+    } else if (result.data?.data && Array.isArray(result.data.data)) {
+      console.log(`📄 [FETCH_PAGE] ✅ Found results in result.data.data`);
+      rawResults = result.data.data;
+      paginationInfo = result.data.pagination || result.pagination;
+      console.log(`📄 [FETCH_PAGE] Results count: ${rawResults.length}`);
+      console.log(`📄 [FETCH_PAGE] Pagination info:`, JSON.stringify(paginationInfo, null, 2));
+    } else {
+      console.log(`📄 [FETCH_PAGE] ⚠️ No results found in expected locations`);
+      console.log(`📄 [FETCH_PAGE] result.data structure:`, JSON.stringify(result.data, null, 2).substring(0, 1000));
+    }
+
+    // Extract hasMore from pagination - check multiple possible locations
+    const hasMore = paginationInfo?.hasMore !== undefined 
+      ? paginationInfo.hasMore
+      : paginationInfo?.total 
+        ? (paginationInfo.start + paginationInfo.count) < paginationInfo.total
+          : false;
+
+    console.log(`📄 [FETCH_PAGE] Calculated hasMore: ${hasMore}`);
+    console.log(`📄 [FETCH_PAGE] Pagination details:`, {
+      total: paginationInfo?.total,
+      count: paginationInfo?.count,
+      start: paginationInfo?.start,
+      hasMore: paginationInfo?.hasMore,
+      calculatedHasMore: hasMore
+    });
+    
+    const returnValue = {
+      leads: rawResults,
+      pagination: {
+        ...paginationInfo,
+        hasMore: hasMore, 
+        currentPage: pageNumber,
+        total: paginationInfo?.total || 0,
+        count: paginationInfo?.count || rawResults.length,
+        start: paginationInfo?.start || 0
+      }
+    };
+    
+    console.log(`📄 [FETCH_PAGE] Returning:`, {
+      leadsCount: returnValue.leads.length,
+      pagination: returnValue.pagination
+    });
+    
+    return returnValue;
+  };
+
+  /**
+   * Generates a human-readable search filter summary from searchParams
+   */
+  const generateSearchFilterSummary = (params: Record<string, unknown>): string => {
+    const filters: string[] = [];
+    
+    if (params.location) filters.push(`Location: ${params.location}`);
+    if (params.title_keywords) filters.push(`Title: ${params.title_keywords}`);
+    if (params.current_company) filters.push(`Company: ${params.current_company}`);
+    if (params.industry) filters.push(`Industry: ${params.industry}`);
+    if (params.past_company) filters.push(`Past Company: ${params.past_company}`);
+    if (params.company_headcount_min || params.company_headcount_max) {
+      const min = params.company_headcount_min || '0';
+      const max = params.company_headcount_max || '∞';
+      filters.push(`Headcount: ${min}-${max}`);
+    }
+    if (params.years_experience_min || params.years_experience_max) {
+      const min = params.years_experience_min || '0';
+      const max = params.years_experience_max || '∞';
+      filters.push(`Experience: ${min}-${max} years`);
+    }
+    if (params.school || params.university) {
+      filters.push(`School: ${params.school || params.university}`);
+    }
+    if (params.changed_jobs_90_days === 'true' || params.changed_jobs_90_days === true) {
+      filters.push('Changed Jobs (90 days)');
+    }
+    if (params.url) {
+      filters.push('Via URL');
+    }
+    
+    return filters.length > 0 ? filters.join(' | ') : 'No filters';
+  };
+
+  /**
+   * Extracts email from LinkedIn summary text
+   */
+  const extractEmailFromSummary = (summary: string | undefined): string => {
+    if (!summary) return '';
+    // Look for email patterns in summary text
+    const emailRegex = /([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g;
+    const matches = summary.match(emailRegex);
+    return matches && matches.length > 0 ? matches[0] : '';
+  };
+
+  /**
+   * Extracts phone from LinkedIn summary text
+   */
+  const extractPhoneFromSummary = (summary: string | undefined): string => {
+    if (!summary) return '';
+    // Look for phone patterns: Phone: 123-456-7890, Phone: (123) 456-7890, Phone: 1234567890, etc.
+    const phonePatterns = [
+      /Phone:\s*([\d\s\-\(\)]+)/i,
+      /Phone\s*:\s*([\d\s\-\(\)]+)/i,
+      /Tel:\s*([\d\s\-\(\)]+)/i,
+      /(\+?1?[-.\s]?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4})/g,
+    ];
+    
+    for (const pattern of phonePatterns) {
+      const match = summary.match(pattern);
+      if (match && match[1]) {
+        // Clean up the phone number
+        const cleaned = match[1].replace(/[^\d+]/g, '');
+        if (cleaned.length >= 10) {
+          return cleaned;
+        }
+      }
+    }
+    return '';
+  };
+
+  const convertResultsToParsedData = (leads: LeadResult[]): ParsedData => {
+    console.log('🔄 [CONVERT] Converting results to parsed data');
+    console.log('🔄 [CONVERT] Input leads count:', leads.length);
+    console.log('🔄 [CONVERT] First lead sample:', leads[0] ? Object.keys(leads[0]) : 'no leads');
+    
+    // Generate search filter summary once
+    const searchFilterSummary = generateSearchFilterSummary(searchParams);
+    console.log('🔄 [CONVERT] Search filter summary:', searchFilterSummary);
+    
+    const headers = ['Name', 'Title', 'Company', 'Location', 'LinkedIn URL', 'Email', 'Phone', 'First Name', 'Last Name', 'City', 'State', 'Zip', 'Search Filter'];
+    const rows = leads.map((lead: any, index: number) => {
+      // Extract name - check camelCase first (API format), then snake_case, then construct
+      const rawFullName = lead.fullName || lead.name || lead.full_name || 
+        (lead.firstName || lead.first_name ? 
+          `${lead.firstName || lead.first_name} ${lead.lastName || lead.last_name || ''}`.trim() : 
+          '');
+      // Normalize name to remove credentials (e.g., "Mona Baset, MBA, MA" -> "Mona Baset")
+      const fullName = normalizeName(rawFullName);
+      const nameParts = fullName.split(' ');
+      const location = lead.geoRegion || lead.location || '';
+      const locationParts = location.split(',').map((s: string) => s.trim()).filter((s: string) => s.length > 0);
+      
+      // PHASE 1 FIX: Properly parse location to avoid "United States" as city
+      // Format possibilities:
+      // - "City, State, Country" (3 parts) → city=City, state=State
+      // - "State, Country" (2 parts) → city="", state=State
+      // - "Country" (1 part) → city="", state="", country=Country
+      // - "City, State" (2 parts, no country) → city=City, state=State
+      let city = '';
+      let state = '';
+      const countries = ['united states', 'usa', 'canada', 'uk', 'united kingdom', 'australia', 'germany', 'france', 'spain', 'italy', 'india', 'china', 'japan'];
+      
+      if (locationParts.length >= 3) {
+        // "City, State, Country" format
+        city = locationParts[0];
+        state = locationParts[1];
+        // Last part is country, ignore it
+      } else if (locationParts.length === 2) {
+        // Could be "City, State" or "State, Country"
+        const secondPart = locationParts[1].toLowerCase();
+        const isCountry = countries.some(c => secondPart.includes(c));
+        if (isCountry) {
+          // "State, Country" format
+          city = ''; // No city
+          state = locationParts[0]; // First part is state
+        } else {
+          // "City, State" format (no country)
+          city = locationParts[0];
+          state = locationParts[1];
+        }
+      } else if (locationParts.length === 1) {
+        // Single part - could be state or country
+        const singlePart = locationParts[0].toLowerCase();
+        const isCountry = countries.some(c => singlePart.includes(c));
+        if (isCountry) {
+          // Just country, no city or state
+          city = '';
+          state = '';
+        } else {
+          // Assume it's a state
+          city = '';
+          state = locationParts[0];
+        }
+      }
+      
+      // VALIDATION: Never set city to country name
+      const cityLower = city.toLowerCase();
+      if (countries.some(c => cityLower.includes(c))) {
+        console.warn(`[CONVERT] Invalid city detected: "${city}" - setting to empty`);
+        city = '';
+      }
+      
+      // Extract email and phone from summary if not already in structured fields
+      const summary = lead.summary || '';
+      const extractedEmail = lead.email || extractEmailFromSummary(summary);
+      const extractedPhone = lead.phone || lead.phone_number || extractPhoneFromSummary(summary);
+      
+      console.log(`🔄 [CONVERT] Lead ${index + 1}:`, {
+        name: fullName,
+        location: location,
+        parsedCity: city || 'NONE',
+        parsedState: state || 'NONE',
+        hasEmail: !!extractedEmail,
+        hasPhone: !!extractedPhone,
+        email: extractedEmail ? extractedEmail.substring(0, 20) + '...' : 'none',
+        phone: extractedPhone ? extractedPhone.substring(0, 15) + '...' : 'none'
+      });
+      
+      return {
+        'Name': fullName,
+        'Title': lead.currentPosition?.title || lead.title || lead.job_title || lead.headline || '',
+        'Company': lead.currentPosition?.companyName || lead.company || lead.company_name || '',
+        'Location': location,
+        'LinkedIn URL': lead.navigationUrl || lead.linkedin_url || lead.profile_url || lead.url || '',
+        'Email': extractedEmail,
+        'Phone': extractedPhone,
+        'First Name': nameParts[0] || '',
+        'Last Name': nameParts.slice(1).join(' ') || '',
+        'City': city,
+        'State': state,
+        'Zip': '',
+        'Search Filter': searchFilterSummary,
+      };
+    });
+
+    console.log('🔄 [CONVERT] Converted data:', {
+      headers: headers.length,
+      rows: rows.length,
+      firstRowSample: rows[0] ? Object.keys(rows[0]) : 'no rows'
+    });
+    
+    return { headers, rows, rowCount: rows.length, columnCount: headers.length };
+  };
+
+  const handleEnrichAndScrub = async () => {
+    console.log('✨ [ENRICH] Starting handleEnrichAndScrub');
+    console.log('✨ [ENRICH] Results:', results ? `${results.length} leads` : 'null');
+    
+    if (!results || results.length === 0) {
+      console.error('✨ [ENRICH] ❌ No results to enrich');
+      setError('No leads to enrich. Please scrape leads first.');
+      return;
+    }
+
+    console.log('✨ [ENRICH] Setting up enrichment state...');
+    setIsEnriching(true);
+    setError(null);
+    setEnrichedData(null);
+    setDncResults([]);
+    setLeadSummaries([]);
+    setWorkflowStep('enriching');
+    initializeAPIProgress();
+
+    try {
+      console.log('✨ [ENRICH] Converting results to parsed data...');
+      const parsedData = convertResultsToParsedData(results);
+      console.log('✨ [ENRICH] Parsed data:', {
+        rowCount: parsedData.rowCount,
+        columnCount: parsedData.columnCount,
+        headers: parsedData.headers,
+        firstRowSample: parsedData.rows[0] ? Object.keys(parsedData.rows[0]) : 'no rows'
+      });
+      
+      updateAPIProgress('LinkedIn Sales Navigator', { status: 'completed', progress: results.length, total: results.length });
+      
+      console.log('✨ [ENRICH] Calling enrichData...');
+      const enriched = await enrichData(parsedData, (current, total) => {
+        console.log(`✨ [ENRICH] Progress: ${current}/${total} (${Math.round((current/total)*100)}%)`);
+        setEnrichmentProgress({ current, total });
+        const phase = Math.floor((current / total) * 9);
+        if (phase >= 1) updateAPIProgress('Skip Tracing v1', { status: 'running', progress: current, total });
+        if (phase >= 2) updateAPIProgress('Skip Tracing v2', { status: 'running', progress: current, total });
+        if (phase >= 3) updateAPIProgress('Income by Zip', { status: 'running', progress: current, total });
+        if (phase >= 4) updateAPIProgress('Website Extractor', { status: 'running', progress: current, total });
+        if (phase >= 5) updateAPIProgress('Website Contacts', { status: 'running', progress: current, total });
+        if (phase >= 6) updateAPIProgress('LinkedIn Profile', { status: 'running', progress: current, total });
+        if (phase >= 7) updateAPIProgress('Fresh LinkedIn', { status: 'running', progress: current, total });
+        if (phase >= 8) updateAPIProgress('Facebook Profile', { status: 'running', progress: current, total });
+      }, (detailedProgress) => {
+        // Real-time detailed progress tracking
+        console.log(`✨ [ENRICH] ${detailedProgress.leadName} - ${detailedProgress.step}:`, detailedProgress.stepDetails);
+        setDetailedProgress(detailedProgress);
+        
+        // Track errors
+        if (detailedProgress.errors && detailedProgress.errors.length > 0) {
+          console.warn(`✨ [ENRICH] Errors for ${detailedProgress.leadName}:`, detailedProgress.errors);
+          setEnrichmentErrors(prev => [
+            ...prev,
+            ...detailedProgress.errors!.map(err => ({
+              lead: detailedProgress.leadName || 'Unknown',
+              error: err,
+              timestamp: detailedProgress.timestamp
+            }))
+          ]);
+        }
+        
+        setEnrichmentProgress({ current: detailedProgress.current, total: detailedProgress.total });
+      });
+      
+      console.log('✨ [ENRICH] ✅ Enrichment completed');
+      console.log('✨ [ENRICH] Enriched data:', {
+        rowCount: enriched.rows.length,
+        headers: enriched.headers,
+        firstRowSample: enriched.rows[0] ? Object.keys(enriched.rows[0]).slice(0, 10) : 'no rows'
+      });
+      
+      setApiProgress(prev => prev.map(api => ({
+        ...api,
+        status: api.status === 'running' ? 'completed' : api.status,
+        progress: api.status === 'running' ? api.total : api.progress
+      })));
+      
+      console.log('✨ [ENRICH] Setting enriched data...');
+      setEnrichedData(enriched);
+      
+      console.log('✨ [ENRICH] Extracting lead summaries...');
+      const summaries: LeadSummary[] = enriched.rows.map((row: EnrichedRow) => extractLeadSummary(row, row._enriched));
+      console.log('✨ [ENRICH] Lead summaries:', summaries.length);
+      setLeadSummaries(summaries);
+      
+      // Save enriched leads to localStorage for the enriched leads page
+      try {
+        const existingLeads = localStorage.getItem('enrichedLeads');
+        const existing = existingLeads ? JSON.parse(existingLeads) : [];
+        const combined = [...existing, ...summaries];
+        localStorage.setItem('enrichedLeads', JSON.stringify(combined));
+        console.log('✨ [ENRICH] Saved enriched leads to localStorage:', combined.length);
+        
+        // Dispatch custom event to notify other components
+        window.dispatchEvent(new Event('enrichedLeadsUpdated'));
+      } catch (error) {
+        console.error('✨ [ENRICH] Failed to save enriched leads to localStorage:', error);
+      }
+      
+      // DNC Scrubbing disabled
+      // if (enableDNCScrub) {
+      //   updateAPIProgress('USHA DNC Scrub', { status: 'running', progress: 0, total: enriched.rows.length });
+      //   await handleDNCScrub(enriched);
+      //   updateAPIProgress('USHA DNC Scrub', { status: 'completed', progress: enriched.rows.length, total: enriched.rows.length });
+      // }
+      
+      console.log('✨ [ENRICH] Setting workflow step to "complete"');
+      setWorkflowStep('complete');
+      console.log('✨ [ENRICH] ✅ Successfully completed enrichment');
+    } catch (err) {
+      console.error('✨ [ENRICH] ❌ Error in handleEnrichAndScrub:', err);
+      console.error('✨ [ENRICH] Error details:', {
+        message: err instanceof Error ? err.message : String(err),
+        stack: err instanceof Error ? err.stack : undefined,
+        name: err instanceof Error ? err.name : undefined
+      });
+      setError(err instanceof Error ? err.message : 'Failed to enrich leads');
+      setApiProgress(prev => prev.map(api => 
+        api.status === 'running' ? { ...api, status: 'error', error: err instanceof Error ? err.message : 'Unknown error' } : api
+      ));
+    } finally {
+      console.log('✨ [ENRICH] Finished handleEnrichAndScrub, setting isEnriching to false');
+      setIsEnriching(false);
+    }
+  };
+
+  const handleDNCScrub = async (data: EnrichedData) => {
+    setIsScrubbing(true);
+    try {
+      const headers = ['First Name', 'Last Name', 'City', 'State', 'Zip', 'Date Of Birth', 'House hold Income', 'Primary Phone'];
+      const csvRows = [
+        headers.join(','),
+        ...data.rows.map((row: EnrichedRow) => {
+          const escapeCSV = (val: string) => val.includes(',') || val.includes('"') ? `"${val.replace(/"/g, '""')}"` : val;
+          return [
+            escapeCSV(String(row['First Name'] || '')),
+            escapeCSV(String(row['Last Name'] || '')),
+            escapeCSV(String(row['City'] || '')),
+            escapeCSV(String(row['State'] || '')),
+            escapeCSV(String(row['Zip'] || '')),
+            escapeCSV(''),
+            escapeCSV(''),
+            escapeCSV(String(row['Phone'] || '')),
+          ].join(',');
+        })
+      ];
+
+      const csv = csvRows.join('\n');
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const file = new File([blob], 'leads.csv', { type: 'text/csv' });
+      const formData = new FormData();
+      formData.append('file', file);
+      if (ushaToken.trim()) formData.append('token', ushaToken);
+      formData.append('ScrubList', 'true');
+      formData.append('ImportLeads', 'false');
+
+      const response = await fetch('/api/usha/scrub', { method: 'POST', body: formData });
+      const result = await response.json();
+
+      if (!response.ok) {
+        const errorMsg = result.error || 'Failed to scrub leads';
+        // Provide more helpful error message for 401
+        if (response.status === 401) {
+          throw new Error(`${errorMsg}. Please add USHA_JWT_TOKEN to .env.local or enter it in the token field above.`);
+        }
+        throw new Error(errorMsg);
+      }
+
+      const jobId = result.data?.JobLogID || result.data?.jobLogID || result.data?.id;
+      if (jobId) {
+        setJobLogID(String(jobId));
+        setTimeout(() => fetchDNCResults(String(jobId)), 3000);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to scrub leads');
+    } finally {
+      setIsScrubbing(false);
+    }
+  };
+
+  const fetchDNCResults = async (jobId: string) => {
+    try {
+      const tokenParam = ushaToken.trim() ? `&token=${encodeURIComponent(ushaToken)}` : '';
+      const response = await fetch(`/api/usha/import-log?JobLogID=${jobId}${tokenParam}`);
+      const result = await response.json();
+
+      if (response.ok && result.data) {
+        const results: DNCResult[] = Array.isArray(result.data) 
+          ? result.data.map((item: any) => ({
+              phone: item.phoneNumber || item.phone || '',
+              isDoNotCall: item.isDoNotCall || item.IsDoNotCall || false,
+              canContact: item.canContact || item.CanContact || false,
+              reason: item.reason || '',
+            }))
+          : [];
+        
+        setDncResults(results);
+        if (enrichedData) {
+          const updatedSummaries = enrichedData.rows.map((row: EnrichedRow) => {
+            const phone = String(row['Phone'] || '');
+            const dncData = results.find(r => r.phone === phone);
+            return extractLeadSummary(row, row._enriched, dncData);
+          });
+          setLeadSummaries(updatedSummaries);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch DNC results:', err);
+    }
+  };
+
+  const handleSortChange = (field: 'income' | 'state' | 'none') => {
+    if (field === 'none') {
+      setSortField('none');
+      return;
+    }
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  const getSortedSummaries = (): LeadSummary[] => {
+    if (sortField === 'none') return leadSummaries;
+    const sorted = [...leadSummaries].sort((a, b) => {
+      if (sortField === 'state') {
+        return sortDirection === 'asc' ? a.state.localeCompare(b.state) : b.state.localeCompare(a.state);
+      }
+      return 0;
+    });
+    return sorted;
+  };
+
+  const getAPIStatusColor = (status: APIProgress['status']) => {
+    switch (status) {
+      case 'completed': return 'bg-gradient-to-r from-blue-500 to-purple-500';
+      case 'running': return 'bg-gradient-to-r from-blue-500 to-purple-500 animate-pulse';
+      case 'error': return 'bg-red-500';
+      default: return 'bg-minimalist-border';
+    }
+  };
+
+  const updateSearchParam = (key: string, value: string | undefined) => {
+    setSearchParams(prev => {
+      const updated = { ...prev };
+      if (value === undefined || value === '') {
+        delete updated[key];
+      } else {
+        updated[key] = value;
+      }
+      return updated;
+    });
+  };
+
+  const [locationValidationStats, setLocationValidationStats] = useState<{
+    total: number;
+    kept: number;
+    removed: number;
+    removalRate: number;
+  } | null>(null);
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 relative overflow-hidden">
+      {/* Animated background elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+        <div className="absolute top-1/2 left-1/2 w-96 h-96 bg-pink-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
+      </div>
+      
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-8 space-y-8 relative z-10">
+      {/* Header */}
+      <div className="space-y-3 animate-fade-in">
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent tracking-tight drop-shadow-lg">Lead Generation</h1>
+        </div>
+      </div>
+        
+      {/* Active Progress Dashboard */}
+      {(isSearching || isEnriching || isScrubbing) && (
+        <div className="space-y-4 animate-slide-up">
+          <div>
+            <h2 className="text-lg font-semibold text-slate-200 mb-1">Progress</h2>
+            <p className="text-xs text-slate-400">Current operation status</p>
+          </div>
+
+          {isSearching && (
+            <div className="group space-y-4 bg-slate-800/40 backdrop-blur-xl border-2 border-slate-700/50 rounded-2xl shadow-xl p-6 hover:border-blue-500/30 hover:shadow-2xl hover:shadow-blue-500/20 transition-all duration-300">
+              {/* Header */}
+              <div className="flex items-center justify-between">
+            <div>
+                  <p className="text-sm font-medium text-slate-200">{scrapingProgress.currentOperation}</p>
+                  {scrapingProgress.totalPages > 0 && (
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      Page {scrapingProgress.currentPage} of {scrapingProgress.totalPages}
+                    </p>
+                  )}
+            </div>
+                {scrapingProgress.status === 'completed' ? (
+                  <CheckCircle className="w-5 h-5 text-emerald-400" />
+                ) : scrapingProgress.status === 'error' ? (
+                  <XCircle className="w-5 h-5 text-red-400" />
+                ) : (
+                  <Loader2 className="w-5 h-5 animate-spin text-blue-400" />
+                )}
+              </div>
+
+              {/* Large Leads Count */}
+              <div className="text-center py-2">
+                <div className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400">
+                  {scrapingProgress.leadsCollected.toLocaleString()}
+                </div>
+                <div className="text-xs text-slate-400 mt-1">
+                  {scrapingProgress.estimatedTotal > 0 && (
+                    <>of {scrapingProgress.estimatedTotal.toLocaleString()} target</>
+                  )}
+                  {scrapingProgress.estimatedTotal === 0 && 'leads collected'}
+                </div>
+              </div>
+
+              {/* Progress Bar */}
+              {scrapingProgress.totalPages > 0 && (
+                <div className="space-y-2">
+                  <div className="w-full bg-slate-700/40 rounded-full h-3 overflow-hidden shadow-inner">
+                  <div 
+                      className="bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 h-3 rounded-full transition-all duration-500 shadow-lg shadow-blue-500/50 relative overflow-hidden"
+                    style={{ width: `${Math.min(100, (scrapingProgress.currentPage / scrapingProgress.totalPages) * 100)}%` }}
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer" />
+                    </div>
+                  </div>
+                  <div className="text-xs text-slate-400 text-center">
+                    {Math.min(100, Math.round((scrapingProgress.currentPage / scrapingProgress.totalPages) * 100))}% complete
+                  </div>
+            </div>
+          )}
+
+              {/* Metrics Grid */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-2">
+                {/* Leads Per Second */}
+                <div className="bg-slate-800/60 rounded-lg p-3 border border-slate-700/50">
+                  <div className="text-xs text-slate-400 mb-1">Speed</div>
+                  <div className="text-lg font-semibold text-blue-400">
+                    {scrapingProgress.leadsPerSecond > 0 ? scrapingProgress.leadsPerSecond.toFixed(2) : '0.00'}
+                </div>
+                  <div className="text-xs text-slate-500">leads/sec</div>
+                  </div>
+
+                {/* Estimated Time Remaining */}
+                <div className="bg-slate-800/60 rounded-lg p-3 border border-slate-700/50">
+                  <div className="text-xs text-slate-400 mb-1">ETA</div>
+                  <div className="text-lg font-semibold text-purple-400">
+                    {scrapingProgress.estimatedTimeRemaining > 0 ? (
+                      <>
+                        {Math.floor(scrapingProgress.estimatedTimeRemaining / 60)}:
+                        {String(scrapingProgress.estimatedTimeRemaining % 60).padStart(2, '0')}
+                      </>
+                    ) : (
+                      '--:--'
+                )}
+              </div>
+                  <div className="text-xs text-slate-500">remaining</div>
+                </div>
+
+                {/* Elapsed Time */}
+                <div className="bg-slate-800/60 rounded-lg p-3 border border-slate-700/50">
+                  <div className="text-xs text-slate-400 mb-1">Elapsed</div>
+                  <div className="text-lg font-semibold text-pink-400">
+                    {Math.floor(scrapingProgress.elapsedTime / 60)}:
+                    {String(scrapingProgress.elapsedTime % 60).padStart(2, '0')}
+                  </div>
+                  <div className="text-xs text-slate-500">time</div>
+                </div>
+
+                {/* Leads This Page */}
+                <div className="bg-slate-800/60 rounded-lg p-3 border border-slate-700/50">
+                  <div className="text-xs text-slate-400 mb-1">This Page</div>
+                  <div className="text-lg font-semibold text-emerald-400">
+                    {scrapingProgress.leadsThisPage}
+                  </div>
+                  <div className="text-xs text-slate-500">leads</div>
+                </div>
+              </div>
+
+              {/* Average Leads Per Page */}
+              {scrapingProgress.averageLeadsPerPage > 0 && (
+                <div className="bg-slate-800/60 rounded-lg p-3 border border-slate-700/50">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-slate-400">Average per page</span>
+                    <span className="text-sm font-semibold text-slate-200">
+                      {scrapingProgress.averageLeadsPerPage.toFixed(1)} leads
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {isEnriching && (
+            <div className="group space-y-3 bg-slate-800/40 backdrop-blur-xl border-2 border-slate-700/50 rounded-2xl shadow-xl p-6 hover:border-purple-500/30 hover:shadow-2xl hover:shadow-purple-500/20 transition-all duration-300">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium text-slate-200">Enriching Data</p>
+                <span className="text-xs text-slate-400">
+                  {enrichmentProgress.current} of {enrichmentProgress.total}
+                </span>
+              </div>
+              <div className="w-full bg-slate-700/40 rounded-full h-2 overflow-hidden shadow-inner">
+                <div 
+                  className="bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 h-2 rounded-full transition-all duration-500 shadow-lg shadow-purple-500/50 relative overflow-hidden"
+                  style={{ width: `${(enrichmentProgress.current / enrichmentProgress.total) * 100}%` }}
+                  >
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer" />
+                </div>
+              </div>
+
+              {/* Real-time Detailed Progress */}
+              {detailedProgress && (
+                <div className="bg-slate-800/60 backdrop-blur-sm border border-slate-700/50 rounded-lg p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-semibold text-slate-200">
+                      Currently Enriching: {detailedProgress.leadName}
+                    </h3>
+                    <span className="text-xs text-slate-400">
+                      {detailedProgress.current}/{detailedProgress.total}
+                    </span>
+                  </div>
+                  
+                  {/* Step Indicator */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-slate-400">Step:</span>
+                    <span className={`px-2 py-1 rounded text-xs font-medium ${
+                      detailedProgress.step === 'linkedin' ? 'bg-blue-500/20 text-blue-400' :
+                      detailedProgress.step === 'zip' ? 'bg-green-500/20 text-green-400' :
+                      detailedProgress.step === 'phone-discovery' ? 'bg-purple-500/20 text-purple-400' :
+                      detailedProgress.step === 'telnyx' ? 'bg-yellow-500/20 text-yellow-400' :
+                      detailedProgress.step === 'gatekeep' ? 'bg-orange-500/20 text-orange-400' :
+                      detailedProgress.step === 'age' ? 'bg-pink-500/20 text-pink-400' :
+                      detailedProgress.step === 'complete' ? 'bg-green-500/20 text-green-400' :
+                      'bg-slate-700/60 text-slate-400'
+                    }`}>
+                      {detailedProgress.step === 'linkedin' ? 'LinkedIn Data' :
+                       detailedProgress.step === 'zip' ? 'ZIP Lookup' :
+                       detailedProgress.step === 'phone-discovery' ? 'Phone Discovery' :
+                       detailedProgress.step === 'telnyx' ? 'Telnyx Lookup' :
+                       detailedProgress.step === 'gatekeep' ? 'Gatekeep Check' :
+                       detailedProgress.step === 'age' ? 'Age Enrichment' :
+                       detailedProgress.step === 'complete' ? 'Complete' : 'Processing'}
+                    </span>
+                  </div>
+                  
+                  {/* Step Details */}
+                  {detailedProgress.stepDetails && (
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+                      {detailedProgress.stepDetails.firstName && (
+                        <div>
+                          <span className="text-slate-400">First:</span>
+                          <span className="text-slate-200 ml-1">{detailedProgress.stepDetails.firstName}</span>
+                        </div>
+                      )}
+                      {detailedProgress.stepDetails.lastName && (
+                        <div>
+                          <span className="text-slate-400">Last:</span>
+                          <span className="text-slate-200 ml-1">{detailedProgress.stepDetails.lastName}</span>
+                        </div>
+                      )}
+                      {detailedProgress.stepDetails.city && (
+                        <div>
+                          <span className="text-slate-400">City:</span>
+                          <span className="text-slate-200 ml-1">{detailedProgress.stepDetails.city}</span>
+                        </div>
+                      )}
+                      {detailedProgress.stepDetails.state && (
+                        <div>
+                          <span className="text-slate-400">State:</span>
+                          <span className="text-slate-200 ml-1">{detailedProgress.stepDetails.state}</span>
+                        </div>
+                      )}
+                      {detailedProgress.stepDetails.zipCode && (
+                        <div>
+                          <span className="text-slate-400">ZIP:</span>
+                          <span className="text-slate-200 ml-1 font-mono">{detailedProgress.stepDetails.zipCode}</span>
+                        </div>
+                      )}
+                      {detailedProgress.stepDetails.phone && (
+                        <div>
+                          <span className="text-slate-400">Phone:</span>
+                          <span className="text-slate-200 ml-1 font-mono">{detailedProgress.stepDetails.phone}</span>
+                        </div>
+                      )}
+                      {detailedProgress.stepDetails.email && (
+                        <div>
+                          <span className="text-slate-400">Email:</span>
+                          <span className="text-slate-200 ml-1">{detailedProgress.stepDetails.email}</span>
+                        </div>
+                      )}
+                      {detailedProgress.stepDetails.lineType && (
+                        <div>
+                          <span className="text-slate-400">Line Type:</span>
+                          <span className="text-slate-200 ml-1">{detailedProgress.stepDetails.lineType}</span>
+                        </div>
+                      )}
+                      {detailedProgress.stepDetails.carrier && (
+                        <div>
+                          <span className="text-slate-400">Carrier:</span>
+                          <span className="text-slate-200 ml-1">{detailedProgress.stepDetails.carrier}</span>
+                        </div>
+                      )}
+                      {detailedProgress.stepDetails.age && (
+                        <div>
+                          <span className="text-slate-400">Age:</span>
+                          <span className="text-slate-200 ml-1">{detailedProgress.stepDetails.age}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  
+                  {/* Errors */}
+                  {detailedProgress.errors && detailedProgress.errors.length > 0 && (
+                    <div className="bg-red-500/10 border border-red-500/30 rounded p-2">
+                      <div className="text-xs font-semibold text-red-400 mb-1">Errors:</div>
+                      {detailedProgress.errors.map((err, idx) => (
+                        <div key={idx} className="text-xs text-red-300">{err}</div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+              
+              {/* Error Log */}
+              {enrichmentErrors.length > 0 && (
+                <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-sm font-semibold text-red-400">Enrichment Errors ({enrichmentErrors.length})</h3>
+                    <button
+                      onClick={() => setEnrichmentErrors([])}
+                      className="text-xs text-red-300 hover:text-red-200"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                  <div className="space-y-1 max-h-40 overflow-y-auto">
+                    {enrichmentErrors.slice(-10).map((err, idx) => (
+                      <div key={idx} className="text-xs text-red-300">
+                        <span className="font-medium">{err.lead}:</span> {err.error}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {apiProgress.map((api, idx) => (
+                  <div key={idx} className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-slate-200">{api.apiName}</span>
+                      <span className={`w-2 h-2 rounded-full ${getAPIStatusColor(api.status)}`} title={api.status} />
+                    </div>
+                    {api.total > 0 && (
+                      <div className="w-full bg-slate-700/60 rounded-full h-0.5">
+                        <div 
+                          className="bg-gradient-to-r from-blue-500 to-purple-500 h-0.5 rounded-full transition-all"
+                          style={{ width: `${(api.progress / api.total) * 100}%` }}
+                  />
+                </div>
+                    )}
+                    <p className="text-xs text-slate-500">
+                      {api.dataFields.slice(0, 2).join(', ')}
+                      {api.dataFields.length > 2 && '...'}
+                    </p>
+                    {api.error && (
+                      <p className="text-xs text-red-500">{api.error}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+        </div>
+      )}
+
+      {/* Search Configuration */}
+      {workflowStep === 'search' && (
+        <div className="space-y-6 animate-fade-in">
+                <div>
+            <h2 className="text-2xl font-bold text-slate-200 tracking-tight mb-1">Configure Search</h2>
+            <p className="text-sm text-slate-400">Set your filters and parameters</p>
+          </div>
+          
+          <div className="space-y-6 bg-slate-800/30 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-6 shadow-xl">
+            {/* Search Type */}
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-slate-200 mb-3">Search Type</label>
+              <div className="grid grid-cols-2 gap-3 w-full">
+                <button
+                  type="button"
+                  onClick={() => setSearchType('person')}
+                  className={`group relative w-full px-4 py-3.5 rounded-xl transition-all duration-300 border-2 overflow-hidden ${
+                    searchType === 'person' 
+                      ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white border-blue-400/50 shadow-lg shadow-blue-500/30 scale-105' 
+                      : 'bg-slate-800/40 backdrop-blur-xl text-slate-200 border-slate-700/50 hover:border-blue-500/60 hover:bg-slate-800/80 hover:scale-[1.02] hover:shadow-lg hover:shadow-blue-500/20'
+                  }`}
+                >
+                  {searchType !== 'person' && (
+                    <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 via-purple-500/0 to-pink-500/0 group-hover:from-blue-500/10 group-hover:via-purple-500/10 group-hover:to-pink-500/10 transition-all duration-500" />
+                  )}
+                  <div className={`relative flex items-center justify-center gap-2 text-sm font-semibold ${
+                    searchType === 'person' ? 'text-white' : 'text-slate-200'
+                  }`}>
+                    <Users className={`w-5 h-5 transition-transform duration-300 ${searchType === 'person' ? 'text-white scale-110' : 'text-slate-300 group-hover:text-blue-400 group-hover:scale-110'}`} />
+                    <span className="relative z-10">People</span>
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSearchType('person_via_url')}
+                  className={`group relative w-full px-4 py-3.5 rounded-xl transition-all duration-300 border-2 overflow-hidden ${
+                    searchType === 'person_via_url' 
+                      ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white border-blue-400/50 shadow-lg shadow-blue-500/30 scale-105' 
+                      : 'bg-slate-800/40 backdrop-blur-xl text-slate-200 border-slate-700/50 hover:border-blue-500/60 hover:bg-slate-800/80 hover:scale-[1.02] hover:shadow-lg hover:shadow-blue-500/20'
+                  }`}
+                >
+                  {searchType !== 'person_via_url' && (
+                    <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 via-purple-500/0 to-pink-500/0 group-hover:from-blue-500/10 group-hover:via-purple-500/10 group-hover:to-pink-500/10 transition-all duration-500" />
+                  )}
+                  <div className={`relative flex items-center justify-center gap-2 text-sm font-semibold ${
+                    searchType === 'person_via_url' ? 'text-white' : 'text-slate-200'
+                  }`}>
+                    <Link2 className={`w-5 h-5 transition-transform duration-300 ${searchType === 'person_via_url' ? 'text-white scale-110' : 'text-slate-300 group-hover:text-blue-400 group-hover:scale-110'}`} />
+                    <span className="relative z-10">Via URL</span>
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            {/* Search Parameters */}
+            {searchType === 'person_via_url' ? (
+              <div className="space-y-4">
+                <label className="block text-sm font-medium text-slate-200">Sales Navigator URL</label>
+                  <input
+                    type="text"
+                  value={String(searchParams.url || '')}
+                  onChange={(e) => updateSearchParam('url', e.target.value)}
+                  placeholder="https://www.linkedin.com/sales/search/people?..."
+                  className="group w-full px-4 py-3 rounded-xl bg-slate-800/40 backdrop-blur-xl border-2 border-slate-700/50 text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-blue-500/60 focus:ring-2 focus:ring-blue-500/20 focus:bg-slate-800/60 hover:border-slate-600/60 transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/10"
+                  />
+                </div>
+            ) : (
+              <div className="space-y-4">
+                {/* Primary Filters */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-medium text-slate-200">Job Title Keywords</label>
+                  <input
+                    type="text"
+                      value={String(searchParams.title_keywords || '')}
+                      onChange={(e) => updateSearchParam('title_keywords', e.target.value)}
+                      placeholder="Director, VP, Manager"
+                      className="group w-full px-4 py-2.5 rounded-xl bg-slate-800/40 backdrop-blur-xl border-2 border-slate-700/50 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-blue-500/60 focus:ring-2 focus:ring-blue-500/20 focus:bg-slate-800/60 hover:border-slate-600/60 transition-all duration-300 hover:shadow-md hover:shadow-blue-500/10"
+                  />
+                </div>
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-medium text-slate-200">Location</label>
+                  <input
+                    type="text"
+                    value={String(searchParams.location || '')}
+                    onChange={(e) => updateSearchParam('location', e.target.value)}
+                    placeholder="Maryland, MD, United States"
+                      className="group w-full px-4 py-2.5 rounded-xl bg-slate-800/40 backdrop-blur-xl border-2 border-slate-700/50 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-blue-500/60 focus:ring-2 focus:ring-blue-500/20 focus:bg-slate-800/60 hover:border-slate-600/60 transition-all duration-300 hover:shadow-md hover:shadow-blue-500/10"
+                  />
+                  {locationDiscoveryStatus && (
+                      <p className="text-xs text-blue-400">{locationDiscoveryStatus}</p>
+                    )}
+                    </div>
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-medium text-slate-200">Current Company</label>
+                    <input
+                      type="text"
+                      value={String(searchParams.current_company || '')}
+                      onChange={(e) => updateSearchParam('current_company', e.target.value)}
+                      placeholder="Apple, Google, Microsoft"
+                      className="group w-full px-4 py-2.5 rounded-xl bg-slate-800/40 backdrop-blur-xl border-2 border-slate-700/50 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-blue-500/60 focus:ring-2 focus:ring-blue-500/20 focus:bg-slate-800/60 hover:border-slate-600/60 transition-all duration-300 hover:shadow-md hover:shadow-blue-500/10"
+                    />
+                    <p className="text-xs text-slate-500">Company name (will auto-convert to URN)</p>
+                </div>
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-medium text-slate-200">Industry</label>
+                  <input
+                    type="text"
+                    value={String(searchParams.industry || '')}
+                    onChange={(e) => updateSearchParam('industry', e.target.value)}
+                    placeholder="Technology, Finance, Healthcare"
+                      className="group w-full px-4 py-2.5 rounded-xl bg-slate-800/40 backdrop-blur-xl border-2 border-slate-700/50 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-blue-500/60 focus:ring-2 focus:ring-blue-500/20 focus:bg-slate-800/60 hover:border-slate-600/60 transition-all duration-300 hover:shadow-md hover:shadow-blue-500/10"
+                  />
+                    <p className="text-xs text-slate-500">Industry name (will auto-convert to ID)</p>
+                  </div>
+                </div>
+
+                {/* Company Filters */}
+                <div className="space-y-3 pt-4 border-t border-slate-700/50-subtle">
+                  <h4 className="text-xs font-medium text-slate-200">Company Filters</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div className="space-y-2">
+                      <label className="block text-xs text-slate-400">Past Company</label>
+                  <input
+                    type="text"
+                        value={String(searchParams.past_company || '')}
+                        onChange={(e) => updateSearchParam('past_company', e.target.value)}
+                        placeholder="Previous employer"
+                        className="w-full px-4 py-2 rounded-lg bg-slate-800/60 backdrop-blur-sm border border-slate-700/50 text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
+                  />
+                </div>
+                    <div className="space-y-2">
+                      <label className="block text-xs text-slate-400">Company Headcount (Min)</label>
+                  <input
+                    type="number"
+                        min="0"
+                    value={String(searchParams.company_headcount_min || '')}
+                        onChange={(e) => updateSearchParam('company_headcount_min', e.target.value.trim() || undefined)}
+                        placeholder="0 = Self-employed"
+                        className="w-full px-4 py-2 rounded-lg bg-slate-800/60 backdrop-blur-sm border border-slate-700/50 text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
+                  />
+                </div>
+                    <div className="space-y-2">
+                      <label className="block text-xs text-slate-400">Company Headcount (Max)</label>
+                  <input
+                    type="number"
+                        min="0"
+                    value={String(searchParams.company_headcount_max || '')}
+                        onChange={(e) => updateSearchParam('company_headcount_max', e.target.value.trim() || undefined)}
+                    placeholder="10000"
+                        className="w-full px-4 py-2 rounded-lg bg-slate-800/60 backdrop-blur-sm border border-slate-700/50 text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
+                  />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Experience & Education Filters */}
+                <div className="space-y-3 pt-4 border-t border-slate-700/50-subtle">
+                  <h4 className="text-xs font-medium text-slate-200">Experience & Education</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                    <div className="space-y-2">
+                      <label className="block text-xs text-slate-400">Years Experience (Min)</label>
+                  <input
+                    type="number"
+                        min="0"
+                    value={String(searchParams.years_experience_min || '')}
+                        onChange={(e) => updateSearchParam('years_experience_min', e.target.value.trim() || undefined)}
+                        placeholder="0"
+                        className="w-full px-4 py-2 rounded-lg bg-slate-800/60 backdrop-blur-sm border border-slate-700/50 text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
+                  />
+                </div>
+                    <div className="space-y-2">
+                      <label className="block text-xs text-slate-400">Years Experience (Max)</label>
+                  <input
+                    type="number"
+                        min="0"
+                    value={String(searchParams.years_experience_max || '')}
+                        onChange={(e) => updateSearchParam('years_experience_max', e.target.value.trim() || undefined)}
+                        placeholder="10"
+                        className="w-full px-4 py-2 rounded-lg bg-slate-800/60 backdrop-blur-sm border border-slate-700/50 text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
+                  />
+                </div>
+                    <div className="space-y-2">
+                      <label className="block text-xs text-slate-400">School / University</label>
+                      <input
+                        type="text"
+                        value={String(searchParams.school || searchParams.university || '')}
+                        onChange={(e) => {
+                          const val = e.target.value.trim();
+                          updateSearchParam('school', val || undefined);
+                          updateSearchParam('university', val || undefined);
+                        }}
+                        placeholder="Stanford, Harvard"
+                        className="w-full px-4 py-2 rounded-lg bg-slate-800/60 backdrop-blur-sm border border-slate-700/50 text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
+                      />
+              </div>
+                    <div className="flex items-end">
+                      <label className="flex items-center gap-2 text-sm text-slate-200 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={searchParams.changed_jobs_90_days === 'true' || searchParams.changed_jobs_90_days === true}
+                          onChange={(e) => updateSearchParam('changed_jobs_90_days', e.target.checked ? 'true' : undefined)}
+                          className="w-4 h-4 text-blue-400 rounded border-slate-700/50 focus:ring-minimalist-accent"
+                        />
+                        Changed Jobs (90 days)
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Pagination Settings */}
+            <div className="space-y-3 pt-4 border-t border-slate-700/50-subtle">
+              <div className="flex items-center justify-between">
+                <label className="flex items-center gap-2 text-sm font-medium text-slate-200 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={fetchAllPages}
+                      onChange={(e) => setFetchAllPages(e.target.checked)}
+                    className="w-4 h-4 text-blue-400 rounded border-slate-700/50 focus:ring-minimalist-accent"
+                    />
+                  Fetch Multiple Pages
+                  </label>
+                <span className="text-xs text-slate-500">
+                  {fetchAllPages ? `Up to ${maxPagesToFetch} pages` : 'Single page only'}
+                </span>
+              </div>
+                  {fetchAllPages && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <label className="block text-xs text-slate-400">Max Pages</label>
+                      <input
+                        type="number"
+                        min="1"
+                        max="100"
+                        value={maxPagesToFetch}
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value) || 1;
+                        setMaxPagesToFetch(Math.min(100, Math.max(1, val)));
+                        }}
+                      className="group w-full px-4 py-2.5 rounded-xl bg-slate-800/40 backdrop-blur-xl border-2 border-slate-700/50 text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-blue-500/60 focus:ring-2 focus:ring-blue-500/20 focus:bg-slate-800/60 hover:border-slate-600/60 transition-all duration-300 hover:shadow-md hover:shadow-blue-500/10"
+                    />
+                    </div>
+                  <div className="space-y-2">
+                    <label className="block text-xs text-slate-400">Results Limit</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="2500"
+                      value={String(searchParams.limit || '2500')}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value) || 2500;
+                        updateSearchParam('limit', String(Math.min(2500, Math.max(1, val))));
+                    }}
+                      className="group w-full px-4 py-2.5 rounded-xl bg-slate-800/40 backdrop-blur-xl border-2 border-slate-700/50 text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-blue-500/60 focus:ring-2 focus:ring-blue-500/20 focus:bg-slate-800/60 hover:border-slate-600/60 transition-all duration-300 hover:shadow-md hover:shadow-blue-500/10"
+                    />
+                </div>
+                </div>
+              )}
+            </div>
+
+
+            {/* Search Button */}
+            <div className="pt-6 border-t border-slate-700/50">
+          <button
+            onClick={handleSearch}
+            disabled={isSearching}
+                className="group relative w-full py-4 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 hover:from-blue-600 hover:via-purple-600 hover:to-pink-600 rounded-xl text-white text-base font-semibold transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 hover:scale-[1.02] active:scale-[0.98] overflow-hidden"
+          >
+                <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
+                {isSearching ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin mr-2 text-white relative z-10" />
+                    <span className="text-white relative z-10">Searching</span>
+                  </>
+                ) : (
+                  <>
+                    <Search className="w-5 h-5 mr-2 text-white relative z-10 group-hover:scale-110 transition-transform duration-300" />
+                    <span className="text-white relative z-10">Start Search</span>
+                  </>
+                )}
+          </button>
+        </div>
+          </div>
+          </div>
+        )}
+
+      {/* Results */}
+      {workflowStep === 'results' && results !== null && (
+        <div className="space-y-4 animate-fade-in">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold text-slate-200 tracking-tight mb-1">Search Results</h2>
+              <p className="text-sm text-slate-400">
+                {results.length > 0 ? `${results.length} leads found` : 'No leads found'}
+              </p>
+            </div>
+            {results.length > 0 && (
+              <div className="flex gap-3">
+            <button
+              onClick={() => {
+                    // Direct download of search results
+                    const headers = ['Name', 'First Name', 'Last Name', 'Title', 'Company', 'Location', 'LinkedIn URL', 'Email', 'Phone', 'City', 'State', 'Zip'];
+                    const rows = results.map((lead: any) => {
+                      // Extract name - check camelCase first (API format), then snake_case, then construct
+                      const rawFullName = lead.fullName || lead.name || lead.full_name || 
+                        (lead.firstName || lead.first_name ? 
+                          `${lead.firstName || lead.first_name} ${lead.lastName || lead.last_name || ''}`.trim() : 
+                          '');
+                      // Normalize name to remove credentials (e.g., "Mona Baset, MBA, MA" -> "Mona Baset")
+                      const fullName = normalizeName(rawFullName);
+                      const nameParts = fullName ? fullName.split(' ') : ['', ''];
+                      
+                      // Extract and parse location - check geoRegion first (API format), then location
+                      const locationFull = lead.geoRegion || lead.location || lead.currentLocation || '';
+                      const locationParts = locationFull ? locationFull.split(',').map((s: string) => s.trim()).filter((s: string) => s.length > 0) : [];
+                      // Format: "City, State, Country" or "State, Country"
+                      const city = locationParts.length >= 3 ? locationParts[0] : locationParts.length === 2 ? '' : locationParts[0] || '';
+                      const state = locationParts.length >= 2 ? locationParts[locationParts.length - 2] : '';
+                      const zip = locationParts.length >= 3 ? locationParts[2] : locationParts.length === 2 ? locationParts[1] : '';
+                      
+                      return [
+                        fullName || '',
+                        nameParts[0] || '',
+                        nameParts.slice(1).join(' ') || '',
+                        lead.currentPosition?.title || lead.title || lead.job_title || lead.headline || '',
+                        lead.currentPosition?.companyName || lead.company || lead.company_name || lead.currentCompany || '',
+                        locationFull, // Keep full location for reference
+                        lead.navigationUrl || lead.linkedin_url || lead.profile_url || lead.url || '',
+                        lead.email || '',
+                        lead.phone || lead.phone_number || '',
+                        city,
+                        state,
+                        zip,
+                      ];
+                    });
+                    
+                    const csv = [headers.join(','), ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))].join('\n');
+                    const blob = new Blob([csv], { type: 'text/csv' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `linkedin-leads-${new Date().toISOString().split('T')[0]}.csv`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                  }}
+                  className="group px-4 py-2.5 bg-slate-800/40 backdrop-blur-xl hover:bg-slate-800/70 border-2 border-slate-700/50 hover:border-blue-500/60 rounded-xl text-slate-200 text-sm font-medium transition-all duration-300 flex items-center gap-2 hover:scale-105 hover:shadow-lg hover:shadow-blue-500/20"
+                >
+                  <Download className="w-4 h-4 group-hover:scale-110 group-hover:text-blue-400 transition-transform duration-300" />
+                  Download CSV
+            </button>
+                <button
+                  onClick={addToLeadList}
+                  className="group px-4 py-2.5 bg-slate-800/40 backdrop-blur-xl hover:bg-slate-800/70 border-2 border-slate-700/50 hover:border-blue-500/60 rounded-xl text-slate-200 text-sm font-medium transition-all duration-300 flex items-center gap-2 hover:scale-105 hover:shadow-lg hover:shadow-blue-500/20"
+                >
+                  <ClipboardList className="w-4 h-4 group-hover:scale-110 group-hover:text-blue-400 transition-transform duration-300" />
+                  Add to List
+                </button>
+                <button
+                  onClick={() => setShowLeadList(true)}
+                  className="group px-4 py-2.5 bg-slate-800/40 backdrop-blur-xl hover:bg-slate-800/70 border-2 border-slate-700/50 hover:border-blue-500/60 rounded-xl text-slate-200 text-sm transition-all duration-300 flex items-center gap-2 hover:scale-105 hover:shadow-lg hover:shadow-blue-500/20"
+                >
+                  <Eye className="w-4 h-4 group-hover:scale-110 group-hover:text-blue-400 transition-transform duration-300" />
+                  View List ({leadList.length})
+                </button>
+                <button
+                  onClick={testEnrichmentSingleLead}
+                  disabled={isEnriching || leadList.length === 0}
+                  className="group px-4 py-2.5 bg-blue-600 hover:bg-blue-700 rounded-xl text-white text-sm font-medium transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 hover:scale-105 active:scale-[0.98]"
+                  title={leadList.length === 0 ? "Add at least one lead to your list first" : "Test enrichment with just the first lead (saves API calls)"}
+                >
+                  {isEnriching ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Testing...
+                    </>
+                  ) : (
+                    <>
+                      <Zap className="w-4 h-4 group-hover:scale-110 group-hover:rotate-12 transition-transform duration-300" />
+                      Test Enrichment (1 lead)
+                    </>
+                  )}
+                </button>
+                {leadList.length > 0 && (
+                  <button
+                    onClick={enrichAllLeadsFromList}
+                    disabled={isEnriching}
+                    className="group relative px-5 py-2.5 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 hover:from-blue-600 hover:via-purple-600 hover:to-pink-600 rounded-xl text-white text-sm font-semibold transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-lg shadow-purple-500/30 hover:shadow-xl hover:shadow-purple-500/40 hover:scale-105 active:scale-[0.98] overflow-hidden"
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
+                    {isEnriching ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin relative z-10" />
+                        <span className="relative z-10">Enriching...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Zap className="w-4 h-4 relative z-10 group-hover:scale-110 group-hover:rotate-12 transition-transform duration-300" />
+                        <span className="relative z-10">Enrich All ({leadList.length})</span>
+                      </>
+                    )}
+                  </button>
+                )}
+                <button
+                  onClick={handleEnrichAndScrub}
+                  disabled={isEnriching || isScrubbing}
+                  className="group relative px-5 py-2.5 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 hover:from-blue-600 hover:via-purple-600 hover:to-pink-600 rounded-xl text-white text-sm font-semibold transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 hover:scale-105 active:scale-[0.98] overflow-hidden"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
+                  {isEnriching ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin mr-2 text-white relative z-10" />
+                      <span className="text-white relative z-10">Enriching...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Rocket className="w-4 h-4 mr-2 text-white relative z-10 group-hover:scale-110 group-hover:rotate-12 transition-transform duration-300" />
+                      <span className="text-white relative z-10">Enrich & Scrub</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
+                </div>
+
+          {results.length > 0 ? (
+            <>
+              <div className="overflow-x-auto rounded-xl border border-slate-700/50 bg-slate-800/20 backdrop-blur-xl">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-slate-700/50 bg-slate-800/40">
+                      <th className="px-6 py-4 text-left text-slate-200 font-semibold">Name</th>
+                      <th className="px-6 py-4 text-left text-slate-200 font-semibold">Title</th>
+                      <th className="px-6 py-4 text-left text-slate-200 font-semibold">Company</th>
+                      <th className="px-6 py-4 text-left text-slate-200 font-semibold">City</th>
+                      <th className="px-6 py-4 text-left text-slate-200 font-semibold">State</th>
+                  </tr>
+                </thead>
+                <tbody>
+                    {results.map((result: any, index: number) => {
+                      // Extract name - check camelCase first (API format), then snake_case, then construct
+                      const rawName = result.fullName || result.name || result.full_name || 
+                        (result.firstName || result.first_name ? 
+                          `${result.firstName || result.first_name} ${result.lastName || result.last_name || ''}`.trim() : 
+                          '');
+                      // Normalize name to remove credentials (e.g., "Mona Baset, MBA, MA" -> "Mona Baset")
+                      const name = rawName ? normalizeName(rawName) : 'N/A';
+                      
+                      // Extract title - check nested currentPosition first, then top-level
+                      const title = result.currentPosition?.title || result.title || result.job_title || result.headline || 'N/A';
+                      
+                      // Extract company - check nested currentPosition first, then top-level
+                      const company = result.currentPosition?.companyName || result.company || result.company_name || 'N/A';
+                      
+                      // Extract and parse location - check geoRegion first (API format), then location
+                      const locationFull = result.geoRegion || result.location || '';
+                      const locationParts = locationFull ? locationFull.split(',').map((s: string) => s.trim()).filter((s: string) => s.length > 0) : [];
+                      
+                      // PHASE 1 FIX: Properly parse location (same logic as above)
+                      const countries = ['united states', 'usa', 'canada', 'uk', 'united kingdom', 'australia', 'germany', 'france', 'spain', 'italy', 'india', 'china', 'japan'];
+                      let city = '';
+                      let state = '';
+                      
+                      if (locationParts.length >= 3) {
+                        city = locationParts[0];
+                        state = locationParts[1];
+                      } else if (locationParts.length === 2) {
+                        const secondPart = locationParts[1].toLowerCase();
+                        const isCountry = countries.some(c => secondPart.includes(c));
+                        if (isCountry) {
+                          city = '';
+                          state = locationParts[0];
+                        } else {
+                          city = locationParts[0];
+                          state = locationParts[1];
+                        }
+                      } else if (locationParts.length === 1) {
+                        const singlePart = locationParts[0].toLowerCase();
+                        const isCountry = countries.some(c => singlePart.includes(c));
+                        if (!isCountry) {
+                          state = locationParts[0];
+                        }
+                      }
+                      
+                      // VALIDATION: Never set city to country name
+                      const cityLower = city.toLowerCase();
+                      if (countries.some(c => cityLower.includes(c))) {
+                        city = '';
+                      }
+                      
+                      const cityDisplay = city || 'N/A';
+                      const stateDisplay = state || 'N/A';
+                      
+                      return (
+                        <tr key={index} className="group border-b border-slate-700/30 hover:bg-gradient-to-r hover:from-blue-500/5 hover:via-purple-500/5 hover:to-pink-500/5 transition-all duration-300 hover:border-blue-500/30 cursor-pointer">
+                          <td className="px-6 py-4 text-slate-200 group-hover:text-blue-300 transition-colors duration-300 font-medium">{name}</td>
+                          <td className="px-6 py-4 text-slate-400 group-hover:text-slate-300 transition-colors duration-300">{title}</td>
+                          <td className="px-6 py-4 text-slate-400 group-hover:text-slate-300 transition-colors duration-300">{company}</td>
+                          <td className="px-6 py-4 text-slate-400 group-hover:text-slate-300 transition-colors duration-300">{city}</td>
+                          <td className="px-6 py-4 text-slate-400 group-hover:text-slate-300 transition-colors duration-300">{state}</td>
+                    </tr>
+                      );
+                    })}
+                </tbody>
+              </table>
+            </div>
+            </>
+          ) : (
+            <div className="px-6 py-8 bg-slate-800/60 backdrop-blur-sm rounded-lg border border-slate-700/50 text-center">
+              <p className="text-slate-400">No leads found. Try adjusting your search filters.</p>
+            </div>
+          )}
+          </div>
+        )}
+
+      {/* Enriched Results */}
+      {workflowStep === 'complete' && leadSummaries.length > 0 && (
+        <div className="space-y-4 animate-fade-in">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold text-slate-200 tracking-tight mb-1">Enriched & Scrubbed Leads</h2>
+              <p className="text-sm text-slate-400">{leadSummaries.length} leads ready</p>
+            </div>
+            <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    const csv = leadSummariesToCSV(getSortedSummaries());
+                    const blob = new Blob([csv], { type: 'text/csv' });
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `enriched_leads_${new Date().toISOString().split('T')[0]}.csv`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+                  }}
+                className="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-500 hover:bg-gradient-to-r from-blue-500 to-purple-500-hover rounded-lg text-white text-sm font-medium transition-all flex items-center"
+                >
+                <Download className="w-4 h-4 mr-2" />
+                Export CSV
+                </button>
+              </div>
+            </div>
+            
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-slate-700/50">
+                  <th className="px-4 py-3 text-left text-slate-200 font-medium">Name</th>
+                  <th className="px-4 py-3 text-left text-slate-200 font-medium">Phone</th>
+                  <th className="px-4 py-3 text-left text-slate-200 font-medium">Email</th>
+                  <th className="px-4 py-3 text-left text-slate-200 font-medium">City</th>
+                  <th className="px-4 py-3 text-left text-slate-200 font-medium">State</th>
+                  <th className="px-4 py-3 text-left text-slate-200 font-medium">Income</th>
+                  <th className="px-4 py-3 text-left text-slate-200 font-medium">DNC</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {getSortedSummaries().map((summary, index) => (
+                  <tr key={index} className="border-b border-slate-700/50-subtle hover:bg-minimalist-border/10 transition-colors">
+                    <td className="px-4 py-3 text-slate-200">{summary.name || 'N/A'}</td>
+                    <td className="px-4 py-3 text-slate-200 font-medium">{summary.phone || 'N/A'}</td>
+                    <td className="px-4 py-3 text-slate-400">{summary.email || 'N/A'}</td>
+                    <td className="px-4 py-3 text-slate-400">{summary.city || 'N/A'}</td>
+                    <td className="px-4 py-3 text-slate-400">{summary.state || 'N/A'}</td>
+                    <td className="px-4 py-3 text-slate-200">{summary.income ? `$${Number(summary.income).toLocaleString()}` : 'N/A'}</td>
+                    <td className={`px-4 py-3 font-medium ${
+                      summary.dncStatus === 'YES' ? 'text-red-500' : 
+                      summary.dncStatus === 'NO' ? 'text-blue-400' : 
+                      'text-slate-500'
+                      }`}>
+                        {summary.dncStatus || 'UNKNOWN'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+      {error && (
+        <div className="px-6 py-4 bg-red-900/20 backdrop-blur-sm border border-red-500/50 rounded-xl shadow-xl animate-fade-in">
+          <p className="text-red-400 font-medium">Error: {error}</p>
+          </div>
+        )}
+
+      {showLeadList && (
+        <LeadListViewer
+          leads={leadList}
+          onClose={() => setShowLeadList(false)}
+          onRemoveLead={removeFromLeadList}
+          onClearList={clearLeadList}
+          onExport={exportLeadList}
+          onEnrichList={enrichAllLeadsFromList}
+        />
+      )}
+      </div>
+    </div>
+  );
+}

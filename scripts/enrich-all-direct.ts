@@ -1,0 +1,227 @@
+/**
+ * Enrich all leads directly (bypasses API, faster)
+ * Loads leads from saved files and enriches them directly
+ */
+
+import * as fs from 'fs';
+import * as path from 'path';
+import { enrichData, EnrichmentProgress } from '../utils/enrichData';
+import { extractLeadSummary } from '../utils/extractLeadSummary';
+import type { EnrichedRow } from '../utils/enrichData';
+import type { LeadSummary } from '../utils/extractLeadSummary';
+
+/**
+ * Loads leads from saved API results files
+ */
+function loadLeadsFromFiles(): any[] {
+  const resultsDir = path.join(process.cwd(), 'data', 'api-results');
+  const allLeads: any[] = [];
+  
+  if (!fs.existsSync(resultsDir)) {
+    console.log('📁 No api-results directory found');
+    return [];
+  }
+  
+  const files = fs.readdirSync(resultsDir).filter(f => f.endsWith('.json'));
+  console.log(`📁 Found ${files.length} result files`);
+  
+  for (const file of files) {
+    try {
+      const filePath = path.join(resultsDir, file);
+      const content = fs.readFileSync(filePath, 'utf-8');
+      const data = JSON.parse(content);
+      
+      // Handle various response structures
+      let leads: any[] = [];
+      
+      if (data.processedResults && Array.isArray(data.processedResults)) {
+        leads = data.processedResults;
+      } else if (data.rawResponse?.response?.data && Array.isArray(data.rawResponse.response.data)) {
+        leads = data.rawResponse.response.data;
+      } else if (data.data && Array.isArray(data.data)) {
+        leads = data.data;
+      } else if (data.response && data.response.data && Array.isArray(data.response.data)) {
+        leads = data.response.data;
+      } else if (data.results && Array.isArray(data.results)) {
+        leads = data.results;
+      } else if (data.leads && Array.isArray(data.leads)) {
+        leads = data.leads;
+      } else if (Array.isArray(data)) {
+        leads = data;
+      }
+      
+      console.log(`  📄 ${file}: ${leads.length} leads`);
+      allLeads.push(...leads);
+    } catch (error) {
+      console.error(`❌ Error reading ${file}:`, error);
+    }
+  }
+  
+  return allLeads;
+}
+
+/**
+ * Normalizes a name by removing credentials
+ */
+function normalizeName(name: string): string {
+  if (!name) return '';
+  return name.replace(/,\s*(MBA|MD|PhD|CPA|JD|DDS|DMD|RN|LPN|BSN|MSN|DNP|PA|NP|DO|DC|OD|DVM|PharmD|RPh|CFA|CFP|CPA|PMP|SHRM-CP|PHR|SPHR|CCNA|PMP|CSM|PMP|ITIL|Six Sigma|Lean|Agile|SAFe|Scrum Master|Product Owner|Project Manager).*$/i, '').trim();
+}
+
+async function main() {
+  console.log('🚀 Starting DIRECT enrichment of all leads...\n');
+  
+  // Load leads from files
+  const leads = loadLeadsFromFiles();
+  
+  if (leads.length === 0) {
+    console.log('❌ No leads found to enrich');
+    console.log('💡 Make sure you have saved leads in data/api-results/');
+    process.exit(1);
+  }
+  
+  console.log(`\n✅ Found ${leads.length} leads to enrich\n`);
+  
+  // Convert to ParsedData format
+  const headers = [
+    'Name', 'Title', 'Company', 'Location', 'LinkedIn URL', 
+    'Email', 'Phone', 'First Name', 'Last Name', 'City', 'State', 'Zip', 'Search Filter'
+  ];
+  
+  const rows = leads.map((lead: any) => {
+    const rawFullName = lead.fullName || lead.name || (lead.firstName && lead.lastName ? `${lead.firstName} ${lead.lastName}` : '');
+    const fullName = normalizeName(rawFullName);
+    const nameParts = fullName ? fullName.split(' ') : ['', ''];
+    
+    const locationFull = lead.geoRegion || lead.location || lead.currentPosition?.companyUrnResolutionResult?.location || '';
+    const locationParts = locationFull ? locationFull.split(',').map((s: string) => s.trim()).filter((s: string) => s.length > 0) : [];
+    let city = '';
+    let state = '';
+    
+    if (locationParts.length >= 3) {
+      city = locationParts[0];
+      state = locationParts[1];
+    } else if (locationParts.length === 2) {
+      if (locationParts[1].toLowerCase().includes('united states')) {
+        state = locationParts[0];
+      } else {
+        city = locationParts[0];
+        state = locationParts[1];
+      }
+    } else if (locationParts.length === 1 && !locationParts[0].toLowerCase().includes('united states')) {
+      state = locationParts[0];
+    }
+    
+    return {
+      'Name': fullName || '',
+      'Title': lead.currentPosition?.title || lead.title || lead.job_title || lead.headline || '',
+      'Company': lead.currentPosition?.companyName || lead.company || lead.company_name || lead.currentCompany || '',
+      'Location': locationFull,
+      'LinkedIn URL': lead.navigationUrl || lead.linkedin_url || lead.profile_url || lead.url || '',
+      'Email': lead.email || '',
+      'Phone': lead.phone || lead.phone_number || '',
+      'First Name': nameParts[0] || '',
+      'Last Name': nameParts.slice(1).join(' ') || '',
+      'City': city,
+      'State': state,
+      'Zip': '',
+      'Search Filter': lead._searchParams?.keywords || 'Bulk Enrichment',
+    };
+  });
+  
+  const parsedData = {
+    headers,
+    rows,
+    rowCount: rows.length,
+    columnCount: headers.length,
+  };
+  
+  console.log(`📊 Prepared ${rows.length} rows for enrichment\n`);
+  console.log('⏳ Starting enrichment process...\n');
+  
+  const startTime = Date.now();
+  let lastProgressTime = Date.now();
+  let currentLead = '';
+  
+  try {
+    const enriched = await enrichData(parsedData, (current, total) => {
+      const percent = Math.round((current / total) * 100);
+      const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+      const rate = current / ((Date.now() - startTime) / 1000);
+      const remaining = Math.ceil((total - current) / rate);
+      process.stdout.write(`\r📈 Progress: ${current}/${total} (${percent}%) - ${elapsed}s elapsed - ~${remaining}s remaining`);
+    }, (detailedProgress: EnrichmentProgress) => {
+      // Real-time detailed progress
+      if (detailedProgress.leadName !== currentLead) {
+        currentLead = detailedProgress.leadName || '';
+        const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+        console.log(`\n✨ [${detailedProgress.current}/${detailedProgress.total}] ${detailedProgress.leadName} - ${detailedProgress.step} (${elapsed}s)`);
+      }
+      
+      if (detailedProgress.stepDetails) {
+        const details = [];
+        if (detailedProgress.stepDetails.phone) details.push(`Phone: ${detailedProgress.stepDetails.phone}`);
+        if (detailedProgress.stepDetails.email) details.push(`Email: ${detailedProgress.stepDetails.email}`);
+        if (detailedProgress.stepDetails.zipCode) details.push(`ZIP: ${detailedProgress.stepDetails.zipCode}`);
+        if (detailedProgress.stepDetails.lineType) details.push(`LineType: ${detailedProgress.stepDetails.lineType}`);
+        if (detailedProgress.stepDetails.carrier) details.push(`Carrier: ${detailedProgress.stepDetails.carrier}`);
+        if (detailedProgress.stepDetails.age) details.push(`Age: ${detailedProgress.stepDetails.age}`);
+        if (details.length > 0) {
+          console.log(`   📋 ${details.join(' | ')}`);
+        }
+      }
+      
+      if (detailedProgress.errors && detailedProgress.errors.length > 0) {
+        console.warn(`   ⚠️  Errors: ${detailedProgress.errors.join(', ')}`);
+      }
+    });
+    
+    console.log(`\n\n✅ Enrichment complete!`);
+    console.log(`⏱️  Total time: ${((Date.now() - startTime) / 1000).toFixed(1)}s`);
+    
+    // Extract summaries
+    const summaries: LeadSummary[] = enriched.rows.map((row: EnrichedRow) => 
+      extractLeadSummary(row, row._enriched)
+    );
+    
+    // Save results
+    const outputPath = path.join(process.cwd(), 'data', 'enriched-all-leads-direct.json');
+    fs.writeFileSync(outputPath, JSON.stringify({
+      metadata: {
+        enrichedAt: new Date().toISOString(),
+        totalLeads: summaries.length,
+        enrichmentTime: Date.now() - startTime,
+      },
+      leads: summaries,
+      enrichedRows: enriched.rows,
+    }, null, 2));
+    
+    console.log(`\n💾 Saved results to: ${outputPath}`);
+    console.log(`\n📊 Summary:`);
+    console.log(`  Total leads: ${summaries.length}`);
+    console.log(`  With phone: ${summaries.filter(s => s.phone && s.phone !== 'EMPTY').length}`);
+    console.log(`  With email: ${summaries.filter(s => s.email && s.email !== 'EMPTY').length}`);
+    console.log(`  With zipcode: ${summaries.filter(s => s.zipcode && s.zipcode !== 'EMPTY').length}`);
+    console.log(`  With age: ${summaries.filter(s => s.age && s.age !== 'EMPTY').length}`);
+    console.log(`  With lineType: ${summaries.filter(s => s.lineType && s.lineType !== 'EMPTY').length}`);
+    console.log(`  With carrier: ${summaries.filter(s => s.carrier && s.carrier !== 'EMPTY').length}`);
+    
+  } catch (error) {
+    console.error('\n❌ Enrichment failed:', error);
+    if (error instanceof Error) {
+      console.error('Error message:', error.message);
+      console.error('Stack:', error.stack);
+    }
+    process.exit(1);
+  }
+}
+
+main().catch((error) => {
+  console.error('\n❌ Fatal error:', error);
+  if (error instanceof Error) {
+    console.error('Error message:', error.message);
+    console.error('Stack:', error.stack);
+  }
+  process.exit(1);
+});
+

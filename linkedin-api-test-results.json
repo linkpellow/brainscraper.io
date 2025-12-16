@@ -1,0 +1,1010 @@
+[
+  {
+    "api": "LinkedIn Data API (rockapis) - By Username",
+    "endpoint": "/api/linkedin-profile-by-username?username=adamselipsky",
+    "method": "GET",
+    "request": {},
+    "status": 200,
+    "response": {
+      "success": true,
+      "data": {
+        "success": false,
+        "message": "We are no longer providing this service at this time. If you need assistance, please contact support@professionalnetworkdata.com",
+        "data": null
+      },
+      "locationInfo": null
+    },
+    "hasLocationData": false,
+    "locationFields": [],
+    "hasGeoId": false,
+    "responseStructure": [
+      "success",
+      "data",
+      "data.success",
+      "data.message",
+      "data.data",
+      "locationInfo"
+    ]
+  },
+  {
+    "api": "LinkedIn Sales Navigator - Search People",
+    "endpoint": "/api/linkedin-sales-navigator",
+    "method": "POST",
+    "request": {
+      "endpoint": "premium_search_person",
+      "location": "Maryland",
+      "page": 1,
+      "limit": 3
+    },
+    "status": 200,
+    "response": {
+      "success": true,
+      "data": {
+        "success": true,
+        "status": 200,
+        "response": {
+          "data": [
+            {
+              "firstName": "Sérgio",
+              "fullName": "Sérgio Seiva",
+              "lastName": "Seiva",
+              "geoRegion": "Guarulhos, São Paulo, Brazil",
+              "profilePictureDisplayImage": "https://media.licdn.com/dms/image/v2/D4D03AQGQ1cz_gADPmA/profile-displayphoto-shrink_100_100/profile-displayphoto-shrink_100_100/0/1706666015303?e=1766016000&v=beta&t=wnBbZT3vhqdibiU-PXSwkYm-QOgtMTw--mMDMp9wtZ0",
+              "summary": "QUALIFICATIONS\n.Since 1995 in IT, passing by several segments and business models, currently at Finance (Bank).\n.20 years interacting directly with Data Center and Projects in Operation/Production with the areas of Governance, Capacity,\nSAP, ITSM, Database, Windows, Unix, Web, Network, Security, Monitoring, Storage, Backup and BI.\n.Network and workstation administrator, working with Finance, Sales, Administrative and Human Resource systems.\n.Management of infrastructure and application projects focused on Data Centers (internal/external), with preparation of\nschedules, due diligence, transition, transformation, migrations, solution designs, implementations and others.\n.Management of financial control, people and contracts (internal / external).\n.Complete ITSM management, covering the components of Incidents, Problems, Changes, Configurations, Service Level,\nService Requests, Knowledge and IT Assets, following the best practices of the ITIL framework.\n.Management of the banking financial environment infrastructure, with a dedicated team working together with third parties\nsuch as IT providers (outsourcing), also involving other suppliers and partners.\n.Leadership and excellent interpersonal skills, with different customers in different ethnicities.\n.Trained training instructor, providing training for ERP clients in strategic planning.\n.Effective on training of the team and deliverable of projects by date and different scopes.\n.Easy on creation of manuals and procedures to installations and/or defaults adopted.\n.Availability of time, travel and change of home.\n\nEDUCATIONAL BACKGROUND\n.MBA .Digital Business .USP/Esalq\n.College .Network and Internet Management .Uninove\n.College .Computer Science .FASP\n.Technical School .Technical Data Processing .Eniac\n.College .Data Processing .Uni Santana\n \nLANGUAGE\n.English advanced with excellent communication, on writing, reading and listening.\n.Spanish, good listening and speaking communication.\n\nCOURSES / TRAINING\n.Change, Problem e Incident Management \n.Development of analyst training instructors (Inter & Ação)\n.Certification in Leadership, Ability to learn and Resilience (Malala, Karnal and Flávio)\n.Scrum! Agility in project and product management\n.VMware vSphere: / VMware NSX\n.Azure DevOps + GitHub, Docker.\n\nCERTIFICATIONS\nAWS Certified Cloud Practitioner\n.Microsoft Azure 70-533-: Implementing Microsoft Azure Infrastructure Solutions\n.ITIL Foundation certificate in IT Service Management\n.Linux LPIC-1 (101/102)\n.SUSE Certified Linux Administrator (Enterprise 11)",
+              "profileUrn": "ACwAAAHvpBwBUq95EWjviNcLaz0L4jtEVxTXKDE",
+              "navigationUrl": "https://www.linkedin.com/in/ACwAAAHvpBwBUq95EWjviNcLaz0L4jtEVxTXKDE",
+              "openLink": true
+            },
+            {
+              "firstName": "Shyam",
+              "fullName": "Shyam Vaidhyanathan",
+              "lastName": "Vaidhyanathan",
+              "geoRegion": "Atlanta Metropolitan Area",
+              "currentPosition": {
+                "tenureAtPosition": {
+                  "numMonths": 4
+                },
+                "companyName": "Shyam Vai Creations",
+                "description": "- Fractional CTO to AI-Powered startups trying to achieve a Product-Market Fit.\n- Consulting in Autonomous Transformation and AI Enablement.\n- Development of AI Strategy.\n- AI Execution - expertise includes generative AI / LLM tools/ Agentic frameworks.",
+                "title": "Managing Principal",
+                "companyId": "104873459",
+                "companyUrnResolutionResult": {
+                  "name": "Shyam Vai Creations",
+                  "companyPictureDisplayImage": "https://media.licdn.com/dms/image/v2/D4E0BAQF8VMi2_o_5pg/company-logo_100_100/B4EZgt1EV4HEAU-/0/1753115543449/shyam_vai_creations_logo?e=1766016000&v=beta&t=XLaytrprLp6pNDlEb892MlBX62j3omSL319PTk5j1OM",
+                  "industry": "Technology, Information and Internet",
+                  "location": "Flowery Branch, Georgia, United States"
+                },
+                "current": true,
+                "tenureAtCompany": {
+                  "numMonths": 4
+                },
+                "startedOn": {
+                  "month": 8,
+                  "year": 2025
+                }
+              },
+              "profilePictureDisplayImage": "https://media.licdn.com/dms/image/v2/D4E03AQHCYKF0mzqM-w/profile-displayphoto-scale_100_100/B4EZm2O6N.IwAc-/0/1759698987682?e=1766016000&v=beta&t=BKhvHsYk9QY_Q081cAozuaK7B6QVuXZii1ZfUXCTgJQ",
+              "summary": "Innovation is the catalyst that collapses the boundary between the future and now.\n\nI am an AI / Software Engineering leader with a builder’s mindset with experience in startups, scale-ups and large enterprises. I’ve built and led high performance software engineering and machine learning teams creating new products/lines of businesses as well as in 'turn-around situations'.  My experience has spanned both B2B and direct to consumer segments building products requiring distributed computing at scale.\n\n\nMy primary super power has been ‘execution’ often in complicated / ambiguous situations. \n\n\nProud Career Moments \n➤ Led engineering for Kaiser's Remote Patient Monitoring programs including Mobile App, Web Apps, Clinical Data Platform and EHR Integrations improving patient engagement by 30%.\n\n➤ Led development of an AI-powered symptom triage and virtual urgent patient care platform improving patient care 24/7 and generating $30M+ annual cost savings.\n\n➤ Led development and launch of the COVID-19 vaccine scheduling system used in 100M+ vaccinations at Kaiser Permanente - we saved many lives !!\n\n➤  Built a hyper-personalization mar-tech platform with deep learning and next best action for financial services (Asset Management) industry at Fractal Analytics \n\n➤ Built Cintelligence™  a petabyte-scale B2B marketing insights platform at this early stage startup (0->1) that drove growth and competitive advantage.\n\n\nLet's Connect \nCurrently exploring ways to apply my experience in environments that value thoughtful leadership, pragmatic innovation, and purpose-driven technology. Always open to connecting with anyone who shares a passion for building what matters.   Let’s connect here or at shyam.vai@gmail.com",
+              "profileUrn": "ACwAAAAg8yoBRAXCP4SHG55EU7mZncXIt_8QMjs",
+              "navigationUrl": "https://www.linkedin.com/in/ACwAAAAg8yoBRAXCP4SHG55EU7mZncXIt_8QMjs",
+              "openLink": false
+            },
+            {
+              "firstName": "Keith",
+              "fullName": "Keith Tode, MBA",
+              "lastName": "Tode, MBA",
+              "geoRegion": "Greater Boston",
+              "currentPosition": {
+                "tenureAtPosition": {
+                  "numYears": 2,
+                  "numMonths": 5
+                },
+                "companyName": "KRT Global Advisory, LLC",
+                "description": "Provide strategic consulting and fractional C-Suite Leadership to life sciences organizations, guiding market entry, commercial strategy, business development and organizational restructuring.\n\n•\tFractional C-Suite executive for EU-based FSP leading North American market entry and commercialization of an AI-powered Risk Based Quality Management (RBQM) platform. \n\n•\tRestructured the global sales organization and commercial operations of an Asian based FSP, including territory alignment, compensation design and commercial analytics resulting in 17% revenue growth.\n\n•\tAdvised mid-market CRO on clinical AI, regulatory and quality service offerings to better position the brand to capture emerging digital health opportunities in North America and Europe.\n\n•\tEvaluated and recommended methodologies to integrate AI/ML into Life Sciences Clinical, Regulatory & Quality Ops for EU based Functional Service Provider targeting Phase I-IV clinical Studies for middle market CRO based in Europe.\n\n•\tDelivered ad hoc time & materials commercial consulting for CNS focused sponsor developing an AI/ML based CTMS",
+                "title": "Founder & CEO",
+                "companyUrnResolutionResult": {},
+                "current": true,
+                "tenureAtCompany": {
+                  "numYears": 2,
+                  "numMonths": 5
+                },
+                "startedOn": {
+                  "month": 7,
+                  "year": 2023
+                }
+              },
+              "profilePictureDisplayImage": "https://media.licdn.com/dms/image/v2/D5603AQE_Vx3FBlcHSQ/profile-displayphoto-shrink_100_100/profile-displayphoto-shrink_100_100/0/1697579073709?e=1766016000&v=beta&t=4adDX9xF8I_zldAZ7UtbgsJlyP1oer1D4qLi2mACObs",
+              "summary": "Two-Time Chief Commercial Officer with global experience across pharmaceuticals, biotechnology, medical device, HealthTech, CROs and FSPs.  He has generated over $500m+ in revenue, managed P&Ls more than $75m+, delivered years of 200%+ growth and commercialized FDA Breakthrough AI/ML technologies.  Builds, restructures and manages multinational teams, drives strategic partnerships, and integrates innovation into clinical, regulatory, quality and commercial operations.\n\nSummary of Qualifications\n\n• Executive Leadership: Two-time CCO with multiple VP roles and Global Head of   International Operations experience.  Extensive engagement with Boards, Private Equity, Venture Capital, FDA, international regulators and C-Suite stakeholders across Life Sciences and HealthTech.\n\n• P&L & Organizational Leadership: Full accountability for $20-$75m+ business units, with direct oversight of multinational teams up to 100.  Proven record of restructuring organizations, modernizing operating strategies and improving pipeline growth, win rates and operational efficiencies.\n\n• Global Expansion & Partnerships: Launched wholly owned subsidiaries in eight (8) APAC countries and generated revenue across 80+ markets.  Sourced, negotiated and executed $10m+ partnerships with Top 100 Pharma & Device sponsors, site networks and hospital systems in the United States and overseas.\n\n• Financial & Strategic Acumen: MBA in International Finance with expertise in GTM strategy, M&A due diligence, licensing negotiations and KPI/Metric development across Salesforce and HubSpot Platforms.",
+              "profileUrn": "ACwAAABTO44BvMVkJsaacvPhMGV1oANDdZDDKUc",
+              "navigationUrl": "https://www.linkedin.com/in/ACwAAABTO44BvMVkJsaacvPhMGV1oANDdZDDKUc",
+              "openLink": true
+            },
+            {
+              "firstName": "Sukhen",
+              "fullName": "Sukhen Tiwari",
+              "lastName": "Tiwari",
+              "geoRegion": "United States",
+              "currentPosition": {
+                "tenureAtPosition": {
+                  "numYears": 1,
+                  "numMonths": 6
+                },
+                "companyName": "Astir IT Solutions, Inc.",
+                "description": "• Designed and managed Azure infrastructure, including IaaS, PaaS, and SaaS solutions, enhancing operational efficiency.  \n• Implemented Infrastructure as Code (IaC) using Terraform and Bicep, streamlining provisioning and governance processes.  \n• Led the development of CI/CD pipelines with Azure DevOps, improving deployment speed and reliability.\nArchitected and deployed AI/ML data pipelines integrating Azure Data Lake, Databricks, and Azure Synapse for large-scale analytics.\nDeveloped and optimized data models and governance frameworks ensuring data quality, lineage, and compliance.\nAutomated model training and deployment using Azure DevOps and CI/CD pipelines for ML workloads.\nCollaborated cross-functionally to translate business objectives into production-grade machine learning solutions with measurable outcomes.\nLed implementation, configuration, and testing of ServiceNow Vulnerability Response (VR), ensuring alignment with organizational security policies and regulatory requirements.\nCollaborated with Security, IT Operations, and business stakeholders to gather, analyze, and validate requirements, translating them into workflows, SLAs, and automation strategies.\nDefined and validated end-to-end VR workflows, including vulnerability identification, triage, remediation tracking, and closure validation, ensuring accurate data integrity and workflow efficiency.\nCoordinated integration of ServiceNow VR with vulnerability scanning tools (Tenable, Qualys), ensuring seamless ticket creation, enrichment, auto-assignment, and remediation validation.\nDeveloped and executed manual and automated test scripts, improving test coverage and reducing defect leakage in vulnerability processes.\nBuilt and maintained dashboards and reports for leadership and operational teams, tracking key metrics such as SLA compliance, vulnerability aging, time to remediate.\nSupported post-implementation operations, troubleshooting issues, implementing system enhancements, and optimizing VR",
+                "title": "Lead Engineer/Cloud Consultant/Architect/Observability/Vulnerability(Client:Kirkland & Ellis)",
+                "companyId": "225796",
+                "companyUrnResolutionResult": {
+                  "name": "Astir IT Solutions, Inc.",
+                  "companyPictureDisplayImage": "https://media.licdn.com/dms/image/v2/C4E0BAQGlyPJVzzriUg/company-logo_200_200/company-logo_200_200/0/1631346933303?e=1766016000&v=beta&t=qgjKu3M0jdqI7mlPUk7PRkqBY9UEmogeveTcXJxA138",
+                  "industry": "Information Technology & Services",
+                  "location": "South Plainfield, New Jersey, United States"
+                },
+                "current": true,
+                "tenureAtCompany": {
+                  "numYears": 1,
+                  "numMonths": 6
+                },
+                "startedOn": {
+                  "month": 6,
+                  "year": 2024
+                }
+              },
+              "profilePictureDisplayImage": "https://media.licdn.com/dms/image/v2/C5603AQGcWJGVGpVidQ/profile-displayphoto-shrink_100_100/profile-displayphoto-shrink_100_100/0/1603671866635?e=1766016000&v=beta&t=NfzUhzmfyaPb3EE70xUSYWxfKUTZkk94eCjRihjdH24",
+              "summary": "As a Cloud Consultant at Astir IT Solutions with many years of experience, I specialize in end-to-end observability architecture and performance optimization. I have hands-on expertise in designing and implementing monitoring solutions using tools such as Dynatrace, Splunk, and Elastic Stack (ELK) for logs, metrics, and distributed tracing. My work focuses on leveraging Infrastructure as Code (IaC) tools like Terraform to automate provisioning and configuration across leading cloud platforms such as AWS, Azure.\nMy role emphasizes enabling efficient CI/CD pipelines using GitHub Actions and GitHub Workflows, streamlining deployment processes. I am committed to helping organizations enhance their cloud-native environments with scalable, secure, and automated solutions to achieve operational efficiency and reliability.\nPlatforms & Environments: Windows / Linux, AWS/Azure \nVersion Control / DevOps: Git, Jenkins CI/CD\nPlatform Engineer with strong experience designing, automating, and supporting Azure-based data and application platforms. \nSkilled in building secure, scalable cloud environments using Azure Data Factory, Azure Key Vault, Databricks, Terraform, and Ansible. \nProven ability to automate operational workflows using PowerShell, Bash, and ensure high availability, reliability, and compliance across Windows and Red Hat Linux systems. \nExperienced in containerization (Docker, Kubernetes, OpenShift), cloud security protocols (OAuth, SCIM, TLS), and end-to-end CI/CD practices. \nPlatform Engineer with extensive experience supporting Azure cloud services, automating infrastructure, and optimizing data and application platforms. \nStrong skills in Key Vault, Terraform, Ansible, scripting (PowerShell, Bash). \nCloud Platform Engineer specializing in Azure automation, secure data platforms, and large-scale infrastructure reliability. \nExpert in Terraform Key Vault, and multi-OS administration. \nDevOps, IaC, and container technologies.\nSenior Cloud Architect & DevSecOps Engineer with 10+ years of experience designing secure, scalable, and automated platforms across Azure and AWS.\nStrong expertise in DevSecOps, integrating security into CI/CD pipelines using JFrog SonarQube,  SAST/DAST\nHands-on experience with containerization and orchestration using Docker, containers, Kubernetes\nExpert in IaC and automation using Terraform, enabling consistent, scalable, and secure cloud infrastructure deployments.\nProven success in enterprise CI/CD engineering, release management, and modernizing application delivery for mission-critical systems.",
+              "profileUrn": "ACwAAAM8mWABhU4jxkT1-R1c1TfA1o6UJQGRR6M",
+              "navigationUrl": "https://www.linkedin.com/in/ACwAAAM8mWABhU4jxkT1-R1c1TfA1o6UJQGRR6M",
+              "openLink": true
+            },
+            {
+              "firstName": "Gil",
+              "fullName": "Gil Smith",
+              "lastName": "Smith",
+              "geoRegion": "Washington, District of Columbia, United States",
+              "currentPosition": {
+                "tenureAtPosition": {
+                  "numYears": 4,
+                  "numMonths": 1
+                },
+                "companyName": "Philips",
+                "description": "Leads Government Health Program development for Philips largest global customers, the Veterans Affairs, DOD Health Affairs. I and my team build the future of Government for Philips bringing the voice of all of our customers into the overall strategy of the company. I'm excited to positively impact the lives of millions affiliated with our military services, and those in need of health programs in underserved areas across the nation through our State and Local Programs. \n\nI'm also fortunate to be invited to apply my overall government expertise and experience in molding not just the strategic future for Philips, but impacting the day-to-day operations of how Philips works with government to provide outstanding services and products.",
+                "title": "Sr. Director (SVP Equiv)- Government Health System Development North America",
+                "companyId": "1090",
+                "companyUrnResolutionResult": {
+                  "name": "Philips",
+                  "companyPictureDisplayImage": "https://media.licdn.com/dms/image/v2/D4E0BAQFpB8fd3m9G0w/company-logo_200_200/company-logo_200_200/0/1737552865359/philips_logo?e=1766016000&v=beta&t=DzbMU8W4VYHIcOQbH2vMsOY9JPyNP5Fs8tthEYf8mUI",
+                  "industry": "Hospitals and Health Care",
+                  "location": "Amsterdam, North Holland, Netherlands"
+                },
+                "current": true,
+                "tenureAtCompany": {
+                  "numYears": 4,
+                  "numMonths": 1
+                },
+                "startedOn": {
+                  "month": 11,
+                  "year": 2021
+                }
+              },
+              "profilePictureDisplayImage": "https://media.licdn.com/dms/image/v2/C4E03AQGIwqbc9WaH8g/profile-displayphoto-shrink_100_100/profile-displayphoto-shrink_100_100/0/1659120839270?e=1766016000&v=beta&t=ZHDAXdDOBpqaVPI4beZTh8pCoH45F519cjRMUQNLeEg",
+              "summary": "I am a strategic leader with deep roots in both public service and private enterprise, known for transforming organizations, building high-performance teams, and delivering mission-critical results. My brand is defined by operational excellence, government contracting expertise, and a relentless commitment to ethical, impactful leadership. Whether driving federal initiatives, leading multimillion-dollar business units, or guiding startups to profitability, I bring clarity, discipline, and trust to every mission. \n\n******* ------------------------------------------------------------------------------------------- *******\n Innovative leadership is my passion, and my track record includes: the first Public Private Partnership between private and military medicine, reengineering medical training across DOD, develop new fleet management protocols for a global volunteer program, managing a travel program for the world's top executive, driving \"hockey stick\" growth in revenue and profit for an emerging mid-tier. Recasting a banking platform for a Billion Dollar Global firm. Launching one of Government's first commercial shared services centers. Leading the establishment of focused government operations and programs for a global healthcare enterprise. \n\nSpecialties: leading and developing growth strategies, turn-around management, delivery model innovation, building sales programs, business process improvement, inspiring executive leaders to success, and developing positive corporate cultures. Public speaker and motivator.\n\nHighest Clearance Held: Top Secret (SCI) (US Government), Public Trust (Japan)\n\nPhilosophy: When in need of inner peace I fall to Reggae. For without Reggae music I would have never known the teachings of peace, love and respect that changed my life in a painful time of need.\n\nBritish By lineage: 19th Great Grandson of Sir Henry Pomeroy, King Henry I household constable named in the Constitutio Domus Regis",
+              "profileUrn": "ACwAAAEoyJkBJnuJYYPnLKt_KY2RyNbPNOmbscU",
+              "navigationUrl": "https://www.linkedin.com/in/ACwAAAEoyJkBJnuJYYPnLKt_KY2RyNbPNOmbscU",
+              "openLink": true
+            },
+            {
+              "firstName": "Mani ",
+              "fullName": "Mani Talan Dhama, Assoc CIPD Level 7, (Ex - Barclays)",
+              "lastName": "Talan Dhama, Assoc CIPD Level 7, (Ex - Barclays) ",
+              "geoRegion": "Dubai, United Arab Emirates",
+              "currentPosition": {
+                "tenureAtPosition": {
+                  "numMonths": 8
+                },
+                "companyName": "LNKD",
+                "description": "As the Founder, Director, and Head of Talent Innovation at LNKD, I lead the vision and execution of a boutique talent platform dedicated to the fast-evolving Web3 ecosystem.\n\nAt LNKD, I work hands-on with pioneering blockchain startups, DeFi protocols, NFT platforms, and DAOs—delivering highly curated, end-to-end talent solutions across the globe. From ultra-niche roles like token economists, cryptographers, and protocol engineers to broader functions in growth, product, and operations—I specialize in building complete, high-performing teams that are ready to scale.\n\nKey areas of impact:\n\nGlobal headhunting for niche and hard-to-fill Web3 roles across technical, executive, and creative verticals\n\nPartnering directly with founders and leadership teams to define hiring strategies that align with product roadmaps and token lifecycles\n\nCurating and growing a private network of elite Web3 talent—developers, community leads, DAOs contributors, product thinkers, and Web3-native marketers\n\nGuiding Web3 companies through full-spectrum recruitment, from stealth to scaling phases\n\nChampioning innovation in hiring, with a focus on intelligent matchmaking, decentralized hiring models, and talent branding\n\nI’m deeply committed to empowering the people behind Web3 innovation—linking visionary companies with exceptional talent to shape the decentralized future. At LNKD, we’re not just matching roles—we’re building the human layer of Web3.",
+                "title": "Founder | Director | Head of Talent Innovation specilising Web3 , Blockchain, Crypto",
+                "companyId": "107038421",
+                "companyUrnResolutionResult": {
+                  "name": "LNKD",
+                  "companyPictureDisplayImage": "https://media.licdn.com/dms/image/v2/D4D0BAQHbyQ8-RzO-MA/company-logo_100_100/B4DZZnv278GwAU-/0/1745497323093?e=1766016000&v=beta&t=x9FMgBAuF-wN5Ac5c0t3Ho8SffoaijNFu_wF6zboLhk",
+                  "industry": "Staffing and Recruiting",
+                  "location": "Dubai, Dubai, United Arab Emirates"
+                },
+                "current": true,
+                "tenureAtCompany": {
+                  "numMonths": 8
+                },
+                "startedOn": {
+                  "month": 4,
+                  "year": 2025
+                }
+              },
+              "profilePictureDisplayImage": "https://media.licdn.com/dms/image/v2/D4D03AQGokUA16AUdcQ/profile-displayphoto-scale_200_200/B4DZpPlUQUGwAY-/0/1762271774408?e=1766016000&v=beta&t=Dm6jIeY1OcqaeuTLqbSLFFKeQHoScRr25F7C1Yk98X4",
+              "summary": "With over three years at the forefront of HR and talent management in the rapidly evolving Crypto, Fintech, and Blockchain sectors, my role at VAI & group of companies has been instrumental in shaping robust Talent and people  management strategies. Our team has achieved significant milestones in performance management, aligning with the dynamic needs of the Middle East market. At Creed&Bear, VAI, LMNTO  and JC Management, the experience has further honed my expertise, allowing me to drive initiatives that resonate with the region's cultural context and technological advancements. My mission is to foster an environment that not only attracts but also nurtures top-tier talent, efficient HR operational processes, ensuring that the values and goals of our organization are met with unwavering commitment and innovative approaches.",
+              "profileUrn": "ACwAAArdYrIBgzuz6FtMXJEFEgUcTzDVPmx8NFs",
+              "navigationUrl": "https://www.linkedin.com/in/ACwAAArdYrIBgzuz6FtMXJEFEgUcTzDVPmx8NFs",
+              "openLink": true
+            },
+            {
+              "firstName": "Dr. Kamran",
+              "fullName": "Dr. Kamran H.",
+              "lastName": "H.",
+              "geoRegion": "Lahore, Punjab, Pakistan",
+              "currentPosition": {
+                "tenureAtPosition": {
+                  "numMonths": 11
+                },
+                "companyName": "Daniel Smart Manufacturing Inc",
+                "description": "Chief Human Resources Officer (CHRO)\nDaniel Smart Manufacturing | Lahore, Pakistan | January 2025 - Present\nTextile, Apparel, Retail, E-commerce & Digital IT Services | Integrated Manufacturing & Technology Group\n• Report to Board of Directors leading enterprise-wide HR transformation for integrated manufacturing and technology\norganization spanning textile production, apparel manufacturing, retail operations, e-commerce, and digital IT services\n• Spearhead complete HR department setup from ground zero including organizational structure design, job description\ndevelopment with KPIs, compensation frameworks, and policy establishment\n• Implement 360-degree performance management system with cascading objectives, continuous feedback mechanisms, and\ndevelopment planning for all organizational levels\n• Design comprehensive training and development programs addressing technical skills, leadership capabilities, and digital\ntransformation competencies across diverse workforce\n• Achieved 65% improvement in employee retention rate within first year through strategic compensation restructuring, career\ndevelopment initiatives, and enhanced employee value proposition\n• Develop and implement organizational development (OD) framework improving organizational efficiency, communication\neffectiveness, and cross-functional collaboration by 40%\n• Rollout comprehensive employee handbook establishing clear policies, procedures, compliance requirements, and behavioral\nexpectations across all business units\n• Establish HR analytics dashboard tracking key metrics including recruitment efficiency, retention rates, training ROI, and\nemployee engagement for data-driven decision making",
+                "title": "Chief Human Resources Officer (CHRO)",
+                "companyId": "90628951",
+                "companyUrnResolutionResult": {
+                  "name": "Daniel Smart Manufacturing Inc",
+                  "companyPictureDisplayImage": "https://media.licdn.com/dms/image/v2/C560BAQHFEsdL9qWbXg/company-logo_200_200/company-logo_200_200/0/1678222957395?e=1766016000&v=beta&t=WG_b0tqqx56qLVHuggMzZqVFpFvhhiZpO3e5WWChxFs",
+                  "industry": "Apparel Manufacturing",
+                  "location": "Baltimore, Maryland, United States"
+                },
+                "current": true,
+                "tenureAtCompany": {
+                  "numMonths": 11
+                },
+                "startedOn": {
+                  "month": 1,
+                  "year": 2025
+                }
+              },
+              "profilePictureDisplayImage": "https://media.licdn.com/dms/image/v2/D5603AQHPBB5Qz_IXhw/profile-displayphoto-shrink_100_100/profile-displayphoto-shrink_100_100/0/1694507394937?e=1766016000&v=beta&t=vsiXRvQl7NBqwqJILqNRIM9UpWLGKpfEqkx2Whk25Bs",
+              "summary": "Global Chief Human Resources Officer with 20+ years transforming human capital functions across Technology, FMCG, Retail,Banking, and Manufacturing sectors spanning USA, UAE, China, Hong Kong, Pakistan, and Vietnam. Proven expertise leading HRorganizations managing 50 to 71,000+ employees with budgets up to $2M+ and total compensation programs exceeding $60M.Track record includes scaling startup HR function 400% (50 to 1,500+ employees), optimizing Fortune 500 operations ($1.5Brevenue company), and delivering $60M+ in cost optimizations through digital transformation, strategic workforce planning, anddata-driven talent strategies. Triple-certified executive (SHRM-SCP, Wharton CHRO, Harvard Leadership) with doctorate-levelresearch expertise in leadership behavior and employee experience. Strategic business partner who aligns people initiatives withorganizational objectives while maintaining 100% compliance and zero adverse legal actions across 5+ consecutive years",
+              "profileUrn": "ACwAAARpgocBSmNzWbwDaFxpAOM-R8a0ezLnZmI",
+              "navigationUrl": "https://www.linkedin.com/in/ACwAAARpgocBSmNzWbwDaFxpAOM-R8a0ezLnZmI",
+              "openLink": true
+            },
+            {
+              "firstName": "Robert",
+              "fullName": "Robert Isabella",
+              "lastName": "Isabella",
+              "geoRegion": "Vancouver, British Columbia, Canada",
+              "currentPosition": {
+                "tenureAtPosition": {
+                  "numYears": 4,
+                  "numMonths": 5
+                },
+                "companyName": "Daiya Foods Inc",
+                "title": "Chief Operations Officer",
+                "companyId": "831571",
+                "companyUrnResolutionResult": {
+                  "name": "Daiya Foods Inc",
+                  "companyPictureDisplayImage": "https://media.licdn.com/dms/image/v2/D560BAQFXvx-bSWAU2Q/company-logo_200_200/company-logo_200_200/0/1695138633269/daiya_foods_inc_logo?e=1766016000&v=beta&t=6UsoDyLZwcp_A6ULvCvw7bLKkZCYAupUHkhoK37KPXE",
+                  "industry": "Food and Beverage Services",
+                  "location": "Burnaby, British Columbia, Canada"
+                },
+                "current": true,
+                "tenureAtCompany": {
+                  "numYears": 4,
+                  "numMonths": 5
+                },
+                "startedOn": {
+                  "month": 7,
+                  "year": 2021
+                }
+              },
+              "profilePictureDisplayImage": "https://media.licdn.com/dms/image/v2/C5603AQExV3rgx6FPWg/profile-displayphoto-shrink_100_100/profile-displayphoto-shrink_100_100/0/1516526976250?e=1766016000&v=beta&t=9fvE4e8xiCD5hWWgSGY5MEPQkLIczgQPaWet4qPKO1Q",
+              "profileUrn": "ACwAAAb6aXEBmvMx1085Lg67STXH6ar0fu6wdJg",
+              "navigationUrl": "https://www.linkedin.com/in/ACwAAAb6aXEBmvMx1085Lg67STXH6ar0fu6wdJg",
+              "openLink": false
+            },
+            {
+              "firstName": "Spencer",
+              "fullName": "Spencer Wade",
+              "lastName": "Wade",
+              "geoRegion": "Chicago, Illinois, United States",
+              "currentPosition": {
+                "tenureAtPosition": {
+                  "numYears": 11,
+                  "numMonths": 11
+                },
+                "companyName": "Lift Conversions - Digital Marketing Agency",
+                "description": "Lift Conversions - Digital Marketing Agency\n► Google Partner\n► Bing Accredited\n► GYBO City Partner\n\nTrusted Digital Media Advisors: Our Strategy Brings Your Vision to Life: The strengths of the elite – experience, knowledge, resources – with the attention and service of a local business, Lift Conversions – a Google Partner and Bing Accredited Agency, offers a full range of IT Services specializing in PPC, SEM, SMM, SEO, and Web Design. Our team will work closely with you to create and implement a strategy uniquely formulated to reach your specific goals. Lift Conversions – we have the solutions you need to reach more customers, increase your revenues, and maximize your ROI. Call 773-419-3636 for a Free Consultation\n\nSearch Engine Marketing\n• Google & Bing Search Marketing\n• Google Display Network\n• Google Shopping\n• Mobile Marketing \n• Video Marketing\n• Search Engine Optimization\n\nSocial Media Marketing\n• Facebook Marketing\n• Twitter Marketing\n• LinkedIn (Network) Marketing\n• Pinterest (Visual) Marketing\n\nTechnology Services\n• Webmaster Services\n• Content Writing & Marketing\n• Database Management Services\n• Network Design & Management\n• Network Security Setup & Management\n• IT Project Management\n\nThe dissemination of pertinent information and digital marketing of Lift Conversions abilities and services has been a tremendous boost to efficiency and visibility within targeted markets.\n\nCertifications:\n►Google: Search | Display | Video | Shopping | Mobile | ►Bing \n►CIW: Web Design | JavaScript | Database Design \n►CompTIA: Project+ | Network+ | Security+ | ►Analytics\n\nLift Conversions\nSpencer Wade - Founder & Principal Strategist\nTrusted Digital Media Adviser\nGoogle Partners Ambassador\nGoogle AdWords Top Contributor \nGoogle WebSearch Top Contributor \nGoogle G+ Top Contributor \nGoogle Mentor\n\nOffice: 773-419-3636 \ninfo@liftconversions.com\nwww.liftconversions.com",
+                "title": "Founder & Principal Strategist",
+                "companyId": "3586613",
+                "companyUrnResolutionResult": {
+                  "name": "Lift Conversions - Digital Marketing Agency",
+                  "companyPictureDisplayImage": "https://media.licdn.com/dms/image/v2/C560BAQFDHtZIOOk64Q/company-logo_200_200/company-logo_200_200/0/1638545740988/lift_conversions_logo?e=1766016000&v=beta&t=V8SwgZ9cTlnw7TUt4cIxfR5Ex_kjxweigOefWzokTM8",
+                  "industry": "Advertising Services",
+                  "location": "Chicago, Illinois, United States"
+                },
+                "current": true,
+                "tenureAtCompany": {
+                  "numYears": 11,
+                  "numMonths": 11
+                },
+                "startedOn": {
+                  "month": 1,
+                  "year": 2014
+                }
+              },
+              "profilePictureDisplayImage": "https://media.licdn.com/dms/image/v2/C4E03AQHgB7DrAL6gYA/profile-displayphoto-shrink_100_100/profile-displayphoto-shrink_100_100/0/1516343956884?e=1766016000&v=beta&t=8VMIuf3hpG-bjtmL8x2_CFwnmWL1S70vd35cvZGihYA",
+              "summary": "Spencer Wade, an IT graduate from Western Governor’s University, is the solutions-oriented Principal Strategist at Lift Conversions, a Google Partner digital marketing agency he founded in 2014. Today, Lift Conversions has locations in both Chicago, Illinois and Westminster, Colorado with Spencer and his wife, Durene, splitting time between homes in each location.\n\nSpencer has earned numerous certifications from the IT industry’s governing bodies and holds a range of Google Alum titles for his years of work in their forums and programs. He also works with the LinkedIn Advisors team, serves as an Ambassador for WGU’s Alumni and handles item writing for corporations in the digital marketing space. These roles, along with his extensive experience in marketing across verticals, have given Spencer a voice of authority in the fields he’s passionate about and he’s used it to assist individuals and businesses, including nonprofits, in their marketing pursuits.\n\nSpencer and his team of Trusted Media Advisors offer a full line of world-class digital marketing services – from search marketing to website design. They deliver a unique blend of boutique-style attention and powerhouse results to clients in more than 54 verticals across the US, Canada, and the EU – with a referral rate over 92%!",
+              "profileUrn": "ACwAAAHwe-ABDGjE1Z18nGs-US9ZDpHG7gpLrxQ",
+              "navigationUrl": "https://www.linkedin.com/in/ACwAAAHwe-ABDGjE1Z18nGs-US9ZDpHG7gpLrxQ",
+              "openLink": false
+            },
+            {
+              "firstName": "Robert J.",
+              "fullName": "Robert J. Hayek",
+              "lastName": "Hayek",
+              "geoRegion": "Port St Lucie, Florida, United States",
+              "currentPosition": {
+                "tenureAtPosition": {
+                  "numYears": 14,
+                  "numMonths": 10
+                },
+                "companyName": "Financial Independence, LLC",
+                "title": "Founder, CEO, CFO - Chief Fun Officer",
+                "companyUrnResolutionResult": {},
+                "current": true,
+                "tenureAtCompany": {
+                  "numYears": 14,
+                  "numMonths": 10
+                },
+                "startedOn": {
+                  "month": 2,
+                  "year": 2011
+                }
+              },
+              "profilePictureDisplayImage": "https://media.licdn.com/dms/image/v2/C5603AQFguwh_81jgeQ/profile-displayphoto-shrink_100_100/profile-displayphoto-shrink_100_100/0/1566066000175?e=1766016000&v=beta&t=UzgL8slSVLlJy9GJABMCT_5WBkhlY3jY-VT3ZFF-2FA",
+              "summary": "We show you how to become debt free in 9 years or less including your mortgage and without spending any \n\nmore money than you spend right now. We eliminate debt to create additional wealth. Through education my\n\n clients are able to understand the importance of becoming debt free. Call for a complementary no risk consultation at \n\n732-241-3427 or schedule online at https://go.thryv.com/site/FinancialIndependenceLLC\n\nAfter struggling with ongoing health issues. I was able to get relief with a new product by a biotech company. \nThis company has a health & science breakthrough as big as DNA and penicillin was. Please let me know if you would like more info also can be away to generate additional income.",
+              "profileUrn": "ACwAAAY8DsIB5XnbIFPu2DxkKFaDjG-G71aAVg4",
+              "navigationUrl": "https://www.linkedin.com/in/ACwAAAY8DsIB5XnbIFPu2DxkKFaDjG-G71aAVg4",
+              "openLink": true
+            },
+            {
+              "firstName": "Song",
+              "fullName": "Song H.",
+              "lastName": "H.",
+              "geoRegion": "Greater Minneapolis-St. Paul Area",
+              "currentPosition": {
+                "tenureAtPosition": {
+                  "numYears": 4,
+                  "numMonths": 11
+                },
+                "companyName": "Wings Credit Union",
+                "description": "Founded in 1938, Wings has nearly $10 billion in assets and 400,000 members, including both businesses and consumers. It offers some of the best savings and lending rates, digital banking platforms, wealth management solutions, and over 80,000 ATMs/Branch locations.\n\nAs Chief Digital and Technology Officer / CIO, I report to the President & Chief Executive Officer (CEO), work with Board Members, and lead the below high-performing teams:\n\n• Program & Transformation (large scale strategic initiatives, enterprise-wide project prioritization, execution, communication, measurement, strategic planning, M&A integration, change management)\n• Data & Analytics (architecture, engineering, integration, data science / AI, business intelligence, customer insights, self-service platforms)\n• Digital & Design (product management, customer journey, employee experience, UX/UI, business process design and automation, innovation)\n• Enterprise Applications (application / software development, quality assurance, support, API-first architecture, product engineering) \n• IT Infrastructure (Azure cloud, network, telecommunications, data centers, DevOps, banking core, IT services and operations)\n• Information Security (CISO office, cyber security, partnership with enterprise risk management)",
+                "title": "Chief Digital and Technology Officer (CDO & CTO) / CIO",
+                "companyId": "97093",
+                "companyUrnResolutionResult": {
+                  "name": "Wings Credit Union",
+                  "companyPictureDisplayImage": "https://media.licdn.com/dms/image/v2/D560BAQGjhB3SI7yXgA/company-logo_200_200/company-logo_200_200/0/1686662644471/wingscu_logo?e=1766016000&v=beta&t=H_DmK7yh6bstW_mHyM11DDshfgflkyMNWvK2LOi0urs",
+                  "industry": "Banking",
+                  "location": "St Paul, Minnesota, United States"
+                },
+                "current": true,
+                "tenureAtCompany": {
+                  "numYears": 4,
+                  "numMonths": 11
+                },
+                "startedOn": {
+                  "year": 2021
+                }
+              },
+              "summary": "•\tChief Digital and Technology Officer (CDO, CTO, CIO) with over 20 years of global leadership experience at Fortune 100 (e.g. HP, P&G, Google, Sysco) and high-growth companies, complemented by strategic advisory board contributions to venture capital and innovative technology firms\n\n•\tBuilt high-performing teams in multiple industries, countries, and functions, including digital transformation, data analytics, information technology, cyber security, product management, business operations, omni-channel experience, service design, strategic planning and initiatives",
+              "profileUrn": "ACwAAAxm2fIBxUFg2OE5bG_Is-dpfJPhUQpk-gA",
+              "navigationUrl": "https://www.linkedin.com/in/ACwAAAxm2fIBxUFg2OE5bG_Is-dpfJPhUQpk-gA",
+              "openLink": false
+            },
+            {
+              "firstName": "Ashish",
+              "fullName": "Ashish Nigam",
+              "lastName": "Nigam",
+              "geoRegion": "Delhi, Delhi, India",
+              "currentPosition": {
+                "tenureAtPosition": {
+                  "numYears": 3,
+                  "numMonths": 3
+                },
+                "companyName": "EverEnviro Resource Management Private Limited",
+                "description": "• Spearheaded  sales strategy for EverEnviro’s fertilizer division, achieving significant YoY growth in market share.  \n• Led and mentored a high-performing sales team, focusing on performance KPIs and customer engagement.  \n• Developed go-to-market strategies for sustainable fertilizers, aligning with the company's green vision and market needs.",
+                "title": "General Manager - Fertilizer sales",
+                "companyId": "76858570",
+                "companyUrnResolutionResult": {
+                  "name": "EverEnviro Resource Management Private Limited",
+                  "companyPictureDisplayImage": "https://media.licdn.com/dms/image/v2/D4D0BAQGdxVFPyDb1uw/company-logo_200_200/company-logo_200_200/0/1687323589945/everenviro_resource_management_private_limited_logo?e=1766016000&v=beta&t=OUSQtLdS0zRDlL3-zZD9x-AwZZ6jYKDtZqsFY-eDJA8",
+                  "industry": "Renewable Energy Power Generation",
+                  "location": "Gurugram, Haryana, India"
+                },
+                "current": true,
+                "tenureAtCompany": {
+                  "numYears": 3,
+                  "numMonths": 3
+                },
+                "startedOn": {
+                  "month": 9,
+                  "year": 2022
+                }
+              },
+              "profilePictureDisplayImage": "https://media.licdn.com/dms/image/v2/D5603AQF-0TXVEwPPPg/profile-displayphoto-scale_400_400/B56ZqWWjDaHYAg-/0/1763459086927?e=1766016000&v=beta&t=WvG-QfacFmwj2VW0PBM2lFGViG2LAFMNxc4tG6Wpb7M",
+              "summary": "With over 15 years of experience in agriculture, agri-tech, and sustainability, I specialize in helping farmers, startups, and enterprises thrive at the intersection of innovation and impact.\n\nAs a consultant, I provide value-driven strategies across the agri value chain—from soil health and renewable energy to marketing and scaling sustainable inputs.\n\nAs a content creator, I turn complex agricultural and climate insights into high-converting digital narratives that build trust, drive action, and position brands as thought leaders.\n\n🔹 What I Deliver:\n• Strategic consulting for agri-startups, SMEs & sustainability-focused brands\n• High-quality articles, LinkedIn posts, whitepapers, and reports on agriculture, renewables & soil health\n• Business development support and GTM strategies in the agri & allied sectors\n\n🔹 Who I Work With:\n• Agri-tech companies\n• Sustainable input brands (FOM, bio-fertilizers, etc.)\n• Renewable energy ventures in rural/agri spaces\n• NGOs, think tanks, and content platforms in global agriculture\n\nLet’s work together to tell better agri stories, design scalable strategies, and make sustainability profitable.\n\n📩 Open to business consulting projects, content partnerships & senior leadership roles.\nLet’s connect!",
+              "profileUrn": "ACwAAA9itsEB8IdOpwYMUuY6Fd-91-dgH6JnAgo",
+              "navigationUrl": "https://www.linkedin.com/in/ACwAAA9itsEB8IdOpwYMUuY6Fd-91-dgH6JnAgo",
+              "openLink": true
+            },
+            {
+              "firstName": "Dowshan",
+              "fullName": "Dowshan Humzah",
+              "lastName": "Humzah",
+              "geoRegion": "London, England, United Kingdom",
+              "currentPosition": {
+                "tenureAtPosition": {
+                  "numYears": 25,
+                  "numMonths": 11
+                },
+                "companyName": "Inspiration For Success",
+                "description": "Inspiration for Success delivers ‘Cognitive Catalyst™ - Creative Consulting for Transformative Results.\n  \nThis is 'thinking differently to get transformative results'  or has been defined as: 'a fast, creative strategy method that turns stuck problems into measurable momentum — blending imagination, evidence and execution to unlock breakthroughs.'\n\nWe use psychology and creativity, in addition to metrics, to expand possibility and the solution space. In essence, moving from a traditional, linear, left-brain approach to a more creative, oblique and right-brain approach - true cognitive diversity. This is more relevant and impactful in our current disruptive times characterised by volatility, uncertainty, complexity and ambiguity.\n\nPut another way, creative consulting adopts behavioural science, marketing growth, product development, brand management and digital transformation principles alongside creative thinking to help solve today's and anticipated problems - especially of a second-order nature. Practical examples and deliverables include healthcare, the NHS and social mobility - as well as redefining models for finance/insurance and in other sectors (client confidentiality).",
+                "title": "Founder Director & Strategic Advisor",
+                "companyId": "4392168",
+                "companyUrnResolutionResult": {
+                  "name": "Inspiration For Success",
+                  "companyPictureDisplayImage": "https://media.licdn.com/dms/image/v2/C4D0BAQFLfwhwoxGtUA/company-logo_200_200/company-logo_200_200/0/1630540029228/inspiration_for_success_limited_logo?e=1766016000&v=beta&t=rXi_IIZyU1JrO7uFr4u7IgihoIEvUY2TEZ1ZUfG6Yno",
+                  "industry": "Business Consulting and Services",
+                  "location": "London Colney, England, United Kingdom"
+                },
+                "current": true,
+                "tenureAtCompany": {
+                  "numYears": 25,
+                  "numMonths": 11
+                },
+                "startedOn": {
+                  "year": 2000
+                }
+              },
+              "profilePictureDisplayImage": "https://media.licdn.com/dms/image/v2/C4D03AQGzWPYcD9XiZw/profile-displayphoto-shrink_100_100/profile-displayphoto-shrink_100_100/0/1637704657463?e=1766016000&v=beta&t=SuHUpHllbEBgcukEyzvG66GYcKlBY3vxmT3JhGBppLY",
+              "summary": "Dowshan Humzah, Independent Board Director & Strategic Growth Advisor\n\nSucceed, Serve and Share is a key principle that has guided and guides Dowshan. He is a contrarian - with expertise in business transformation, digital change and innovation and creativity - as demonstrated across multiple organisations and sectors.\n\nProfessionally, Dowshan is a Board-Level Strategist and Growth Catalyst who helps organisations (across private, public and civil society sectors) scale with purpose, blending commercial innovation, digital insight, and human-centred governance.\n\nHe brings over 25 years of experience delivering creative consultancy to drive transformative results. With a focus on strategy, start-ups, and digital media, he helps organisations leverage psychology, creativity, and metrics to embrace cognitive diversity and navigate today’s volatile, uncertain and complex business environment.  \n\nAs an executive, he is renowned for multiple industry firsts - and developing, Cognitive Catalyst™: Creative Consulting for transformative change (i.e. a fast, creative strategy method that turns stuck problems into measurable momentum — blending imagination, evidence and execution to unlock breakthrough).\n\nAs a non-Esxecutove, he is renowned for the 4 Eyes of Good Governance and Board Composition model; and Diversity of 'POETS' - providing access-to-opportunity especially for underestimated population groups and changing the narrative.\n\nHis expertise lies in combining behavioural science, marketing growth, product development, and digital transformation to expand the solution space and enable innovative thinking. Passionate about addressing uncertainty with foresight and creative approaches, he collaborates with leaders to inspire impactful change and deliver meaningful outcomes - embracing challenge and curiosity.",
+              "profileUrn": "ACwAAABTM0wBT8OwyO3G5WVGHkjqpF3C0CZEjUs",
+              "navigationUrl": "https://www.linkedin.com/in/ACwAAABTM0wBT8OwyO3G5WVGHkjqpF3C0CZEjUs",
+              "openLink": true
+            },
+            {
+              "firstName": "Peter",
+              "fullName": "Peter Rose",
+              "lastName": "Rose",
+              "geoRegion": "Berlin, Berlin, Germany",
+              "currentPosition": {
+                "tenureAtPosition": {
+                  "numYears": 2,
+                  "numMonths": 1
+                },
+                "companyName": "Mapular",
+                "title": "Founder and CEO",
+                "companyId": "99484327",
+                "companyUrnResolutionResult": {
+                  "name": "Mapular",
+                  "companyPictureDisplayImage": "https://media.licdn.com/dms/image/v2/D4E0BAQErnGhXMKQ6TA/company-logo_200_200/company-logo_200_200/0/1702890298475/mapular_logo?e=1766016000&v=beta&t=dv79H34uEIbN8qzLtPM3k4ncfSTcb2OLybqQ0URF-Mo",
+                  "industry": "Software Development",
+                  "location": "Berlin, Berlin, Germany"
+                },
+                "current": true,
+                "tenureAtCompany": {
+                  "numYears": 2,
+                  "numMonths": 1
+                },
+                "startedOn": {
+                  "month": 11,
+                  "year": 2023
+                }
+              },
+              "profilePictureDisplayImage": "https://media.licdn.com/dms/image/v2/D4D03AQF-6-oP89esLA/profile-displayphoto-scale_200_200/B4DZlNnmKHGgAY-/0/1757943852554?e=1766016000&v=beta&t=YcPx1q4gNvtDLN10EqDww-PxyL38KLVpWai1Ita9o0Y",
+              "summary": "I'm the Founder & CEO of Mapular, a Berlin-based location intelligence SaaS startup specializing in AI-powered consumer analytics and advanced store locator solutions. I lead our team in delivering Mapular's core consumer analytics platform, which integrates online and offline data—from store locator searches, CRM, media and marketing spend (e.g., ad platforms like Google Ads or Meta), online and offline sales (e.g., e-commerce and POS systems), foot traffic, demographics, and more—creating a unified omnichannel view that helps D2C and retail brands make smarter, revenue-driving decisions. Using our proprietary AI-driven digital twin technology, we enable simulations for marketing campaigns, store performance optimization, and expansion planning, helping you reduce waste and boost ROI by connecting digital demand to in-store results—often doubling return on ad spend.\n\nOur store locator supports this as a powerful data engine, tracking user behavior, filters, and conversion paths to feed rich insights directly into the AI-powered analytics platform for deeper customer journey understanding and targeted growth.\n\nWith a background in geospatial tech and entrepreneurship, I co-host the GeoMob Berlin meetup to foster connections and innovation in the location intelligence community. If you're a marketing lead, growth manager, or retail expansion head at a consumer brand struggling with fragmented data or suboptimal campaigns, let's connect. I'm always open to chatting about how Mapular can transform your strategy. DM me to schedule a quick call!",
+              "profileUrn": "ACwAAAVSDWsBiLbxQO13XJr2bjwiMG21zpuETtI",
+              "navigationUrl": "https://www.linkedin.com/in/ACwAAAVSDWsBiLbxQO13XJr2bjwiMG21zpuETtI",
+              "openLink": true
+            },
+            {
+              "firstName": "Dave",
+              "fullName": "Dave Phillips",
+              "lastName": "Phillips",
+              "geoRegion": "New York City Metropolitan Area",
+              "currentPosition": {
+                "tenureAtPosition": {
+                  "numMonths": 10
+                },
+                "companyName": "OmniCo Consulting",
+                "description": "Helping businesses navigate retail success in a digital world.\nServices include:\n     *Fractional Senior Leadership\n     *Strategic Planning\n     *Digital Transformation\n     *Operational Excellence\n     *Market Research",
+                "title": "Principal Consultant",
+                "companyUrnResolutionResult": {},
+                "current": true,
+                "tenureAtCompany": {
+                  "numMonths": 10
+                },
+                "startedOn": {
+                  "month": 2,
+                  "year": 2025
+                }
+              },
+              "profilePictureDisplayImage": "https://media.licdn.com/dms/image/v2/D4E03AQGodRuTZ2RTKw/profile-displayphoto-scale_200_200/B4EZetvbJGG4AY-/0/1750966585588?e=1766016000&v=beta&t=D2G7qeKO2ZlA_rXuK84FL8plvMCTqHaZwuUMl4N2a0Q",
+              "summary": "Transformational eCommerce and omnichannel retail executive with 20+ years leading $1B+ businesses at CVS, Nike, Barnes & Noble and Toys R Us. Proven track record driving double-digit growth, optimizing global supply chains, and leveraging AI solutions to deliver $10M+ in operational efficiencies.  Strategic, collaborative, and strong communicator known for developing high-performing teams and fostering cultures of innovation, trust, and continuous improvement.\n\nOpen to executive roles, board appointments, or fractional/advisory work in retail, CPG, and tech-driven commerce.",
+              "profileUrn": "ACwAAAbizWYByNeGIagxiz8M4brmKxLBlg_jBZs",
+              "navigationUrl": "https://www.linkedin.com/in/ACwAAAbizWYByNeGIagxiz8M4brmKxLBlg_jBZs",
+              "openLink": true
+            },
+            {
+              "firstName": "Miklos",
+              "fullName": "Miklos Szegedi",
+              "lastName": "Szegedi",
+              "geoRegion": "San Francisco Bay Area",
+              "currentPosition": {
+                "tenureAtPosition": {
+                  "numYears": 5,
+                  "numMonths": 6
+                },
+                "companyName": "Schmied Enterprises",
+                "description": "We carry out SW, training, HW, IT, IoT, Web, ERP, AI, cybersecurity, manufacturing, fiber projects with our partners.\n\nI built research systems and solutions as white label assets as well as contract development for revenue.\nSome projects were under NDA. Others included open source Dapper Flow, Golang, C# ERP development, low latency C codec development, CUDA white label database and research projects, SaaS frontends, in-memory KV databases up to 6TB RAM, Cloudflare, Docker, Kubernetes integration. Payment integration with Stripe, AI model training data for business decision making and financial risk mitigation.\nDigital marketing 200k-500k unique visitors with AI web services. My streaming display solution is ready for the funding with a patent.\n\nReference Implementations\n| Eco-Friendly No-button & No-touch Screens |\n  https://apps.theme25.com/canvas/screen\n| Search and AI |\n  https://crowsays.theme25.com\n| Document Indexing & Retrieval Augmented Generation |\n  Demo Upon Request\n| Prompt Content Store |\n  Demo Upon Request\n| Digital Marketing |\n  https://buy.theme25.com/tv/shopping\n| Generated Video Sharing |\n  https://buy.theme25.com/tv\n| Concept Distributed Operating System & Jetstreamdb |\n  https://buy.theme25.com/dos/fs\n| Article editor |\n  Demo Upon Request\n| Document editor |\n  Demo Upon Request\n| In-Memory JetStreamDB | Do you need a serverless microservice with access to 6TB RAM? This is it. |\n  https://gitlab.com/eper.io/jetstreamdb\n\n| Payment & Financial Systems | Video/Media/Streaming | Trainings | Manufacturing, ERP | Embedded ARM, RISC, FPGA Troubleshooting | ASIC Verification | CI/CD | Statistics | Shipping software at scale 1B+ | IPO experience | Regulatory compliance | AI power & cost reduction | Accounting verification w/ AI | Fast, up to 30TB RAM RAG/Inference | Datacenter | Fiber | Lightning | Scaling digital marketing to 1m visitors | AI Cost Optimization | GPU drivers | Crypto Tokens for Cloud |\n\n\nPlease contact on LinkedIn first.",
+                "title": "CEO, Solution Architect",
+                "companyId": "74920904",
+                "companyUrnResolutionResult": {
+                  "name": "Schmied Enterprises",
+                  "companyPictureDisplayImage": "https://media.licdn.com/dms/image/v2/D560BAQEu4S54BYXRIw/company-logo_100_100/B56ZVM8csmHEAQ-/0/1740752669776/schmiedenterprises_logo?e=1766016000&v=beta&t=j7ViRH9Zdnia0HeCvRLKcTnbjfOGrlyAOEi-SIH_d5I",
+                  "industry": "Retail",
+                  "location": "San Jose, California, United States"
+                },
+                "current": true,
+                "tenureAtCompany": {
+                  "numYears": 5,
+                  "numMonths": 6
+                },
+                "startedOn": {
+                  "month": 6,
+                  "year": 2020
+                }
+              },
+              "profilePictureDisplayImage": "https://media.licdn.com/dms/image/v2/D5603AQFFncqISKQz_Q/profile-displayphoto-crop_800_800/B56ZialWZsG4AU-/0/1754940139628?e=1766016000&v=beta&t=lFVdZhk-H8rkAymMbmZ5P0vHhxozTgRabYxYH0K6MCo",
+              "summary": "Thank you for your interest in my profile.\n\nI work on saving on your corporate expenses with AI, or saving on your AI costs with my AI. You can make a better Christmas party.\n\n---\n\nCOMPANY\n\nPlease contact me on LinkedIn first.\n\nMy primary goal is to build a viable business plan to get investment for a display product line. I envision kitchen cabinets with AI screens adjusting the image whether it is a party or leisure time. AI Pal kiosks that invite employees back to the office. Light handheld streaming tablets for work. Safer humanoids in public with streaming control. All these are possible with low latency fiber networks of the 2030s.\n\n| Gallery | https://26union.eper.io/gallery |\n| Company, Investors | https://www.schmied.us |\n| Educational Economics | https://26union.eper.io/editorial |\n| My Search Engine | https://26union.eper.io/search |\n| Open-source Code | https://26union.eper.io/oss |\n\n---\n\nCAREER\n\nEx-Amazon, Ex-Microsoft. Over four years of comprehensive experience. I am passionate about project financing and completion. I am a privacy advocate. I like hiking, swimming, squash, pool, writing, humor, and camping. I would be happy to move and try interesting roles in new places like NYC, Texas, The Netherlands, Germany, or France.\n\nNote to recruiters: I am open to employment 3+ years with base & equity compensation. I am open to opportunities growing into a management/lead role to gain experience. My preference is for contract positions with established teams or limited cross-disciplinary opportunities.",
+              "profileUrn": "ACwAAAAExloBuluebKJAPnh2q1exTpCLmPo9fyY",
+              "navigationUrl": "https://www.linkedin.com/in/ACwAAAAExloBuluebKJAPnh2q1exTpCLmPo9fyY",
+              "openLink": false
+            },
+            {
+              "firstName": "Eva",
+              "fullName": "Eva Moskowitz",
+              "lastName": "Moskowitz",
+              "geoRegion": "New York, New York, United States",
+              "currentPosition": {
+                "tenureAtPosition": {
+                  "numYears": 19,
+                  "numMonths": 11
+                },
+                "companyName": "Success Academy Charter Schools",
+                "description": "SuccessCareers.org",
+                "title": "CEO and Founder",
+                "companyId": "657229",
+                "companyUrnResolutionResult": {
+                  "name": "Success Academy Charter Schools",
+                  "companyPictureDisplayImage": "https://media.licdn.com/dms/image/v2/C4D0BAQF6FRfd-eQS-A/company-logo_200_200/company-logo_200_200/0/1630527272017/success_academy_charter_schools_logo?e=1766016000&v=beta&t=T710Uk1ROCCwDozdGPRLe6qG26kquutGId3yJJhgz3E",
+                  "industry": "Education Administration Programs",
+                  "location": "New York, New York, United States"
+                },
+                "current": true,
+                "tenureAtCompany": {
+                  "numYears": 19,
+                  "numMonths": 11
+                },
+                "startedOn": {
+                  "year": 2006
+                }
+              },
+              "profilePictureDisplayImage": "https://media.licdn.com/dms/image/v2/C5603AQEAqhWc4Ri08g/profile-displayphoto-shrink_100_100/profile-displayphoto-shrink_100_100/0/1516517346187?e=1766016000&v=beta&t=tWm8ggvcUgm4SgW3hXtjfkAYfTo9gDoSiUMeR19xm64",
+              "summary": "As founder and CEO of Success Academy Charter Schools, the largest and best-performing public charter school network in New York State, I have made it my mission to challenge the conventional wisdom that children from high-need neighborhoods cannot achieve at the highest academic levels. Since I opened the first Success Academy in Harlem in 2006, I have been a leader in education reform, offering parents an alternative to chronically low-performing schools and helping thousands of children fulfill their academic potential. Today, Success Academy operates 57 schools and employs hundreds of teachers and other professionals. \n\nLearn more in my new memoir, The Education of Eva Moskowitz, available at Amazon now.",
+              "profileUrn": "ACwAAAbq1yoBZ9bFCVw-0_GlVs4mY7HCAZHKIrM",
+              "navigationUrl": "https://www.linkedin.com/in/ACwAAAbq1yoBZ9bFCVw-0_GlVs4mY7HCAZHKIrM",
+              "openLink": true
+            },
+            {
+              "firstName": "Ezri",
+              "fullName": "Ezri Silver",
+              "lastName": "Silver",
+              "geoRegion": "New York, New York, United States",
+              "currentPosition": {
+                "tenureAtPosition": {
+                  "numYears": 1,
+                  "numMonths": 8
+                },
+                "companyName": "Socket Managed Services",
+                "title": "Chief Operating Officer",
+                "companyId": "3313170",
+                "companyUrnResolutionResult": {
+                  "name": "Socket - SMS",
+                  "companyPictureDisplayImage": "https://media.licdn.com/dms/image/v2/D4E0BAQETj0494-MYkA/company-logo_200_200/company-logo_200_200/0/1733426334111/wearebrandos_logo?e=1766016000&v=beta&t=cYxMbaLN9P9EIwT7APNP9UUrMmaMB2Bo6utBYzbaXjM",
+                  "industry": "Financial Services"
+                },
+                "current": true,
+                "tenureAtCompany": {
+                  "numYears": 2,
+                  "numMonths": 7
+                },
+                "startedOn": {
+                  "month": 4,
+                  "year": 2024
+                }
+              },
+              "profilePictureDisplayImage": "https://media.licdn.com/dms/image/v2/D4E03AQEmm2OitlE2uA/profile-displayphoto-shrink_100_100/profile-displayphoto-shrink_100_100/0/1720097613922?e=1766016000&v=beta&t=U2Tk76ubypSy-37R8u-R6Oycpb_qEEvPQyckPXU05wY",
+              "summary": "An intuitive and articulate professional with 20+ years' experience driving the development and implementation of global business strategies to ensure continuous growth and progress in supply chain operations. I am known for my ability to mange to the cash cycle from P&L Management to the Balance Sheet with Cash  cycle conversion, with special attention to managing operating costs and related expenses, along with governing the development and expansion of Omni-channel (I.e. consumer retail, e-commerce, and wholesale distribution). Fostering a full-vertical footprint in domestic and international trade markets.\n \nAn expert in establishing and maintaining business relationships, with commercial, retail, and merchant banking organizations, distribution partners, suppliers, and commercial real estate corporations. \n\nAs an articulate communicator, I have the keen ability to collaborate with C-Level executives (client and internal stakeholders) to develop strategies spreading brand awareness and increasing sales and revenue potential across all verticals to all stakeholders regardless or\nseniority or authority.\n\nAn accomplished leader and mentor with proven success co-founding and establishing brand products and retail operations as well as building an e-commerce platform from the ground-up for the governing body of an elite sport association.\n\nI look forward to expanding my professional network by connecting with industry leaders and corporations to explore opportunities where I can leverage my substantial experience to be an immediate asset to the company's efforts in building and expanding Global Operations.",
+              "profileUrn": "ACwAAAAH6YQBZJGm8BqF5WNp7qhiCZCBrSom7f0",
+              "navigationUrl": "https://www.linkedin.com/in/ACwAAAAH6YQBZJGm8BqF5WNp7qhiCZCBrSom7f0",
+              "openLink": true
+            },
+            {
+              "firstName": "Jim",
+              "fullName": "Jim Loden",
+              "lastName": "Loden",
+              "geoRegion": "Arlington, Texas, United States",
+              "currentPosition": {
+                "tenureAtPosition": {
+                  "numMonths": 4
+                },
+                "companyName": "Rujo Boots",
+                "description": "• Spearheading RUJO Boots, by establishing a brand that honors traditional western bootmaking while innovating with modern design.  \n• Developing and executing comprehensive marketing strategies that drive significant sales growth and brand recognition.  \n• Fostering a culture of excellence in operations, ensuring every pair of boots reflects authenticity and craftsmanship and creating raving fans",
+                "title": "President",
+                "companyId": "69935946",
+                "companyUrnResolutionResult": {
+                  "name": "Rujo Boots",
+                  "companyPictureDisplayImage": "https://media.licdn.com/dms/image/v2/D560BAQEVEDQnQzfVkw/company-logo_400_400/B56ZUbuLV0GoAY-/0/1739926845128/rujo_boots_logo?e=1766016000&v=beta&t=b013NpN_polV8dOsgSeVWIwMV95KcBjGpQTZsIuHLvY",
+                  "industry": "Retail Apparel and Fashion",
+                  "location": "Dallas, Texas, United States"
+                },
+                "current": true,
+                "tenureAtCompany": {
+                  "numMonths": 4
+                },
+                "startedOn": {
+                  "month": 8,
+                  "year": 2025
+                }
+              },
+              "profilePictureDisplayImage": "https://media.licdn.com/dms/image/v2/D5603AQHE89ESlN474Q/profile-displayphoto-shrink_100_100/profile-displayphoto-shrink_100_100/0/1729009187499?e=1766016000&v=beta&t=o_OEKm7yhh7j3eoYBxSUGDbdPo-z4yWjuaqXwjT_Atg",
+              "summary": "Retail expert for entire Omni Channel experience.  I've launched and built brands online at Amazon, HSN, Best Buy, Walmart, Home Depot, Lowes, QVC, Sam's, JCPenney, Macy's, GameStop or anyone else?  I have 30 plus years as an Executive in Distribution and Retail.  I am connected in almost every single channel.  I love retail.  Whether it is online, in store, or on air.\n\nAs a CRO, EVP, SVP of Sales  I have lead the sales, marketing and merchandising teams for omni-channel, retail brick and mortar, and enterprise sales channels for over 25 years..  I specialize in creating and executing strategies that drive explosive growth, transformational sales, and high-performing teams for innovative, fast-paced companies.  I have taken companies from $300M to $1.5B in 30 months.\n\nI have a proven track record of quickly turning around underperforming businesses, leveraging data, consumer insights, and technologies to optimize multi-billion-dollar P&Ls, and developing the original Apple Store concept and successfully pitching it to Steve Jobs. I am a visionary and innovative leader who seeks ideas, ownership, and accountability from all levels and every individual in the organization. I am a humble servant leader who believes in doing what is right, not what is popular. I treat my people like I want them to treat our best customers.",
+              "profileUrn": "ACwAAAAgW_gBN-GBJ4K4whi6xA1p1XXKYFRhO3M",
+              "navigationUrl": "https://www.linkedin.com/in/ACwAAAAgW_gBN-GBJ4K4whi6xA1p1XXKYFRhO3M",
+              "openLink": false
+            },
+            {
+              "firstName": "Stephan",
+              "fullName": "Stephan Smith",
+              "lastName": "Smith",
+              "geoRegion": "Greater Boston",
+              "currentPosition": {
+                "tenureAtPosition": {
+                  "numMonths": 11
+                },
+                "companyName": "Launch by Lunch 🍕",
+                "description": "Building a bridge between Low-code solutions and AI to help founders get to their ah-ha moments.",
+                "title": "Technical Translator-in-Chief",
+                "companyId": "107224260",
+                "companyUrnResolutionResult": {
+                  "name": "Launch by Lunch 🍕",
+                  "companyPictureDisplayImage": "https://media.licdn.com/dms/image/v2/D4E0BAQEUNgm8yKNRvA/company-logo_100_100/B4EZagLtzxGYAU-/0/1746444148637/launch_by_lunch_no_code_logo?e=1766016000&v=beta&t=XWLI_WC06uR_jKhAw2QW4NqJJFabhDSEFFSaZmPuVd0",
+                  "industry": "Technology, Information and Internet",
+                  "location": "Boston, Massachusetts, United States"
+                },
+                "current": true,
+                "tenureAtCompany": {
+                  "numMonths": 11
+                },
+                "startedOn": {
+                  "month": 1,
+                  "year": 2025
+                }
+              },
+              "profilePictureDisplayImage": "https://media.licdn.com/dms/image/v2/D4E03AQHNaOfxXIwA1w/profile-displayphoto-shrink_100_100/profile-displayphoto-shrink_100_100/0/1702492829712?e=1766016000&v=beta&t=KJtfXCgdtut-z70Peh8X0YIsQXPoF87ssD67f06Yx6g",
+              "summary": "When a big startup exit turns into a hot mess, I look hard at the role of code in a tech startup. My last company broke me in a good way. I am now a fractional CTO, a low-code CTO. If you find the balance of code, tech and revenue interesting, I write a weekly newsletter on this topic [https://LowCodeCTO.com/subscribe]\n\nI enable non-technical founders to build startups with little or no code. \n\nCall me when:\nA. Call me/us when your vibe startup idea needs some scale.\nB. Your headcount has to drop, but your velocity has to increase.\nC. When your development teams are LOBBYING for a 'Full Refactor'. \nD. When technology is LIMITING revenue options.\n\nBring me your Vibe code gems and I will make them into production-ready revenue machines.",
+              "profileUrn": "ACwAAACiJSEB8yGv6zX29FSA15g9XvdAbzw7Eoc",
+              "navigationUrl": "https://www.linkedin.com/in/ACwAAACiJSEB8yGv6zX29FSA15g9XvdAbzw7Eoc",
+              "openLink": true
+            },
+            {
+              "firstName": "Christian",
+              "fullName": "Christian Rudlof",
+              "lastName": "Rudlof",
+              "geoRegion": "Hannover-Braunschweig-Göttingen-Wolfsburg Region",
+              "currentPosition": {
+                "tenureAtPosition": {
+                  "numYears": 6,
+                  "numMonths": 4
+                },
+                "companyName": "CBR Fashion Group",
+                "description": "-Finance\n-Legal & Compliance\n-HR\n-IT \n-Logistics",
+                "title": "Managing Director / Chief Fincancial Officer (CFO)",
+                "companyId": "1193630",
+                "companyUrnResolutionResult": {
+                  "name": "CBR Fashion Group",
+                  "companyPictureDisplayImage": "https://media.licdn.com/dms/image/v2/D4E0BAQGFjKmkxPSLvg/company-logo_200_200/company-logo_200_200/0/1738311187041/cbr_fashion_logo?e=1766016000&v=beta&t=zEGSl0sDaGb_eC3eMASKOl9Pxzpn4Psk9AC5k-J6jk0",
+                  "industry": "Retail Apparel and Fashion",
+                  "location": "Isernhagen Farster Bauerschaft, Lower Saxony, Germany"
+                },
+                "current": true,
+                "tenureAtCompany": {
+                  "numYears": 12,
+                  "numMonths": 1
+                },
+                "startedOn": {
+                  "month": 8,
+                  "year": 2019
+                }
+              },
+              "profilePictureDisplayImage": "https://media.licdn.com/dms/image/v2/C4D03AQH63haSJoWF5A/profile-displayphoto-shrink_100_100/profile-displayphoto-shrink_100_100/0/1565790920919?e=1766016000&v=beta&t=AJe0kr-cM7UKwnhZ5JuakNacdh1xNO5Jl4rlQEVwu2s",
+              "summary": "Driving Efficiencies in Organizations\nSound Financial Background\nUnderstanding of Business Needs\nCreating Value in PE-Environment",
+              "profileUrn": "ACwAAAYBYfwBQst_ipfvv1VAjT_TN-U7rFxLe1E",
+              "navigationUrl": "https://www.linkedin.com/in/ACwAAAYBYfwBQst_ipfvv1VAjT_TN-U7rFxLe1E",
+              "openLink": false
+            },
+            {
+              "firstName": "Joseph L.",
+              "fullName": "Joseph L. Rosenberg",
+              "lastName": "Rosenberg",
+              "geoRegion": "Florham Park, New Jersey, United States",
+              "currentPosition": {
+                "tenureAtPosition": {
+                  "numYears": 42,
+                  "numMonths": 8
+                },
+                "companyName": "Joseph L. Rosenberg CPA",
+                "title": "CPA-Owner",
+                "companyId": "203050",
+                "companyUrnResolutionResult": {},
+                "current": true,
+                "tenureAtCompany": {
+                  "numYears": 42,
+                  "numMonths": 8
+                },
+                "startedOn": {
+                  "month": 4,
+                  "year": 1983
+                }
+              },
+              "profilePictureDisplayImage": "https://media.licdn.com/dms/image/v2/C4E03AQFExtw5-b1wBQ/profile-displayphoto-shrink_100_100/profile-displayphoto-shrink_100_100/0/1516169380670?e=1766016000&v=beta&t=Ro0eEDjCHVwyPEQeVZTibrKymaE4Bh0sLn0WUZSzwyk",
+              "summary": "Taxation is not a once a year occurrence. The tax law changes regularly, and so does your income. Since we are coming to the end of the year it is a good time to review your projected federal and state returns so you can make adjustments before year end to effect the outcome. \nAt the state of New Jersey level, there were changes for homeowners and renters to receive greater rebates of rent paid or real estate taxes paid. Some affected seniors. Income levels that qualify are subject to change and the Stay NJ tax break opened up additional breaks for seniors with income up to $500,000. \nMy office is Located in Florham Park, New Jersey. I have been a New Jersey Certified Public Accountant since 1974 and I am also licensed in New  York State. I have owned my own C.P.A .firm since 1983 (Website is www.cpajoe.net). I am a Certified Quickbooks Professional Advisor for both online and desktop versions. \n\nSpecialties: Personal income tax return preparation. Corporate, partnership, LLC and other business tax return preparation.Income tax planning, business planning, business consulting, accounting, recordkeeping, projections, financial statement preparation, including  reviews and compilations.  I also work with startups to assist them in entity selection, taxation and getting their books organized.\n\nIn 2024 I started a Linkedin business page where I have posted articles on taxation and other small business  subjects. Many of the articles are collaborative efforts with linkedin based AI origination followed by professional touches by me and other professionals. For my efforts I was named a top voice in accounting until Linkedin removed those awards. If you wish to access this content, let me know and I'll provide  you a link to those to those I am connected with, and will accept connection requests from those I'm not connected to.\nRegarding Linkedin, I joined here in its initial year, in January 2024 and the marketing people got to know me and I received press opportunities, most notably in the New York Times in September, 2010. The Times article is entitled \"The Social Network That Gets Down to Business\". When linkedin rolled out its games in 2024 I started playing Linkedin and posted an almost daily teaser on the games.With the recent changes in Linkedin's algorithm to support primarily people whose content aligns with their primary focus, I will reduce my posting about the games, but will continue to post in the pinpoint community about the games. I will continue to support players around the world and especially those in the United States, where I do business.",
+              "profileUrn": "ACwAAAABq1gB7rG5NGu755B38piuguoTOocsjag",
+              "navigationUrl": "https://www.linkedin.com/in/ACwAAAABq1gB7rG5NGu755B38piuguoTOocsjag",
+              "openLink": true
+            },
+            {
+              "firstName": "Matt",
+              "fullName": "Matt Powell",
+              "lastName": "Powell",
+              "geoRegion": "Hamden, New York, United States",
+              "currentPosition": {
+                "tenureAtPosition": {
+                  "numYears": 2,
+                  "numMonths": 7
+                },
+                "companyName": "Tribute Technology",
+                "title": "Chief Technology Officer",
+                "companyId": "67118712",
+                "companyUrnResolutionResult": {
+                  "name": "Tribute Technology",
+                  "companyPictureDisplayImage": "https://media.licdn.com/dms/image/v2/D560BAQH4qrFpsucjOA/company-logo_100_100/B56ZfB9CCQH8AU-/0/1751305691692/tributetechnology_logo?e=1766016000&v=beta&t=WCFEnzNf_Ns-XI5C4sXV71Q9dbfTkutVAfJ34ViSUz8",
+                  "industry": "Software Development",
+                  "location": "Waunakee, Wisconsin, United States"
+                },
+                "current": true,
+                "tenureAtCompany": {
+                  "numYears": 2,
+                  "numMonths": 7
+                },
+                "startedOn": {
+                  "month": 5,
+                  "year": 2023
+                }
+              },
+              "profilePictureDisplayImage": "https://media.licdn.com/dms/image/v2/C4D03AQFnXpGAYZ0IKw/profile-displayphoto-shrink_100_100/profile-displayphoto-shrink_100_100/0/1531112143395?e=1766016000&v=beta&t=KveF22uZzxNgcJXc9mVEiy4PW-qot66K6Y4kxh_c5q0",
+              "summary": "Serial entrepreneur.  Nerd.  Operator.  Idea guy.  Frequent loud mouth.",
+              "profileUrn": "ACwAAAAdrhoBpo57iI9Bi94uAQPfnzWeUQ23v8o",
+              "navigationUrl": "https://www.linkedin.com/in/ACwAAAAdrhoBpo57iI9Bi94uAQPfnzWeUQ23v8o",
+              "openLink": false
+            },
+            {
+              "firstName": "Rasel",
+              "fullName": "Rasel Ahmed",
+              "lastName": "Ahmed",
+              "geoRegion": "Berlin, Berlin, Germany",
+              "currentPosition": {
+                "tenureAtPosition": {
+                  "numYears": 1,
+                  "numMonths": 5
+                },
+                "companyName": "Musemind - Global UX Design Agency",
+                "description": "Musemind is a research-driven global UX/UI design agency delivering world-class digital experiences. Our team of product, visual, and motion designers blends research, creativity, and strategy to design interfaces and user experiences that drive growth and delight users.\n\nWe’ve partnered with leading brands including Visa, Microsoft, Salesforce, Indeed, Panther, Motley Fool, Peel, Telenor Group, Central Group, Qatar Museums, River, GoWish, and JTI.\n\nOur expertise:\n\t• UX/UI Design | Product Design | SaaS Design | Mobile App Design | Web Design\n\t• Human-Centric Design | Innovation | Digital and Brand Strategy | Interaction Design\n\t• User Research | User Testing | Prototyping | Front-end Development\n\t• Digital products used by millions of users\n\t• Modern websites that tell brand stories and drive engagement\n\t• World-class user experiences\n\nWhat I do at Musemind:\n\t• Drive new business and client partnerships\n\t• Lead and inspire teams to craft human-centric, innovative UX/UI designs\n\t• Architect high-performing, people-first teams\n\t• Shape design strategy and digital innovation across products and services\n\t• Expand business network in Europe and globally\n\nInterested in working together?\n📧 Email: rasel.ahmed@musemind.agency\n🌐 Website: https://musemind.agency/\nBehance: https://www.behance.net/raselahmed211\nDribbble: https://dribbble.com/musemindagency",
+                "title": "Co-Founder and Chief Design & Digital Officer (CDO), Musemind Europe",
+                "companyId": "74953722",
+                "companyUrnResolutionResult": {
+                  "name": "Musemind - Global UX Design Agency",
+                  "companyPictureDisplayImage": "https://media.licdn.com/dms/image/v2/D560BAQEhgCPQQ4wbyg/company-logo_200_200/company-logo_200_200/0/1696940128302/musemind_agency_logo?e=1766016000&v=beta&t=Kt0_ZWd9V8CqCedeDM-nCuCM3fzx00FM582UFz1nBlU",
+                  "industry": "Design Services",
+                  "location": "Dubai, Dubai, United Arab Emirates"
+                },
+                "current": true,
+                "tenureAtCompany": {
+                  "numYears": 1,
+                  "numMonths": 5
+                },
+                "startedOn": {
+                  "month": 7,
+                  "year": 2024
+                }
+              },
+              "profilePictureDisplayImage": "https://media.licdn.com/dms/image/v2/D4E03AQHSH_jfdXcClw/profile-displayphoto-shrink_100_100/profile-displayphoto-shrink_100_100/0/1727611117858?e=1766016000&v=beta&t=XXusL-p-yxEVmZLRd7kXvZ5q27pguyawXFhl2Jy_dW4",
+              "summary": "Designing with Purpose. Leading with Empathy. Driving Real Impact.\n\nFor over 18 years, I’ve dedicated my career to one simple but powerful belief:\n\nA product alone won’t win - you must deeply understand and serve your customers to truly build something meaningful.\n\nFrom telecom to e-commerce, aviation to AI, I’ve worked / partnered with global / fortune 500 brands like VISA Inc. and visionary startups to build experiences that don’t just function - they connect, inspire, and convert.\n\nWhat I Stand For\n\n-> People first: Every product, every touchpoint, every design decision starts with empathy.\n-> Data-driven creativity: Insights and research fuel innovation that moves metrics and hearts alike.\n-> Relentless impact: I measure success by the growth, loyalty, and joy we create for customers and businesses.\n\nMy Journey\n\nSpent nearly 12 years at Telenor Group, where I learned, executed, and led strategies around exceptional product and service design, growth hacking with a focus on retention and engagement, and end-to-end customer experience management. Since then, I’ve driven product and design strategy at Delivery Hero through data analytics, led data science and insights at AirAsia Group, and headed customer experience, human-centric design, and insights at Central Group. \n\nToday, I bring this wealth of experience to my role as Co-Founder of Musemind (global UX agency) and Mentor Lane (global mentorship platform).\n\nAcross 300+ clients + companies globally, my work has contributed to:\n\n✅ $4.5B+ in revenue impact\n✅ NPS soaring by 170%+\n✅ CSAT and CES improvements from 3 to 4.5+\n✅ Improve task completion rates from 50% to 95%.\n✅ Cutting customer complaints by half\n✅ Boosting conversion %, retention %, and lifetime value\n\nWhat Drives Me\n\nDesign isn’t just about aesthetics. It’s about crafting human experiences that simplify complexity, spark connection, and empower users. Whether redesigning USSD systems or offline channels or superApp / digital product & services or SaaS or e-commerce, Fintech or creating AI-powered product journeys, my focus is on usability, performance, and empathy - the perfect balance that turns users into advocates.\n\nWhat I’m Excited About\n\nBuilding products that unlock potential - for customers, teams, and businesses.\nInnovating at the crossroads of UX, AI, and product strategy.\nDriving sustainable, user-centered growth that truly matters.\nAnd building the best mentorship platforms to help future leaders grow with clarity, confidence, and purpose.\n\nLet’s Connect >\nIf you believe in designing with heart and delivering measurable impact.",
+              "profileUrn": "ACwAAAguXAABRLwSKcWXAeIFx1uupn9dDE-AuNc",
+              "navigationUrl": "https://www.linkedin.com/in/ACwAAAguXAABRLwSKcWXAeIFx1uupn9dDE-AuNc",
+              "openLink": true
+            },
+            {
+              "firstName": "Mark",
+              "fullName": "Mark Salter",
+              "lastName": "Salter",
+              "geoRegion": "London, England, United Kingdom",
+              "currentPosition": {
+                "tenureAtPosition": {
+                  "numYears": 2,
+                  "numMonths": 1
+                },
+                "companyName": "Maximise Your Sales",
+                "description": "\nhttps://maximiseyoursales.com\n\nLaunched targeted B2B consulting venture focused on sales leadership and employee performance in high-growth technology SMBs.\n\nEngaged as a subject matter expert, providing insight into Cloud Computing and Key Hyperscalers (Azure, AWS, GP), Open-\nSource Software, Containers as a Service, SAAS, EPM Platforms, ERP Ecosystems and Alliance Strategies.\n\nBuilt LinkedIn content strategy, averaging 10K+ weekly post views and 400+ profile visits, driving qualified client lead\n",
+                "title": "VP Sales (fractional)",
+                "companyUrnResolutionResult": {},
+                "current": true,
+                "tenureAtCompany": {
+                  "numYears": 2,
+                  "numMonths": 1
+                },
+                "startedOn": {
+                  "month": 11,
+                  "year": 2023
+                }
+              },
+              "profilePictureDisplayImage": "https://media.licdn.com/dms/image/v2/D4E03AQFWhZAvjOHsgQ/profile-displayphoto-scale_400_400/B4EZeXIYOVHwAg-/0/1750587248662?e=1766016000&v=beta&t=KiU8F2CZnpntlOWpx2F4EAON5BkAvQ03y1JgoIe9tzs",
+              "summary": "Alliances Sales Director | VP Channel Sales. \n\nSeeking permanent role. \n\nFor over 20 years, I have been building high-performance strategic alliances, channel-sales teams and partner ecosystems. \n\nI have aligned Global SIs with local Sales Teams and driven revenue across many enterprise software markets including Linux, AI/ML, SAP, Cybersecurity, Kubernetes and related environments. \n\nMy career spans VP / Senior Director roles at Canonical, SUSE, and Message Labs (now Broadcom), leading global sales teams, building revenue and launching GTM programs for SAAS vendors with Hyperscalers (AWS, GCP, Azure) across EMEA, APAC, India and North America.\n\nI’ve delivered $13M infrastructure programs, run 75-person global sales orgs, and scaled alliances across complex technical landscapes, from Cloud to PRM to Open Source.\n\nIn late 2023, I took time away from full time employment to care for terminally ilI Parent. I am now seeing a return to full-time employment.\n\nDuring this time I  launched MaximiseYourSales.com, a fractional leadership brand and consulting vehicle that helps B2B SMBs grow without inciting large costs. I also  regularly provide consulting to investors in cloud computing and open source software.\n\n\nI deliver:\n→ Teams that perform\n→ Partners that scale\n→ Revenue that sticks",
+              "profileUrn": "ACwAAAAo1ksBQIJNAjax5Os0vAHqnCdnw8d1mEE",
+              "navigationUrl": "https://www.linkedin.com/in/ACwAAAAo1ksBQIJNAjax5Os0vAHqnCdnw8d1mEE",
+              "openLink": true
+            }
+          ],
+          "pagination": {
+            "total": 2009712533,
+            "count": 25,
+            "start": 0,
+            "links": []
+          }
+        }
+      }
+    },
+    "hasLocationData": true,
+    "locationFields": [
+      "data.response.data[0].geoRegion: \"Guarulhos, São Paulo, Brazil\""
+    ],
+    "hasGeoId": false,
+    "responseStructure": [
+      "success",
+      "data",
+      "data.success",
+      "data.status",
+      "data.response",
+      "data.response.data",
+      "data.response.data[0].firstName",
+      "data.response.data[0].fullName",
+      "data.response.data[0].lastName",
+      "data.response.data[0].geoRegion",
+      "data.response.data[0].profilePictureDisplayImage",
+      "data.response.data[0].summary",
+      "data.response.data[0].profileUrn",
+      "data.response.data[0].navigationUrl",
+      "data.response.data[0].openLink",
+      "data.response.pagination",
+      "data.response.pagination.total",
+      "data.response.pagination.count",
+      "data.response.pagination.start",
+      "data.response.pagination.links"
+    ]
+  },
+  {
+    "api": "Fresh LinkedIn Profile Data",
+    "endpoint": "/api/fresh-linkedin-profile?linkedin_url=https://www.linkedin.com/in/adamselipsky/",
+    "method": "GET",
+    "request": {},
+    "status": 403,
+    "response": {
+      "error": "RapidAPI error: Forbidden",
+      "details": "{\"message\":\"You are not subscribed to this API.\"}"
+    },
+    "hasLocationData": false,
+    "locationFields": [],
+    "hasGeoId": false,
+    "responseStructure": [
+      "error",
+      "details"
+    ]
+  },
+  {
+    "api": "Fresh LinkedIn Company Data",
+    "endpoint": "/api/fresh-linkedin-company?linkedin_url=https://www.linkedin.com/company/apple/",
+    "method": "GET",
+    "request": {},
+    "status": 429,
+    "response": {
+      "error": "RapidAPI error: Too Many Requests",
+      "details": "{\"message\":\"Too many requests\"}"
+    },
+    "hasLocationData": false,
+    "locationFields": [],
+    "hasGeoId": false,
+    "responseStructure": [
+      "error",
+      "details"
+    ]
+  },
+  {
+    "api": "LinkedIn Company (by domain) - rockapis",
+    "endpoint": "/api/linkedin-company?domain=apple.com",
+    "method": "GET",
+    "request": {},
+    "status": 200,
+    "response": {
+      "success": false,
+      "message": "We are no longer providing this service at this time. If you need assistance, please contact support@professionalnetworkdata.com",
+      "data": null
+    },
+    "hasLocationData": false,
+    "locationFields": [],
+    "hasGeoId": false,
+    "responseStructure": [
+      "success",
+      "message",
+      "data"
+    ]
+  },
+  {
+    "api": "LinkedIn Profile (li-data-scraper)",
+    "endpoint": "/api/linkedin-profile?url=https://www.linkedin.com/in/adamselipsky/",
+    "method": "GET",
+    "request": {},
+    "status": 200,
+    "response": {
+      "success": false,
+      "message": "We are no longer providing this service at this time. If you need assistance, please contact support@professionalnetworkdata.com",
+      "data": null
+    },
+    "hasLocationData": false,
+    "locationFields": [],
+    "hasGeoId": false,
+    "responseStructure": [
+      "success",
+      "message",
+      "data"
+    ]
+  },
+  {
+    "api": "LinkedIn Bulk Data Scraper",
+    "endpoint": "/api/linkedin-scraper?url=https://www.linkedin.com/in/adamselipsky/&endpoint=profile",
+    "method": "GET",
+    "request": {},
+    "status": 200,
+    "response": {
+      "success": true,
+      "data": {
+        "success": true,
+        "status": 200,
+        "health": "100%"
+      },
+      "raw": "{\"success\":true,\"status\":200,\"health\":\"100%\"}"
+    },
+    "hasLocationData": false,
+    "locationFields": [],
+    "hasGeoId": false,
+    "responseStructure": [
+      "success",
+      "data",
+      "data.success",
+      "data.status",
+      "data.health",
+      "raw"
+    ]
+  }
+]

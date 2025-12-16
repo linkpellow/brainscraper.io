@@ -1,0 +1,108 @@
+/**
+ * Data Directory Utility
+ * 
+ * Centralized data directory path management with Railway persistent volume support
+ * Uses DATA_DIR environment variable for Railway deployments, falls back to local data/ directory
+ */
+
+import * as path from 'path';
+import * as fs from 'fs';
+
+/**
+ * Gets the data directory path
+ * Priority:
+ * 1. DATA_DIR environment variable (for Railway persistent volumes)
+ * 2. process.cwd()/data (local development)
+ */
+export function getDataDirectory(): string {
+  // Railway persistent volumes: Use DATA_DIR env var if set
+  if (process.env.DATA_DIR) {
+    const dataDir = process.env.DATA_DIR;
+    // Ensure directory exists
+    if (!fs.existsSync(dataDir)) {
+      try {
+        fs.mkdirSync(dataDir, { recursive: true });
+        console.log(`📁 Created data directory: ${dataDir}`);
+      } catch (error) {
+        console.error(`❌ Failed to create data directory ${dataDir}:`, error);
+        // Fall back to local data directory
+        return path.join(process.cwd(), 'data');
+      }
+    }
+    return dataDir;
+  }
+  
+  // Local development: Use project data/ directory
+  const localDataDir = path.join(process.cwd(), 'data');
+  if (!fs.existsSync(localDataDir)) {
+    try {
+      fs.mkdirSync(localDataDir, { recursive: true });
+    } catch (error) {
+      console.error(`❌ Failed to create local data directory:`, error);
+    }
+  }
+  return localDataDir;
+}
+
+/**
+ * Gets the full path to a file in the data directory
+ */
+export function getDataFilePath(filename: string): string {
+  return path.join(getDataDirectory(), filename);
+}
+
+/**
+ * Ensures the data directory exists
+ */
+export function ensureDataDirectory(): void {
+  const dataDir = getDataDirectory();
+  if (!fs.existsSync(dataDir)) {
+    try {
+      fs.mkdirSync(dataDir, { recursive: true });
+      console.log(`📁 Created data directory: ${dataDir}`);
+    } catch (error) {
+      console.error(`❌ Failed to create data directory:`, error);
+      throw new Error(`Cannot create data directory: ${dataDir}`);
+    }
+  }
+}
+
+/**
+ * Safe file write with error handling and directory creation
+ */
+export function safeWriteFile(filePath: string, data: string, options?: { encoding?: BufferEncoding }): void {
+  try {
+    ensureDataDirectory();
+    const dir = path.dirname(filePath);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    fs.writeFileSync(filePath, data, options || { encoding: 'utf-8' });
+  } catch (error) {
+    console.error(`❌ Failed to write file ${filePath}:`, error);
+    throw new Error(`File write failed: ${filePath} - ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+}
+
+/**
+ * Safe file read with error handling
+ */
+export function safeReadFile(filePath: string, encoding: BufferEncoding = 'utf-8'): string | null {
+  try {
+    if (!fs.existsSync(filePath)) {
+      return null;
+    }
+    return fs.readFileSync(filePath, encoding);
+  } catch (error) {
+    console.error(`❌ Failed to read file ${filePath}:`, error);
+    return null;
+  }
+}
+
+/**
+ * Check if a file exists in the data directory
+ */
+export function dataFileExists(filename: string): boolean {
+  const filePath = getDataFilePath(filename);
+  return fs.existsSync(filePath);
+}

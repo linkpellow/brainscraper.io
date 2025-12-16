@@ -1,0 +1,225 @@
+@import "tailwindcss";
+
+:root {
+  --background: #000000;
+  --foreground: #FFD700;
+  --accent-cyan: #FFD700;
+  --accent-green: #FFA500;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* scroll-behavior is now handled via data-scroll-behavior attribute in layout.tsx */
+
+body {
+  color: #1A1A1A;
+  background: #FFFFFF;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: 'kern' 1, 'liga' 1, 'calt' 1;
+  text-rendering: optimizeLegibility;
+}
+
+/* Removed scanline effect for minimalist design */
+
+/* Modern selection */
+::selection {
+  background: rgba(37, 99, 235, 0.2);
+  color: #1A1A1A;
+}
+
+/* Minimal scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+  transition: background 0.3s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  .terminal-border {
+    border: 1px solid rgba(255, 215, 0, 0.15);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2), 0 0 1px rgba(255, 215, 0, 0.1);
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    background: rgba(17, 17, 17, 0.4);
+    backdrop-filter: blur(12px);
+    border-radius: 8px;
+  }
+  
+  .terminal-border:hover {
+    border-color: rgba(255, 215, 0, 0.3);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3), 0 0 2px rgba(255, 215, 0, 0.2);
+    transform: translateY(-1px);
+  }
+  
+  .terminal-glow {
+    text-shadow: 0 0 8px rgba(255, 215, 0, 0.3), 0 0 16px rgba(255, 215, 0, 0.15);
+  }
+  
+  .terminal-glow-sm {
+    text-shadow: 0 0 4px rgba(255, 215, 0, 0.25), 0 0 8px rgba(255, 215, 0, 0.1);
+  }
+  
+  .terminal-glow-lg {
+    text-shadow: 0 0 12px rgba(255, 215, 0, 0.4), 0 0 24px rgba(255, 215, 0, 0.2), 0 0 36px rgba(255, 215, 0, 0.1);
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  
+  /* Smooth transitions for all interactive elements */
+  button, a, input, select, textarea {
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  
+  /* Subtle hover lift effect */
+  .hover-lift:hover {
+    transform: translateY(-2px);
+  }
+  
+  /* Soft focus states */
+  input:focus, textarea:focus, select:focus {
+    outline: none;
+    border-color: rgba(255, 215, 0, 0.4);
+    box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.1);
+  }
+}
+
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse-cyan {
+  0%, 100% {
+    opacity: 1;
+    box-shadow: 0 0 8px rgba(255, 215, 0, 0.2);
+  }
+  50% {
+    opacity: 0.9;
+    box-shadow: 0 0 16px rgba(255, 215, 0, 0.3);
+  }
+}
+
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 2s infinite;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+@keyframes gradient-shift {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes glow-pulse {
+  0%, 100% {
+    opacity: 0.5;
+    filter: blur(20px);
+  }
+  50% {
+    opacity: 0.8;
+    filter: blur(30px);
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 3s infinite linear;
+  background: linear-gradient(
+    to right,
+    transparent 0%,
+    rgba(255, 255, 255, 0.1) 50%,
+    transparent 100%
+  );
+  background-size: 1000px 100%;
+}
+
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: gradient-shift 3s ease infinite;
+}
+
+.glow-effect {
+  animation: glow-pulse 2s ease-in-out infinite;
+}
+
+@keyframes scanline {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(100vh);
+  }
+}
+

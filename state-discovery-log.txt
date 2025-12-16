@@ -1,0 +1,269 @@
+[dotenv@17.2.3] injecting env (3) from .env.local -- tip: ✅ audit secrets and track compliance: https://dotenvx.com/ops
+🌎 Discovering Geo IDs for US States
+
+================================================================================
+Total states to discover: 30
+
+
+[1/30] Alabama (AL)
+--------------------------------------------------------------------------------
+
+🔍 Discovering geo ID for Alabama...
+  ⚠️  Could not extract ID from URL
+  ❌ FAILED: Could not discover geo ID
+
+[2/30] Arkansas (AR)
+--------------------------------------------------------------------------------
+
+🔍 Discovering geo ID for Arkansas...
+  ⚠️  Could not extract ID from URL
+  ❌ FAILED: Could not discover geo ID
+
+[3/30] Colorado (CO)
+--------------------------------------------------------------------------------
+
+🔍 Discovering geo ID for Colorado...
+  ⚠️  Could not extract ID from URL
+  ❌ FAILED: Could not discover geo ID
+
+[4/30] Delaware (DE)
+--------------------------------------------------------------------------------
+
+🔍 Discovering geo ID for Delaware...
+  ⚠️  Could not extract ID from URL
+  ❌ FAILED: Could not discover geo ID
+
+[5/30] Florida (FL)
+--------------------------------------------------------------------------------
+
+🔍 Discovering geo ID for Florida...
+  ⚠️  Could not extract ID from URL
+  ❌ FAILED: Could not discover geo ID
+
+[6/30] Georgia (GA)
+--------------------------------------------------------------------------------
+
+🔍 Discovering geo ID for Georgia...
+  ⚠️  Could not extract ID from URL
+  ❌ FAILED: Could not discover geo ID
+
+[7/30] Illinois (IL)
+--------------------------------------------------------------------------------
+
+🔍 Discovering geo ID for Illinois...
+  ⚠️  Could not extract ID from URL
+  ❌ FAILED: Could not discover geo ID
+
+[8/30] Indiana (IN)
+--------------------------------------------------------------------------------
+
+🔍 Discovering geo ID for Indiana...
+  ⚠️  Could not extract ID from URL
+  ❌ FAILED: Could not discover geo ID
+
+[9/30] Iowa (IA)
+--------------------------------------------------------------------------------
+
+🔍 Discovering geo ID for Iowa...
+  ⚠️  Could not extract ID from URL
+  ❌ FAILED: Could not discover geo ID
+
+[10/30] Kansas (KS)
+--------------------------------------------------------------------------------
+
+🔍 Discovering geo ID for Kansas...
+  ⚠️  Could not extract ID from URL
+  ❌ FAILED: Could not discover geo ID
+
+[11/30] Kentucky (KY)
+--------------------------------------------------------------------------------
+
+🔍 Discovering geo ID for Kentucky...
+  ⚠️  Could not extract ID from URL
+  ❌ FAILED: Could not discover geo ID
+
+[12/30] Louisiana (LA)
+--------------------------------------------------------------------------------
+
+🔍 Discovering geo ID for Louisiana...
+  ⚠️  Could not extract ID from URL
+  ❌ FAILED: Could not discover geo ID
+
+[13/30] Maryland (MD)
+--------------------------------------------------------------------------------
+
+🔍 Discovering geo ID for Maryland...
+  ⚠️  Could not extract ID from URL
+  ❌ FAILED: Could not discover geo ID
+
+[14/30] Michigan (MI)
+--------------------------------------------------------------------------------
+
+🔍 Discovering geo ID for Michigan...
+  ⚠️  Could not extract ID from URL
+  ❌ FAILED: Could not discover geo ID
+
+[15/30] Mississippi (MS)
+--------------------------------------------------------------------------------
+
+🔍 Discovering geo ID for Mississippi...
+  ⚠️  Could not extract ID from URL
+  ❌ FAILED: Could not discover geo ID
+
+[16/30] Missouri (MO)
+--------------------------------------------------------------------------------
+
+🔍 Discovering geo ID for Missouri...
+  ⚠️  Could not extract ID from URL
+  ❌ FAILED: Could not discover geo ID
+
+[17/30] Montana (MT)
+--------------------------------------------------------------------------------
+
+🔍 Discovering geo ID for Montana...
+  ⚠️  Could not extract ID from URL
+  ❌ FAILED: Could not discover geo ID
+
+[18/30] Nebraska (NE)
+--------------------------------------------------------------------------------
+
+🔍 Discovering geo ID for Nebraska...
+  ⚠️  Could not extract ID from URL
+  ❌ FAILED: Could not discover geo ID
+
+[19/30] Nevada (NV)
+--------------------------------------------------------------------------------
+
+🔍 Discovering geo ID for Nevada...
+  ⚠️  Could not extract ID from URL
+  ❌ FAILED: Could not discover geo ID
+
+[20/30] North Carolina (NC)
+--------------------------------------------------------------------------------
+
+🔍 Discovering geo ID for North Carolina...
+  ⚠️  Could not extract ID from URL
+  ❌ FAILED: Could not discover geo ID
+
+[21/30] Ohio (OH)
+--------------------------------------------------------------------------------
+
+🔍 Discovering geo ID for Ohio...
+  ⚠️  Could not extract ID from URL
+  ❌ FAILED: Could not discover geo ID
+
+[22/30] Oklahoma (OK)
+--------------------------------------------------------------------------------
+
+🔍 Discovering geo ID for Oklahoma...
+  ⚠️  Could not extract ID from URL
+  ❌ FAILED: Could not discover geo ID
+
+[23/30] South Carolina (SC)
+--------------------------------------------------------------------------------
+
+🔍 Discovering geo ID for South Carolina...
+  ⚠️  Could not extract ID from URL
+  ❌ FAILED: Could not discover geo ID
+
+[24/30] South Dakota (SD)
+--------------------------------------------------------------------------------
+
+🔍 Discovering geo ID for South Dakota...
+  ⚠️  Could not extract ID from URL
+  ❌ FAILED: Could not discover geo ID
+
+[25/30] Tennessee (TN)
+--------------------------------------------------------------------------------
+
+🔍 Discovering geo ID for Tennessee...
+  ⚠️  Could not extract ID from URL
+  ❌ FAILED: Could not discover geo ID
+
+[26/30] Texas (TX)
+--------------------------------------------------------------------------------
+
+🔍 Discovering geo ID for Texas...
+  ⚠️  Could not extract ID from URL
+  ❌ FAILED: Could not discover geo ID
+
+[27/30] Utah (UT)
+--------------------------------------------------------------------------------
+
+🔍 Discovering geo ID for Utah...
+  ⚠️  Could not extract ID from URL
+  ❌ FAILED: Could not discover geo ID
+
+[28/30] Virginia (VA)
+--------------------------------------------------------------------------------
+
+🔍 Discovering geo ID for Virginia...
+  ⚠️  Could not extract ID from URL
+  ❌ FAILED: Could not discover geo ID
+
+[29/30] Wisconsin (WI)
+--------------------------------------------------------------------------------
+
+🔍 Discovering geo ID for Wisconsin...
+  ⚠️  Could not extract ID from URL
+  ❌ FAILED: Could not discover geo ID
+
+[30/30] West Virginia (WV)
+--------------------------------------------------------------------------------
+
+🔍 Discovering geo ID for West Virginia...
+  ⚠️  Could not extract ID from URL
+  ❌ FAILED: Could not discover geo ID
+
+================================================================================
+📊 DISCOVERY SUMMARY
+
+✅ Successfully discovered: 0/30
+✅ Verified: 0/30
+❌ Failed: 30/30
+
+STATE RESULTS:
+--------------------------------------------------------------------------------
+State               Abbr  Location ID    Verified
+--------------------------------------------------------------------------------
+Alabama             AL    N/A            ❌
+Arkansas            AR    N/A            ❌
+Colorado            CO    N/A            ❌
+Delaware            DE    N/A            ❌
+Florida             FL    N/A            ❌
+Georgia             GA    N/A            ❌
+Illinois            IL    N/A            ❌
+Indiana             IN    N/A            ❌
+Iowa                IA    N/A            ❌
+Kansas              KS    N/A            ❌
+Kentucky            KY    N/A            ❌
+Louisiana           LA    N/A            ❌
+Maryland            MD    N/A            ❌
+Michigan            MI    N/A            ❌
+Mississippi         MS    N/A            ❌
+Missouri            MO    N/A            ❌
+Montana             MT    N/A            ❌
+Nebraska            NE    N/A            ❌
+Nevada              NV    N/A            ❌
+North Carolina      NC    N/A            ❌
+Ohio                OH    N/A            ❌
+Oklahoma            OK    N/A            ❌
+South Carolina      SC    N/A            ❌
+South Dakota        SD    N/A            ❌
+Tennessee           TN    N/A            ❌
+Texas               TX    N/A            ❌
+Utah                UT    N/A            ❌
+Virginia            VA    N/A            ❌
+Wisconsin           WI    N/A            ❌
+West Virginia       WV    N/A            ❌
+
+================================================================================
+📝 DATABASE ENTRIES (JSON):
+
+{}
+
+💾 Saved to: data/discovered-states.json
+💾 CSV saved to: data/discovered-states.csv
+
+================================================================================
+✅ Discovery complete!
