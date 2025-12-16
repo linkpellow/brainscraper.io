@@ -20,6 +20,7 @@ export interface LeadSummary {
   normalizedCarrier?: string; // From Telnyx carrier.normalized_carrier
   searchFilter?: string; // Search filter summary from LinkedIn search
   dateScraped?: string; // Date when the lead was scraped/created
+  linkedinUrl?: string; // LinkedIn profile URL
 }
 
 /**
@@ -375,6 +376,9 @@ export function extractLeadSummary(
   // Extract search filter from row (added during conversion)
   const searchFilter = row['Search Filter'] ? String(row['Search Filter']) : '';
   
+  // Extract LinkedIn URL from row
+  const linkedinUrl = row['LinkedIn URL'] || row['LinkedInURL'] || row['linkedin_url'] || row['linkedinUrl'] || row['navigationUrl'] || row['profile_url'] || row['url'] || '';
+  
   // Extract date scraped from row or use provided date, or current date if not available
   const scrapedDateRaw = dateScraped || row['Date Scraped'] || row['date_scraped'] || row['DateScraped'] || new Date().toISOString().split('T')[0];
   const scrapedDate = scrapedDateRaw ? String(scrapedDateRaw) : new Date().toISOString().split('T')[0];
@@ -414,6 +418,7 @@ export function extractLeadSummary(
     normalizedCarrier,
     searchFilter,
     dateScraped: scrapedDate,
+    linkedinUrl: linkedinUrl ? String(linkedinUrl) : undefined,
   };
   
   // DIAGNOSTIC: Enhanced debug logging

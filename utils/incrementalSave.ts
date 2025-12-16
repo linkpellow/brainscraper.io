@@ -3,16 +3,42 @@
  * 
  * Provides continuous saving during enrichment to ensure data persistence
  * even if the process is interrupted. Tracks processed leads to avoid duplicates.
+ * 
+ * NOTE: This module uses Node.js fs module and can only run on the server.
+ * All functions check if they're running in a Node.js environment before executing.
  */
 
-import * as fs from 'fs';
-import * as path from 'path';
-import { getDataDirectory, ensureDataDirectory, safeWriteFile, safeReadFile } from './dataDirectory';
 import type { EnrichedRow } from './enrichData';
 import type { LeadSummary } from './extractLeadSummary';
 
+// Check if we're running in Node.js (server-side)
+const isServer = typeof window === 'undefined' && typeof process !== 'undefined' && process.versions?.node;
+
+// Lazy load Node.js modules only on server
+let fs: typeof import('fs') | null = null;
+let path: typeof import('path') | null = null;
+let dataDirectoryUtils: typeof import('./dataDirectory') | null = null;
+
+function ensureServerModules() {
+  if (!isServer) {
+    return false;
+  }
+  if (!fs || !path || !dataDirectoryUtils) {
+    try {
+      fs = require('fs');
+      path = require('path');
+      dataDirectoryUtils = require('./dataDirectory');
+    } catch (error) {
+      console.error('Failed to load server modules:', error);
+      return false;
+    }
+  }
+  return true;
+}
+
 /**
  * Get a unique key for a lead to track duplicates
+ * Works on both client and server
  */
 export function getLeadKey(lead: any): string {
   // Use LinkedIn URL as primary key, fallback to name+email+phone
@@ -35,10 +61,15 @@ export function getLeadKey(lead: any): string {
 
 /**
  * Load already processed lead keys from checkpoint file
+ * Only works on server - returns empty set on client
  */
 export function loadProcessedLeads(): Set<string> {
-  const checkpointPath = path.join(getDataDirectory(), 'enrichment-checkpoint.json');
-  const content = safeReadFile(checkpointPath);
+  if (!ensureServerModules()) {
+    return new Set(); // Return empty set on client
+  }
+  
+  const checkpointPath = path!.join(dataDirectoryUtils!.getDataDirectory(), 'enrichment-checkpoint.json');
+  const content = dataDirectoryUtils!.safeReadFile(checkpointPath);
   
   if (!content) {
     return new Set();
@@ -54,9 +85,14 @@ export function loadProcessedLeads(): Set<string> {
 
 /**
  * Save a processed lead key to checkpoint
+ * Only works on server - no-op on client
  */
 export function saveProcessedLeadKey(key: string): void {
-  const checkpointPath = path.join(getDataDirectory(), 'enrichment-checkpoint.json');
+  if (!ensureServerModules()) {
+    return; // No-op on client
+  }
+  
+  const checkpointPath = path!.join(dataDirectoryUtils!.getDataDirectory(), 'enrichment-checkpoint.json');
   const processed = loadProcessedLeads();
   processed.add(key);
   
@@ -66,23 +102,38 @@ export function saveProcessedLeadKey(key: string): void {
     totalProcessed: processed.size,
   };
   
-  safeWriteFile(checkpointPath, JSON.stringify(data, null, 2));
+  dataDirectoryUtils!.safeWriteFile(checkpointPath, JSON.stringify(data, null, 2));
 }
 
 /**
  * Save enriched lead immediately to disk
+ * Only works on server - no-op on client (saves via API instead)
  */
 export function saveEnrichedLeadImmediate(
   enrichedRow: EnrichedRow,
   leadSummary: LeadSummary
 ): void {
+  if (!ensureServerModules()) {
+    // On client, save via API call
+    if (typeof fetch !== 'undefined') {
+      fetch('/api/save-enriched-lead', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enrichedRow, leadSummary }),
+      }).catch(error => {
+        console.error(`❌ [INCREMENTAL_SAVE] Failed to save lead via API:`, error);
+      });
+    }
+    return;
+  }
+  
   try {
-    ensureDataDirectory();
-    const dataDir = getDataDirectory();
-    const enrichedDir = path.join(dataDir, 'enriched-leads');
+    dataDirectoryUtils!.ensureDataDirectory();
+    const dataDir = dataDirectoryUtils!.getDataDirectory();
+    const enrichedDir = path!.join(dataDir, 'enriched-leads');
     
-    if (!fs.existsSync(enrichedDir)) {
-      fs.mkdirSync(enrichedDir, { recursive: true });
+    if (!fs!.existsSync(enrichedDir)) {
+      fs!.mkdirSync(enrichedDir, { recursive: true });
     }
     
     // Save individual lead file
@@ -90,7 +141,7 @@ export function saveEnrichedLeadImmediate(
     const sanitizedKey = leadKey.replace(/[^a-zA-Z0-9:]/g, '_').substring(0, 100);
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
     const filename = `${timestamp}-${sanitizedKey}.json`;
-    const filepath = path.join(enrichedDir, filename);
+    const filepath = path!.join(enrichedDir, filename);
     
     const leadData = {
       metadata: {
@@ -101,16 +152,16 @@ export function saveEnrichedLeadImmediate(
       leadSummary,
     };
     
-    safeWriteFile(filepath, JSON.stringify(leadData, null, 2));
+    dataDirectoryUtils!.safeWriteFile(filepath, JSON.stringify(leadData, null, 2));
     
     // Also append to daily summary file
     const dateStr = new Date().toISOString().split('T')[0];
-    const summaryFile = path.join(enrichedDir, `summary-${dateStr}.json`);
+    const summaryFile = path!.join(enrichedDir, `summary-${dateStr}.json`);
     
     let dailySummary: any[] = [];
-    if (fs.existsSync(summaryFile)) {
+    if (fs!.existsSync(summaryFile)) {
       try {
-        const existing = safeReadFile(summaryFile);
+        const existing = dataDirectoryUtils!.safeReadFile(summaryFile);
         if (existing) {
           dailySummary = JSON.parse(existing);
         }
@@ -130,7 +181,7 @@ export function saveEnrichedLeadImmediate(
       dailySummary.push(leadData);
     }
     
-    safeWriteFile(summaryFile, JSON.stringify(dailySummary, null, 2));
+    dataDirectoryUtils!.safeWriteFile(summaryFile, JSON.stringify(dailySummary, null, 2));
     
     // Mark as processed
     saveProcessedLeadKey(leadKey);
@@ -144,18 +195,23 @@ export function saveEnrichedLeadImmediate(
 
 /**
  * Load all enriched leads from disk
+ * Only works on server - returns empty array on client
  */
 export function loadAllEnrichedLeads(): LeadSummary[] {
+  if (!ensureServerModules()) {
+    return []; // Return empty array on client
+  }
+  
   try {
-    const dataDir = getDataDirectory();
-    const enrichedDir = path.join(dataDir, 'enriched-leads');
+    const dataDir = dataDirectoryUtils!.getDataDirectory();
+    const enrichedDir = path!.join(dataDir, 'enriched-leads');
     
-    if (!fs.existsSync(enrichedDir)) {
+    if (!fs!.existsSync(enrichedDir)) {
       return [];
     }
     
     const allLeads: LeadSummary[] = [];
-    const files = fs.readdirSync(enrichedDir)
+    const files = fs!.readdirSync(enrichedDir)
       .filter(file => file.endsWith('.json') && file.startsWith('20'))
       .sort()
       .reverse(); // Most recent first
@@ -164,8 +220,8 @@ export function loadAllEnrichedLeads(): LeadSummary[] {
     
     for (const file of files) {
       try {
-        const filepath = path.join(enrichedDir, file);
-        const content = safeReadFile(filepath);
+        const filepath = path!.join(enrichedDir, file);
+        const content = dataDirectoryUtils!.safeReadFile(filepath);
         if (!content) continue;
         
         const data = JSON.parse(content);
@@ -194,8 +250,13 @@ export function loadAllEnrichedLeads(): LeadSummary[] {
 
 /**
  * Check if a lead has already been processed
+ * Works on both client and server (returns false on client if can't check)
  */
 export function isLeadProcessed(lead: any): boolean {
+  if (!ensureServerModules()) {
+    return false; // On client, can't check, so return false to allow processing
+  }
+  
   const processed = loadProcessedLeads();
   const key = getLeadKey(lead);
   return processed.has(key);
@@ -203,10 +264,16 @@ export function isLeadProcessed(lead: any): boolean {
 
 /**
  * Clear checkpoint (use with caution)
+ * Only works on server - no-op on client
  */
 export function clearCheckpoint(): void {
-  const checkpointPath = path.join(getDataDirectory(), 'enrichment-checkpoint.json');
-  if (fs.existsSync(checkpointPath)) {
-    fs.unlinkSync(checkpointPath);
+  if (!ensureServerModules()) {
+    return; // No-op on client
+  }
+  
+  const checkpointPath = path!.join(dataDirectoryUtils!.getDataDirectory(), 'enrichment-checkpoint.json');
+  if (fs!.existsSync(checkpointPath)) {
+    fs!.unlinkSync(checkpointPath);
   }
 }
+
