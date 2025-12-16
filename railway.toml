@@ -15,3 +15,4 @@ restartPolicyMaxRetries = 10
 # DATA_DIR=/data (for persistent volume)
 # USHA_JWT_TOKEN=your-token (optional, will use Crokodial API)
 # CRON_SECRET=your-secret (optional, for cron job security)
+# NODE_VERSION=20 (forces Node.js 20 for Next.js 16 compatibility)
