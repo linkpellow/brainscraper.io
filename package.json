@@ -3,7 +3,6 @@
   "version": "1.0.0",
   "description": "A hacker-themed website for uploading and viewing spreadsheets",
   "private": true,
-  // Trigger deployment
   "scripts": {
     "dev": "next dev",
     "build": "next build",
