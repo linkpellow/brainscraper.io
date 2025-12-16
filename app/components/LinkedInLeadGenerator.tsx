@@ -170,7 +170,7 @@ export default function LinkedInLeadGenerator() {
   const [ushaToken, setUshaToken] = useState<string>('');
   const [jobLogID, setJobLogID] = useState<string | null>(null);
   const [leadSummaries, setLeadSummaries] = useState<LeadSummary[]>([]);
-  const [sortField, setSortField] = useState<'state' | 'none'>('none');
+  const [sortField, setSortField] = useState<'state' | 'income' | 'none'>('none');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [enableDNCScrub, setEnableDNCScrub] = useState<boolean>(false);
   const [locationDiscoveryStatus, setLocationDiscoveryStatus] = useState<string | null>(null);
@@ -1409,6 +1409,11 @@ export default function LinkedInLeadGenerator() {
     const sorted = [...leadSummaries].sort((a, b) => {
       if (sortField === 'state') {
         return sortDirection === 'asc' ? a.state.localeCompare(b.state) : b.state.localeCompare(a.state);
+      }
+      if (sortField === 'income') {
+        const aIncome = a.income || 0;
+        const bIncome = b.income || 0;
+        return sortDirection === 'asc' ? aIncome - bIncome : bIncome - aIncome;
       }
       return 0;
     });
