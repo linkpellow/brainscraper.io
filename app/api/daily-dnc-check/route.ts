@@ -293,7 +293,10 @@ async function saveEnrichedLeads(leads: LeadSummary[]): Promise<void> {
       const timestampData = {
         lastCheck: new Date().toISOString(),
         totalLeads: leads.length,
-        leadsWithPhone: leads.filter(l => l.phone?.replace(/\D/g, '').length >= 10).length,
+        leadsWithPhone: leads.filter(l => {
+          const phoneDigits = l.phone?.replace(/\D/g, '');
+          return phoneDigits && phoneDigits.length >= 10;
+        }).length,
       };
       safeWriteFile(timestampPath, JSON.stringify(timestampData, null, 2));
       console.log(`✅ [DAILY_DNC] Updated timestamp: ${timestampData.lastCheck}`);
