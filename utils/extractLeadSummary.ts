@@ -376,7 +376,8 @@ export function extractLeadSummary(
   const searchFilter = row['Search Filter'] ? String(row['Search Filter']) : '';
   
   // Extract date scraped from row or use provided date, or current date if not available
-  const scrapedDate = dateScraped || row['Date Scraped'] || row['date_scraped'] || row['DateScraped'] || new Date().toISOString().split('T')[0];
+  const scrapedDateRaw = dateScraped || row['Date Scraped'] || row['date_scraped'] || row['DateScraped'] || new Date().toISOString().split('T')[0];
+  const scrapedDate = scrapedDateRaw ? String(scrapedDateRaw) : new Date().toISOString().split('T')[0];
   
   // Extract income - try row first, then enriched data, convert to number
   let income: number | undefined;
