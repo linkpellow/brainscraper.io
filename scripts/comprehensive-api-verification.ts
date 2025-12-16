@@ -578,9 +578,11 @@ async function runVerification(): Promise<VerificationReport> {
   const companyTestB = phase2Results.find(r => r.name.includes('Format B (URN)'));
   
   if (companyTestA && companyTestB) {
-    if (companyTestA.resultsCount > companyTestB.resultsCount) {
+    const countA = companyTestA.resultsCount ?? 0;
+    const countB = companyTestB.resultsCount ?? 0;
+    if (countA > countB) {
       recommendations.push('✅ Use normalized company names (Format A) - returns more results');
-    } else if (companyTestB.resultsCount > companyTestA.resultsCount) {
+    } else if (countB > countA) {
       recommendations.push('✅ Use URN format for companies (Format B) - returns more results');
     } else {
       recommendations.push('⚠️ Both company formats work similarly - use normalized names (simpler)');
