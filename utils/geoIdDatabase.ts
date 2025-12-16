@@ -198,7 +198,7 @@ export function lookupGeoId(locationText: string): GeoIdEntry | null {
   // Handle both {entries: {}} and direct {} database formats
   const entries = db.entries || db;
   
-  const rawEntry = entries[normalizedKey];
+  const rawEntry = entries[normalizedKey] as any; // Allow legacy formats with 'id' instead of 'locationId'
   if (rawEntry) {
     // Normalize entry structure (some entries use 'id' instead of 'locationId')
     const entry: GeoIdEntry = {
