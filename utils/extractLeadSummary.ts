@@ -14,6 +14,7 @@ export interface LeadSummary {
   city: string;
   email: string;
   dncStatus: string; // "YES", "NO", or "UNKNOWN"
+  income?: number; // Income value for sorting
   lineType?: string; // From Telnyx portability.line_type
   carrier?: string; // From Telnyx carrier.name
   normalizedCarrier?: string; // From Telnyx carrier.normalized_carrier
@@ -377,6 +378,26 @@ export function extractLeadSummary(
   // Extract date scraped from row or use provided date, or current date if not available
   const scrapedDate = dateScraped || row['Date Scraped'] || row['date_scraped'] || row['DateScraped'] || new Date().toISOString().split('T')[0];
   
+  // Extract income - try row first, then enriched data, convert to number
+  let income: number | undefined;
+  const rowIncome = row['Income'] || row['income'] || row['Household Income'] || row['household_income'] || '';
+  if (rowIncome) {
+    const incomeNum = typeof rowIncome === 'number' ? rowIncome : parseFloat(String(rowIncome).replace(/[^0-9.]/g, ''));
+    if (!isNaN(incomeNum) && incomeNum > 0) {
+      income = incomeNum;
+    }
+  }
+  if (!income && enriched?.incomeData) {
+    const incomeData = enriched.incomeData as any;
+    const incomeValue = incomeData.income || incomeData.householdIncome || incomeData.value || incomeData;
+    if (incomeValue) {
+      const incomeNum = typeof incomeValue === 'number' ? incomeValue : parseFloat(String(incomeValue).replace(/[^0-9.]/g, ''));
+      if (!isNaN(incomeNum) && incomeNum > 0) {
+        income = incomeNum;
+      }
+    }
+  }
+  
   const summary = {
     name: extractName(row, enriched),
     phone: extractPhone(row, enriched), // TOP PRIORITY
@@ -386,6 +407,7 @@ export function extractLeadSummary(
     city: extractCity(row, enriched),
     email: extractEmail(row, enriched),
     dncStatus,
+    income,
     lineType,
     carrier,
     normalizedCarrier,
