@@ -17,6 +17,11 @@ const orbitron = Orbitron({
 export const metadata: Metadata = {
   title: "brainscraper.io",
   description: "Upload and view spreadsheets with a hacker theme",
+  icons: {
+    icon: '/favicon.png',
+    shortcut: '/favicon.png',
+    apple: '/favicon.png',
+  },
 };
 
 export default function RootLayout({
