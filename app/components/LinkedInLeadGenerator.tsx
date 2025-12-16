@@ -1265,11 +1265,72 @@ export default function LinkedInLeadGenerator() {
       console.log('✨ [ENRICH] Lead summaries:', summaries.length);
       setLeadSummaries(summaries);
       
-      // Save enriched leads to localStorage for the enriched leads page
+      // Load existing enriched leads from disk (incremental saves)
+      try {
+        const loadResponse = await fetch('/api/load-enriched-leads');
+        if (loadResponse.ok) {
+          const diskData = await loadResponse.json();
+          if (diskData.success && Array.isArray(diskData.leads)) {
+            console.log(`✨ [ENRICH] Loaded ${diskData.leads.length} leads from disk`);
+            // Merge disk leads with newly enriched leads (avoid duplicates)
+            const seenKeys = new Set<string>();
+            const allSummaries: LeadSummary[] = [];
+            
+            // Add disk leads first
+            for (const lead of diskData.leads) {
+              const key = lead.linkedinUrl || `${lead.name}-${lead.email}-${lead.phone}`;
+              if (!seenKeys.has(key)) {
+                seenKeys.add(key);
+                allSummaries.push(lead);
+              }
+            }
+            
+            // Add newly enriched leads
+            for (const lead of summaries) {
+              const key = lead.linkedinUrl || `${lead.name}-${lead.email}-${lead.phone}`;
+              if (!seenKeys.has(key)) {
+                seenKeys.add(key);
+                allSummaries.push(lead);
+              }
+            }
+            
+            console.log(`✨ [ENRICH] Total unique leads after merge: ${allSummaries.length}`);
+            setLeadSummaries(allSummaries);
+            
+            // Save merged leads to localStorage
+            localStorage.setItem('enrichedLeads', JSON.stringify(allSummaries));
+            console.log('✨ [ENRICH] Saved merged leads to localStorage:', allSummaries.length);
+          }
+        }
+      } catch (loadError) {
+        console.error('✨ [ENRICH] Failed to load leads from disk:', loadError);
+      }
+      
+      // Also save newly enriched leads to localStorage (fallback)
       try {
         const existingLeads = localStorage.getItem('enrichedLeads');
         const existing = existingLeads ? JSON.parse(existingLeads) : [];
-        const combined = [...existing, ...summaries];
+        const seenKeys = new Set<string>();
+        const combined: LeadSummary[] = [];
+        
+        // Add existing leads
+        for (const lead of existing) {
+          const key = lead.linkedinUrl || `${lead.name}-${lead.email}-${lead.phone}`;
+          if (!seenKeys.has(key)) {
+            seenKeys.add(key);
+            combined.push(lead);
+          }
+        }
+        
+        // Add new summaries
+        for (const lead of summaries) {
+          const key = lead.linkedinUrl || `${lead.name}-${lead.email}-${lead.phone}`;
+          if (!seenKeys.has(key)) {
+            seenKeys.add(key);
+            combined.push(lead);
+          }
+        }
+        
         localStorage.setItem('enrichedLeads', JSON.stringify(combined));
         console.log('✨ [ENRICH] Saved enriched leads to localStorage:', combined.length);
         
@@ -1882,7 +1943,6 @@ export default function LinkedInLeadGenerator() {
                       placeholder="Apple, Google, Microsoft"
                       className="group w-full px-4 py-2.5 rounded-xl bg-slate-800/40 backdrop-blur-xl border-2 border-slate-700/50 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-blue-500/60 focus:ring-2 focus:ring-blue-500/20 focus:bg-slate-800/60 hover:border-slate-600/60 transition-all duration-300 hover:shadow-md hover:shadow-blue-500/10 font-data"
                     />
-                    <p className="text-xs text-slate-500 font-data">Company name (will auto-convert to URN)</p>
                 </div>
                   <div className="space-y-1.5">
                     <label className="block text-xs font-medium text-slate-200 font-data">Industry</label>
@@ -1893,13 +1953,11 @@ export default function LinkedInLeadGenerator() {
                     placeholder="Technology, Finance, Healthcare"
                       className="group w-full px-4 py-2.5 rounded-xl bg-slate-800/40 backdrop-blur-xl border-2 border-slate-700/50 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-blue-500/60 focus:ring-2 focus:ring-blue-500/20 focus:bg-slate-800/60 hover:border-slate-600/60 transition-all duration-300 hover:shadow-md hover:shadow-blue-500/10 font-data"
                   />
-                    <p className="text-xs text-slate-500 font-data">Industry name (will auto-convert to ID)</p>
                   </div>
                 </div>
 
                 {/* Company Filters */}
                 <div className="space-y-3 pt-4 border-t border-slate-700/50-subtle">
-                  <h4 className="text-xs font-medium text-slate-200 font-data">Company Filters</h4>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                     <div className="space-y-2">
                       <label className="block text-xs text-slate-400 font-data">Past Company</label>

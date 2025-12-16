@@ -3,6 +3,8 @@
  */
 
 import { ParsedData } from './parseFile';
+import { isLeadProcessed, saveEnrichedLeadImmediate, getLeadKey } from './incrementalSave';
+import { extractLeadSummary } from './extractLeadSummary';
 
 /**
  * Detailed progress information for real-time tracking
@@ -1759,8 +1761,34 @@ export async function enrichData(
 
   for (let i = 0; i < data.rows.length; i++) {
     const row = data.rows[i];
-    const enrichedRow: EnrichedRow = { ...row };
     const leadName = String(row['Name'] || row['First Name'] + ' ' + row['Last Name'] || `Lead ${i + 1}`).trim();
+    
+    // Check if lead has already been processed (duplicate detection)
+    if (isLeadProcessed(row)) {
+      const leadKey = getLeadKey(row);
+      console.log(`⏭️  [ENRICH_DATA] Skipping already processed lead: ${leadName} (${leadKey})`);
+      
+      // Still report progress for skipped leads
+      if (onProgress) {
+        onProgress(i + 1, data.rows.length);
+      }
+      if (onDetailedProgress) {
+        onDetailedProgress({
+          current: i + 1,
+          total: data.rows.length,
+          leadName,
+          step: 'complete',
+          stepDetails: {},
+          timestamp: Date.now(),
+        });
+      }
+      
+      // Try to load existing enriched data for this lead
+      // This ensures we don't lose data even if we skip enrichment
+      continue; // Skip to next lead to avoid duplicate API calls
+    }
+    
+    const enrichedRow: EnrichedRow = { ...row };
 
     // Enhanced progress callback
     const reportProgress = (step: EnrichmentProgress['step'], stepDetails?: EnrichmentProgress['stepDetails'], errors?: string[]) => {
@@ -1850,6 +1878,16 @@ export async function enrichData(
     }
     if (!enrichment.email && enrichedRow['Email']) {
       // Keep the original email from row
+    }
+
+    // CRITICAL: Save immediately after enrichment to ensure data persistence
+    try {
+      const leadSummary = extractLeadSummary(enrichedRow, enrichment);
+      saveEnrichedLeadImmediate(enrichedRow, leadSummary);
+      console.log(`💾 [ENRICH_DATA] Saved lead immediately: ${leadName}`);
+    } catch (saveError) {
+      console.error(`❌ [ENRICH_DATA] Failed to save lead ${leadName}:`, saveError);
+      // Continue processing even if save fails - don't lose the enrichment
     }
 
     enrichedRows.push(enrichedRow);
