@@ -8,7 +8,11 @@ export default function LoadingSpinner() {
         loop
         muted
         playsInline
-        className="w-16 h-16 object-contain"
+        className="w-16 h-16 object-contain mix-blend-screen"
+        style={{
+          mixBlendMode: 'screen',
+          filter: 'invert(1)',
+        }}
         aria-label="Loading"
       >
         <source src="/eye.mp4" type="video/mp4" />

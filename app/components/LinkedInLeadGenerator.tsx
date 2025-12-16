@@ -1461,7 +1461,19 @@ export default function LinkedInLeadGenerator() {
       {/* Header */}
       <div className="space-y-3 animate-fade-in">
         <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent tracking-tight drop-shadow-lg">Lead Generation</h1>
+          <div className="flex items-center gap-3">
+            <div className="w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center">
+              <svg
+                viewBox="0 0 24 24"
+                className="w-full h-full"
+                fill="#0077b5"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+              </svg>
+            </div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent tracking-tight drop-shadow-lg">Lead Generation</h1>
+          </div>
         </div>
       </div>
         
@@ -1772,14 +1784,14 @@ export default function LinkedInLeadGenerator() {
       {workflowStep === 'search' && (
         <div className="space-y-6 animate-fade-in">
                 <div>
-            <h2 className="text-2xl font-bold text-slate-200 tracking-tight mb-1">Configure Search</h2>
-            <p className="text-sm text-slate-400">Set your filters and parameters</p>
+            <h2 className="text-2xl font-bold text-slate-200 tracking-tight mb-1 font-data">Configure Search</h2>
+            <p className="text-sm text-slate-400 font-data">Set your filters and parameters</p>
           </div>
           
           <div className="space-y-6 bg-slate-800/30 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-6 shadow-xl">
             {/* Search Type */}
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-slate-200 mb-3">Search Type</label>
+              <label className="block text-sm font-medium text-slate-200 mb-3 font-data">Search Type</label>
               <div className="grid grid-cols-2 gap-3 w-full">
                 <button
                   type="button"
@@ -1793,7 +1805,7 @@ export default function LinkedInLeadGenerator() {
                   {searchType !== 'person' && (
                     <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 via-purple-500/0 to-pink-500/0 group-hover:from-blue-500/10 group-hover:via-purple-500/10 group-hover:to-pink-500/10 transition-all duration-500" />
                   )}
-                  <div className={`relative flex items-center justify-center gap-2 text-sm font-semibold ${
+                  <div className={`relative flex items-center justify-center gap-2 text-sm font-semibold font-data ${
                     searchType === 'person' ? 'text-white' : 'text-slate-200'
                   }`}>
                     <Users className={`w-5 h-5 transition-transform duration-300 ${searchType === 'person' ? 'text-white scale-110' : 'text-slate-300 group-hover:text-blue-400 group-hover:scale-110'}`} />
@@ -1812,7 +1824,7 @@ export default function LinkedInLeadGenerator() {
                   {searchType !== 'person_via_url' && (
                     <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 via-purple-500/0 to-pink-500/0 group-hover:from-blue-500/10 group-hover:via-purple-500/10 group-hover:to-pink-500/10 transition-all duration-500" />
                   )}
-                  <div className={`relative flex items-center justify-center gap-2 text-sm font-semibold ${
+                  <div className={`relative flex items-center justify-center gap-2 text-sm font-semibold font-data ${
                     searchType === 'person_via_url' ? 'text-white' : 'text-slate-200'
                   }`}>
                     <Link2 className={`w-5 h-5 transition-transform duration-300 ${searchType === 'person_via_url' ? 'text-white scale-110' : 'text-slate-300 group-hover:text-blue-400 group-hover:scale-110'}`} />
@@ -1825,13 +1837,13 @@ export default function LinkedInLeadGenerator() {
             {/* Search Parameters */}
             {searchType === 'person_via_url' ? (
               <div className="space-y-4">
-                <label className="block text-sm font-medium text-slate-200">Sales Navigator URL</label>
+                <label className="block text-sm font-medium text-slate-200 font-data">Sales Navigator URL</label>
                   <input
                     type="text"
                   value={String(searchParams.url || '')}
                   onChange={(e) => updateSearchParam('url', e.target.value)}
                   placeholder="https://www.linkedin.com/sales/search/people?..."
-                  className="group w-full px-4 py-3 rounded-xl bg-slate-800/40 backdrop-blur-xl border-2 border-slate-700/50 text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-blue-500/60 focus:ring-2 focus:ring-blue-500/20 focus:bg-slate-800/60 hover:border-slate-600/60 transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/10"
+                  className="group w-full px-4 py-3 rounded-xl bg-slate-800/40 backdrop-blur-xl border-2 border-slate-700/50 text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-blue-500/60 focus:ring-2 focus:ring-blue-500/20 focus:bg-slate-800/60 hover:border-slate-600/60 transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/10 font-data"
                   />
                 </div>
             ) : (
@@ -1839,86 +1851,86 @@ export default function LinkedInLeadGenerator() {
                 {/* Primary Filters */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-medium text-slate-200">Job Title Keywords</label>
+                    <label className="block text-xs font-medium text-slate-200 font-data">Job Title Keywords</label>
                   <input
                     type="text"
                       value={String(searchParams.title_keywords || '')}
                       onChange={(e) => updateSearchParam('title_keywords', e.target.value)}
                       placeholder="Director, VP, Manager"
-                      className="group w-full px-4 py-2.5 rounded-xl bg-slate-800/40 backdrop-blur-xl border-2 border-slate-700/50 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-blue-500/60 focus:ring-2 focus:ring-blue-500/20 focus:bg-slate-800/60 hover:border-slate-600/60 transition-all duration-300 hover:shadow-md hover:shadow-blue-500/10"
+                      className="group w-full px-4 py-2.5 rounded-xl bg-slate-800/40 backdrop-blur-xl border-2 border-slate-700/50 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-blue-500/60 focus:ring-2 focus:ring-blue-500/20 focus:bg-slate-800/60 hover:border-slate-600/60 transition-all duration-300 hover:shadow-md hover:shadow-blue-500/10 font-data"
                   />
                 </div>
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-medium text-slate-200">Location</label>
+                    <label className="block text-xs font-medium text-slate-200 font-data">Location</label>
                   <input
                     type="text"
                     value={String(searchParams.location || '')}
                     onChange={(e) => updateSearchParam('location', e.target.value)}
                     placeholder="Maryland, MD, United States"
-                      className="group w-full px-4 py-2.5 rounded-xl bg-slate-800/40 backdrop-blur-xl border-2 border-slate-700/50 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-blue-500/60 focus:ring-2 focus:ring-blue-500/20 focus:bg-slate-800/60 hover:border-slate-600/60 transition-all duration-300 hover:shadow-md hover:shadow-blue-500/10"
+                      className="group w-full px-4 py-2.5 rounded-xl bg-slate-800/40 backdrop-blur-xl border-2 border-slate-700/50 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-blue-500/60 focus:ring-2 focus:ring-blue-500/20 focus:bg-slate-800/60 hover:border-slate-600/60 transition-all duration-300 hover:shadow-md hover:shadow-blue-500/10 font-data"
                   />
                   {locationDiscoveryStatus && (
-                      <p className="text-xs text-blue-400">{locationDiscoveryStatus}</p>
+                      <p className="text-xs text-blue-400 font-data">{locationDiscoveryStatus}</p>
                     )}
                     </div>
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-medium text-slate-200">Current Company</label>
+                    <label className="block text-xs font-medium text-slate-200 font-data">Current Company</label>
                     <input
                       type="text"
                       value={String(searchParams.current_company || '')}
                       onChange={(e) => updateSearchParam('current_company', e.target.value)}
                       placeholder="Apple, Google, Microsoft"
-                      className="group w-full px-4 py-2.5 rounded-xl bg-slate-800/40 backdrop-blur-xl border-2 border-slate-700/50 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-blue-500/60 focus:ring-2 focus:ring-blue-500/20 focus:bg-slate-800/60 hover:border-slate-600/60 transition-all duration-300 hover:shadow-md hover:shadow-blue-500/10"
+                      className="group w-full px-4 py-2.5 rounded-xl bg-slate-800/40 backdrop-blur-xl border-2 border-slate-700/50 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-blue-500/60 focus:ring-2 focus:ring-blue-500/20 focus:bg-slate-800/60 hover:border-slate-600/60 transition-all duration-300 hover:shadow-md hover:shadow-blue-500/10 font-data"
                     />
-                    <p className="text-xs text-slate-500">Company name (will auto-convert to URN)</p>
+                    <p className="text-xs text-slate-500 font-data">Company name (will auto-convert to URN)</p>
                 </div>
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-medium text-slate-200">Industry</label>
+                    <label className="block text-xs font-medium text-slate-200 font-data">Industry</label>
                   <input
                     type="text"
                     value={String(searchParams.industry || '')}
                     onChange={(e) => updateSearchParam('industry', e.target.value)}
                     placeholder="Technology, Finance, Healthcare"
-                      className="group w-full px-4 py-2.5 rounded-xl bg-slate-800/40 backdrop-blur-xl border-2 border-slate-700/50 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-blue-500/60 focus:ring-2 focus:ring-blue-500/20 focus:bg-slate-800/60 hover:border-slate-600/60 transition-all duration-300 hover:shadow-md hover:shadow-blue-500/10"
+                      className="group w-full px-4 py-2.5 rounded-xl bg-slate-800/40 backdrop-blur-xl border-2 border-slate-700/50 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-blue-500/60 focus:ring-2 focus:ring-blue-500/20 focus:bg-slate-800/60 hover:border-slate-600/60 transition-all duration-300 hover:shadow-md hover:shadow-blue-500/10 font-data"
                   />
-                    <p className="text-xs text-slate-500">Industry name (will auto-convert to ID)</p>
+                    <p className="text-xs text-slate-500 font-data">Industry name (will auto-convert to ID)</p>
                   </div>
                 </div>
 
                 {/* Company Filters */}
                 <div className="space-y-3 pt-4 border-t border-slate-700/50-subtle">
-                  <h4 className="text-xs font-medium text-slate-200">Company Filters</h4>
+                  <h4 className="text-xs font-medium text-slate-200 font-data">Company Filters</h4>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                     <div className="space-y-2">
-                      <label className="block text-xs text-slate-400">Past Company</label>
+                      <label className="block text-xs text-slate-400 font-data">Past Company</label>
                   <input
                     type="text"
                         value={String(searchParams.past_company || '')}
                         onChange={(e) => updateSearchParam('past_company', e.target.value)}
                         placeholder="Previous employer"
-                        className="w-full px-4 py-2 rounded-lg bg-slate-800/60 backdrop-blur-sm border border-slate-700/50 text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
+                        className="w-full px-4 py-2 rounded-lg bg-slate-800/60 backdrop-blur-sm border border-slate-700/50 text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-blue-500 transition-colors font-data"
                   />
                 </div>
                     <div className="space-y-2">
-                      <label className="block text-xs text-slate-400">Company Headcount (Min)</label>
+                      <label className="block text-xs text-slate-400 font-data">Company Headcount (Min)</label>
                   <input
                     type="number"
                         min="0"
                     value={String(searchParams.company_headcount_min || '')}
                         onChange={(e) => updateSearchParam('company_headcount_min', e.target.value.trim() || undefined)}
                         placeholder="0 = Self-employed"
-                        className="w-full px-4 py-2 rounded-lg bg-slate-800/60 backdrop-blur-sm border border-slate-700/50 text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
+                        className="w-full px-4 py-2 rounded-lg bg-slate-800/60 backdrop-blur-sm border border-slate-700/50 text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-blue-500 transition-colors font-data"
                   />
                 </div>
                     <div className="space-y-2">
-                      <label className="block text-xs text-slate-400">Company Headcount (Max)</label>
+                      <label className="block text-xs text-slate-400 font-data">Company Headcount (Max)</label>
                   <input
                     type="number"
                         min="0"
                     value={String(searchParams.company_headcount_max || '')}
                         onChange={(e) => updateSearchParam('company_headcount_max', e.target.value.trim() || undefined)}
                     placeholder="10000"
-                        className="w-full px-4 py-2 rounded-lg bg-slate-800/60 backdrop-blur-sm border border-slate-700/50 text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
+                        className="w-full px-4 py-2 rounded-lg bg-slate-800/60 backdrop-blur-sm border border-slate-700/50 text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-blue-500 transition-colors font-data"
                   />
                     </div>
                   </div>
@@ -1926,32 +1938,32 @@ export default function LinkedInLeadGenerator() {
 
                 {/* Experience & Education Filters */}
                 <div className="space-y-3 pt-4 border-t border-slate-700/50-subtle">
-                  <h4 className="text-xs font-medium text-slate-200">Experience & Education</h4>
+                  <h4 className="text-xs font-medium text-slate-200 font-data">Experience & Education</h4>
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                     <div className="space-y-2">
-                      <label className="block text-xs text-slate-400">Years Experience (Min)</label>
+                      <label className="block text-xs text-slate-400 font-data">Years Experience (Min)</label>
                   <input
                     type="number"
                         min="0"
                     value={String(searchParams.years_experience_min || '')}
                         onChange={(e) => updateSearchParam('years_experience_min', e.target.value.trim() || undefined)}
                         placeholder="0"
-                        className="w-full px-4 py-2 rounded-lg bg-slate-800/60 backdrop-blur-sm border border-slate-700/50 text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
+                        className="w-full px-4 py-2 rounded-lg bg-slate-800/60 backdrop-blur-sm border border-slate-700/50 text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-blue-500 transition-colors font-data"
                   />
                 </div>
                     <div className="space-y-2">
-                      <label className="block text-xs text-slate-400">Years Experience (Max)</label>
+                      <label className="block text-xs text-slate-400 font-data">Years Experience (Max)</label>
                   <input
                     type="number"
                         min="0"
                     value={String(searchParams.years_experience_max || '')}
                         onChange={(e) => updateSearchParam('years_experience_max', e.target.value.trim() || undefined)}
                         placeholder="10"
-                        className="w-full px-4 py-2 rounded-lg bg-slate-800/60 backdrop-blur-sm border border-slate-700/50 text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
+                        className="w-full px-4 py-2 rounded-lg bg-slate-800/60 backdrop-blur-sm border border-slate-700/50 text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-blue-500 transition-colors font-data"
                   />
                 </div>
                     <div className="space-y-2">
-                      <label className="block text-xs text-slate-400">School / University</label>
+                      <label className="block text-xs text-slate-400 font-data">School / University</label>
                       <input
                         type="text"
                         value={String(searchParams.school || searchParams.university || '')}
@@ -1961,11 +1973,11 @@ export default function LinkedInLeadGenerator() {
                           updateSearchParam('university', val || undefined);
                         }}
                         placeholder="Stanford, Harvard"
-                        className="w-full px-4 py-2 rounded-lg bg-slate-800/60 backdrop-blur-sm border border-slate-700/50 text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
+                        className="w-full px-4 py-2 rounded-lg bg-slate-800/60 backdrop-blur-sm border border-slate-700/50 text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-blue-500 transition-colors font-data"
                       />
               </div>
                     <div className="flex items-end">
-                      <label className="flex items-center gap-2 text-sm text-slate-200 cursor-pointer">
+                      <label className="flex items-center gap-2 text-sm text-slate-200 cursor-pointer font-data">
                         <input
                           type="checkbox"
                           checked={searchParams.changed_jobs_90_days === 'true' || searchParams.changed_jobs_90_days === true}
@@ -1983,7 +1995,7 @@ export default function LinkedInLeadGenerator() {
             {/* Pagination Settings */}
             <div className="space-y-3 pt-4 border-t border-slate-700/50-subtle">
               <div className="flex items-center justify-between">
-                <label className="flex items-center gap-2 text-sm font-medium text-slate-200 cursor-pointer">
+                <label className="flex items-center gap-2 text-sm font-medium text-slate-200 cursor-pointer font-data">
                     <input
                       type="checkbox"
                       checked={fetchAllPages}
@@ -1992,14 +2004,14 @@ export default function LinkedInLeadGenerator() {
                     />
                   Fetch Multiple Pages
                   </label>
-                <span className="text-xs text-slate-500">
+                <span className="text-xs text-slate-500 font-data">
                   {fetchAllPages ? `Up to ${maxPagesToFetch} pages` : 'Single page only'}
                 </span>
               </div>
                   {fetchAllPages && (
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-2">
-                    <label className="block text-xs text-slate-400">Max Pages</label>
+                    <label className="block text-xs text-slate-400 font-data">Max Pages</label>
                       <input
                         type="number"
                         min="1"
@@ -2009,11 +2021,11 @@ export default function LinkedInLeadGenerator() {
                           const val = parseInt(e.target.value) || 1;
                         setMaxPagesToFetch(Math.min(100, Math.max(1, val)));
                         }}
-                      className="group w-full px-4 py-2.5 rounded-xl bg-slate-800/40 backdrop-blur-xl border-2 border-slate-700/50 text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-blue-500/60 focus:ring-2 focus:ring-blue-500/20 focus:bg-slate-800/60 hover:border-slate-600/60 transition-all duration-300 hover:shadow-md hover:shadow-blue-500/10"
+                      className="group w-full px-4 py-2.5 rounded-xl bg-slate-800/40 backdrop-blur-xl border-2 border-slate-700/50 text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-blue-500/60 focus:ring-2 focus:ring-blue-500/20 focus:bg-slate-800/60 hover:border-slate-600/60 transition-all duration-300 hover:shadow-md hover:shadow-blue-500/10 font-data"
                     />
                     </div>
                   <div className="space-y-2">
-                    <label className="block text-xs text-slate-400">Results Limit</label>
+                    <label className="block text-xs text-slate-400 font-data">Results Limit</label>
                   <input
                     type="number"
                     min="1"
@@ -2023,7 +2035,7 @@ export default function LinkedInLeadGenerator() {
                       const val = parseInt(e.target.value) || 2500;
                         updateSearchParam('limit', String(Math.min(2500, Math.max(1, val))));
                     }}
-                      className="group w-full px-4 py-2.5 rounded-xl bg-slate-800/40 backdrop-blur-xl border-2 border-slate-700/50 text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-blue-500/60 focus:ring-2 focus:ring-blue-500/20 focus:bg-slate-800/60 hover:border-slate-600/60 transition-all duration-300 hover:shadow-md hover:shadow-blue-500/10"
+                      className="group w-full px-4 py-2.5 rounded-xl bg-slate-800/40 backdrop-blur-xl border-2 border-slate-700/50 text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-blue-500/60 focus:ring-2 focus:ring-blue-500/20 focus:bg-slate-800/60 hover:border-slate-600/60 transition-all duration-300 hover:shadow-md hover:shadow-blue-500/10 font-data"
                     />
                 </div>
                 </div>
@@ -2036,7 +2048,7 @@ export default function LinkedInLeadGenerator() {
           <button
             onClick={handleSearch}
             disabled={isSearching}
-                className="group relative w-full py-4 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 hover:from-blue-600 hover:via-purple-600 hover:to-pink-600 rounded-xl text-white text-base font-semibold transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 hover:scale-[1.02] active:scale-[0.98] overflow-hidden"
+                className="group relative w-full py-4 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 hover:from-blue-600 hover:via-purple-600 hover:to-pink-600 rounded-xl text-white text-base font-semibold transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 hover:scale-[1.02] active:scale-[0.98] overflow-hidden font-data"
           >
                 <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
                 {isSearching ? (

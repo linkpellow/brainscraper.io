@@ -236,7 +236,7 @@ export default function DataTable({ data, fileName, isEnriched = false, dncResul
         <div className="min-w-full inline-block">
           {viewMode === 'summary' && isEnriched ? (
             // Summary View - Essential Fields Only: NAME, PHONE (TOP PRIORITY), DOB/AGE, ZIPCODE, STATE, CITY, EMAIL, DNC STATUS
-            <table className="w-full border-collapse font-mono text-sm">
+            <table className="w-full border-collapse font-data text-sm">
               <thead>
                 <tr className="bg-hacker-bg-tertiary/70">
                   <th className="border border-hacker-cyan/30 px-4 py-3 text-left text-hacker-text-primary terminal-glow-sm whitespace-nowrap">Name</th>
@@ -301,7 +301,7 @@ export default function DataTable({ data, fileName, isEnriched = false, dncResul
             </table>
           ) : (
             // Full View - All Columns
-            <table className="w-full border-collapse font-mono text-sm">
+            <table className="w-full border-collapse font-data text-sm">
               <thead>
                 <tr className="bg-hacker-bg-tertiary/70">
                   {data.headers.map((header, index) => (

@@ -54,7 +54,8 @@ export default function EnrichedLeadsPage() {
   const [leads, setLeads] = useState<LeadSummary[]>([]);
   const [sortField, setSortField] = useState<SortField>('none');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
-  const [ageFilter65, setAgeFilter65] = useState<boolean>(false);
+  const [ageMin, setAgeMin] = useState<number | ''>('');
+  const [ageMax, setAgeMax] = useState<number | ''>(64);
   const [mobileOnly, setMobileOnly] = useState<boolean>(false);
   const [filterDNC, setFilterDNC] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -374,12 +375,17 @@ export default function EnrichedLeadsPage() {
       });
     }
     
-    // Age filter (65 and below)
-    if (ageFilter65) {
+    // Age range filter
+    if (ageMin !== '' || ageMax !== '') {
       filteredLeads = filteredLeads.filter((lead) => {
         if (!lead.dobOrAge) return false;
         const age = parseInt(lead.dobOrAge);
-        return !isNaN(age) && age <= 65;
+        if (isNaN(age)) return false;
+        
+        const min = ageMin !== '' ? Number(ageMin) : 0;
+        const max = ageMax !== '' ? Number(ageMax) : 999;
+        
+        return age >= min && age <= max;
       });
     }
     
@@ -761,12 +767,12 @@ export default function EnrichedLeadsPage() {
             <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent tracking-tight drop-shadow-lg">
               Enriched Leads
             </h1>
-            <p className="text-xs sm:text-sm text-slate-400 mt-1 sm:mt-2 font-medium">
-              {searchQuery || ageFilter65 || mobileOnly || filterDNC ? (
+            <p className="text-xs sm:text-sm text-slate-400 mt-1 sm:mt-2 font-medium font-data">
+              {searchQuery || ageMin !== '' || ageMax !== '' || mobileOnly || filterDNC ? (
                 <>
                   {getSortedLeads().length} of {leads.length} leads
                   {searchQuery && ` (search: "${searchQuery}")`}
-                  {ageFilter65 && ' (65↓)'}
+                  {(ageMin !== '' || ageMax !== '') && ` (age: ${ageMin !== '' ? ageMin : '0'}-${ageMax !== '' ? ageMax : '99+'})`}
                   {mobileOnly && ' (mobile only)'}
                   {filterDNC && ' (DNC filtered)'}
                 </>
@@ -779,25 +785,6 @@ export default function EnrichedLeadsPage() {
             </p>
           </div>
           <div className="flex flex-wrap gap-2 sm:gap-3 w-full sm:w-auto">
-            <button
-              onClick={handleRestore}
-              disabled={loadingSaved}
-              className="px-3 sm:px-4 py-1.5 sm:py-2 bg-green-600 hover:bg-green-700 rounded-lg text-white text-xs sm:text-sm font-medium transition-all flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
-              title="Restore leads from saved backup"
-                >
-                  {loadingSaved ? (
-                    <>
-                      <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 animate-spin" />
-                  <span className="hidden sm:inline">Restoring...</span>
-                  <span className="sm:hidden">...</span>
-                    </>
-                  ) : (
-                    <>
-                  <span className="hidden sm:inline">💾 Restore Data</span>
-                  <span className="sm:hidden">💾</span>
-                    </>
-                  )}
-                </button>
             <button
               onClick={handleEnrich}
               disabled={loadingSaved}
@@ -820,7 +807,7 @@ export default function EnrichedLeadsPage() {
             <button
               onClick={handleExportCSV}
               disabled={leads.length === 0}
-              className="px-3 sm:px-4 py-1.5 sm:py-2 bg-minimalist-bg-soft hover:bg-minimalist-bg-subtle border border-minimalist-border rounded-lg text-minimalist-text text-xs sm:text-sm font-medium transition-all flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-3 sm:px-4 py-1.5 sm:py-2 bg-slate-800/80 hover:bg-slate-700/80 border border-slate-600/50 rounded-lg text-slate-200 hover:text-white text-xs sm:text-sm font-medium transition-all flex items-center disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-blue-500/20"
             >
               <Download className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
               <span className="hidden sm:inline">Export CSV</span>
@@ -861,7 +848,7 @@ export default function EnrichedLeadsPage() {
                   placeholder="Search by name..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-12 pr-12 py-3 bg-transparent text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 rounded-xl transition-all duration-300"
+                  className="w-full pl-12 pr-12 py-3 bg-transparent text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 rounded-xl transition-all duration-300 font-data"
                 />
                 {searchQuery && (
                   <button
@@ -876,38 +863,64 @@ export default function EnrichedLeadsPage() {
             
             {/* Filter Checkboxes and Sort Controls */}
             <div className="flex flex-wrap gap-2 sm:gap-3 items-center">
-            <label className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold border border-slate-700/50 bg-slate-800/60 backdrop-blur-sm text-slate-200 cursor-pointer hover:bg-slate-700/60 hover:border-blue-500/50 hover:text-blue-300 transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-blue-500/20">
+            <div className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold border border-slate-700/50 bg-slate-800/60 backdrop-blur-sm text-slate-200 hover:bg-slate-700/60 hover:border-blue-500/50 transition-all duration-300 shadow-lg font-data">
+              <span className="whitespace-nowrap text-xs">Age:</span>
               <input
-                type="checkbox"
-                checked={ageFilter65}
-                onChange={(e) => setAgeFilter65(e.target.checked)}
-                className="w-3 h-3 sm:w-4 sm:h-4 text-blue-500 bg-slate-700 border-slate-600 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer accent-blue-500"
+                type="number"
+                placeholder="Min"
+                value={ageMin}
+                onChange={(e) => setAgeMin(e.target.value === '' ? '' : parseInt(e.target.value) || '')}
+                min="0"
+                max="120"
+                className="w-12 sm:w-14 px-1.5 py-0.5 bg-slate-700/50 border border-slate-600 rounded text-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50"
               />
-              <span>65↓</span>
-            </label>
-            <label className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold border border-slate-700/50 bg-slate-800/60 backdrop-blur-sm text-slate-200 cursor-pointer hover:bg-slate-700/60 hover:border-purple-500/50 hover:text-purple-300 transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-purple-500/20">
+              <span className="text-slate-400 text-xs">-</span>
               <input
-                type="checkbox"
-                checked={mobileOnly}
-                onChange={(e) => setMobileOnly(e.target.checked)}
-                className="w-3 h-3 sm:w-4 sm:h-4 text-purple-500 bg-slate-700 border-slate-600 rounded focus:ring-2 focus:ring-purple-500 cursor-pointer accent-purple-500"
+                type="number"
+                placeholder="Max"
+                value={ageMax}
+                onChange={(e) => setAgeMax(e.target.value === '' ? '' : parseInt(e.target.value) || '')}
+                min="0"
+                max="120"
+                className="w-12 sm:w-14 px-1.5 py-0.5 bg-slate-700/50 border border-slate-600 rounded text-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50"
               />
-              <span className="hidden sm:inline">Mobile Only</span>
-              <span className="sm:hidden">Mobile</span>
-            </label>
-            <label className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold border border-slate-700/50 bg-slate-800/60 backdrop-blur-sm text-slate-200 cursor-pointer hover:bg-slate-700/60 hover:border-red-500/50 hover:text-red-300 transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-red-500/20">
+              {(ageMin !== '' || ageMax !== '') && (
+                <button
+                  onClick={() => {
+                    setAgeMin('');
+                    setAgeMax('');
+                  }}
+                  className="ml-1 text-slate-400 hover:text-red-400 transition-colors"
+                  title="Clear age filter"
+                >
+                  <X className="w-3 h-3 sm:w-4 sm:h-4" />
+                </button>
+              )}
+            </div>
+            <button
+              onClick={() => setMobileOnly(!mobileOnly)}
+              className={`flex items-center justify-center px-2 sm:px-2.5 py-1.5 sm:py-2 rounded-lg border transition-all duration-300 hover:scale-110 ${
+                mobileOnly
+                  ? 'border-purple-500/80 bg-purple-500/20 text-purple-300 shadow-lg shadow-purple-500/50 ring-2 ring-purple-500/50'
+                  : 'border-slate-700/50 bg-slate-800/60 text-slate-400 hover:bg-slate-700/60 hover:border-purple-500/50 hover:text-purple-300 shadow-lg hover:shadow-purple-500/20'
+              }`}
+              title={mobileOnly ? 'Show all leads' : 'Show mobile only'}
+            >
+              <Smartphone className={`w-4 h-4 sm:w-5 sm:h-5 ${mobileOnly ? 'text-purple-300' : 'text-slate-400'}`} />
+            </button>
+            <label className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold border border-slate-700/50 bg-slate-800/60 backdrop-blur-sm text-slate-200 cursor-pointer hover:bg-slate-700/60 hover:border-red-500/50 hover:text-red-300 transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-red-500/20 font-data">
               <input
                 type="checkbox"
                 checked={filterDNC}
                 onChange={(e) => setFilterDNC(e.target.checked)}
                 className="w-3 h-3 sm:w-4 sm:h-4 text-red-500 bg-slate-700 border-slate-600 rounded focus:ring-2 focus:ring-red-500 cursor-pointer accent-red-500"
               />
-              <span className="hidden sm:inline">Filter DNC</span>
-              <span className="sm:hidden">No DNC</span>
+              <span className="hidden sm:inline text-xs">Filter DNC</span>
+              <span className="sm:hidden text-xs">No DNC</span>
             </label>
             <button
               onClick={() => handleSort('name')}
-              className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-300 border flex items-center gap-1 sm:gap-2 backdrop-blur-sm shadow-lg hover:scale-105 ${
+              className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-300 border flex items-center gap-1 sm:gap-2 backdrop-blur-sm shadow-lg hover:scale-105 font-data ${
                 sortField === 'name'
                   ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white border-transparent shadow-blue-500/50'
                   : 'bg-slate-800/60 text-slate-200 hover:bg-slate-700/60 border-slate-700/50 hover:border-blue-500/50 hover:shadow-blue-500/20'
@@ -917,7 +930,7 @@ export default function EnrichedLeadsPage() {
             </button>
             <button
               onClick={() => handleSort('state')}
-              className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-300 border flex items-center gap-1 sm:gap-2 backdrop-blur-sm shadow-lg hover:scale-105 ${
+              className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-300 border flex items-center gap-1 sm:gap-2 backdrop-blur-sm shadow-lg hover:scale-105 font-data ${
                 sortField === 'state'
                   ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white border-transparent shadow-blue-500/50'
                   : 'bg-slate-800/60 text-slate-200 hover:bg-slate-700/60 border-slate-700/50 hover:border-blue-500/50 hover:shadow-blue-500/20'
@@ -927,7 +940,7 @@ export default function EnrichedLeadsPage() {
             </button>
             <button
               onClick={() => handleSort('city')}
-              className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-300 border flex items-center gap-1 sm:gap-2 backdrop-blur-sm shadow-lg hover:scale-105 ${
+              className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-300 border flex items-center gap-1 sm:gap-2 backdrop-blur-sm shadow-lg hover:scale-105 font-data ${
                 sortField === 'city'
                   ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white border-transparent shadow-blue-500/50'
                   : 'bg-slate-800/60 text-slate-200 hover:bg-slate-700/60 border-slate-700/50 hover:border-blue-500/50 hover:shadow-blue-500/20'
@@ -937,7 +950,7 @@ export default function EnrichedLeadsPage() {
             </button>
             <button
               onClick={() => handleSort('zipcode')}
-              className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-300 border flex items-center gap-1 sm:gap-2 backdrop-blur-sm shadow-lg hover:scale-105 ${
+              className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-300 border flex items-center gap-1 sm:gap-2 backdrop-blur-sm shadow-lg hover:scale-105 font-data ${
                 sortField === 'zipcode'
                   ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white border-transparent shadow-blue-500/50'
                   : 'bg-slate-800/60 text-slate-200 hover:bg-slate-700/60 border-slate-700/50 hover:border-blue-500/50 hover:shadow-blue-500/20'
@@ -948,7 +961,7 @@ export default function EnrichedLeadsPage() {
             </button>
             <button
               onClick={() => handleSort('age')}
-              className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-300 border flex items-center gap-1 sm:gap-2 backdrop-blur-sm shadow-lg hover:scale-105 ${
+              className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-300 border flex items-center gap-1 sm:gap-2 backdrop-blur-sm shadow-lg hover:scale-105 font-data ${
                 sortField === 'age'
                   ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white border-transparent shadow-blue-500/50'
                   : 'bg-slate-800/60 text-slate-200 hover:bg-slate-700/60 border-slate-700/50 hover:border-blue-500/50 hover:shadow-blue-500/20'
@@ -958,7 +971,7 @@ export default function EnrichedLeadsPage() {
             </button>
             <button
               onClick={() => handleSort('searchFilter')}
-              className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-300 border flex items-center gap-1 sm:gap-2 backdrop-blur-sm shadow-lg hover:scale-105 ${
+              className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-300 border flex items-center gap-1 sm:gap-2 backdrop-blur-sm shadow-lg hover:scale-105 font-data ${
                 sortField === 'searchFilter'
                   ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white border-transparent shadow-blue-500/50'
                   : 'bg-slate-800/60 text-slate-200 hover:bg-slate-700/60 border-slate-700/50 hover:border-blue-500/50 hover:shadow-blue-500/20'
@@ -969,10 +982,10 @@ export default function EnrichedLeadsPage() {
             </button>
             <button
               onClick={() => setSortField('none')}
-              className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-300 border bg-slate-800/60 text-slate-200 hover:bg-slate-700/60 border-slate-700/50 hover:border-red-500/50 hover:shadow-red-500/20 backdrop-blur-sm shadow-lg hover:scale-105"
+              className="flex items-center justify-center px-2 sm:px-2.5 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-300 border bg-slate-800/60 text-slate-200 hover:bg-slate-700/60 border-slate-700/50 hover:border-red-500/50 hover:shadow-red-500/20 backdrop-blur-sm shadow-lg hover:scale-105 font-data"
+              title="Clear sort"
             >
-              <span className="hidden sm:inline">Clear Sort</span>
-              <span className="sm:hidden">Clear</span>
+              <X className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
             </div>
           </div>
@@ -1003,7 +1016,7 @@ export default function EnrichedLeadsPage() {
             <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-blue-500/20 via-purple-500/20 to-pink-500/20 opacity-50 blur-xl animate-pulse pointer-events-none" />
             <div className="relative z-10">
               
-              <table className="w-full text-xs relative z-10" style={{ tableLayout: 'fixed', width: '100%' }}>
+              <table className="w-full text-xs relative z-10 font-data" style={{ tableLayout: 'fixed', width: '100%' }}>
                 <thead>
                   <tr className="border-b border-gradient-to-r from-blue-500/30 via-purple-500/30 to-pink-500/30 bg-gradient-to-r from-slate-800/80 to-slate-700/80 backdrop-blur-sm">
                     <th className="px-2 py-2 text-left text-blue-400 font-semibold text-[10px] uppercase tracking-wider" style={{ width: '13%' }}>Name</th>

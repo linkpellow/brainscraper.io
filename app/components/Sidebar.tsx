@@ -29,9 +29,19 @@ export default function Sidebar() {
     <aside className="w-64 bg-slate-900/80 backdrop-blur-xl border-r border-slate-700/50 h-screen fixed left-0 top-0 z-50 flex flex-col">
       {/* Logo/Header */}
       <div className="p-6 border-b border-slate-700/50">
-        <h1 className="text-xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-          BrainScraper
-        </h1>
+        <div className="flex items-center gap-2">
+          <img 
+            src="/logo.png" 
+            alt="BrainScraper Logo" 
+            className="w-14 h-14 object-contain"
+            style={{
+              filter: 'brightness(0) saturate(100%) invert(48%) sepia(100%) saturate(2000%) hue-rotate(195deg) brightness(1.1) contrast(1.1)',
+            }}
+          />
+          <h1 className="text-xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+            BrainScraper
+          </h1>
+        </div>
       </div>
 
       {/* Navigation */}
