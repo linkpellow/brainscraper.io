@@ -29,6 +29,14 @@ export async function GET(request: NextRequest) {
     let leads: any[] = [];
     let source = 'none';
     
+    // Validation function: lead must have name AND (phone OR email)
+    const isValidLead = (lead: any): boolean => {
+      const name = (lead.name || '').trim();
+      const phone = (lead.phone || '').trim();
+      const email = (lead.email || '').trim();
+      return name.length > 0 && (phone.length > 0 || email.length > 0);
+    };
+    
     // Helper function to check if leads have actual data (not all empty)
     const hasData = (leadsArray: any[]): boolean => {
       if (leadsArray.length === 0) return false;
@@ -124,6 +132,9 @@ export async function GET(request: NextRequest) {
         // Continue - we'll return empty leads if nothing found
       }
     }
+    
+    // Filter leads to only valid ones before returning
+    leads = leads.filter(isValidLead);
     
     // Calculate stats
     const stats = {

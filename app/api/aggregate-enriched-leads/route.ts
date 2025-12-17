@@ -35,6 +35,17 @@ export async function POST(request: NextRequest) {
       }
     }
     
+    // Validation function: lead must have name AND (phone OR email)
+    const isValidLead = (lead: LeadSummary): boolean => {
+      const name = (lead.name || '').trim();
+      const phone = (lead.phone || '').trim();
+      const email = (lead.email || '').trim();
+      return name.length > 0 && (phone.length > 0 || email.length > 0);
+    };
+    
+    // Filter existing leads to only valid ones
+    existingLeads = existingLeads.filter(isValidLead);
+    
     // Create a deduplication map using LinkedIn URL or name+email+phone as key
     const seenKeys = new Set<string>();
     const aggregatedLeads: LeadSummary[] = [];
@@ -62,8 +73,11 @@ export async function POST(request: NextRequest) {
       }
     }
     
+    // Filter new leads before processing
+    const validNewLeads = newLeads.filter(isValidLead);
+    
     // Add new leads (will overwrite duplicates)
-    for (const lead of newLeads) {
+    for (const lead of validNewLeads) {
       const key = getLeadKey(lead);
       if (key === 'name:unknown') continue; // Skip invalid leads
       
@@ -83,7 +97,7 @@ export async function POST(request: NextRequest) {
       metadata: {
         lastUpdated: new Date().toISOString(),
         totalLeads: aggregatedLeads.length,
-        newLeadsAdded: newLeads.length,
+        newLeadsAdded: validNewLeads.length,
         existingLeadsCount: existingLeads.length,
       },
       leads: aggregatedLeads,
@@ -91,12 +105,12 @@ export async function POST(request: NextRequest) {
     
     safeWriteFile(existingPath, JSON.stringify(outputData, null, 2));
     
-    console.log(`✅ [AGGREGATE] Saved ${aggregatedLeads.length} leads to enriched-all-leads.json (${newLeads.length} new)`);
+    console.log(`✅ [AGGREGATE] Saved ${aggregatedLeads.length} leads to enriched-all-leads.json (${validNewLeads.length} new, ${newLeads.length - validNewLeads.length} invalid filtered)`);
     
     return NextResponse.json({
       success: true,
       totalLeads: aggregatedLeads.length,
-      newLeadsAdded: newLeads.length,
+      newLeadsAdded: validNewLeads.length,
       message: `Successfully aggregated ${aggregatedLeads.length} leads`,
     });
   } catch (error) {

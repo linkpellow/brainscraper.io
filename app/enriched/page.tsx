@@ -98,6 +98,14 @@ export default function EnrichedLeadsPage() {
     setEnrichmentProgress(0);
     setEnrichmentLogs([]);
     
+    // Validation function: lead must have name AND (phone OR email)
+    const isValidLead = (lead: any): boolean => {
+      const name = (lead.name || '').trim();
+      const phone = (lead.phone || '').trim();
+      const email = (lead.email || '').trim();
+      return name.length > 0 && (phone.length > 0 || email.length > 0);
+    };
+
     // Load enriched leads from localStorage and API
     const loadLeads = async () => {
       try {
@@ -109,23 +117,19 @@ export default function EnrichedLeadsPage() {
           try {
             const parsed = JSON.parse(stored);
             if (Array.isArray(parsed) && parsed.length > 0) {
-              // Check if localStorage data has actual content
-              const hasData = parsed.some((lead: any) => 
-                (lead.name && lead.name.trim()) || 
-                (lead.phone && lead.phone.trim()) || 
-                (lead.email && lead.email.trim())
-              );
-              if (hasData) {
+              // Filter to only valid leads
+              const validLeads = parsed.filter(isValidLead);
+              if (validLeads.length > 0) {
                 // Add today's date to all leads that don't have dateScraped
-                const leadsWithDate = parsed.map((lead: LeadSummary) => ({
+                const leadsWithDate = validLeads.map((lead: LeadSummary) => ({
                   ...lead,
                   dateScraped: lead.dateScraped || today
                 }));
                 setLeads(leadsWithDate);
-                // Update localStorage with dates added
+                // Update localStorage with filtered valid leads and dates
                 localStorage.setItem('enrichedLeads', JSON.stringify(leadsWithDate));
                 setLoading(false);
-                console.log(`✅ Loaded ${leadsWithDate.length} leads from localStorage`);
+                console.log(`✅ Loaded ${leadsWithDate.length} valid leads from localStorage (${parsed.length - validLeads.length} invalid filtered)`);
                 return;
               }
             }
@@ -140,15 +144,17 @@ export default function EnrichedLeadsPage() {
           if (response.ok) {
             const result = await response.json();
             if (result.success && Array.isArray(result.leads) && result.leads.length > 0) {
+              // Filter to only valid leads (API already filters, but double-check)
+              const validLeads = result.leads.filter(isValidLead);
               // Add today's date to all leads that don't have dateScraped
-              const leadsWithDate = result.leads.map((lead: LeadSummary) => ({
+              const leadsWithDate = validLeads.map((lead: LeadSummary) => ({
                 ...lead,
                 dateScraped: lead.dateScraped || today
               }));
               setLeads(leadsWithDate);
-              // Update localStorage with fresh data and dates
+              // Update localStorage with fresh filtered data and dates
               localStorage.setItem('enrichedLeads', JSON.stringify(leadsWithDate));
-              console.log(`✅ Loaded ${leadsWithDate.length} leads from ${result.source} results`);
+              console.log(`✅ Loaded ${leadsWithDate.length} valid leads from ${result.source} results`);
               setLoading(false);
               return;
             }
@@ -173,13 +179,12 @@ export default function EnrichedLeadsPage() {
         try {
           const parsed = e.newValue ? JSON.parse(e.newValue) : [];
           const today = new Date().toISOString().split('T')[0];
-          // Add today's date to all leads that don't have dateScraped
-          const leadsWithDate = Array.isArray(parsed) 
-            ? parsed.map((lead: LeadSummary) => ({
-                ...lead,
-                dateScraped: lead.dateScraped || today
-              }))
-            : [];
+          // Filter to only valid leads, then add today's date
+          const validLeads = Array.isArray(parsed) ? parsed.filter(isValidLead) : [];
+          const leadsWithDate = validLeads.map((lead: LeadSummary) => ({
+            ...lead,
+            dateScraped: lead.dateScraped || today
+          }));
           setLeads(leadsWithDate);
         } catch (error) {
           console.error('Failed to parse enriched leads:', error);
