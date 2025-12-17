@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as fs from 'fs';
 import * as path from 'path';
-import { getUshaToken } from '@/utils/getUshaToken';
+import { getUshaToken, clearTokenCache } from '@/utils/getUshaToken';
 import { getDataDirectory, getDataFilePath, safeWriteFile, safeReadFile, ensureDataDirectory } from '@/utils/dataDirectory';
 import { withLock } from '@/utils/fileLock';
 
@@ -133,17 +133,32 @@ export async function GET(request: NextRequest) {
             return { lead, updated: false };
           }
           
-          const url = `https://api-business-agent.ushadvisors.com/Leads/api/leads/scrubphonenumber?currentContextAgentNumber=${encodeURIComponent(currentContextAgentNumber)}&phone=${encodeURIComponent(phone)}`;
-          
-          const response = await fetch(url, {
-            method: 'GET',
-            headers: {
+          // Helper function for DNC API call with retry
+          const callDNCAPI = async (phone: string, token: string): Promise<Response> => {
+            const url = `https://api-business-agent.ushadvisors.com/Leads/api/leads/scrubphonenumber?currentContextAgentNumber=${encodeURIComponent(currentContextAgentNumber)}&phone=${encodeURIComponent(phone)}`;
+            const headers = {
               'Authorization': `Bearer ${token}`,
               'Origin': 'https://agent.ushadvisors.com',
               'Referer': 'https://agent.ushadvisors.com',
               'Content-Type': 'application/json',
-            },
-          });
+            };
+            
+            let response = await fetch(url, { method: 'GET', headers });
+            
+            // Retry once on auth failure (should be rare with backend validation)
+            if (response.status === 401 || response.status === 403) {
+              clearTokenCache();
+              const freshToken = await getUshaToken(null, true);
+              if (freshToken) {
+                response = await fetch(url, { method: 'GET', headers: { ...headers, 'Authorization': `Bearer ${freshToken}` } });
+              }
+            }
+            
+            return response;
+          };
+          
+          // Use current token, refresh per item if needed (should be rare)
+          const response = await callDNCAPI(phone, token);
           
           if (!response.ok) {
             console.log(`  ⚠️ [DAILY_DNC] ${phone}: API error ${response.status}`);
