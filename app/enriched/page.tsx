@@ -112,37 +112,30 @@ export default function EnrichedLeadsPage() {
         const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
         
         // Try localStorage first (preserve user's current view)
+        // But always check API to ensure we have latest data
         const stored = localStorage.getItem('enrichedLeads');
+        let localStorageLeads: LeadSummary[] = [];
         if (stored) {
           try {
             const parsed = JSON.parse(stored);
             if (Array.isArray(parsed) && parsed.length > 0) {
               // Filter to only valid leads
-              const validLeads = parsed.filter(isValidLead);
-              if (validLeads.length > 0) {
-                // Add today's date to all leads that don't have dateScraped
-                const leadsWithDate = validLeads.map((lead: LeadSummary) => ({
-                  ...lead,
-                  dateScraped: lead.dateScraped || today
-                }));
-                setLeads(leadsWithDate);
-                // Update localStorage with filtered valid leads and dates
-                localStorage.setItem('enrichedLeads', JSON.stringify(leadsWithDate));
-                setLoading(false);
-                console.log(`✅ Loaded ${leadsWithDate.length} valid leads from localStorage (${parsed.length - validLeads.length} invalid filtered)`);
-                return;
+              localStorageLeads = parsed.filter(isValidLead);
+              if (localStorageLeads.length > 0) {
+                console.log(`📦 Found ${localStorageLeads.length} valid leads in localStorage`);
               }
             }
           } catch (e) {
-            console.log('Error parsing localStorage data, will reload from API');
+            console.log('Error parsing localStorage data');
           }
         }
         
-        // If no valid localStorage data, load from API
+        // Always load from API to get latest server data
         try {
           const response = await fetch(`/api/load-enriched-results?t=${Date.now()}`);
           if (response.ok) {
             const result = await response.json();
+            console.log(`📡 [ENRICHED_PAGE] API response:`, { success: result.success, leadsCount: result.leads?.length, source: result.source, stats: result.stats });
             if (result.success && Array.isArray(result.leads) && result.leads.length > 0) {
               // Filter to only valid leads (API already filters, but double-check)
               const validLeads = result.leads.filter(isValidLead);
@@ -154,13 +147,34 @@ export default function EnrichedLeadsPage() {
               setLeads(leadsWithDate);
               // Update localStorage with fresh filtered data and dates
               localStorage.setItem('enrichedLeads', JSON.stringify(leadsWithDate));
-              console.log(`✅ Loaded ${leadsWithDate.length} valid leads from ${result.source} results`);
+              console.log(`✅ Loaded ${leadsWithDate.length} valid leads from ${result.source} (API had ${result.leads.length} total)`);
+              setLoading(false);
+              return;
+            } else if (localStorageLeads.length > 0) {
+              // Fallback to localStorage if API returns empty but we have localStorage data
+              console.log(`⚠️ API returned no leads, using ${localStorageLeads.length} leads from localStorage`);
+              const leadsWithDate = localStorageLeads.map((lead: LeadSummary) => ({
+                ...lead,
+                dateScraped: lead.dateScraped || today
+              }));
+              setLeads(leadsWithDate);
               setLoading(false);
               return;
             }
           }
         } catch (apiError) {
-          console.log('Could not load from API:', apiError);
+          console.error('❌ Could not load from API:', apiError);
+          // Fallback to localStorage if API fails
+          if (localStorageLeads.length > 0) {
+            console.log(`⚠️ API failed, using ${localStorageLeads.length} leads from localStorage`);
+            const leadsWithDate = localStorageLeads.map((lead: LeadSummary) => ({
+              ...lead,
+              dateScraped: lead.dateScraped || today
+            }));
+            setLeads(leadsWithDate);
+            setLoading(false);
+            return;
+          }
         }
         
         setLeads([]);
@@ -1025,6 +1039,23 @@ export default function EnrichedLeadsPage() {
   };
 
   const sortedLeads = getSortedLeads();
+  
+  // Debug logging
+  useEffect(() => {
+    console.log('🔍 [ENRICHED_PAGE] Leads state:', {
+      totalLeads: leads.length,
+      sortedLeads: sortedLeads.length,
+      searchQuery,
+      ageMin,
+      ageMax,
+      mobileOnly,
+      filterDNC,
+      sortField
+    });
+    if (leads.length > 0 && sortedLeads.length === 0) {
+      console.warn('⚠️ [ENRICHED_PAGE] Leads exist but sortedLeads is empty - filters may be too restrictive');
+    }
+  }, [leads.length, sortedLeads.length, searchQuery, ageMin, ageMax, mobileOnly, filterDNC, sortField]);
 
   return (
     <AppLayout>
