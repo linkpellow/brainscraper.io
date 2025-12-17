@@ -139,10 +139,26 @@ export default function EnrichedLeadsPage() {
             if (result.success && Array.isArray(result.leads) && result.leads.length > 0) {
               // Filter to only valid leads (API already filters, but double-check)
               const validLeads = result.leads.filter(isValidLead);
+              
+              // Debug: Check DNC status in loaded leads
+              const leadsWithDNC = validLeads.filter((l: LeadSummary) => l.dncStatus && l.dncStatus !== 'UNKNOWN');
+              console.log(`📊 [ENRICHED_PAGE] Loaded leads DNC status: ${leadsWithDNC.length} with DNC status (YES/NO) out of ${validLeads.length} total`);
+              if (leadsWithDNC.length > 0) {
+                const dncCount = leadsWithDNC.filter((l: LeadSummary) => l.dncStatus === 'YES').length;
+                const okCount = leadsWithDNC.filter((l: LeadSummary) => l.dncStatus === 'NO').length;
+                console.log(`   DNC breakdown: ${dncCount} DNC, ${okCount} OK`);
+              }
+              
               // Add today's date to all leads that don't have dateScraped
+              // CRITICAL: Preserve all fields including DNC status
               const leadsWithDate = validLeads.map((lead: LeadSummary) => ({
                 ...lead,
-                dateScraped: lead.dateScraped || today
+                dateScraped: lead.dateScraped || today,
+                // Ensure DNC status is preserved
+                dncStatus: lead.dncStatus || 'UNKNOWN',
+                dncLastChecked: lead.dncLastChecked,
+                canContact: lead.canContact,
+                dncReason: lead.dncReason,
               }));
               setLeads(leadsWithDate);
               // Update localStorage with fresh filtered data and dates
@@ -357,7 +373,27 @@ export default function EnrichedLeadsPage() {
               return lead;
             });
             
+            // Save to localStorage for immediate UI update
             localStorage.setItem('enrichedLeads', JSON.stringify(updatedLeads));
+            
+            // CRITICAL: Save to server so DNC status persists across page reloads
+            console.log(`💾 [FRONTEND DNC] Saving ${updatedLeads.length} leads to server...`);
+            fetch('/api/aggregate-enriched-leads', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ newLeads: updatedLeads }),
+            })
+              .then(response => response.json())
+              .then(result => {
+                if (result.success) {
+                  console.log(`✅ [FRONTEND DNC] Saved ${result.totalLeads} leads to server (DNC status persisted)`);
+                } else {
+                  console.error(`❌ [FRONTEND DNC] Failed to save to server:`, result.error);
+                }
+              })
+              .catch(error => {
+                console.error(`❌ [FRONTEND DNC] Error saving to server:`, error);
+              });
             
             console.log('✅ [FRONTEND DNC] ============================================');
             console.log(`✅ [FRONTEND DNC] DNC Scrubbing Complete!`);
