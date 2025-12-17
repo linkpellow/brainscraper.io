@@ -314,19 +314,40 @@ function extractDOBAndAge(row: EnrichedRow, enriched: EnrichmentResult | undefin
  * Extracts DNC status (needs to be merged from USHA scrub results)
  * This will be populated when USHA scrub data is available
  */
-function extractDNCStatus(row: EnrichedRow, dncData?: { phone: string; isDoNotCall: boolean; canContact: boolean }): { dncStatus: string } {
-  // Check if DNC data is attached to row
-  if (dncData) {
+function extractDNCStatus(
+  row: EnrichedRow, 
+  enriched: EnrichmentResult | undefined,
+  dncData?: { phone: string; isDoNotCall: boolean; canContact: boolean }
+): { dncStatus: string; canContact?: boolean; dncReason?: string; dncLastChecked?: string } {
+  // Priority 1: Check enriched result (from immediate DNC check during enrichment)
+  if (enriched?.dncStatus) {
     return {
-      dncStatus: dncData.isDoNotCall ? 'YES' : 'NO',
+      dncStatus: enriched.dncStatus,
+      canContact: enriched.canContact,
+      dncReason: enriched.dncReason,
+      dncLastChecked: enriched.dncLastChecked,
     };
   }
   
-  // Check if DNC data is in row
+  // Priority 2: Check if DNC data was provided (legacy parameter)
+  if (dncData) {
+    return {
+      dncStatus: dncData.isDoNotCall ? 'YES' : 'NO',
+      canContact: dncData.canContact,
+    };
+  }
+  
+  // Priority 3: Check row for DNC status
   const dnc = row['DNC'] || row['dnc'] || row['DoNotCall'] || row['Do Not Call'] || row['isDoNotCall'] || '';
+  const canContact = row['Can Contact'] || row['canContact'];
+  const dncReason = row['DNC Reason'] || row['dncReason'];
+  const dncLastChecked = row['DNC Last Checked'] || row['dncLastChecked'];
   
   return {
     dncStatus: dnc ? (String(dnc).toUpperCase() === 'YES' || String(dnc) === 'true' ? 'YES' : 'NO') : 'UNKNOWN',
+    canContact: canContact !== undefined ? Boolean(canContact) : undefined,
+    dncReason: dncReason ? String(dncReason) : undefined,
+    dncLastChecked: dncLastChecked ? String(dncLastChecked) : undefined,
   };
 }
 
@@ -361,7 +382,7 @@ export function extractLeadSummary(
   });
 
   const { dob, age } = extractDOBAndAge(row, enriched);
-  const { dncStatus } = extractDNCStatus(row, dncData);
+  const { dncStatus, canContact, dncReason, dncLastChecked: extractedDncLastChecked } = extractDNCStatus(row, enriched, dncData);
   
   // Use age if available, otherwise DOB
   const dobOrAge = age || dob || '';
@@ -490,8 +511,8 @@ export function extractLeadSummary(
     }
   }
   
-  // Extract dncLastChecked from row if it exists (preserve existing value)
-  const dncLastChecked = row['dncLastChecked'] || row['DNC Last Checked'] || row['dnc_last_checked'] || undefined;
+  // Extract dncLastChecked (use from extractDNCStatus if available, otherwise from row)
+  const dncLastChecked = extractedDncLastChecked || row['dncLastChecked'] || row['DNC Last Checked'] || row['dnc_last_checked'] || undefined;
   
   const summary: LeadSummary = {
     name: extractName(row, enriched),

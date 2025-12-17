@@ -104,6 +104,7 @@ export function ensureDataDirectory(): void {
 
 /**
  * Safe file write with error handling and directory creation
+ * Uses atomic write pattern (write to temp file, then rename) for data integrity
  */
 export function safeWriteFile(filePath: string, data: string, options?: { encoding?: BufferEncoding }): void {
   if (!ensureServerModules()) {
@@ -116,9 +117,29 @@ export function safeWriteFile(filePath: string, data: string, options?: { encodi
     if (!fs!.existsSync(dir)) {
       fs!.mkdirSync(dir, { recursive: true });
     }
-    fs!.writeFileSync(filePath, data, options || { encoding: 'utf-8' });
+    
+    // Atomic write: write to temp file first, then rename
+    // This ensures the original file is never corrupted if write fails
+    const tempFilePath = `${filePath}.tmp.${Date.now()}.${Math.random().toString(36).substring(7)}`;
+    fs!.writeFileSync(tempFilePath, data, options || { encoding: 'utf-8' });
+    
+    // Atomic rename (rename is atomic on most filesystems)
+    fs!.renameSync(tempFilePath, filePath);
   } catch (error) {
     console.error(`❌ Failed to write file ${filePath}:`, error);
+    // Clean up temp file if it exists
+    try {
+      const tempFiles = fs!.readdirSync(dir).filter(f => f.startsWith(path!.basename(filePath) + '.tmp.'));
+      tempFiles.forEach(f => {
+        try {
+          fs!.unlinkSync(path!.join(dir, f));
+        } catch {
+          // Ignore cleanup errors
+        }
+      });
+    } catch {
+      // Ignore cleanup errors
+    }
     throw new Error(`File write failed: ${filePath} - ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }

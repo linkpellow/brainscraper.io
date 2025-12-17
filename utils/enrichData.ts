@@ -6,6 +6,7 @@ import { ParsedData } from './parseFile';
 import { isLeadProcessed, saveEnrichedLeadImmediate, getLeadKey } from './incrementalSave';
 import { extractLeadSummary } from './extractLeadSummary';
 import { callAPIWithConfig } from './apiToggleMiddleware';
+import { getUshaToken } from './getUshaToken';
 
 /**
  * Detailed progress information for real-time tracking
@@ -60,6 +61,10 @@ export interface EnrichmentResult {
   normalizedCarrier?: string; // From Telnyx carrier.normalized_carrier
   age?: string; // From skip-tracing
   dob?: string; // From skip-tracing
+  dncStatus?: string; // 'YES' | 'NO' | 'UNKNOWN' - DNC status from USHA API
+  canContact?: boolean; // Whether lead can be contacted (not DNC)
+  dncReason?: string; // Reason for DNC status
+  dncLastChecked?: string; // ISO date string of last DNC check
   error?: string;
 }
 
@@ -1139,20 +1144,92 @@ function shouldContinueEnrichment(
 }
 
 /**
+ * Check DNC status for a phone number using USHA API
+ * STEP 5.5: DNC Check (FREE - saves money by avoiding age enrichment on DNC numbers)
+ * 
+ * @param phone - Phone number to check (10+ digits)
+ * @returns DNC status result
+ */
+async function checkDNCStatus(
+  phone: string
+): Promise<{ isDNC: boolean; canContact: boolean; reason?: string }> {
+  try {
+    // Clean phone number - remove all non-digits
+    const cleanedPhone = phone.replace(/\D/g, '');
+    
+    if (cleanedPhone.length < 10) {
+      console.log(`[DNC_CHECK] ⚠️  Invalid phone format: ${phone}`);
+      return { isDNC: false, canContact: true, reason: 'Invalid phone number format' };
+    }
+    
+    // Get USHA token
+    const token = await getUshaToken();
+    if (!token) {
+      console.log(`[DNC_CHECK] ⚠️  Failed to get USHA token - skipping DNC check`);
+      return { isDNC: false, canContact: true, reason: 'Token fetch failed' };
+    }
+    
+    // Call USHA DNC API
+    const currentContextAgentNumber = '00044447';
+    const url = `https://api-business-agent.ushadvisors.com/Leads/api/leads/scrubphonenumber?currentContextAgentNumber=${encodeURIComponent(currentContextAgentNumber)}&phone=${encodeURIComponent(cleanedPhone)}`;
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Origin': 'https://agent.ushadvisors.com',
+        'Referer': 'https://agent.ushadvisors.com',
+        'Content-Type': 'application/json',
+      },
+    });
+    
+    if (!response.ok) {
+      console.log(`[DNC_CHECK] ⚠️  API error ${response.status} - assuming not DNC`);
+      return { isDNC: false, canContact: true, reason: `API error: ${response.statusText}` };
+    }
+    
+    const result = await response.json();
+    
+    // Parse response - check nested data structure first, then fallback to top-level
+    const responseData = result.data || result;
+    const isDNC = responseData.isDoNotCall === true || 
+                  responseData.contactStatus?.canContact === false ||
+                  result.isDNC === true || 
+                  result.isDoNotCall === true;
+    const canContact = responseData.contactStatus?.canContact !== false && !isDNC;
+    const reason = responseData.contactStatus?.reason || responseData.reason || (isDNC ? 'Do Not Call' : undefined);
+    
+    return {
+      isDNC,
+      canContact,
+      reason,
+    };
+  } catch (error) {
+    console.error(`[DNC_CHECK] ❌ Error checking DNC status:`, error);
+    // On error, assume not DNC to avoid blocking enrichment
+    return { isDNC: false, canContact: true, reason: error instanceof Error ? error.message : 'Unknown error' };
+  }
+}
+
+/**
  * OPTIMIZED ENRICHMENT PIPELINE
  * Order of operations (EXACT):
  * 1. LinkedIn (Sales Nav) → First name, last name, city, state
  * 2. Local geo DB → Zipcode (free)
  * 3. Skip trace (phones only) → Get a phone number (address only if bundled)
  * 4. Telnyx Number Lookup → Linetype + carrier
- * 5. Skip trace (conditional) → Age only if the number is valid (not VoIP/junk)
+ * 5. Gatekeep → Filter VoIP/junk carriers (cost saver)
+ * 5.5. DNC Check → Check DNC status (FREE - only on valid mobile numbers)
+ * 6. Skip trace (conditional) → Age only if the number is valid AND not DNC
  * 
  * API CALLS PER LEAD:
  * - STEP 3: 1 skip-tracing search call (phones only)
  * - STEP 3: 0-1 person details call (only if search doesn't have phone)
  * - STEP 4: 1 Telnyx call (only if we have phone)
- * - STEP 6: 0-1 skip-tracing age call (only if Telnyx validates AND age not in STEP 3 results)
- * MAX: 3 calls per lead (typically 1-2, often just 1-2 if age is in search results)
+ * - STEP 5.5: 1 DNC check (FREE - only if gatekeep passes)
+ * - STEP 6: 0-1 skip-tracing age call (only if Telnyx validates AND not DNC AND age not in STEP 3 results)
+ * MAX: 3-4 calls per lead (typically 2-3, DNC check is FREE)
+ * COST SAVINGS: Age enrichment skipped on DNC numbers (saves 1 API call per DNC lead)
  */
 export async function enrichRow(
   row: Record<string, string | number>,
@@ -1709,7 +1786,7 @@ export async function enrichRow(
   
   // STEP 5: GATEKEEP (MONEY SAVER - Cuts 30-60% of waste)
   const skipTracingData = result.skipTracingData as any;
-  const shouldContinue = shouldContinueEnrichment(
+  let shouldContinue = shouldContinueEnrichment(
     phone,
     result.lineType,
     result.carrierName,
@@ -1726,7 +1803,46 @@ export async function enrichRow(
     carrier: result.carrierName,
   }, shouldContinue ? undefined : ['Gatekeep failed: Skipping age enrichment']);
   
-  // STEP 6: Age (CONDITIONAL - Only if Telnyx confirms valid number)
+  // STEP 5.5: DNC CHECK (FREE - saves money by avoiding age enrichment on DNC numbers)
+  // Only check DNC if gatekeep passed (valid mobile number)
+  if (shouldContinue && phone) {
+    console.log(`[ENRICH_ROW] STEP 5.5: Checking DNC status for phone: ${phone.substring(0, 5)}...`);
+    
+    try {
+      const dncResult = await checkDNCStatus(phone);
+      
+      // Store DNC status in result
+      result.dncStatus = dncResult.isDNC ? 'YES' : 'NO';
+      result.canContact = dncResult.canContact;
+      result.dncReason = dncResult.reason;
+      result.dncLastChecked = new Date().toISOString();
+      
+      console.log(`[ENRICH_ROW] STEP 5.5: DNC Status: ${dncResult.isDNC ? '🔴 YES (DNC)' : '🟢 NO (OK to call)'}`);
+      
+      // Early exit: Skip age enrichment if DNC (cost savings)
+      if (dncResult.isDNC) {
+        shouldContinue = false;
+        console.log(`[ENRICH_ROW] ⛔ STEP 5.5: DNC detected - skipping age enrichment (cost savings)`);
+        onProgress?.('gatekeep', {
+          phone: phone || undefined,
+          lineType: result.lineType,
+          carrier: result.carrierName,
+        }, ['DNC detected - skipping age enrichment']);
+      } else {
+        console.log(`[ENRICH_ROW] ✅ STEP 5.5: Not DNC - proceeding to age enrichment`);
+      }
+    } catch (error) {
+      console.error(`[ENRICH_ROW] ❌ STEP 5.5: DNC check failed:`, error);
+      // On error, assume not DNC and continue (don't block enrichment)
+      result.dncStatus = 'UNKNOWN';
+      result.canContact = true;
+      result.dncLastChecked = new Date().toISOString();
+    }
+  } else if (phone) {
+    console.log(`[ENRICH_ROW] STEP 5.5: DNC check skipped - gatekeep failed (${result.lineType === 'voip' ? 'VoIP' : 'junk carrier'})`);
+  }
+  
+  // STEP 6: Age (CONDITIONAL - Only if Telnyx confirms valid number AND not DNC)
   // Age enrichment ONLY runs on high-quality leads (not VoIP/junk)
   // CRITICAL OPTIMIZATION: Reuse STEP 3 search results to avoid duplicate API calls
   if (shouldContinue && !hasDOBOrAge(row, headers) && firstName && lastName && phone) {

@@ -269,31 +269,24 @@ export async function GET(request: NextRequest) {
 
 /**
  * Load all enriched leads from storage files
+ * Single source of truth: enriched-all-leads.json
  */
 async function loadAllEnrichedLeads(): Promise<LeadSummary[]> {
   ensureDataDirectory();
-  const possibleFiles = [
-    'enriched-all-leads.json',
-    'enriched-322-leads.json',
-    're-enriched-leads.json',
-  ];
+  const filePath = getDataFilePath('enriched-all-leads.json');
+  const content = safeReadFile(filePath);
   
-  for (const filename of possibleFiles) {
-    const filePath = getDataFilePath(filename);
-    const content = safeReadFile(filePath);
-    
-    if (content) {
-      try {
-        const data = JSON.parse(content);
-        const leads = Array.isArray(data) ? data : (data.leads || []);
-        
-        if (leads.length > 0 && leads.some((l: any) => l.phone || l.name || l.email)) {
-          console.log(`✅ [DAILY_DNC] Loaded ${leads.length} leads from ${filename}`);
-          return leads;
-        }
-      } catch (error) {
-        console.error(`❌ [DAILY_DNC] Error parsing ${filename}:`, error);
+  if (content) {
+    try {
+      const data = JSON.parse(content);
+      const leads = Array.isArray(data) ? data : (data.leads || []);
+      
+      if (leads.length > 0) {
+        console.log(`✅ [DAILY_DNC] Loaded ${leads.length} leads from enriched-all-leads.json`);
+        return leads;
       }
+    } catch (error) {
+      console.error(`❌ [DAILY_DNC] Error parsing enriched-all-leads.json:`, error);
     }
   }
   

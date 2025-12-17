@@ -1,31 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDataFilePath, safeReadFile, ensureDataDirectory, getDataDirectory } from '@/utils/dataDirectory';
-import { loadAllEnrichedLeads } from '@/utils/incrementalSave';
-import * as fs from 'fs';
-import * as path from 'path';
+import { getDataFilePath, safeReadFile, ensureDataDirectory } from '@/utils/dataDirectory';
 
 /**
  * API endpoint to load enriched results from saved files
- * Returns partial results if available, so UI can display data immediately
- * 
- * Checks multiple sources:
- * 1. Main aggregated files (enriched-all-leads.json, etc.)
- * 2. Daily summary files in enriched-leads/ directory
- * 3. Individual lead files in enriched-leads/ directory
+ * Single source of truth: enriched-all-leads.json
  */
 
 export async function GET(request: NextRequest) {
   try {
     ensureDataDirectory();
     
-    // Try to load final results first (check multiple possible files)
-    const possibleFiles = [
-      { filename: 'enriched-322-leads.json', source: 'final' },
-      { filename: 'enriched-322-leads-partial.json', source: 'partial' },
-      { filename: 're-enriched-leads.json', source: 're-enriched' },
-      { filename: 'enriched-all-leads.json', source: 'all-leads' },
-    ];
-    
+    // Single source of truth: enriched-all-leads.json
     let leads: any[] = [];
     let source = 'none';
     
@@ -48,88 +33,42 @@ export async function GET(request: NextRequest) {
       );
     };
     
-    // Try each file in priority order
-    for (const { filename, source: fileSource } of possibleFiles) {
-      if (leads.length > 0) break; // Already found data
-      
-      const filePath = getDataFilePath(filename);
-      const content = safeReadFile(filePath);
-      
-      if (content) {
-        try {
-          const data = JSON.parse(content);
-          const candidateLeads = Array.isArray(data) ? data : (data.leads || []);
-          if (hasData(candidateLeads)) {
-            leads = candidateLeads;
-            source = fileSource;
-            break;
-          }
-        } catch (error) {
-          console.error(`Error parsing ${filename}:`, error);
-        }
-      }
-    }
+    // Load from single source of truth: enriched-all-leads.json
+    const filePath = getDataFilePath('enriched-all-leads.json');
+    const content = safeReadFile(filePath);
     
-    // If no leads found in main files, check enriched-leads/ directory
-    if (leads.length === 0) {
+    if (content) {
       try {
-        // Try loading from daily summary files first (more efficient)
-        const dataDir = getDataDirectory();
-        const enrichedDir = path.join(dataDir, 'enriched-leads');
+        const data = JSON.parse(content);
         
-        if (fs.existsSync(enrichedDir)) {
-          // Load all daily summary files (summary-YYYY-MM-DD.json)
-          const summaryFiles = fs.readdirSync(enrichedDir)
-            .filter(file => file.startsWith('summary-') && file.endsWith('.json'))
-            .sort()
-            .reverse(); // Most recent first
-          
-          const seenKeys = new Set<string>();
-          const aggregatedLeads: any[] = [];
-          
-          for (const summaryFile of summaryFiles) {
-            try {
-              const filePath = path.join(enrichedDir, summaryFile);
-              const content = safeReadFile(filePath);
-              if (!content) continue;
-              
-              const data = JSON.parse(content);
-              const dailyLeads = Array.isArray(data) ? data : [];
-              
-              for (const item of dailyLeads) {
-                const leadSummary = item.leadSummary || item;
-                if (!leadSummary) continue;
-                
-                // Use LinkedIn URL or name+email+phone as key for deduplication
-                const leadKey = item.metadata?.leadKey || 
-                  (leadSummary.linkedinUrl ? `linkedin:${leadSummary.linkedinUrl}` :
-                   `${leadSummary.name || ''}:${leadSummary.email || ''}:${leadSummary.phone || ''}`);
-                
-                if (!seenKeys.has(leadKey) && leadKey !== ':') {
-                  seenKeys.add(leadKey);
-                  aggregatedLeads.push(leadSummary);
-                }
-              }
-            } catch (error) {
-              console.error(`Error loading summary file ${summaryFile}:`, error);
-            }
-          }
-          
-          if (hasData(aggregatedLeads)) {
-            leads = aggregatedLeads;
-            source = 'enriched-leads-summaries';
-          } else {
-            // Fallback: use loadAllEnrichedLeads() which loads from individual files
-            const individualLeads = loadAllEnrichedLeads();
-            if (hasData(individualLeads)) {
-              leads = individualLeads;
-              source = 'enriched-leads-individual';
-            }
-          }
+        // Handle both array format (current) and metadata wrapper format (backward compatibility)
+        let candidateLeads: any[] = [];
+        if (Array.isArray(data)) {
+          candidateLeads = data;
+        } else if (data && typeof data === 'object' && Array.isArray(data.leads)) {
+          // Legacy format with metadata wrapper
+          candidateLeads = data.leads;
+          console.warn('⚠️ [LOAD] Detected legacy data format with metadata wrapper, migrating...');
+        } else {
+          console.error('❌ [LOAD] Invalid data structure in enriched-all-leads.json');
+          throw new Error('Invalid data structure: expected array or object with leads array');
+        }
+        
+        // Validate all items are objects
+        if (!candidateLeads.every(item => typeof item === 'object' && item !== null)) {
+          console.error('❌ [LOAD] Data contains non-object items');
+          throw new Error('Invalid data: all items must be objects');
+        }
+        
+        if (hasData(candidateLeads)) {
+          leads = candidateLeads;
+          source = 'enriched-all-leads.json';
         }
       } catch (error) {
-        console.error('Error loading from enriched-leads directory:', error);
-        // Continue - we'll return empty leads if nothing found
+        console.error(`❌ [LOAD] Error parsing enriched-all-leads.json:`, error);
+        // Return empty leads instead of crashing
+        leads = [];
+        source = 'error';
       }
     }
     
