@@ -13,13 +13,16 @@ export async function GET(request: NextRequest) {
     const dataDir = getDataDirectory();
     const resultsDir = path.join(dataDir, 'api-results');
     
+    // Create the directory if it doesn't exist (instead of erroring)
     if (!fs.existsSync(resultsDir)) {
+      fs.mkdirSync(resultsDir, { recursive: true });
+      // If directory was just created and is empty, return empty results
       return NextResponse.json({
-        success: false,
-        error: 'No saved results directory found',
+        success: true,
         leads: [],
         totalLeads: 0,
-        fileCount: 0
+        fileCount: 0,
+        message: 'No scraped leads found yet. Scrape some leads first to see them in the enrichment queue.'
       });
     }
 
@@ -82,33 +85,56 @@ export async function GET(request: NextRequest) {
       return true;
     });
 
-    // Check if leads have been enriched by checking enriched data files
-    // Load enriched leads to cross-reference
-    const enrichedDataPath = getDataFilePath('enriched-all-leads.json');
-    let enrichedLeads: any[] = [];
+    // Check if leads have been enriched by checking enriched-leads/ directory
+    // This is where enriched leads are actually saved (individual files + daily summaries)
+    const enrichedDir = path.join(dataDir, 'enriched-leads');
+    const enrichedIdentifiers = new Set<string>();
     
-    const enrichedContent = safeReadFile(enrichedDataPath);
-    if (enrichedContent) {
+    if (fs.existsSync(enrichedDir)) {
       try {
-        const enrichedData = JSON.parse(enrichedContent);
-        enrichedLeads = Array.isArray(enrichedData) ? enrichedData : [];
-      } catch (error) {
-        console.error('Error parsing enriched leads:', error);
+        // Load all enriched lead files
+        const enrichedFiles = fs.readdirSync(enrichedDir)
+          .filter(file => file.endsWith('.json') && (file.startsWith('20') || file.startsWith('summary-')))
+          .sort()
+          .reverse(); // Most recent first
+        
+        for (const file of enrichedFiles) {
+          try {
+            const filePath = path.join(enrichedDir, file);
+            const fileContent = safeReadFile(filePath);
+            if (!fileContent) continue;
+            
+            const enrichedData = JSON.parse(fileContent);
+            
+            // Handle both individual lead files and daily summary files
+            const leadsToCheck = Array.isArray(enrichedData) 
+              ? enrichedData 
+              : (enrichedData.enrichedRow || enrichedData.leadSummary) 
+                ? [enrichedData] 
+                : [];
+            
+            leadsToCheck.forEach((item: any) => {
+              // Extract lead data from different possible structures
+              const lead = item.enrichedRow || item.leadSummary || item;
+              const key = lead.linkedinUrl || lead['LinkedIn URL'] || lead.navigationUrl || 
+                         lead.linkedin_url || lead.profile_url || lead.url ||
+                         `${lead.name || lead.fullName || ''}-${lead.email || lead['Email'] || ''}`.trim();
+              if (key) enrichedIdentifiers.add(key.toLowerCase());
+            });
+          } catch (fileError) {
+            console.error(`Error processing enriched file ${file}:`, fileError);
+            // Continue with other files
+          }
+        }
+      } catch (dirError) {
+        console.error('Error reading enriched-leads directory:', dirError);
       }
     }
 
-    // Create a set of enriched lead identifiers (LinkedIn URL or name+email)
-    const enrichedIdentifiers = new Set<string>();
-    enrichedLeads.forEach((lead: any) => {
-      const key = lead.linkedinUrl || lead.linkedin_url || 
-                 `${lead.name || ''}-${lead.email || ''}`.trim();
-      if (key) enrichedIdentifiers.add(key);
-    });
-
     // Filter out leads that have been enriched
     const unenrichedLeads = uniqueLeads.filter(lead => {
-      const key = lead.navigationUrl || lead.linkedin_url || lead.profile_url || lead.url ||
-                 `${lead.fullName || lead.name || ''}-${lead.email || ''}`.trim();
+      const key = (lead.navigationUrl || lead.linkedin_url || lead.profile_url || lead.url ||
+                 `${lead.fullName || lead.name || ''}-${lead.email || ''}`.trim()).toLowerCase();
       return !enrichedIdentifiers.has(key);
     });
 
