@@ -594,6 +594,25 @@ export default function LinkedInLeadGenerator() {
         console.error('✨ [ENRICH_LIST] Failed to save enriched leads to localStorage:', error);
       }
 
+      // Aggregate and save enriched leads to server (enriched-all-leads.json)
+      try {
+        const aggregateResponse = await fetch('/api/aggregate-enriched-leads', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ newLeads: summaries }),
+        });
+        
+        if (aggregateResponse.ok) {
+          const aggregateData = await aggregateResponse.json();
+          console.log('✨ [ENRICH_LIST] Aggregated and saved leads to server:', aggregateData.totalLeads);
+        } else {
+          console.warn('✨ [ENRICH_LIST] Failed to aggregate leads on server:', await aggregateResponse.text());
+        }
+      } catch (aggregateError) {
+        console.error('✨ [ENRICH_LIST] Error aggregating leads:', aggregateError);
+        // Don't fail the enrichment if aggregation fails
+      }
+
       // Update leadList to mark leads as enriched
       setLeadList(prev => prev.map(lead => ({ ...lead, enriched: true })));
 

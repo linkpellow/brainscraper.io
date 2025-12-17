@@ -71,9 +71,15 @@ function calculateAge(dob: string): string {
  * Extracts name from various sources
  */
 function extractName(row: EnrichedRow, enriched: EnrichmentResult | undefined): string {
-  // Try original row data first
-  const firstName = row['First Name'] || row['FirstName'] || row['first_name'] || row['First'] || '';
-  const lastName = row['Last Name'] || row['LastName'] || row['last_name'] || row['Last'] || '';
+  // Try 'Name' column first (most common)
+  const name = row['Name'] || row['name'] || '';
+  if (name && String(name).trim()) {
+    return String(name).trim();
+  }
+  
+  // Try original row data - check various column name formats
+  const firstName = row['First Name'] || row['FirstName'] || row['first_name'] || row['First'] || row['Firstname'] || row['firstname'] || '';
+  const lastName = row['Last Name'] || row['LastName'] || row['last_name'] || row['Last'] || row['Lastname'] || row['lastname'] || '';
   
   if (firstName || lastName) {
     return `${firstName} ${lastName}`.trim();

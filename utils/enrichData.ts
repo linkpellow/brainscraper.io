@@ -1328,6 +1328,7 @@ export async function enrichRow(
         hasError: !!error,
         dataKeys: data ? Object.keys(data) : [],
         errorMessage: error,
+        dataPreview: data ? JSON.stringify(data).substring(0, 500) : 'none',
       });
       
       if (data) {
@@ -1340,12 +1341,19 @@ export async function enrichRow(
           const actualData = data.data || data;
           result.skipTracingData = actualData;
           
+          console.log(`[ENRICH_ROW] STEP 3: Extracted actualData, keys:`, actualData ? Object.keys(actualData) : []);
+          console.log(`[ENRICH_ROW] STEP 3: actualData.PeopleDetails exists:`, !!actualData.PeopleDetails);
+          console.log(`[ENRICH_ROW] STEP 3: actualData.PeopleDetails is array:`, Array.isArray(actualData.PeopleDetails));
+          console.log(`[ENRICH_ROW] STEP 3: actualData.PeopleDetails length:`, actualData.PeopleDetails?.length || 0);
+          
           // Handle new API response format: { PeopleDetails: [...], Status: 200, ... }
           let responseData: any = null;
           if (actualData.PeopleDetails && Array.isArray(actualData.PeopleDetails) && actualData.PeopleDetails.length > 0) {
             // New API format - use first result
             responseData = actualData.PeopleDetails[0];
             console.log(`[ENRICH_ROW] STEP 3: Found ${actualData.PeopleDetails.length} results, using first match`);
+            console.log(`[ENRICH_ROW] STEP 3: First result keys:`, Object.keys(responseData));
+            console.log(`[ENRICH_ROW] STEP 3: First result preview:`, JSON.stringify(responseData).substring(0, 300));
             
             // STEP 3: PHONES ONLY - Do NOT extract age here (age comes later in STEP 6, conditionally)
             // Age extraction removed - will be done conditionally in STEP 6 after Telnyx validation
@@ -1354,6 +1362,16 @@ export async function enrichRow(
             // This saves API calls - we only need person details if search doesn't have phone
             const searchPhone = responseData.Telephone || responseData.phone || responseData.phone_number || 
                                responseData['Phone Number'] || responseData['Phone'];
+            
+            console.log(`[ENRICH_ROW] STEP 3: Checking for phone in search results:`, {
+              hasTelephone: !!responseData.Telephone,
+              hasPhone: !!responseData.phone,
+              hasPhoneNumber: !!responseData.phone_number,
+              hasPhoneNumberField: !!responseData['Phone Number'],
+              hasPhoneField: !!responseData['Phone'],
+              searchPhoneValue: searchPhone || 'NOT_FOUND',
+              currentPhone: phone || 'NONE',
+            });
             
             if (searchPhone && !phone) {
               // Clean phone: remove all non-digits except leading +
@@ -1367,7 +1385,11 @@ export async function enrichRow(
               if (phone.length >= 10) {
                 result.phone = phone;
                 console.log(`[ENRICH_ROW] ✅ STEP 3: Got phone from SEARCH RESULTS: ${phone.substring(0, 5)}... (saved API call!)`);
+              } else {
+                console.log(`[ENRICH_ROW] ⚠️  STEP 3: Search phone found but invalid length (${phone.length}): ${phone}`);
               }
+            } else if (!searchPhone) {
+              console.log(`[ENRICH_ROW] ⚠️  STEP 3: No phone found in search results for ${firstName} ${lastName}`);
             }
             
             // ONLY make person details call if we STILL don't have a phone number
@@ -1400,9 +1422,13 @@ export async function enrichRow(
                 if (personData && personData.data) {
                   const personDetails = personData.data;
                   console.log(`[ENRICH_ROW] STEP 3: Person details received, keys: ${Object.keys(personDetails).slice(0, 10).join(', ')}...`);
+                  console.log(`[ENRICH_ROW] STEP 3: Person details has 'All Phone Details':`, !!personDetails['All Phone Details']);
+                  console.log(`[ENRICH_ROW] STEP 3: 'All Phone Details' is array:`, Array.isArray(personDetails['All Phone Details']));
+                  console.log(`[ENRICH_ROW] STEP 3: 'All Phone Details' length:`, personDetails['All Phone Details']?.length || 0);
                 
                 // Extract phone from "All Phone Details" array (prefer most recent/wireless)
                 if (personDetails['All Phone Details'] && Array.isArray(personDetails['All Phone Details']) && personDetails['All Phone Details'].length > 0) {
+                  console.log(`[ENRICH_ROW] STEP 3: Processing ${personDetails['All Phone Details'].length} phone details`);
                   // Prefer wireless phones, then most recently reported
                   const phones = personDetails['All Phone Details']
                     .filter((p: any) => p.phone_number)
@@ -1418,6 +1444,11 @@ export async function enrichRow(
                   
                   if (phones.length > 0) {
                     const phoneNumber = phones[0].phone_number;
+                    console.log(`[ENRICH_ROW] STEP 3: Selected phone from All Phone Details:`, {
+                      phoneNumber,
+                      phoneType: phones[0].phone_type,
+                      lastReported: phones[0].last_reported,
+                    });
                     // Clean phone: remove all non-digits except leading +
                     phone = String(phoneNumber).replace(/[^\d+]/g, '');
                     // Remove leading + if present (US numbers)
@@ -1429,13 +1460,20 @@ export async function enrichRow(
                     if (phone.length >= 10) {
                       result.phone = phone;
                       console.log(`[ENRICH_ROW] ✅ STEP 3: Got phone from person details: ${phone.substring(0, 5)}... (${phones[0].phone_type})`);
+                    } else {
+                      console.log(`[ENRICH_ROW] ⚠️  STEP 3: Phone from person details invalid length (${phone.length}): ${phone}`);
                     }
+                  } else {
+                    console.log(`[ENRICH_ROW] ⚠️  STEP 3: No valid phones found in All Phone Details array`);
                   }
+                } else {
+                  console.log(`[ENRICH_ROW] ⚠️  STEP 3: 'All Phone Details' not found or empty in person details`);
                 }
                 
                 // Fallback: check Person Details Telephone field
                 if (!phone && personDetails['Person Details'] && Array.isArray(personDetails['Person Details']) && personDetails['Person Details'].length > 0) {
                   const telephone = personDetails['Person Details'][0].Telephone;
+                  console.log(`[ENRICH_ROW] STEP 3: Checking Person Details Telephone field:`, telephone || 'NOT_FOUND');
                   if (telephone) {
                     // Clean phone: remove all non-digits except leading +
                     phone = String(telephone).replace(/[^\d+]/g, '');
@@ -1448,8 +1486,17 @@ export async function enrichRow(
                     if (phone.length >= 10) {
                       result.phone = phone;
                       console.log(`[ENRICH_ROW] ✅ STEP 3: Got phone from Person Details: ${phone.substring(0, 5)}...`);
+                    } else {
+                      console.log(`[ENRICH_ROW] ⚠️  STEP 3: Person Details Telephone invalid length (${phone.length}): ${phone}`);
                     }
                   }
+                } else if (!phone) {
+                  console.log(`[ENRICH_ROW] ⚠️  STEP 3: No phone found in person details for ${firstName} ${lastName}`);
+                  console.log(`[ENRICH_ROW] STEP 3: Person Details structure:`, {
+                    hasPersonDetails: !!personDetails['Person Details'],
+                    isArray: Array.isArray(personDetails['Person Details']),
+                    length: personDetails['Person Details']?.length || 0,
+                  });
                 }
                 
                 // Extract state from Current Address Details List
@@ -1462,13 +1509,26 @@ export async function enrichRow(
                 }
                 
                 // Extract email addresses if available
+                console.log(`[ENRICH_ROW] STEP 3: Checking for email in person details:`, {
+                  hasEmailAddresses: !!personDetails['Email Addresses'],
+                  isArray: Array.isArray(personDetails['Email Addresses']),
+                  length: personDetails['Email Addresses']?.length || 0,
+                  currentEmail: email || 'NONE',
+                });
                 if (personDetails['Email Addresses'] && Array.isArray(personDetails['Email Addresses']) && personDetails['Email Addresses'].length > 0 && !email) {
                   const firstEmail = personDetails['Email Addresses'][0];
+                  console.log(`[ENRICH_ROW] STEP 3: First email from person details:`, firstEmail || 'NOT_FOUND');
                   if (firstEmail && firstEmail.includes('@')) {
                     email = firstEmail;
-                    result.email = email ?? undefined;
-                    console.log(`[ENRICH_ROW] ✅ STEP 3: Got email from person details: ${firstEmail.substring(0, 10)}...`);
+                    result.email = email || undefined;
+                    if (email) {
+                      console.log(`[ENRICH_ROW] ✅ STEP 3: Got email from person details: ${email.substring(0, 10)}...`);
+                    }
+                  } else {
+                    console.log(`[ENRICH_ROW] ⚠️  STEP 3: Email from person details invalid or missing @: ${firstEmail}`);
                   }
+                } else if (!email) {
+                  console.log(`[ENRICH_ROW] ⚠️  STEP 3: No email found in person details for ${firstName} ${lastName}`);
                 }
                 
                 // Extract ZIP code from Current Address Details List (more accurate than LinkedIn location)
@@ -1493,39 +1553,60 @@ export async function enrichRow(
                 console.log(`[ENRICH_ROW] ❌ STEP 3: Exception fetching person details:`, error instanceof Error ? error.message : String(error));
               }
             }
+            
+            // If we still don't have phone/email, try extracting from responseData
+            if (!phone || !email) {
+              const extracted = extractContactFromData(responseData || actualData, phone, email);
+              
+              console.log(`[ENRICH_ROW] STEP 3: Extracted from skip-tracing:`, {
+                extractedPhone: extracted.phone ? `${extracted.phone.substring(0, 5)}...` : 'NONE',
+                extractedEmail: extracted.email ? `${extracted.email.substring(0, 10)}...` : 'NONE',
+                currentPhone: phone ? `${phone.substring(0, 5)}...` : 'NONE',
+                currentEmail: email ? `${email.substring(0, 10)}...` : 'NONE',
+              });
+              
+              // PHASE 3: CRITICAL FIX - Update phone/email from skip-tracing
+              // This is the PRIMARY source of contact data when LinkedIn doesn't have it
+              if (extracted.phone && !phone) {
+                phone = extracted.phone;
+                result.phone = phone;
+                console.log(`[ENRICH_ROW] ✅ PHASE 3: Updated phone from skip-tracing: ${phone.substring(0, 5)}...`);
+              } else if (!extracted.phone) {
+                console.log(`[ENRICH_ROW] ⚠️  PHASE 3: Skip-tracing did not return phone`);
+              }
+              
+              if (extracted.email && !email) {
+                email = extracted.email;
+                result.email = email ?? undefined;
+                console.log(`[ENRICH_ROW] ✅ PHASE 3: Updated email from skip-tracing: ${email.substring(0, 10)}...`);
+              } else if (!extracted.email) {
+                console.log(`[ENRICH_ROW] ⚠️  PHASE 3: Skip-tracing did not return email`);
+              }
+            }
           } else if (Array.isArray(actualData) && actualData.length > 0) {
             // Fallback: array format
             responseData = actualData[0];
+            const extracted = extractContactFromData(responseData, phone, email);
+            if (extracted.phone && !phone) {
+              phone = extracted.phone;
+              result.phone = phone;
+            }
+            if (extracted.email && !email) {
+              email = extracted.email;
+              result.email = email ?? undefined;
+            }
           } else {
             // Fallback: direct object
             responseData = actualData;
-          }
-          
-          const extracted = extractContactFromData(responseData || actualData, phone, email);
-        
-        console.log(`[ENRICH_ROW] STEP 3: Extracted from skip-tracing:`, {
-          extractedPhone: extracted.phone ? `${extracted.phone.substring(0, 5)}...` : 'NONE',
-          extractedEmail: extracted.email ? `${extracted.email.substring(0, 10)}...` : 'NONE',
-          currentPhone: phone ? `${phone.substring(0, 5)}...` : 'NONE',
-          currentEmail: email ? `${email.substring(0, 10)}...` : 'NONE',
-        });
-        
-          // PHASE 3: CRITICAL FIX - Update phone/email from skip-tracing
-          // This is the PRIMARY source of contact data when LinkedIn doesn't have it
-          if (extracted.phone) {
-            phone = extracted.phone;
-            result.phone = phone;
-            console.log(`[ENRICH_ROW] ✅ PHASE 3: Updated phone from skip-tracing: ${phone.substring(0, 5)}...`);
-          } else {
-            console.log(`[ENRICH_ROW] ⚠️  PHASE 3: Skip-tracing did not return phone`);
-          }
-          
-          if (extracted.email) {
-            email = extracted.email;
-            result.email = email ?? undefined;
-            console.log(`[ENRICH_ROW] ✅ PHASE 3: Updated email from skip-tracing: ${extracted.email.substring(0, 10)}...`);
-          } else {
-            console.log(`[ENRICH_ROW] ⚠️  PHASE 3: Skip-tracing did not return email`);
+            const extracted = extractContactFromData(responseData, phone, email);
+            if (extracted.phone && !phone) {
+              phone = extracted.phone;
+              result.phone = phone;
+            }
+            if (extracted.email && !email) {
+              email = extracted.email;
+              result.email = email ?? undefined;
+            }
           }
           
           console.log(`[ENRICH_ROW] After skip-tracing:`, {
@@ -1894,20 +1975,52 @@ export async function enrichData(
       }
     }
     
-    // CRITICAL: Preserve phone/email from row if enrichment didn't find them
+    // CRITICAL: Preserve phone/email from enrichment, or keep valid row values
     // This ensures extractLeadSummary can read them from the row
-    if (enrichment.phone && !enrichedRow['Phone']) {
-      enrichedRow['Phone'] = enrichment.phone;
+    // Always save enrichment phone if found, even if row has empty string
+    if (enrichment.phone) {
+      const currentPhone = String(enrichedRow['Phone'] || '').trim();
+      const enrichmentPhone = String(enrichment.phone).trim();
+      // Only update if current phone is empty/invalid or enrichment phone is better
+      if (!currentPhone || currentPhone.length < 10 || currentPhone === 'EMPTY' || currentPhone === 'N/A') {
+        enrichedRow['Phone'] = enrichmentPhone;
+        console.log(`💾 [ENRICH_DATA] Saved phone to row for ${leadName}: ${enrichmentPhone.substring(0, 5)}...`);
+      } else if (enrichmentPhone.length >= 10) {
+        // Enrichment phone is valid, prefer it over existing
+        enrichedRow['Phone'] = enrichmentPhone;
+        console.log(`💾 [ENRICH_DATA] Updated phone in row for ${leadName}: ${enrichmentPhone.substring(0, 5)}...`);
+      }
     }
-    if (enrichment.email && !enrichedRow['Email']) {
-      enrichedRow['Email'] = enrichment.email;
+    
+    // Always save enrichment email if found, even if row has empty string
+    if (enrichment.email) {
+      const currentEmail = String(enrichedRow['Email'] || '').trim();
+      const enrichmentEmail = String(enrichment.email).trim();
+      // Only update if current email is empty/invalid or enrichment email is better
+      if (!currentEmail || !currentEmail.includes('@') || currentEmail === 'EMPTY' || currentEmail === 'N/A') {
+        enrichedRow['Email'] = enrichmentEmail;
+        console.log(`💾 [ENRICH_DATA] Saved email to row for ${leadName}: ${enrichmentEmail.substring(0, 10)}...`);
+      } else if (enrichmentEmail.includes('@')) {
+        // Enrichment email is valid, prefer it over existing
+        enrichedRow['Email'] = enrichmentEmail;
+        console.log(`💾 [ENRICH_DATA] Updated email in row for ${leadName}: ${enrichmentEmail.substring(0, 10)}...`);
+      }
     }
-    // Also preserve original row values if enrichment doesn't have them
-    if (!enrichment.phone && enrichedRow['Phone']) {
-      // Keep the original phone from row
+    
+    // Preserve original row values if enrichment doesn't have them and row values are valid
+    if (!enrichment.phone) {
+      const rowPhone = String(enrichedRow['Phone'] || '').trim();
+      if (rowPhone && rowPhone.length >= 10 && rowPhone !== 'EMPTY' && rowPhone !== 'N/A') {
+        // Keep the original phone from row - it's valid
+        console.log(`💾 [ENRICH_DATA] Preserved existing phone in row for ${leadName}: ${rowPhone.substring(0, 5)}...`);
+      }
     }
-    if (!enrichment.email && enrichedRow['Email']) {
-      // Keep the original email from row
+    if (!enrichment.email) {
+      const rowEmail = String(enrichedRow['Email'] || '').trim();
+      if (rowEmail && rowEmail.includes('@') && rowEmail !== 'EMPTY' && rowEmail !== 'N/A') {
+        // Keep the original email from row - it's valid
+        console.log(`💾 [ENRICH_DATA] Preserved existing email in row for ${leadName}: ${rowEmail.substring(0, 10)}...`);
+      }
     }
 
     // CRITICAL: Save immediately after enrichment to ensure data persistence
