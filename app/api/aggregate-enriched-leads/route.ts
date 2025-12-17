@@ -90,15 +90,59 @@ export async function POST(request: NextRequest) {
       // Filter new leads before processing
       validNewLeads = newLeads.filter(isValidLead);
       
-      // Add new leads (will overwrite duplicates)
+      // Helper function to merge leads intelligently, preserving DNC status
+      const mergeLeads = (existing: LeadSummary, incoming: LeadSummary): LeadSummary => {
+        // Start with existing lead as base
+        const merged = { ...existing };
+        
+        // Preserve DNC-related fields from existing lead if they're valid
+        // Only overwrite if incoming lead has valid DNC data
+        const existingHasValidDNC = existing.dncStatus && 
+                                    existing.dncStatus !== 'UNKNOWN' && 
+                                    existing.dncLastChecked;
+        const incomingHasValidDNC = incoming.dncStatus && 
+                                    incoming.dncStatus !== 'UNKNOWN' && 
+                                    incoming.dncLastChecked;
+        
+        if (existingHasValidDNC && !incomingHasValidDNC) {
+          // Preserve existing DNC data
+          merged.dncStatus = existing.dncStatus;
+          merged.dncReason = existing.dncReason;
+          merged.canContact = existing.canContact;
+          merged.dncLastChecked = existing.dncLastChecked;
+        } else if (incomingHasValidDNC) {
+          // Use incoming DNC data (newer or more complete)
+          merged.dncStatus = incoming.dncStatus;
+          merged.dncReason = incoming.dncReason;
+          merged.canContact = incoming.canContact;
+          merged.dncLastChecked = incoming.dncLastChecked;
+        }
+        
+        // For all other fields, prefer incoming lead data (newer data wins)
+        // But don't overwrite with empty/undefined values
+        Object.keys(incoming).forEach(key => {
+          const value = incoming[key as keyof LeadSummary];
+          // Only update if value is not empty/undefined
+          if (value !== undefined && value !== null && value !== '') {
+            // Skip DNC fields if we already handled them above
+            if (key !== 'dncStatus' && key !== 'dncReason' && key !== 'canContact' && key !== 'dncLastChecked') {
+              (merged as any)[key] = value;
+            }
+          }
+        });
+        
+        return merged;
+      };
+      
+      // Add new leads (will merge with duplicates, preserving DNC status)
       for (const lead of validNewLeads) {
         const key = getLeadKey(lead);
         if (key === 'name:unknown') continue; // Skip invalid leads
         
         const existingIndex = aggregatedLeads.findIndex(l => getLeadKey(l) === key);
         if (existingIndex >= 0) {
-          // Update existing lead with new data
-          aggregatedLeads[existingIndex] = lead;
+          // Merge existing lead with new data, preserving DNC status
+          aggregatedLeads[existingIndex] = mergeLeads(aggregatedLeads[existingIndex], lead);
         } else {
           // Add new lead
           aggregatedLeads.push(lead);
