@@ -111,9 +111,11 @@ export function safeWriteFile(filePath: string, data: string, options?: { encodi
     throw new Error('safeWriteFile can only be called on the server');
   }
   
+  // Get directory path outside try block so it's accessible in catch
+  const dir = path!.dirname(filePath);
+  
   try {
     ensureDataDirectory();
-    const dir = path!.dirname(filePath);
     if (!fs!.existsSync(dir)) {
       fs!.mkdirSync(dir, { recursive: true });
     }
@@ -129,14 +131,16 @@ export function safeWriteFile(filePath: string, data: string, options?: { encodi
     console.error(`❌ Failed to write file ${filePath}:`, error);
     // Clean up temp file if it exists
     try {
-      const tempFiles = fs!.readdirSync(dir).filter(f => f.startsWith(path!.basename(filePath) + '.tmp.'));
-      tempFiles.forEach(f => {
-        try {
-          fs!.unlinkSync(path!.join(dir, f));
-        } catch {
-          // Ignore cleanup errors
-        }
-      });
+      if (fs!.existsSync(dir)) {
+        const tempFiles = fs!.readdirSync(dir).filter(f => f.startsWith(path!.basename(filePath) + '.tmp.'));
+        tempFiles.forEach(f => {
+          try {
+            fs!.unlinkSync(path!.join(dir, f));
+          } catch {
+            // Ignore cleanup errors
+          }
+        });
+      }
     } catch {
       // Ignore cleanup errors
     }
