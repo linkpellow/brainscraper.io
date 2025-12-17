@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { 
   Rocket, Users, Building2, Link2, ClipboardList, Eye, Zap, 
   CheckCircle, XCircle, Loader2, Download, DollarSign, Play,
-  Search, Filter, FileDown, ArrowRight, Linkedin, Facebook
+  Search, Filter, FileDown, ArrowRight, Linkedin, Facebook, Sparkles
 } from 'lucide-react';
 import { ParsedData } from '@/utils/parseFile';
 import { enrichData, EnrichedData, EnrichedRow, EnrichmentProgress } from '@/utils/enrichData';
@@ -1532,6 +1532,154 @@ export default function LinkedInLeadGenerator() {
     }
   };
 
+  const handleScrubOnly = async () => {
+    if (leadList.length === 0) {
+      alert('No leads in the list to scrub. Add leads first.');
+      return;
+    }
+
+    // Filter leads with phone numbers
+    const leadsWithPhone = leadList.filter(lead => {
+      const phone = lead.phone?.replace(/\D/g, '');
+      return phone && phone.length >= 10;
+    });
+
+    if (leadsWithPhone.length === 0) {
+      alert('No leads with valid phone numbers to scrub.');
+      return;
+    }
+
+    if (!confirm(`Scrub DNC status for ${leadsWithPhone.length} leads with phone numbers?`)) {
+      return;
+    }
+
+    console.log('🔍 [SCRUB_ONLY] Starting DNC scrub for leadList');
+    setIsScrubbing(true);
+    setError(null);
+
+    try {
+      const phoneNumbers = leadsWithPhone.map(lead => lead.phone?.replace(/\D/g, '')).filter(Boolean) as string[];
+      
+      // Scrub in batches
+      const batchSize = 20;
+      const dncResults = new Map<string, { status: string; isDNC: boolean }>();
+      const totalBatches = Math.ceil(phoneNumbers.length / batchSize);
+
+      for (let i = 0; i < phoneNumbers.length; i += batchSize) {
+        const batchNum = Math.floor(i / batchSize) + 1;
+        const batch = phoneNumbers.slice(i, i + batchSize);
+        
+        console.log(`📤 [SCRUB_ONLY] Sending batch ${batchNum}/${totalBatches} (${batch.length} numbers)...`);
+        
+        try {
+          const response = await fetch('/api/usha/scrub-batch', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ phoneNumbers: batch }),
+          });
+          
+          if (response.ok) {
+            const result = await response.json();
+            if (result.success && result.results) {
+              result.results.forEach((r: any) => {
+                dncResults.set(r.phone, {
+                  status: r.status === 'DNC' ? 'YES' : r.status === 'OK' ? 'NO' : 'UNKNOWN',
+                  isDNC: r.isDNC || r.status === 'DNC'
+                });
+              });
+            }
+          } else {
+            const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+            throw new Error(errorData.error || response.statusText);
+          }
+        } catch (error) {
+          console.error(`❌ [SCRUB_ONLY] Batch ${batchNum} failed:`, error);
+          throw error;
+        }
+        
+        // Small delay between batches
+        if (i + batchSize < phoneNumbers.length) {
+          await new Promise(resolve => setTimeout(resolve, 200));
+        }
+      }
+
+      // Update leadList with DNC status
+      if (dncResults.size > 0) {
+        const dncCount = Array.from(dncResults.values()).filter(v => v.isDNC).length;
+        const okCount = dncResults.size - dncCount;
+        
+        console.log(`✅ [SCRUB_ONLY] Scrub complete: ${okCount} OK, ${dncCount} DNC`);
+        
+        // Convert status: 'YES' -> 'Do Not Call', 'NO' -> 'Safe', 'UNKNOWN' -> 'Unknown'
+        const convertDNCStatus = (status: string): 'Safe' | 'Do Not Call' | 'Unknown' => {
+          if (status === 'YES') return 'Do Not Call';
+          if (status === 'NO') return 'Safe';
+          return 'Unknown';
+        };
+        
+        setLeadList(prev => prev.map(lead => {
+          const phone = lead.phone?.replace(/\D/g, '');
+          if (phone && dncResults.has(phone)) {
+            const result = dncResults.get(phone)!;
+            const convertedStatus: 'Safe' | 'Do Not Call' | 'Unknown' = convertDNCStatus(result.status);
+            return {
+              ...lead,
+              dncStatus: convertedStatus,
+              dncChecked: true,
+            };
+          }
+          return lead;
+        }));
+
+        // Save to server via aggregate endpoint
+        const updatedLeads: LeadSummary[] = leadList.map(lead => {
+          const phone = lead.phone?.replace(/\D/g, '');
+          const baseLead: LeadSummary = {
+            name: lead.name || '',
+            phone: lead.phone || '',
+            email: lead.email || '',
+            dobOrAge: lead.dateOfBirth || lead.age?.toString() || '',
+            zipcode: lead.zipCode || '',
+            state: lead.state || '',
+            city: lead.city || '',
+            dncStatus: 'UNKNOWN',
+            linkedinUrl: lead.linkedinUrl,
+          };
+          
+          if (phone && dncResults.has(phone)) {
+            const result = dncResults.get(phone)!;
+            baseLead.dncStatus = result.status === 'YES' ? 'YES' : result.status === 'NO' ? 'NO' : 'UNKNOWN';
+            baseLead.dncLastChecked = new Date().toISOString();
+          }
+          
+          return baseLead;
+        });
+
+        try {
+          const response = await fetch('/api/aggregate-enriched-leads', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ newLeads: updatedLeads }),
+          });
+          
+          if (response.ok) {
+            console.log('✅ [SCRUB_ONLY] Saved DNC status to server');
+          }
+        } catch (error) {
+          console.error('❌ [SCRUB_ONLY] Failed to save to server:', error);
+        }
+
+        alert(`DNC scrub complete!\n${okCount} OK, ${dncCount} DNC`);
+      }
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Failed to scrub leads';
+      setError(errorMsg);
+      alert(`Error: ${errorMsg}`);
+    } finally {
+      setIsScrubbing(false);
+    }
+  };
+
   const handleDNCScrub = async (data: EnrichedData) => {
     setIsScrubbing(true);
     try {
@@ -2450,20 +2598,20 @@ export default function LinkedInLeadGenerator() {
                 </button>
                 {leadList.length > 0 && (
                   <button
-                    onClick={enrichAllLeadsFromList}
-                    disabled={isEnriching}
-                    className="group relative px-5 py-2.5 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 hover:from-blue-600 hover:via-purple-600 hover:to-pink-600 rounded-xl text-white text-sm font-semibold transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-lg shadow-purple-500/30 hover:shadow-xl hover:shadow-purple-500/40 hover:scale-105 active:scale-[0.98] overflow-hidden"
+                    onClick={handleScrubOnly}
+                    disabled={isScrubbing}
+                    className="group px-4 py-2.5 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 rounded-xl text-white text-sm font-semibold transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-lg shadow-green-500/30 hover:shadow-xl hover:shadow-green-500/40 hover:scale-105 active:scale-[0.98]"
+                    title="Scrub DNC status for all leads with phone numbers"
                   >
-                    <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
-                    {isEnriching ? (
+                    {isScrubbing ? (
                       <>
-                        <Loader2 className="w-4 h-4 animate-spin relative z-10" />
-                        <span className="relative z-10">Enriching...</span>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Scrubbing...
                       </>
                     ) : (
                       <>
-                        <Zap className="w-4 h-4 relative z-10 group-hover:scale-110 group-hover:rotate-12 transition-transform duration-300" />
-                        <span className="relative z-10">Enrich All ({leadList.length})</span>
+                        <Sparkles className="w-4 h-4 group-hover:scale-110 group-hover:rotate-12 transition-transform duration-300" />
+                        Scrub DNC
                       </>
                     )}
                   </button>
