@@ -1,0 +1,80 @@
+{
+  "timestamp": "2025-12-17T16:13:42.758Z",
+  "testLeads": [
+    {
+      "name": "John Doe",
+      "phone": "",
+      "dobOrAge": "",
+      "zipcode": "80201",
+      "state": "Colorado",
+      "city": "Denver",
+      "email": "",
+      "dncStatus": "UNKNOWN",
+      "lineType": "",
+      "carrier": "",
+      "normalizedCarrier": "",
+      "searchFilter": "",
+      "dateScraped": "2025-12-17"
+    },
+    {
+      "name": "Jane Smith",
+      "phone": "",
+      "dobOrAge": "",
+      "zipcode": "80201",
+      "state": "Colorado",
+      "city": "Boulder",
+      "email": "",
+      "dncStatus": "UNKNOWN",
+      "lineType": "",
+      "carrier": "",
+      "normalizedCarrier": "",
+      "searchFilter": "",
+      "dateScraped": "2025-12-17"
+    },
+    {
+      "name": "Bob Johnson",
+      "phone": "",
+      "dobOrAge": "",
+      "zipcode": "80201",
+      "state": "Colorado",
+      "city": "Aurora",
+      "email": "",
+      "dncStatus": "UNKNOWN",
+      "lineType": "",
+      "carrier": "",
+      "normalizedCarrier": "",
+      "searchFilter": "",
+      "dateScraped": "2025-12-17"
+    }
+  ],
+  "statistics": {
+    "total": 3,
+    "withPhone": 0,
+    "withEmail": 0,
+    "phonePercentage": 0,
+    "emailPercentage": 0
+  },
+  "enrichedRows": [
+    {
+      "name": "John Doe",
+      "phone": "",
+      "email": "",
+      "hasPhoneInRow": false,
+      "hasEmailInRow": false
+    },
+    {
+      "name": "Jane Smith",
+      "phone": "",
+      "email": "",
+      "hasPhoneInRow": false,
+      "hasEmailInRow": false
+    },
+    {
+      "name": "Bob Johnson",
+      "phone": "",
+      "email": "",
+      "hasPhoneInRow": false,
+      "hasEmailInRow": false
+    }
+  ]
+}

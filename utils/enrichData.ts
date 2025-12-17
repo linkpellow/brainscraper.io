@@ -1544,8 +1544,19 @@ export async function enrichRow(
                   }
                 }
                 
-                // STEP 3: PHONES ONLY - Do NOT extract age here
-                // Age will be extracted conditionally in STEP 6 after Telnyx validation
+                // STEP 3: Extract age from person details but store it for STEP 6 conditional use
+                // Age will be conditionally used in STEP 6 after Telnyx validation
+                if (personDetails['Person Details'] && Array.isArray(personDetails['Person Details']) && personDetails['Person Details'].length > 0) {
+                  const ageFromPersonDetails = personDetails['Person Details'][0].Age;
+                  if (ageFromPersonDetails) {
+                    // Store age in skipTracingData for STEP 6 to use conditionally
+                    if (!result.skipTracingData) {
+                      result.skipTracingData = {};
+                    }
+                    (result.skipTracingData as any).ageFromPersonDetails = String(ageFromPersonDetails);
+                    console.log(`[ENRICH_ROW] STEP 3: Stored age from person details for STEP 6: ${ageFromPersonDetails}`);
+                  }
+                }
               } else {
                 console.log(`[ENRICH_ROW] ⚠️  STEP 3: Person details API returned no data or invalid structure`);
               }
@@ -1746,8 +1757,14 @@ export async function enrichRow(
       
       if (personId && !phone) {
         // We already made person details call in STEP 3 (because we needed phone)
-        // Age should have been in person details - if not, it's not available
-        console.log(`[ENRICH_ROW] STEP 6: Person details already fetched in STEP 3, age not available`);
+        // Age should have been extracted and stored in skipTracingData.ageFromPersonDetails
+        const storedAge = (skipTracingData as any)?.ageFromPersonDetails;
+        if (storedAge) {
+          result.age = storedAge;
+          console.log(`[ENRICH_ROW] ✅ STEP 6: Using age from STEP 3 person details: ${result.age}`);
+        } else {
+          console.log(`[ENRICH_ROW] STEP 6: Person details already fetched in STEP 3, but age not found in stored data`);
+        }
       } else if (personId) {
         // We have Person ID but didn't fetch person details in STEP 3 (phone was in search)
         // Fetch person details now for age

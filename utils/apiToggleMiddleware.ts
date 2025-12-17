@@ -71,8 +71,15 @@ export async function callAPIWithConfig(
     const apiConfig = settings.apiToggles[apiKey];
     
     // Check if API is enabled
+    // CRITICAL: Locked APIs are ALWAYS enabled, regardless of settings
+    if (metadata.locked) {
+      // Locked APIs cannot be disabled - always proceed
+      return await callAPI(url, options, apiName);
+    }
+    
+    // For non-locked APIs, check toggle config
     // Default: enabled (if not in toggles, assume enabled for backward compatibility)
-    const enabled = apiConfig ? apiConfig.enabled : (metadata.locked ? true : true);
+    const enabled = apiConfig ? apiConfig.enabled : true;
     
     if (!enabled) {
       console.log(`[API_TOGGLE] ${apiName} is disabled, skipping`);

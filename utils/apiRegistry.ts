@@ -21,6 +21,7 @@ export const API_REGISTRY: Record<string, APIMetadata> = {
     costPer1000: 15.00,
     dependencies: [],
     category: 'scraping',
+    locked: true, // Always enabled - required for lead generation
   },
   'facebook-scraper': {
     name: 'Facebook Scraper',
@@ -33,12 +34,14 @@ export const API_REGISTRY: Record<string, APIMetadata> = {
     costPer1000: 25.00,
     dependencies: [],
     category: 'enrichment',
+    locked: true, // Always enabled - required for phone/email/age enrichment
   },
   'telnyx-lookup': {
     name: 'Telnyx Lookup',
     costPer1000: 4.00,
     dependencies: ['skip-tracing'], // Auto-disables if skip-tracing off
     category: 'validation',
+    locked: true, // Always enabled - required for phone validation (linetype, carrier)
   },
   // Note: The following APIs are available but not currently used in the enrichment pipeline
   // They can be enabled for future use or manual enrichment

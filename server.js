@@ -9,7 +9,20 @@ const dev = process.env.NODE_ENV !== 'production';
 const hostname = '0.0.0.0';
 const port = process.env.PORT || 3000;
 
-const app = next({ dev, hostname, port });
+// Ensure production mode for Railway deployments
+const isProduction = process.env.NODE_ENV === 'production' || process.env.RAILWAY_ENVIRONMENT === 'production';
+
+const app = next({ 
+  dev: !isProduction, 
+  hostname, 
+  port,
+  // Disable server actions if not needed (prevents "Failed to find Server Action" errors)
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '2mb',
+    },
+  },
+});
 const handle = app.getRequestHandler();
 
 app.prepare().then(() => {

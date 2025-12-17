@@ -1,0 +1,36 @@
+{
+  "metadata": {
+    "savedAt": "2025-12-17T16:13:40.631Z",
+    "leadKey": "name:Jane Smith"
+  },
+  "enrichedRow": {
+    "Firstname": "Jane",
+    "Lastname": "Smith",
+    "State": "Colorado",
+    "City": "Boulder",
+    "Name": "Jane Smith",
+    "_enriched": {
+      "firstName": "Jane",
+      "lastName": "Smith",
+      "zipCode": "80201",
+      "addressLine2": "Boulder",
+      "error": "Skip-tracing (Phone Discovery): fetch failed"
+    },
+    "Zipcode": "80201"
+  },
+  "leadSummary": {
+    "name": "Jane Smith",
+    "phone": "",
+    "dobOrAge": "",
+    "zipcode": "80201",
+    "state": "Colorado",
+    "city": "Boulder",
+    "email": "",
+    "dncStatus": "UNKNOWN",
+    "lineType": "",
+    "carrier": "",
+    "normalizedCarrier": "",
+    "searchFilter": "",
+    "dateScraped": "2025-12-17"
+  }
+}

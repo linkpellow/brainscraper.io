@@ -97,18 +97,10 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const result = await response.text();
-    
-    // Try to parse as JSON, fallback to text
-    let data;
-    try {
-      data = JSON.parse(result);
-      console.log(`[SKIP-TRACING] Parsed JSON response. Keys:`, Object.keys(data));
-      console.log(`[SKIP-TRACING] Response preview:`, JSON.stringify(data).substring(0, 500));
-    } catch {
-      data = { raw: result };
-      console.log(`[SKIP-TRACING] Failed to parse JSON, using raw text. Length:`, result.length);
-    }
+    // API always returns valid JSON - parse directly
+    const data = await response.json();
+    console.log(`[SKIP-TRACING] Response keys:`, Object.keys(data));
+    console.log(`[SKIP-TRACING] Response preview:`, JSON.stringify(data).substring(0, 500));
 
     return NextResponse.json({ success: true, data });
   } catch (error) {
@@ -195,18 +187,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const result = await response.text();
-    
-    // Try to parse as JSON, fallback to text
-    let data;
-    try {
-      data = JSON.parse(result);
-      console.log(`[SKIP-TRACING POST] Parsed JSON response. Keys:`, Object.keys(data));
-      console.log(`[SKIP-TRACING POST] Response preview:`, JSON.stringify(data).substring(0, 500));
-    } catch {
-      data = { raw: result };
-      console.log(`[SKIP-TRACING POST] Failed to parse JSON, using raw text. Length:`, result.length);
-    }
+    // API always returns valid JSON - parse directly
+    const data = await response.json();
+    console.log(`[SKIP-TRACING POST] Response keys:`, Object.keys(data));
+    console.log(`[SKIP-TRACING POST] Response preview:`, JSON.stringify(data).substring(0, 500));
 
     return NextResponse.json({ success: true, data });
   } catch (error) {

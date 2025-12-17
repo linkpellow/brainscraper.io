@@ -681,14 +681,14 @@ function APIControlsTab({ settings, updateSettings }: any) {
     const metadata = API_REGISTRY[apiKey];
     if (!metadata) return;
 
-    // Locked APIs cannot be disabled
-    if (metadata.locked && !enabled) {
-      return;
+    // CRITICAL: Locked APIs cannot be disabled - always return early
+    if (metadata.locked) {
+      return; // Locked APIs cannot be toggled
     }
 
     const newToggles = { ...settings.apiToggles };
     newToggles[apiKey] = {
-      enabled: metadata.locked ? true : enabled,
+      enabled: enabled, // Only non-locked APIs can be toggled
       costPer1000: metadata.costPer1000,
       dependencies: metadata.dependencies,
     };
@@ -718,7 +718,8 @@ function APIControlsTab({ settings, updateSettings }: any) {
           .map((apiKey) => {
           const metadata = API_REGISTRY[apiKey];
           const toggle = settings.apiToggles[apiKey];
-          const enabled = toggle?.enabled ?? (metadata.locked ? true : true);
+          // CRITICAL: Locked APIs are ALWAYS enabled, regardless of toggle state
+          const enabled = metadata.locked ? true : (toggle?.enabled ?? true);
           const isLocked = metadata.locked === true;
 
           return (

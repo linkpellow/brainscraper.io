@@ -1,0 +1,36 @@
+{
+  "metadata": {
+    "savedAt": "2025-12-17T16:12:58.445Z",
+    "leadKey": "name:John Doe"
+  },
+  "enrichedRow": {
+    "Firstname": "John",
+    "Lastname": "Doe",
+    "State": "Colorado",
+    "City": "Denver",
+    "Name": "John Doe",
+    "_enriched": {
+      "firstName": "John",
+      "lastName": "Doe",
+      "zipCode": "80201",
+      "addressLine2": "Denver",
+      "error": "Skip-tracing (Phone Discovery): fetch failed"
+    },
+    "Zipcode": "80201"
+  },
+  "leadSummary": {
+    "name": "",
+    "phone": "",
+    "dobOrAge": "",
+    "zipcode": "80201",
+    "state": "Colorado",
+    "city": "Denver",
+    "email": "",
+    "dncStatus": "UNKNOWN",
+    "lineType": "",
+    "carrier": "",
+    "normalizedCarrier": "",
+    "searchFilter": "",
+    "dateScraped": "2025-12-17"
+  }
+}

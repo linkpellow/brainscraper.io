@@ -304,10 +304,10 @@ export async function POST(request: NextRequest) {
           
           if (searchParams.changed_jobs_90_days === 'true' || searchParams.changed_jobs_90_days === true) {
             filtersForUrl.push({
-              type: 'CHANGED_JOBS_90_DAYS',
+              type: 'RECENTLY_CHANGED_JOBS',
               values: [{
-                id: 'true',
-                text: 'Changed jobs in last 90 days',
+                id: 'RPC',
+                text: 'Changed jobs',
                 selectionType: 'INCLUDED',
               }],
             });
@@ -516,6 +516,75 @@ export async function POST(request: NextRequest) {
                   data = { raw: viaUrlResult };
                 }
                 
+                // CRITICAL: Check if RapidAPI returned an error in a 200 OK response
+                if (data && typeof data === 'object' && !Array.isArray(data)) {
+                  // Check for error in data.data (nested error response)
+                  if (data.data && typeof data.data === 'object' && data.data.success === false && data.data.error) {
+                    const errorMessage = typeof data.data.error === 'string' ? data.data.error : 'Request failed with status code 403';
+                    const is403Error = errorMessage.includes('403') || errorMessage.toLowerCase().includes('forbidden');
+                    
+                    logger.error('via_url endpoint returned 403 error in 200 OK response', {
+                      endpoint: viaUrlEndpoint,
+                      httpStatus: 200,
+                      errorMessage,
+                      fullError: data.data.error,
+                      fullResponse: JSON.stringify(data, null, 2),
+                      requestUrl: generatedUrl,
+                      requestBody: JSON.stringify(viaUrlBody, null, 2),
+                    });
+                    
+                    // Return 403 error instead of treating as success
+                    return NextResponse.json(
+                      {
+                        success: false,
+                        error: is403Error ? 'Rate limit exceeded' : (data.data.error || 'API request failed'),
+                        message: is403Error ? 'Rate limit exceeded' : errorMessage,
+                        details: {
+                          ...data.data,
+                          rapidApiError: data.data.error,
+                          endpoint: viaUrlEndpoint,
+                          requestUrl: generatedUrl,
+                          requestBody: viaUrlBody,
+                        }
+                      },
+                      { status: 403 }
+                    );
+                  }
+                  
+                  // Check for error at top level
+                  if (data.success === false && data.error) {
+                    const errorMessage = typeof data.error === 'string' ? data.error : 'Request failed';
+                    const is403Error = errorMessage.includes('403') || errorMessage.toLowerCase().includes('forbidden');
+                    
+                    logger.error('via_url endpoint returned 403 error in 200 OK response (top level)', {
+                      endpoint: viaUrlEndpoint,
+                      httpStatus: 200,
+                      errorMessage,
+                      fullError: data.error,
+                      fullResponse: JSON.stringify(data, null, 2),
+                      requestUrl: generatedUrl,
+                      requestBody: JSON.stringify(viaUrlBody, null, 2),
+                    });
+                    
+                    // Return 403 error instead of treating as success
+                    return NextResponse.json(
+                      {
+                        success: false,
+                        error: is403Error ? 'Rate limit exceeded' : (data.error || 'API request failed'),
+                        message: is403Error ? 'Rate limit exceeded' : errorMessage,
+                        details: {
+                          ...data,
+                          rapidApiError: data.error,
+                          endpoint: viaUrlEndpoint,
+                          requestUrl: generatedUrl,
+                          requestBody: viaUrlBody,
+                        }
+                      },
+                      { status: 403 }
+                    );
+                  }
+                }
+                
                 // Extract pagination if available
                 const pagination = 
                   data?.response?.pagination ||
@@ -556,7 +625,24 @@ export async function POST(request: NextRequest) {
                   method: 'via_url', // Indicates which method was used
                 });
               } else {
-                // via_url failed, fall through to regular search
+                // via_url failed, log detailed error and fall through to regular search
+                const errorText = await viaUrlResponse.text();
+                let errorData;
+                try {
+                  errorData = JSON.parse(errorText);
+                } catch {
+                  errorData = { error: errorText };
+                }
+                
+                logger.error('via_url endpoint failed with HTTP error', {
+                  endpoint: viaUrlEndpoint,
+                  httpStatus: viaUrlResponse.status,
+                  errorText,
+                  errorData,
+                  requestUrl: generatedUrl,
+                  requestBody: JSON.stringify(viaUrlBody, null, 2),
+                });
+                
                 logger.warn(`⚠️ via_url endpoint failed (${viaUrlResponse.status}), falling back to regular search`);
               }
             } else {
@@ -775,10 +861,10 @@ export async function POST(request: NextRequest) {
         // Changed jobs filter
         if (requestBody.changed_jobs_90_days === 'true' || requestBody.changed_jobs_90_days === true) {
           filters.push({
-            type: 'CHANGED_JOBS_90_DAYS',
+            type: 'RECENTLY_CHANGED_JOBS',
             values: [{
-              id: 'true',
-              text: 'Changed jobs in last 90 days',
+              id: 'RPC',
+              text: 'Changed jobs',
               selectionType: 'INCLUDED'
             }]
           });
@@ -1505,12 +1591,32 @@ export async function POST(request: NextRequest) {
             fullResponse: data
           });
           
+          // Check if this is a 403 error and format message accordingly
+          const errorMessage = typeof data.data.error === 'string' ? data.data.error : 'Request failed with status code 403';
+          const is403Error = errorMessage.includes('403') || errorMessage.toLowerCase().includes('forbidden');
+          const userMessage = is403Error ? 'Rate limit exceeded' : errorMessage;
+          
+          // Log full error details for debugging
+          logger.error('RapidAPI 403 Error Details', {
+            endpoint,
+            httpStatus: 200, // HTTP status was 200 but body contains error
+            errorMessage,
+            fullError: data.data.error,
+            fullResponse: JSON.stringify(data, null, 2),
+            requestBody: JSON.stringify(requestBody, null, 2),
+          });
+          
           return NextResponse.json(
             {
               success: false,
-              error: data.data.error || 'API request failed',
-              message: typeof data.data.error === 'string' ? data.data.error : 'Request failed with status code 403',
-              details: data.data
+              error: is403Error ? 'Rate limit exceeded' : (data.data.error || 'API request failed'),
+              message: userMessage,
+              details: {
+                ...data.data,
+                rapidApiError: data.data.error,
+                endpoint,
+                requestBody: requestBody, // Include request body for debugging
+              }
             },
             { status: 403 }
           );
@@ -1524,12 +1630,32 @@ export async function POST(request: NextRequest) {
             fullResponse: data
           });
           
+          // Check if this is a 403 error and format message accordingly
+          const errorMessage = typeof data.error === 'string' ? data.error : 'Request failed';
+          const is403Error = errorMessage.includes('403') || errorMessage.toLowerCase().includes('forbidden');
+          const userMessage = is403Error ? 'Rate limit exceeded' : errorMessage;
+          
+          // Log full error details for debugging
+          logger.error('RapidAPI 403 Error Details (Top Level)', {
+            endpoint,
+            httpStatus: 200, // HTTP status was 200 but body contains error
+            errorMessage,
+            fullError: data.error,
+            fullResponse: JSON.stringify(data, null, 2),
+            requestBody: JSON.stringify(requestBody, null, 2),
+          });
+          
           return NextResponse.json(
             {
               success: false,
-              error: data.error || 'API request failed',
-              message: typeof data.error === 'string' ? data.error : 'Request failed',
-              details: data
+              error: is403Error ? 'Rate limit exceeded' : (data.error || 'API request failed'),
+              message: userMessage,
+              details: {
+                ...data,
+                rapidApiError: data.error,
+                endpoint,
+                requestBody: requestBody, // Include request body for debugging
+              }
             },
             { status: 403 }
           );

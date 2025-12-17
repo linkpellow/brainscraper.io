@@ -1,0 +1,36 @@
+{
+  "metadata": {
+    "savedAt": "2025-12-17T16:13:02.676Z",
+    "leadKey": "name:Bob Johnson"
+  },
+  "enrichedRow": {
+    "Firstname": "Bob",
+    "Lastname": "Johnson",
+    "State": "Colorado",
+    "City": "Aurora",
+    "Name": "Bob Johnson",
+    "_enriched": {
+      "firstName": "Bob",
+      "lastName": "Johnson",
+      "zipCode": "80201",
+      "addressLine2": "Aurora",
+      "error": "Skip-tracing (Phone Discovery): fetch failed"
+    },
+    "Zipcode": "80201"
+  },
+  "leadSummary": {
+    "name": "",
+    "phone": "",
+    "dobOrAge": "",
+    "zipcode": "80201",
+    "state": "Colorado",
+    "city": "Aurora",
+    "email": "",
+    "dncStatus": "UNKNOWN",
+    "lineType": "",
+    "carrier": "",
+    "normalizedCarrier": "",
+    "searchFilter": "",
+    "dateScraped": "2025-12-17"
+  }
+}

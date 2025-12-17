@@ -8,6 +8,7 @@
 
 import { getDataDirectory, ensureDataDirectory, safeWriteFile, safeReadFile } from './dataDirectory';
 import { withLock } from './fileLock';
+import { API_REGISTRY } from './apiRegistry';
 
 export interface ScrapeLimits {
   linkedin: { daily: number; monthly: number };
@@ -143,11 +144,11 @@ export const DEFAULT_SETTINGS: SettingsConfig = {
     },
   },
   notifications: {
-    scrapeStarted: false,
-    scrapeCompleted: false,
-    errorsDetected: false,
-    quotaApproaching: false,
-    jobAutoPaused: false,
+    scrapeStarted: true,
+    scrapeCompleted: true,
+    errorsDetected: true,
+    quotaApproaching: true,
+    jobAutoPaused: true,
     channels: [],
   },
 };
@@ -232,6 +233,20 @@ export function loadSettings(): SettingsConfig {
         },
       };
 
+      // CRITICAL: Ensure all locked APIs are enabled (cannot be disabled)
+      if (!merged.apiToggles) {
+        merged.apiToggles = {};
+      }
+      for (const [apiKey, metadata] of Object.entries(API_REGISTRY)) {
+        if (metadata.locked) {
+          merged.apiToggles[apiKey] = {
+            enabled: true, // Locked APIs are always enabled
+            costPer1000: metadata.costPer1000,
+            dependencies: metadata.dependencies,
+          };
+        }
+      }
+
       settingsCache = merged;
       cacheTimestamp = now;
       return merged;
@@ -267,10 +282,24 @@ export async function saveSettings(settings: SettingsConfig): Promise<void> {
     const filePath = getSettingsFilePath();
 
     // Validate settings structure
-    const validated = {
+    const validated: SettingsConfig = {
       ...DEFAULT_SETTINGS,
       ...settings,
     };
+
+    // CRITICAL: Ensure all locked APIs are enabled (cannot be disabled)
+    if (!validated.apiToggles) {
+      validated.apiToggles = {};
+    }
+    for (const [apiKey, metadata] of Object.entries(API_REGISTRY)) {
+      if (metadata.locked) {
+        validated.apiToggles[apiKey] = {
+          enabled: true, // Locked APIs are always enabled
+          costPer1000: metadata.costPer1000,
+          dependencies: metadata.dependencies,
+        };
+      }
+    }
 
     // Use file locking for concurrent safety
     await withLock(filePath, async () => {
