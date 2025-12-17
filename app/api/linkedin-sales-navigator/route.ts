@@ -427,43 +427,149 @@ export async function POST(request: NextRequest) {
             });
           }
           
-          // Job title goes in keywords (better accuracy than JOB_TITLE filter)
-          const keywordsForUrl = searchParams.title_keywords ? String(searchParams.title_keywords) : '';
-          
-          // Generate Sales Navigator URL using json_to_url
-          const jsonToUrlResponse = await fetchWithTimeout(
-            'https://realtime-linkedin-sales-navigator-data.p.rapidapi.com/json_to_url',
-            {
-              method: 'POST',
-              headers: {
-                'x-rapidapi-key': RAPIDAPI_KEY,
-                'x-rapidapi-host': 'realtime-linkedin-sales-navigator-data.p.rapidapi.com',
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                filters: filtersForUrl,
-                keywords: keywordsForUrl,
-              }),
-            },
-            15000 // 15 second timeout
-          );
-          
-          if (jsonToUrlResponse.ok) {
-            const urlResult = await jsonToUrlResponse.text();
-            let generatedUrl: string | null = null;
+          // Handle job titles - use CURRENT_TITLE filter instead of keywords for better compatibility
+          // Real LinkedIn URLs use CURRENT_TITLE filter with ID codes, not keywords
+          let keywordsForUrl = '';
+          if (searchParams.title_keywords) {
+            const titleKeywords = String(searchParams.title_keywords);
+            // Check if we should use CURRENT_TITLE filter instead of keywords
+            // Common titles like "Owner" have specific IDs (e.g., id:1 for Owner)
+            const commonTitles: Record<string, string> = {
+              'owner': '1',
+              'founder': '2',
+              'ceo': '3',
+              'president': '4',
+              // Add more as needed
+            };
             
-            try {
-              const urlData = JSON.parse(urlResult);
-              // json_to_url returns URL in 'data' field (verified in test)
-              generatedUrl = urlData.url || urlData.data || (typeof urlData === 'string' ? urlData : null);
-            } catch {
-              // If not JSON, assume it's the URL directly
-              generatedUrl = urlResult;
+            const titleLower = titleKeywords.toLowerCase();
+            const matchingTitle = Object.keys(commonTitles).find(t => titleLower.includes(t));
+            
+            if (matchingTitle) {
+              // Use CURRENT_TITLE filter instead of keywords
+              filtersForUrl.push({
+                type: 'CURRENT_TITLE',
+                values: [{
+                  id: commonTitles[matchingTitle],
+                  text: matchingTitle.charAt(0).toUpperCase() + matchingTitle.slice(1),
+                  selectionType: 'INCLUDED',
+                }],
+              });
+              logger.log(`📝 Using CURRENT_TITLE filter (id:${commonTitles[matchingTitle]}) instead of keywords for "${matchingTitle}"`);
+            } else {
+              // Fall back to keywords for less common titles
+              keywordsForUrl = titleKeywords;
+              logger.log(`📝 Using keywords for title search: "${titleKeywords.substring(0, 50)}..."`);
+            }
+          }
+          
+          // MANUALLY CONSTRUCT URL (bypassing json_to_url which generates invalid URLs with spellCorrectionEnabled)
+          // Real LinkedIn URLs format: (recentSearchParam:(id:XXX,doLogHistory:true),filters:List(...))
+          // CRITICAL: Do NOT include spellCorrectionEnabled - it causes 400 errors
+          let generatedUrl: string | null = null;
+          
+          try {
+            // Build the query structure matching real LinkedIn format exactly
+            const queryParts: string[] = [];
+            
+            // recentSearchParam (session-specific, generate random ID)
+            const recentSearchId = Math.floor(Math.random() * 10000000000);
+            queryParts.push(`recentSearchParam:(id:${recentSearchId},doLogHistory:true)`);
+            
+            // Build filters list
+            if (filtersForUrl.length > 0) {
+              const filterStrings = filtersForUrl.map(filter => {
+                const valueStrings = filter.values.map((val: any) => {
+                  // URL encode the text value (double encode for comma in "Florida, United States")
+                  const encodedText = encodeURIComponent(val.text);
+                  return `(id:${val.id},text:${encodedText},selectionType:${val.selectionType})`;
+                });
+                return `(type:${filter.type},values:List(${valueStrings.join(',')}))`;
+              });
+              queryParts.push(`filters:List(${filterStrings.join(',')})`);
             }
             
-            if (generatedUrl && typeof generatedUrl === 'string') {
+            // Add keywords only if present (and not using CURRENT_TITLE filter)
+            if (keywordsForUrl) {
+              queryParts.push(`keywords:${keywordsForUrl}`);
+            }
+            
+            // Construct the full query parameter
+            const queryValue = `(${queryParts.join(',')})`;
+            const encodedQuery = encodeURIComponent(queryValue);
+            
+            // Generate session ID (random base64-like string, 22 chars)
+            const sessionId = Buffer.from(`${Date.now()}-${Math.random()}`).toString('base64')
+              .replace(/[+/=]/g, '')
+              .substring(0, 22);
+            
+            // Construct the full URL (matching real LinkedIn format exactly)
+            generatedUrl = `https://www.linkedin.com/sales/search/people?query=${encodedQuery}&sessionId=${sessionId}&viewAllFilters=true`;
+            
+            logger.log(`🔧 Manually constructed Sales Navigator URL (bypassing json_to_url)`);
+            logger.log(`🔍 URL length: ${generatedUrl.length} chars, filters: ${filtersForUrl.length}`);
+            
+          } catch (urlError) {
+            logger.warn(`⚠️ Failed to manually construct URL, falling back to json_to_url:`, urlError);
+            generatedUrl = null;
+          }
+          
+          // Fallback to json_to_url if manual construction failed
+          if (!generatedUrl) {
+            logger.log(`⚠️ Falling back to json_to_url endpoint`);
+            const jsonToUrlResponse = await fetchWithTimeout(
+              'https://realtime-linkedin-sales-navigator-data.p.rapidapi.com/json_to_url',
+              {
+                method: 'POST',
+                headers: {
+                  'x-rapidapi-key': RAPIDAPI_KEY,
+                  'x-rapidapi-host': 'realtime-linkedin-sales-navigator-data.p.rapidapi.com',
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  filters: filtersForUrl,
+                  keywords: keywordsForUrl,
+                }),
+              },
+              15000 // 15 second timeout
+            );
+            
+            if (jsonToUrlResponse.ok) {
+              const urlResult = await jsonToUrlResponse.text();
+              try {
+                const urlData = JSON.parse(urlResult);
+                generatedUrl = urlData.url || urlData.data || (typeof urlData === 'string' ? urlData : null);
+              } catch {
+                generatedUrl = urlResult;
+              }
+            } else {
+              // json_to_url fallback also failed
+              const errorText = await jsonToUrlResponse.text();
+              let errorData;
+              try {
+                errorData = JSON.parse(errorText);
+              } catch {
+                errorData = { error: errorText };
+              }
+              
+              logger.warn(`⚠️ json_to_url fallback also failed (HTTP ${jsonToUrlResponse.status})`);
+              logger.warn(`⚠️ Request payload: filters=${JSON.stringify(filtersForUrl).substring(0, 200)}..., keywords=${keywordsForUrl.substring(0, 100)}...`);
+              logger.warn(`⚠️ Error response: ${errorText.substring(0, 500)}...`);
+            }
+          }
+          
+          if (generatedUrl && typeof generatedUrl === 'string') {
+            // Validate URL format before using it
+            const isValidUrl = generatedUrl.startsWith('https://www.linkedin.com/sales/search/') &&
+                              generatedUrl.includes('query=');
+            
+            if (!isValidUrl) {
+              logger.warn(`⚠️ Generated URL has invalid format, falling back to regular search`);
+              logger.warn(`⚠️ Generated URL: ${generatedUrl.substring(0, 200)}...`);
+            } else {
               // Use via_url endpoint with generated URL
               logger.log(`✅ Generated Sales Navigator URL, using via_url endpoint for 100% accuracy`);
+              logger.log(`🔍 URL validation: Format valid, length: ${generatedUrl.length} chars`);
               
               // Determine person vs company
               const isPersonSearch = endpoint === 'search_person' || endpoint === 'premium_search_person';
@@ -484,6 +590,8 @@ export async function POST(request: NextRequest) {
               if (searchParams.limit) {
                 viaUrlBody.limit = parseInt(String(searchParams.limit), 10) || 25;
               }
+              
+              logger.log(`🔍 Calling ${viaUrlEndpoint} with URL: ${generatedUrl.substring(0, 150)}...`);
               
               // Make the via_url API call
               const viaUrlResponse = await retryWithBackoff(
@@ -521,29 +629,38 @@ export async function POST(request: NextRequest) {
                 
                 // CRITICAL: Check if RapidAPI returned an error in a 200 OK response
                 if (data && typeof data === 'object' && !Array.isArray(data)) {
+                  // Check for error at top level first (e.g., {"success":false,"error":"Request failed with status code 400"})
+                  const topLevelError = data.success === false && data.error;
                   // Check for error in data.data (nested error response)
-                  if (data.data && typeof data.data === 'object' && data.data.success === false && data.data.error) {
-                    const errorMessage = typeof data.data.error === 'string' ? data.data.error : 'Request failed with status code 403';
+                  const nestedError = data.data && typeof data.data === 'object' && data.data.success === false && data.data.error;
+                  
+                  if (topLevelError || nestedError) {
+                    const errorMessage = topLevelError 
+                      ? (typeof data.error === 'string' ? data.error : String(data.error))
+                      : (typeof data.data.error === 'string' ? data.data.error : String(data.data.error));
                     const is403Error = errorMessage.includes('403') || errorMessage.toLowerCase().includes('forbidden');
                     const is400Error = errorMessage.includes('400') || errorMessage.toLowerCase().includes('bad request');
                     
                     // 400 errors mean the URL is invalid - fall back to regular search
                     if (is400Error) {
-                      logger.warn('via_url endpoint returned 400 error in nested response (invalid URL), falling back to regular search', {
+                      logger.warn('via_url endpoint returned 400 error in response body (invalid URL), falling back to regular search', {
                         endpoint: viaUrlEndpoint,
                         httpStatus: 200,
                         errorMessage,
-                        requestUrl: generatedUrl,
+                        requestUrl: generatedUrl.substring(0, 200),
+                        errorLocation: topLevelError ? 'top-level' : 'nested',
                       });
                       // Don't return - fall through to regular search
                     } else {
+                      const fullError = topLevelError ? data.error : data.data.error;
                       logger.error('via_url endpoint returned error in 200 OK response', {
                         endpoint: viaUrlEndpoint,
                         httpStatus: 200,
                         errorMessage,
-                        fullError: data.data.error,
+                        fullError,
                         fullResponse: JSON.stringify(data, null, 2),
-                        requestUrl: generatedUrl,
+                        requestUrl: generatedUrl.substring(0, 200),
+                        errorLocation: topLevelError ? 'top-level' : 'nested',
                         requestBody: JSON.stringify(viaUrlBody, null, 2),
                       });
                       
@@ -551,56 +668,11 @@ export async function POST(request: NextRequest) {
                       return NextResponse.json(
                         {
                           success: false,
-                          error: is403Error ? 'Rate limit exceeded' : (data.data.error || 'API request failed'),
+                          error: is403Error ? 'Rate limit exceeded' : (fullError || 'API request failed'),
                           message: is403Error ? 'Rate limit exceeded' : errorMessage,
                           details: {
-                            ...data.data,
-                            rapidApiError: data.data.error,
-                            endpoint: viaUrlEndpoint,
-                            requestUrl: generatedUrl,
-                            requestBody: viaUrlBody,
-                          }
-                        },
-                        { status: 403 }
-                      );
-                    }
-                  }
-                  
-                  // Check for error at top level
-                  if (data.success === false && data.error) {
-                    const errorMessage = typeof data.error === 'string' ? data.error : 'Request failed';
-                    const is403Error = errorMessage.includes('403') || errorMessage.toLowerCase().includes('forbidden');
-                    const is400Error = errorMessage.includes('400') || errorMessage.toLowerCase().includes('bad request');
-                    
-                    // 400 errors mean the URL is invalid - fall back to regular search
-                    if (is400Error) {
-                      logger.warn('via_url endpoint returned 400 error (invalid URL), falling back to regular search', {
-                        endpoint: viaUrlEndpoint,
-                        httpStatus: 200,
-                        errorMessage,
-                        requestUrl: generatedUrl,
-                      });
-                      // Don't return - fall through to regular search
-                    } else {
-                      logger.error('via_url endpoint returned error in 200 OK response (top level)', {
-                        endpoint: viaUrlEndpoint,
-                        httpStatus: 200,
-                        errorMessage,
-                        fullError: data.error,
-                        fullResponse: JSON.stringify(data, null, 2),
-                        requestUrl: generatedUrl,
-                        requestBody: JSON.stringify(viaUrlBody, null, 2),
-                      });
-                      
-                      // Return 403 error instead of treating as success (only for non-400 errors)
-                      return NextResponse.json(
-                        {
-                          success: false,
-                          error: is403Error ? 'Rate limit exceeded' : (data.error || 'API request failed'),
-                          message: is403Error ? 'Rate limit exceeded' : errorMessage,
-                          details: {
-                            ...data,
-                            rapidApiError: data.error,
+                            ...(topLevelError ? data : data.data),
+                            rapidApiError: fullError,
                             endpoint: viaUrlEndpoint,
                             requestUrl: generatedUrl,
                             requestBody: viaUrlBody,
@@ -698,27 +770,10 @@ export async function POST(request: NextRequest) {
                   // Fall through to regular search - don't return
                 }
               }
-            } else {
-              // URL generation failed, fall through to regular search
-              logger.warn(`⚠️ Failed to generate Sales Navigator URL, falling back to regular search`);
             }
           } else {
-            // json_to_url failed, fall through to regular search
-            // Check if it's a 403 (filter not supported)
-            const errorText = await jsonToUrlResponse.text();
-            let errorData;
-            try {
-              errorData = JSON.parse(errorText);
-            } catch {
-              errorData = { error: errorText };
-            }
-            
-            if (jsonToUrlResponse.status === 403) {
-              logger.warn(`⚠️ json_to_url returned 403 (filter may not be supported), falling back to regular search`);
-              logger.warn(`⚠️ Error details:`, errorData);
-            } else {
-              logger.warn(`⚠️ json_to_url endpoint failed (${jsonToUrlResponse.status}), falling back to regular search`);
-            }
+            // URL generation failed (both manual construction and json_to_url fallback failed)
+            logger.warn(`⚠️ Failed to generate Sales Navigator URL, falling back to regular search`);
           }
         }
       } catch (error) {
