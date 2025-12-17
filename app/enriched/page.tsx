@@ -209,10 +209,26 @@ export default function EnrichedLeadsPage() {
   useEffect(() => {
     if (leads.length === 0 || isScrubbingDNC) return;
     
-    // Check if any leads need DNC scrubbing (don't have DNC status or have UNKNOWN)
+    // Check if any leads need DNC scrubbing
+    // Skip leads that were already checked today
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+    
     const leadsToScrub = leads.filter((lead: LeadSummary) => {
       const phone = lead.phone?.replace(/\D/g, '');
-      return phone && phone.length >= 10 && (!lead.dncStatus || lead.dncStatus === 'UNKNOWN');
+      if (!phone || phone.length < 10) {
+        return false;
+      }
+      
+      // Skip if already checked today
+      if (lead.dncLastChecked) {
+        const lastCheckedDate = lead.dncLastChecked.split('T')[0];
+        if (lastCheckedDate === today) {
+          return false; // Already checked today, skip
+        }
+      }
+      
+      // Include if no DNC status or has UNKNOWN status
+      return !lead.dncStatus || lead.dncStatus === 'UNKNOWN';
     });
     
     if (leadsToScrub.length === 0) return;
@@ -313,7 +329,11 @@ export default function EnrichedLeadsPage() {
             const updatedLeads = prevLeads.map((lead: LeadSummary) => {
               const phone = lead.phone?.replace(/\D/g, '');
               if (phone && dncResults.has(phone)) {
-                return { ...lead, dncStatus: dncResults.get(phone) || 'UNKNOWN' };
+                return { 
+                  ...lead, 
+                  dncStatus: dncResults.get(phone) || 'UNKNOWN',
+                  dncLastChecked: new Date().toISOString() // Mark as checked today
+                };
               }
               return lead;
             });

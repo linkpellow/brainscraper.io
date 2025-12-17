@@ -30,6 +30,7 @@ export interface LeadSummary {
   city: string;
   email: string;
   dncStatus: string; // "YES", "NO", or "UNKNOWN"
+  dncLastChecked?: string; // ISO date string of last DNC check (YYYY-MM-DD format)
   income?: number; // Income value for sorting
   lineType?: string; // From Telnyx portability.line_type
   carrier?: string; // From Telnyx carrier.name
@@ -483,6 +484,9 @@ export function extractLeadSummary(
     }
   }
   
+  // Extract dncLastChecked from row if it exists (preserve existing value)
+  const dncLastChecked = row['dncLastChecked'] || row['DNC Last Checked'] || row['dnc_last_checked'] || undefined;
+  
   const summary: LeadSummary = {
     name: extractName(row, enriched),
     phone: extractPhone(row, enriched), // TOP PRIORITY
@@ -492,6 +496,7 @@ export function extractLeadSummary(
     city: extractCity(row, enriched),
     email: extractEmail(row, enriched),
     dncStatus,
+    ...(dncLastChecked && { dncLastChecked: String(dncLastChecked) }), // Preserve if exists
     income,
     lineType,
     carrier,

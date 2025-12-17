@@ -26,6 +26,7 @@ interface LeadSummary {
   dncStatus?: string;
   dncReason?: string;
   canContact?: boolean;
+  dncLastChecked?: string; // ISO date string of last DNC check
   [key: string]: any;
 }
 
@@ -58,13 +59,38 @@ export async function GET(request: NextRequest) {
       });
     }
     
-    // Step 2: Filter leads with phone numbers
+    // Step 2: Filter leads with phone numbers that haven't been checked today
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+    
     const leadsWithPhone = leads.filter((lead: LeadSummary) => {
       const phone = lead.phone?.replace(/\D/g, '');
-      return phone && phone.length >= 10;
+      if (!phone || phone.length < 10) {
+        return false;
+      }
+      
+      // Skip if already checked today
+      if (lead.dncLastChecked) {
+        const lastCheckedDate = lead.dncLastChecked.split('T')[0];
+        if (lastCheckedDate === today) {
+          return false; // Already checked today, skip
+        }
+      }
+      
+      return true;
     });
     
-    console.log(`📞 [DAILY_DNC] Step 2: Found ${leadsWithPhone.length} leads with phone numbers\n`);
+    const skippedToday = leads.filter((lead: LeadSummary) => {
+      const phone = lead.phone?.replace(/\D/g, '');
+      if (!phone || phone.length < 10) return false;
+      if (lead.dncLastChecked) {
+        const lastCheckedDate = lead.dncLastChecked.split('T')[0];
+        return lastCheckedDate === today;
+      }
+      return false;
+    }).length;
+    
+    console.log(`📞 [DAILY_DNC] Step 2: Found ${leadsWithPhone.length} leads with phone numbers that need checking`);
+    console.log(`⏭️  [DAILY_DNC] Skipping ${skippedToday} leads already checked today\n`);
     
     if (leadsWithPhone.length === 0) {
       console.log('⚠️ [DAILY_DNC] No leads with phone numbers found');
@@ -138,20 +164,21 @@ export async function GET(request: NextRequest) {
           const newDNCStatus = isDNC ? 'YES' : 'NO';
           const statusChanged = currentDNCStatus !== newDNCStatus;
           
-          if (statusChanged || !lead.dncStatus) {
-            const updatedLead: LeadSummary = {
-              ...lead,
-              dncStatus: newDNCStatus,
-              dncReason: reason,
-              canContact: canContact,
-            };
-            
-            // Use phone as key for deduplication
-            updatedLeads.set(phone, updatedLead);
-            return { lead: updatedLead, updated: true };
-          }
+          // Always update dncLastChecked date, even if status didn't change
+          // This ensures we track that the lead was checked today
+          const updatedLead: LeadSummary = {
+            ...lead,
+            dncStatus: newDNCStatus,
+            dncReason: reason,
+            canContact: canContact,
+            dncLastChecked: new Date().toISOString(), // Mark as checked today
+          };
           
-          return { lead, updated: false };
+          // Use phone as key for deduplication
+          updatedLeads.set(phone, updatedLead);
+          
+          // Return updated: true if status changed or was missing, false if just date updated
+          return { lead: updatedLead, updated: statusChanged || !lead.dncStatus };
         } catch (error) {
           console.log(`  ❌ [DAILY_DNC] ${lead.phone}: Error - ${error instanceof Error ? error.message : 'Unknown'}`);
           return { lead, updated: false };
