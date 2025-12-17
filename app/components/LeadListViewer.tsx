@@ -46,7 +46,7 @@ export default function LeadListViewer({
   const safeToContactCount = leads.filter(l => l.canContact === true).length;
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div className="modal-overlay">
       <div className="bg-hacker-bg-secondary terminal-border w-full max-w-[95vw] max-h-[90vh] flex flex-col">
         {/* Header */}
         <div className="terminal-border-b p-4 bg-hacker-bg-tertiary/60">
@@ -163,15 +163,15 @@ export default function LeadListViewer({
                     </td>
                     <td className="p-2">
                       {lead.dncStatus ? (
-                        <span className={`text-xs px-2 py-1 rounded ${
-                          lead.dncStatus === 'Safe' ? 'bg-green-900/40 text-green-300' :
-                          lead.dncStatus === 'Do Not Call' ? 'bg-red-900/40 text-red-300' :
-                          'bg-yellow-900/40 text-yellow-300'
+                        <span className={`badge text-xs ${
+                          lead.dncStatus === 'Safe' ? 'badge-success' :
+                          lead.dncStatus === 'Do Not Call' ? 'badge-error' :
+                          'badge-warning'
                         }`}>
                           {lead.dncStatus}
                         </span>
                       ) : (
-                        <span className="text-hacker-text-primary-dim italic">-</span>
+                        <span className="text-slate-500 italic">-</span>
                       )}
                     </td>
                     <td className="p-2 text-xs max-w-[150px] truncate" title={lead.company}>

@@ -1,0 +1,59 @@
+{
+  "mcpServers": {
+    "RapidAPI Hub - Facebook Scraper API": {
+      "command": "npx",
+      "args": [
+        "mcp-remote",
+        "https://mcp.rapidapi.com",
+        "--header",
+        "x-api-host: facebook-scraper-api4.p.rapidapi.com",
+        "--header",
+        "x-api-key: ${env:RAPIDAPI_KEY}"
+      ]
+    },
+    "RapidAPI Hub - Skip Tracing Working API": {
+      "command": "npx",
+      "args": [
+        "mcp-remote",
+        "https://mcp.rapidapi.com",
+        "--header",
+        "x-api-host: skip-tracing-working-api.p.rapidapi.com",
+        "--header",
+        "x-api-key: ${env:RAPIDAPI_KEY}"
+      ]
+    },
+    "RapidAPI Hub - LinkedIn Sales Navigator": {
+      "command": "npx",
+      "args": [
+        "mcp-remote",
+        "https://mcp.rapidapi.com",
+        "--header",
+        "x-api-host: realtime-linkedin-sales-navigator-data.p.rapidapi.com",
+        "--header",
+        "x-api-key: ${env:RAPIDAPI_KEY}"
+      ]
+    },
+    "RapidAPI Hub - Website Contacts Scraper": {
+      "command": "npx",
+      "args": [
+        "mcp-remote",
+        "https://mcp.rapidapi.com",
+        "--header",
+        "x-api-host: website-contacts-scraper.p.rapidapi.com",
+        "--header",
+        "x-api-key: ${env:RAPIDAPI_KEY}"
+      ]
+    },
+    "RapidAPI Hub - Fresh LinkedIn Profile Data": {
+      "command": "npx",
+      "args": [
+        "mcp-remote",
+        "https://mcp.rapidapi.com",
+        "--header",
+        "x-api-host: fresh-linkedin-profile-data.p.rapidapi.com",
+        "--header",
+        "x-api-key: ${env:RAPIDAPI_KEY}"
+      ]
+    }
+  }
+}

@@ -28,7 +28,58 @@ try {
  */
 
 export async function POST(request: NextRequest) {
+  // Request-level cache to prevent duplicate API calls within same request
+  const requestCache = {
+    locationIds: new Map<string, { id: string; fullId: string; source: string }>(),
+    industrySuggestions: new Map<string, any[]>(),
+  };
+
   try {
+    // Check cooldown
+    try {
+      const { isInCooldown } = await import('@/utils/cooldownManager');
+      const inCooldown = await isInCooldown();
+      if (inCooldown) {
+        return NextResponse.json(
+          {
+            error: 'System is in cooldown',
+            message: 'Scraping is temporarily paused due to error spike. Please try again later.',
+            isRateLimit: true,
+          },
+          { status: 503 }
+        );
+      }
+    } catch (cooldownError) {
+      console.warn('[LINKEDIN_SCRAPER] Failed to check cooldown:', cooldownError);
+    }
+
+    // Check scrape limits before processing
+    try {
+      const { checkScrapeLimit } = await import('@/utils/scrapeUsageTracker');
+      const { loadSettings } = await import('@/utils/settingsConfig');
+      const settings = loadSettings();
+      const limitCheck = await checkScrapeLimit(
+        'linkedin',
+        settings.scrapeLimits.linkedin.daily,
+        settings.scrapeLimits.linkedin.monthly
+      );
+
+      if (!limitCheck.allowed) {
+        return NextResponse.json(
+          {
+            error: 'Scrape limit reached',
+            message: `${limitCheck.limitType === 'daily' ? 'Daily' : 'Monthly'} limit reached. Current: ${limitCheck.currentCount}, Limit: ${limitCheck.limit === Infinity ? 'Unlimited' : limitCheck.limit}`,
+            limitType: limitCheck.limitType,
+            isRateLimit: true,
+          },
+          { status: 429 }
+        );
+      }
+    } catch (limitError) {
+      // If limit check fails, log but continue (backward compatible)
+      console.warn('[LINKEDIN_SCRAPER] Failed to check scrape limits:', limitError);
+    }
+
     const body = await request.json();
     const { endpoint, ...searchParams } = body;
 
@@ -93,8 +144,29 @@ export async function POST(request: NextRequest) {
       const locationText = String(searchParams.location);
       
       try {
-        // Check if we have a location ID for this location
-        const discovery = await getLocationId(locationText, RAPIDAPI_KEY, true);
+        // Check request cache first to avoid duplicate discovery calls
+        let discovery: { locationId: string | null; fullId: string | null; source: string };
+        const cacheKey = locationText.toLowerCase().trim();
+        
+        if (requestCache.locationIds.has(cacheKey)) {
+          const cached = requestCache.locationIds.get(cacheKey)!;
+          discovery = {
+            locationId: cached.id,
+            fullId: cached.fullId,
+            source: cached.source,
+          };
+          logger.log(`📍 Using request-cached location ID for "${locationText}"`);
+        } else {
+          // Not in request cache - discover and cache it
+          discovery = await getLocationId(locationText, RAPIDAPI_KEY, true);
+          if (discovery.fullId && discovery.locationId) {
+            requestCache.locationIds.set(cacheKey, {
+              id: discovery.locationId,
+              fullId: discovery.fullId,
+              source: discovery.source,
+            });
+          }
+        }
         
         if (discovery.fullId && discovery.source !== 'failed') {
           // We have a location ID - use via_url endpoint for 100% accuracy
@@ -157,12 +229,25 @@ export async function POST(request: NextRequest) {
             const industries = industryText.split(',').map(i => i.trim()).filter(i => i.length > 0);
             
             // Get industry IDs from suggestions
+            // CRITICAL OPTIMIZATION: Cache industry suggestions to avoid duplicate API calls
             try {
               const { getIndustrySuggestions } = await import('@/utils/linkedinFilterHelpers');
               const industryValues: any[] = [];
               
               for (const industryName of industries) {
-                const suggestions = await getIndustrySuggestions(industryName, RAPIDAPI_KEY);
+                const cacheKey = industryName.toLowerCase().trim();
+                
+                // Check request cache first
+                let suggestions: any[];
+                if (requestCache.industrySuggestions.has(cacheKey)) {
+                  suggestions = requestCache.industrySuggestions.get(cacheKey)!;
+                  logger.log(`💼 Using request-cached industry suggestions for "${industryName}"`);
+                } else {
+                  // Not in cache - fetch and cache it
+                  suggestions = await getIndustrySuggestions(industryName, RAPIDAPI_KEY);
+                  requestCache.industrySuggestions.set(cacheKey, suggestions);
+                }
+                
                 const exactMatch = suggestions.find(s => 
                   s.text.toLowerCase() === industryName.toLowerCase()
                 );
@@ -500,9 +585,31 @@ export async function POST(request: NextRequest) {
           
           // Strategy 2: Try discovery (more accurate than static mappings)
           // Only use static mapping if discovery fails
+          // CRITICAL OPTIMIZATION: Check request cache first to avoid duplicate calls
           if (RAPIDAPI_KEY) {
             try {
-              const discovery = await getLocationId(locationText, RAPIDAPI_KEY, true);
+              let discovery: { locationId: string | null; fullId: string | null; source: string };
+              const cacheKey = locationText.toLowerCase().trim();
+              
+              if (requestCache.locationIds.has(cacheKey)) {
+                const cached = requestCache.locationIds.get(cacheKey)!;
+                discovery = {
+                  locationId: cached.id,
+                  fullId: cached.fullId,
+                  source: cached.source,
+                };
+                logger.log(`📍 Using request-cached location ID for "${locationText}" (regular search)`);
+              } else {
+                // Not in request cache - discover and cache it
+                discovery = await getLocationId(locationText, RAPIDAPI_KEY, true);
+                if (discovery.fullId && discovery.locationId) {
+                  requestCache.locationIds.set(cacheKey, {
+                    id: discovery.locationId,
+                    fullId: discovery.fullId,
+                    source: discovery.source,
+                  });
+                }
+              }
               
               if (discovery.fullId && discovery.source !== 'failed') {
                 // Found via discovery - use it (more accurate than static mapping)
@@ -561,7 +668,29 @@ export async function POST(request: NextRequest) {
               
               if (!stateFilter && RAPIDAPI_KEY) {
                 try {
-                  const stateDiscovery = await getLocationId(state, RAPIDAPI_KEY, true);
+                  // CRITICAL OPTIMIZATION: Check request cache first
+                  let stateDiscovery: { locationId: string | null; fullId: string | null; source: string };
+                  const stateCacheKey = state.toLowerCase().trim();
+                  
+                  if (requestCache.locationIds.has(stateCacheKey)) {
+                    const cached = requestCache.locationIds.get(stateCacheKey)!;
+                    stateDiscovery = {
+                      locationId: cached.id,
+                      fullId: cached.fullId,
+                      source: cached.source,
+                    };
+                    logger.log(`📍 Using request-cached location ID for state "${state}"`);
+                  } else {
+                    stateDiscovery = await getLocationId(state, RAPIDAPI_KEY, true);
+                    if (stateDiscovery.fullId && stateDiscovery.locationId) {
+                      requestCache.locationIds.set(stateCacheKey, {
+                        id: stateDiscovery.locationId,
+                        fullId: stateDiscovery.fullId,
+                        source: stateDiscovery.source,
+                      });
+                    }
+                  }
+                  
                   if (stateDiscovery.fullId) {
                     // CRITICAL FIX: Use REGION type with numeric ID (verified from LinkedIn URLs)
                     const stateId = stateDiscovery.fullId ? stateDiscovery.fullId.replace('urn:li:fs_geo:', '') : (stateDiscovery.locationId || '');
@@ -1430,15 +1559,35 @@ export async function POST(request: NextRequest) {
         for (const geoRegion of geoRegions) {
           if (geoRegion && geoRegion !== locationText) {
             // Try to discover location ID for this geoRegion (async, don't await)
-            getLocationId(geoRegion, RAPIDAPI_KEY || '', true).then(discovery => {
-              logger.log(`📍 Discovered location ID for geoRegion "${geoRegion}"`, {
-                locationId: discovery.locationId,
-                fullId: discovery.fullId,
-                source: discovery.source
+            // CRITICAL OPTIMIZATION: Check request cache first to avoid duplicate calls
+            const geoCacheKey = geoRegion.toLowerCase().trim();
+            
+            if (requestCache.locationIds.has(geoCacheKey)) {
+              const cached = requestCache.locationIds.get(geoCacheKey)!;
+              logger.log(`📍 Using request-cached location ID for geoRegion "${geoRegion}"`, {
+                locationId: cached.id,
+                fullId: cached.fullId,
+                source: cached.source
               });
-            }).catch((error) => {
-              logger.warn(`Failed to discover location ID for geoRegion "${geoRegion}"`, error);
-            });
+            } else {
+              // Not in cache - discover and cache it (async, don't await)
+              getLocationId(geoRegion, RAPIDAPI_KEY || '', true).then(discovery => {
+                if (discovery.fullId && discovery.locationId) {
+                  requestCache.locationIds.set(geoCacheKey, {
+                    id: discovery.locationId,
+                    fullId: discovery.fullId,
+                    source: discovery.source,
+                  });
+                }
+                logger.log(`📍 Discovered location ID for geoRegion "${geoRegion}"`, {
+                  locationId: discovery.locationId,
+                  fullId: discovery.fullId,
+                  source: discovery.source
+                });
+              }).catch((error) => {
+                logger.warn(`Failed to discover location ID for geoRegion "${geoRegion}"`, error);
+              });
+            }
           }
         }
       } catch (error) {
@@ -1549,6 +1698,38 @@ export async function POST(request: NextRequest) {
       // Don't fail the request if saving fails
       logger.warn('Failed to save API results:', saveError);
     }
+
+    // Track scrape usage
+    try {
+      const { incrementScrapeCount } = await import('@/utils/scrapeUsageTracker');
+      const leadCount = finalResults?.length || 0;
+      if (leadCount > 0) {
+        await incrementScrapeCount('linkedin', leadCount);
+        logger.log(`📊 Tracked ${leadCount} LinkedIn leads in usage counter`);
+
+        // Check quota and notify if approaching
+        try {
+          const { loadSettings } = await import('@/utils/settingsConfig');
+          const { getDailyUsage, getMonthlyUsage } = await import('@/utils/scrapeUsageTracker');
+          const { notifyQuotaApproaching } = await import('@/utils/notifications');
+          const settings = loadSettings();
+          const daily = await getDailyUsage('linkedin');
+          const monthly = await getMonthlyUsage('linkedin');
+          
+          if (settings.scrapeLimits.linkedin.daily !== Infinity) {
+            await notifyQuotaApproaching('linkedin', daily, settings.scrapeLimits.linkedin.daily, 'daily');
+          }
+          if (settings.scrapeLimits.linkedin.monthly !== Infinity) {
+            await notifyQuotaApproaching('linkedin', monthly, settings.scrapeLimits.linkedin.monthly, 'monthly');
+          }
+        } catch (quotaError) {
+          console.warn('[LINKEDIN_SCRAPER] Failed to check quota:', quotaError);
+        }
+      }
+    } catch (usageError) {
+      // Don't fail the request if usage tracking fails
+      logger.warn('Failed to track scrape usage:', usageError);
+    }
     
     // Return response with pagination metadata and location validation stats
     return NextResponse.json({
@@ -1563,6 +1744,14 @@ export async function POST(request: NextRequest) {
       locationValidationStats: locationValidationStats || undefined
     });
   } catch (error) {
+    // Record error for cooldown tracking
+    try {
+      const { recordError } = await import('@/utils/cooldownManager');
+      await recordError();
+    } catch (cooldownError) {
+      console.warn('[LINKEDIN_SCRAPER] Failed to record error:', cooldownError);
+    }
+
     logger.error('LinkedIn Sales Navigator API error', error);
     
     // Handle specific error types

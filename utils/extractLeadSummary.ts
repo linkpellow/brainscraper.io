@@ -5,6 +5,22 @@
 
 import { EnrichedRow, EnrichmentResult } from './enrichData';
 
+export interface SourceDetails {
+  // LinkedIn fields
+  occupation?: string;
+  jobTitle?: string;
+  location?: string;
+  isSelfEmployed?: boolean;
+  changedJobs?: boolean;
+  companySize?: string;
+  // Facebook fields
+  groupName?: string;
+  groupId?: string;
+  keywords?: string[];
+  postId?: string;
+  commentId?: string;
+}
+
 export interface LeadSummary {
   name: string;
   phone: string; // TOP PRIORITY
@@ -18,9 +34,11 @@ export interface LeadSummary {
   lineType?: string; // From Telnyx portability.line_type
   carrier?: string; // From Telnyx carrier.name
   normalizedCarrier?: string; // From Telnyx carrier.normalized_carrier
-  searchFilter?: string; // Search filter summary from LinkedIn search
+  searchFilter?: string; // Search filter summary from LinkedIn search (backward compatibility)
   dateScraped?: string; // Date when the lead was scraped/created
   linkedinUrl?: string; // LinkedIn profile URL
+  platform?: 'linkedin' | 'facebook'; // Platform source identifier
+  sourceDetails?: SourceDetails; // Structured source information
 }
 
 /**
@@ -383,6 +401,68 @@ export function extractLeadSummary(
   const scrapedDateRaw = dateScraped || row['Date Scraped'] || row['date_scraped'] || row['DateScraped'] || new Date().toISOString().split('T')[0];
   const scrapedDate = scrapedDateRaw ? String(scrapedDateRaw) : new Date().toISOString().split('T')[0];
   
+  // Extract platform from row
+  const platformRaw = row['Platform'] || row['platform'] || '';
+  const platform = (platformRaw === 'linkedin' || platformRaw === 'facebook') ? platformRaw as 'linkedin' | 'facebook' : undefined;
+  
+  // Extract sourceDetails from row (can be object or JSON string)
+  let sourceDetails: SourceDetails | undefined;
+  const sourceDetailsRaw = row['Source Details'] || row['sourceDetails'] || row['source_details'] || '';
+  if (sourceDetailsRaw) {
+    try {
+      if (typeof sourceDetailsRaw === 'string') {
+        sourceDetails = JSON.parse(sourceDetailsRaw);
+      } else if (typeof sourceDetailsRaw === 'object') {
+        sourceDetails = sourceDetailsRaw as SourceDetails;
+      }
+    } catch {
+      // If parsing fails, try to construct from individual fields
+      const getStringValue = (value: string | number | undefined): string | undefined => {
+        if (value === undefined || value === null) return undefined;
+        return String(value);
+      };
+      
+      const getBoolValue = (value: string | number | boolean | undefined): boolean | undefined => {
+        if (value === undefined || value === null) return undefined;
+        if (typeof value === 'boolean') return value;
+        const str = String(value).toLowerCase();
+        return str === 'true' || str === 'yes' || str === '1' ? true : undefined;
+      };
+      
+      sourceDetails = {
+        occupation: getStringValue(row['Occupation'] || row['occupation']),
+        jobTitle: getStringValue(row['Job Title'] || row['jobTitle'] || row['job_title'] || row['Title']),
+        location: getStringValue(row['Location'] || row['location']),
+        isSelfEmployed: getBoolValue(row['Is Self Employed'] || row['isSelfEmployed'] || row['is_self_employed']),
+        changedJobs: getBoolValue(row['Changed Jobs'] || row['changedJobs'] || row['changed_jobs']),
+        companySize: getStringValue(row['Company Size'] || row['companySize'] || row['company_size']),
+        groupName: getStringValue(row['Group Name'] || row['groupName'] || row['group_name']),
+        groupId: getStringValue(row['Group ID'] || row['groupId'] || row['group_id']),
+        keywords: (() => {
+          const keywordsValue = row['Keywords'] || row['keywords'];
+          if (!keywordsValue) return undefined;
+          if (Array.isArray(keywordsValue)) {
+            return keywordsValue.map(k => String(k));
+          }
+          return String(keywordsValue).split(',').map(k => k.trim());
+        })(),
+        postId: getStringValue(row['Post ID'] || row['postId'] || row['post_id']),
+        commentId: getStringValue(row['Comment ID'] || row['commentId'] || row['comment_id']),
+      };
+      // Remove undefined values
+      if (sourceDetails) {
+        Object.keys(sourceDetails).forEach(key => {
+          if (sourceDetails![key as keyof SourceDetails] === undefined) {
+            delete sourceDetails![key as keyof SourceDetails];
+          }
+        });
+        if (Object.keys(sourceDetails).length === 0) {
+          sourceDetails = undefined;
+        }
+      }
+    }
+  }
+  
   // Extract income - try row first, then enriched data, convert to number
   let income: number | undefined;
   const rowIncome = row['Income'] || row['income'] || row['Household Income'] || row['household_income'] || '';
@@ -403,7 +483,7 @@ export function extractLeadSummary(
     }
   }
   
-  const summary = {
+  const summary: LeadSummary = {
     name: extractName(row, enriched),
     phone: extractPhone(row, enriched), // TOP PRIORITY
     dobOrAge,
@@ -419,6 +499,8 @@ export function extractLeadSummary(
     searchFilter,
     dateScraped: scrapedDate,
     linkedinUrl: linkedinUrl ? String(linkedinUrl) : undefined,
+    platform,
+    sourceDetails,
   };
   
   // DIAGNOSTIC: Enhanced debug logging
@@ -449,13 +531,13 @@ export function extractLeadSummary(
 
 /**
  * Converts lead summaries to CSV format
- * Columns: Firstname, Lastname, State, City, Age, Zipcode, Linetype, Carrier, Search Filter
+ * Columns: Firstname, Lastname, State, City, Age, Zipcode, Linetype, Carrier, Platform, Source Details, Search Filter
  */
 export function leadSummariesToCSV(summaries: LeadSummary[]): string {
   if (summaries.length === 0) return '';
   
-  // Order: Firstname, Lastname, State, City, Age, Zipcode, Linetype, Carrier, Search Filter
-  const headers = ['Firstname', 'Lastname', 'State', 'City', 'Age', 'Zipcode', 'Linetype', 'Carrier', 'Search Filter'];
+  // Order: Firstname, Lastname, State, City, Age, Zipcode, Linetype, Carrier, Platform, Source Details, Search Filter
+  const headers = ['Firstname', 'Lastname', 'State', 'City', 'Age', 'Zipcode', 'Linetype', 'Carrier', 'Platform', 'Source Details', 'Search Filter'];
   const rows = summaries.map(summary => {
     // Split name into first and last
     const nameParts = (summary.name || '').trim().split(/\s+/);
@@ -488,6 +570,22 @@ export function leadSummariesToCSV(summaries: LeadSummary[]): string {
       }
     }
     
+    // Format source details as readable string
+    let sourceDetailsStr = '';
+    if (summary.sourceDetails) {
+      const parts: string[] = [];
+      if (summary.sourceDetails.occupation) parts.push(`Occupation: ${summary.sourceDetails.occupation}`);
+      if (summary.sourceDetails.jobTitle) parts.push(`Job: ${summary.sourceDetails.jobTitle}`);
+      if (summary.sourceDetails.location) parts.push(`Location: ${summary.sourceDetails.location}`);
+      if (summary.sourceDetails.isSelfEmployed) parts.push('Self-Employed');
+      if (summary.sourceDetails.changedJobs) parts.push('Changed Jobs');
+      if (summary.sourceDetails.groupName) parts.push(`Group: ${summary.sourceDetails.groupName}`);
+      if (summary.sourceDetails.keywords && summary.sourceDetails.keywords.length > 0) {
+        parts.push(`Keywords: ${summary.sourceDetails.keywords.join(', ')}`);
+      }
+      sourceDetailsStr = parts.join(' | ');
+    }
+    
     return [
       firstname,
       lastname,
@@ -497,6 +595,8 @@ export function leadSummariesToCSV(summaries: LeadSummary[]): string {
       summary.zipcode || '',
       summary.lineType || '',
       summary.carrier || '',
+      summary.platform || '',
+      sourceDetailsStr,
       summary.searchFilter || '',
     ];
   });

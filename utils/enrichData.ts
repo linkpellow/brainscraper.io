@@ -5,6 +5,7 @@
 import { ParsedData } from './parseFile';
 import { isLeadProcessed, saveEnrichedLeadImmediate, getLeadKey } from './incrementalSave';
 import { extractLeadSummary } from './extractLeadSummary';
+import { callAPIWithConfig } from './apiToggleMiddleware';
 
 /**
  * Detailed progress information for real-time tracking
@@ -774,7 +775,22 @@ function getServerBaseUrl(): string {
   return 'http://localhost:3000';
 }
 
-async function callAPI(
+/**
+ * Wrapper function that applies settings-based controls
+ * This is the main entry point for all API calls
+ */
+export async function callAPI(
+  url: string,
+  options: RequestInit = {},
+  apiName: string
+): Promise<{ data?: any; error?: string }> {
+  return await callAPIWithConfig(url, options, apiName, callAPIImpl);
+}
+
+/**
+ * Original callAPI function (internal - actual implementation)
+ */
+async function callAPIImpl(
   url: string,
   options: RequestInit = {},
   apiName: string
@@ -877,6 +893,17 @@ async function callAPI(
     }
   } catch (error) {
     if (timeoutId) clearTimeout(timeoutId);
+    
+    // Record error for cooldown tracking (only for actual errors, not timeouts)
+    if (!(error instanceof Error && error.name === 'AbortError')) {
+      try {
+        const { recordError } = await import('./cooldownManager');
+        await recordError();
+      } catch (cooldownError) {
+        // Silent fail - don't break API call flow
+      }
+    }
+
     if (error instanceof Error && error.name === 'AbortError') {
       console.error(`[CALL_API] ${apiName} timeout after ${timeoutMs}ms`);
       return {
@@ -1289,10 +1316,11 @@ export async function enrichRow(
     }
     
     // Use GET to call skip-tracing API with name
-      const { data, error } = await callAPI(
+      const { data, error } = await callAPIWithConfig(
       searchUrl,
         {},
-        'Skip-tracing (Phone Discovery)'
+        'Skip-tracing (Phone Discovery)',
+        callAPIImpl
       );
       
       console.log(`[ENRICH_ROW] STEP 3: Skip-tracing API response:`, {
@@ -1350,10 +1378,11 @@ export async function enrichRow(
               try {
                 // Call person details API directly
                 // Note: The API endpoint works (tested directly), so we let it complete naturally
-                const personDetailsResult = await callAPI(
+                const personDetailsResult = await callAPIWithConfig(
                   `/api/skip-tracing?peo_id=${encodeURIComponent(responseData['Person ID'])}`,
                   {},
-                  'Skip-tracing (Person Details)'
+                  'Skip-tracing (Person Details)',
+                  callAPIImpl
                 );
                 
                 const { data: personData, error: personError } = personDetailsResult;
@@ -1543,10 +1572,11 @@ export async function enrichRow(
   // STEP 4: Telnyx Phone Intelligence (CRITICAL)
   if (phone) {
     console.log(`[ENRICH_ROW] Calling Telnyx for phone: ${phone.substring(0, 5)}...`);
-    const { data, error } = await callAPI(
+    const { data, error } = await callAPIWithConfig(
       `/api/telnyx/lookup?phone=${encodeURIComponent(phone)}`,
       {},
-      'Telnyx'
+      'Telnyx',
+      callAPIImpl
     );
     
     if (data) {
@@ -1606,7 +1636,7 @@ export async function enrichRow(
   
   // STEP 6: Age (CONDITIONAL - Only if Telnyx confirms valid number)
   // Age enrichment ONLY runs on high-quality leads (not VoIP/junk)
-  // OPTIMIZATION: Reuse age from STEP 3 search results if available (saves API call)
+  // CRITICAL OPTIMIZATION: Reuse STEP 3 search results to avoid duplicate API calls
   if (shouldContinue && !hasDOBOrAge(row, headers) && firstName && lastName && phone) {
     // First, check if we already have age data from STEP 3 search results
     const skipTracingData = result.skipTracingData as any;
@@ -1627,56 +1657,56 @@ export async function enrichRow(
       // Use age from STEP 3 - no additional API call needed
       result.age = ageFromStep3;
       console.log(`[ENRICH_ROW] ✅ STEP 6: Using age from STEP 3 search results: ${result.age}`);
-    } else {
-      // Age not in STEP 3 results - make API call to get it
-      const cleanedFirstName = cleanNameForAPI(firstName);
-      const cleanedLastName = cleanNameForAPI(lastName);
-      const fullName = `${cleanedFirstName} ${cleanedLastName}`.trim();
+    } else if (skipTracingData && (skipTracingData.PeopleDetails?.length > 0 || Object.keys(skipTracingData).length > 0)) {
+      // STEP 3 had results but no age - check person details if we have Person ID
+      // CRITICAL: Only make person details call if we didn't already make it in STEP 3
+      const step3Result = skipTracingData.PeopleDetails?.[0] || skipTracingData;
+      const personId = step3Result?.['Person ID'] || step3Result?.person_id;
       
-      // Build citystatezip if we have location data
-      let citystatezip = '';
-      if (city && state) {
-        citystatezip = `${city}, ${state}`;
-        if (zipCode) {
-          citystatezip += ` ${zipCode}`;
+      if (personId && !phone) {
+        // We already made person details call in STEP 3 (because we needed phone)
+        // Age should have been in person details - if not, it's not available
+        console.log(`[ENRICH_ROW] STEP 6: Person details already fetched in STEP 3, age not available`);
+      } else if (personId) {
+        // We have Person ID but didn't fetch person details in STEP 3 (phone was in search)
+        // Fetch person details now for age
+        console.log(`[ENRICH_ROW] STEP 6: Fetching person details for age via Person ID: ${personId}...`);
+        
+        try {
+          const personDetailsResult = await callAPIWithConfig(
+            `/api/skip-tracing?peo_id=${encodeURIComponent(personId)}`,
+            {},
+            'Skip-tracing (Person Details - Age)',
+            callAPIImpl
+          );
+          
+          const { data: personData, error: personError } = personDetailsResult;
+          
+          if (personError) {
+            console.log(`[ENRICH_ROW] ⚠️  STEP 6: Person details API error: ${personError}`);
+          } else if (personData?.data) {
+            const personDetails = personData.data;
+            
+            // Extract age from person details
+            if (personDetails['Person Details'] && Array.isArray(personDetails['Person Details']) && personDetails['Person Details'].length > 0) {
+              const age = personDetails['Person Details'][0].Age;
+              if (age) {
+                result.age = String(age);
+                console.log(`[ENRICH_ROW] ✅ STEP 6: Got age from person details: ${result.age}`);
+              }
+            }
+          }
+        } catch (error) {
+          console.log(`[ENRICH_ROW] ❌ STEP 6: Exception fetching person details for age:`, error instanceof Error ? error.message : String(error));
         }
-      }
-      
-      // Use bynameaddress if we have location, otherwise byname
-      let searchUrl = '';
-      if (citystatezip) {
-        searchUrl = `/api/skip-tracing?name=${encodeURIComponent(fullName)}&citystatezip=${encodeURIComponent(citystatezip)}&page=1`;
       } else {
-        searchUrl = `/api/skip-tracing?name=${encodeURIComponent(fullName)}&page=1`;
+        // No Person ID and no age in search results - age not available without making new search
+        // CRITICAL OPTIMIZATION: Don't make duplicate search call - age is not available
+        console.log(`[ENRICH_ROW] STEP 6: Age not available in STEP 3 results and no Person ID - skipping duplicate search call`);
       }
-      
-      console.log(`[ENRICH_ROW] STEP 6: Age not in STEP 3 results, fetching age for validated lead: ${fullName}`);
-      const { data, error } = await callAPI(
-        searchUrl,
-        {},
-        'Skip-tracing (Age)'
-      );
-      
-      if (data && !data.error) {
-        const actualData = data.data || data;
-        let responseData: any = null;
-        
-        if (actualData.PeopleDetails && Array.isArray(actualData.PeopleDetails) && actualData.PeopleDetails.length > 0) {
-          responseData = actualData.PeopleDetails[0];
-        } else if (Array.isArray(actualData) && actualData.length > 0) {
-          responseData = actualData[0];
-        } else {
-          responseData = actualData;
-        }
-        
-        if (responseData?.Age) {
-          result.age = String(responseData.Age);
-          console.log(`[ENRICH_ROW] ✅ STEP 6: Got age from API call: ${result.age}`);
-        }
-      }
-      if (error) {
-        console.log(`[ENRICH_ROW] ⚠️  STEP 6: Age lookup error: ${error}`);
-      }
+    } else {
+      // STEP 3 had no results at all - age not available
+      console.log(`[ENRICH_ROW] STEP 6: STEP 3 had no results - age not available`);
     }
   } else if (!shouldContinue) {
     console.log(`[ENRICH_ROW] STEP 6: Skipping age enrichment - number not validated by Telnyx (VoIP/junk/geo mismatch)`);
@@ -1901,6 +1931,15 @@ export async function enrichData(
     if (i < data.rows.length - 1) {
       await new Promise((resolve) => setTimeout(resolve, 100));
     }
+  }
+
+  // Route enriched leads to configured destination
+  try {
+    const { routeEnrichedLeads } = await import('./outputRouter');
+    await routeEnrichedLeads(enrichedRows);
+  } catch (routingError) {
+    // Don't fail enrichment if routing fails
+    console.warn('[ENRICH_DATA] Failed to route leads:', routingError);
   }
 
   return {

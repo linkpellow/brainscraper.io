@@ -56,7 +56,7 @@ export default function EnrichmentQueuePage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent tracking-tight drop-shadow-lg">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent tracking-tight drop-shadow-lg">
               Enrichment Queue
             </h1>
             <p className="text-slate-400 mt-2 font-data">
@@ -93,14 +93,14 @@ export default function EnrichmentQueuePage() {
               </h2>
               <button
                 onClick={loadUnenrichedLeads}
-                className="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg hover:shadow-lg hover:shadow-blue-500/50 transition-all duration-300 text-sm font-medium"
+                className="px-4 py-2 btn-active text-white rounded-lg state-transition text-sm font-medium"
               >
                 Refresh
               </button>
             </div>
 
             {leads.length === 0 ? (
-              <div className="p-12 text-center bg-slate-800/60 backdrop-blur-xl rounded-xl border border-slate-700/50">
+              <div className="p-12 text-center panel-inactive rounded-xl">
                 <Sparkles className="w-16 h-16 text-slate-600 mx-auto mb-4" />
                 <p className="text-slate-400 text-lg">No unenriched leads found</p>
                 <p className="text-slate-500 text-sm mt-2">
@@ -108,13 +108,11 @@ export default function EnrichmentQueuePage() {
                 </p>
               </div>
             ) : (
-              <div className="overflow-x-auto rounded-2xl border border-slate-700/50 bg-gradient-to-br from-slate-900/50 via-slate-800/50 to-slate-900/50 backdrop-blur-xl shadow-2xl shadow-blue-500/10 relative">
-                {/* Animated gradient border */}
-                <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-blue-500/20 via-purple-500/20 to-pink-500/20 opacity-50 blur-xl animate-pulse pointer-events-none" />
+              <div className="overflow-x-auto rounded-2xl panel-inactive relative">
                 <div className="relative z-10">
                   <table className="w-full text-xs relative z-10 font-data" style={{ tableLayout: 'fixed', width: '100%' }}>
                     <thead>
-                      <tr className="border-b border-gradient-to-r from-blue-500/30 via-purple-500/30 to-pink-500/30 bg-gradient-to-r from-slate-800/80 to-slate-700/80 backdrop-blur-sm">
+                      <tr className="table-header">
                         <th className="px-2 py-2 text-left text-blue-400 font-semibold text-[10px] uppercase tracking-wider" style={{ width: '15%' }}>Name</th>
                         <th className="px-2 py-2 text-left text-blue-400 font-semibold text-[10px] uppercase tracking-wider" style={{ width: '15%' }}>Title</th>
                         <th className="px-2 py-2 text-left text-blue-400 font-semibold text-[10px] uppercase tracking-wider" style={{ width: '15%' }}>Company</th>
@@ -135,7 +133,7 @@ export default function EnrichmentQueuePage() {
                         return (
                           <tr 
                             key={idx} 
-                            className="group relative border-b border-slate-700/20 hover:border-blue-500/30 transition-all duration-500 ease-out hover:bg-gradient-to-r hover:from-slate-800/60 hover:via-slate-700/40 hover:to-slate-800/60 backdrop-blur-sm"
+                            className="group relative table-row-inactive"
                           >
                             <td className="px-2 py-2 text-slate-100 font-semibold relative z-10">
                               {name}

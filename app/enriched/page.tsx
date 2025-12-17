@@ -760,7 +760,7 @@ export default function EnrichedLeadsPage() {
 
   return (
     <AppLayout>
-      <div className="w-full px-2 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8 space-y-4 sm:space-y-6">
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-8 space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="min-w-0 flex-1">
@@ -807,7 +807,7 @@ export default function EnrichedLeadsPage() {
             <button
               onClick={handleExportCSV}
               disabled={leads.length === 0}
-              className="px-3 sm:px-4 py-1.5 sm:py-2 bg-slate-800/80 hover:bg-slate-700/80 border border-slate-600/50 rounded-lg text-slate-200 hover:text-white text-xs sm:text-sm font-medium transition-all flex items-center disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-blue-500/20"
+              className="px-3 sm:px-4 py-1.5 sm:py-2 btn-inactive rounded-lg text-slate-200 hover:text-white text-xs sm:text-sm font-medium flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Download className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
               <span className="hidden sm:inline">Export CSV</span>
@@ -841,7 +841,7 @@ export default function EnrichedLeadsPage() {
             {/* Search Bar */}
             <div className="relative group">
               <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 via-purple-500/20 to-pink-500/20 rounded-xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              <div className="relative bg-slate-800/60 backdrop-blur-xl border border-slate-700/50 rounded-xl shadow-xl">
+              <div className="relative panel-inactive rounded-xl">
                 <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400 group-hover:text-blue-400 transition-colors" />
                 <input
                   type="text"
@@ -863,7 +863,7 @@ export default function EnrichedLeadsPage() {
             
             {/* Filter Checkboxes and Sort Controls */}
             <div className="flex flex-wrap gap-2 sm:gap-3 items-center">
-            <div className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold border border-slate-700/50 bg-slate-800/60 backdrop-blur-sm text-slate-200 hover:bg-slate-700/60 hover:border-blue-500/50 transition-all duration-300 shadow-lg font-data">
+            <div className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold btn-inactive text-slate-200 font-data">
               <span className="whitespace-nowrap text-xs">Age:</span>
               <input
                 type="number"
@@ -902,13 +902,13 @@ export default function EnrichedLeadsPage() {
               className={`flex items-center justify-center px-2 sm:px-2.5 py-1.5 sm:py-2 rounded-lg border transition-all duration-300 hover:scale-110 ${
                 mobileOnly
                   ? 'border-purple-500/80 bg-purple-500/20 text-purple-300 shadow-lg shadow-purple-500/50 ring-2 ring-purple-500/50'
-                  : 'border-slate-700/50 bg-slate-800/60 text-slate-400 hover:bg-slate-700/60 hover:border-purple-500/50 hover:text-purple-300 shadow-lg hover:shadow-purple-500/20'
+                  : 'btn-inactive text-slate-400'
               }`}
               title={mobileOnly ? 'Show all leads' : 'Show mobile only'}
             >
               <Smartphone className={`w-4 h-4 sm:w-5 sm:h-5 ${mobileOnly ? 'text-purple-300' : 'text-slate-400'}`} />
             </button>
-            <label className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold border border-slate-700/50 bg-slate-800/60 backdrop-blur-sm text-slate-200 cursor-pointer hover:bg-slate-700/60 hover:border-red-500/50 hover:text-red-300 transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-red-500/20 font-data">
+            <label className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold btn-inactive text-slate-200 cursor-pointer font-data">
               <input
                 type="checkbox"
                 checked={filterDNC}
@@ -920,40 +920,40 @@ export default function EnrichedLeadsPage() {
             </label>
             <button
               onClick={() => handleSort('name')}
-              className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-300 border flex items-center gap-1 sm:gap-2 backdrop-blur-sm shadow-lg hover:scale-105 font-data ${
+              className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold state-transition border flex items-center gap-1 sm:gap-2 font-data ${
                 sortField === 'name'
-                  ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white border-transparent shadow-blue-500/50'
-                  : 'bg-slate-800/60 text-slate-200 hover:bg-slate-700/60 border-slate-700/50 hover:border-blue-500/50 hover:shadow-blue-500/20'
+                  ? 'btn-active text-white border-transparent'
+                  : 'btn-inactive text-slate-200'
               }`}
             >
               Name {getSortIcon('name')}
             </button>
             <button
               onClick={() => handleSort('state')}
-              className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-300 border flex items-center gap-1 sm:gap-2 backdrop-blur-sm shadow-lg hover:scale-105 font-data ${
+              className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold state-transition border flex items-center gap-1 sm:gap-2 font-data ${
                 sortField === 'state'
-                  ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white border-transparent shadow-blue-500/50'
-                  : 'bg-slate-800/60 text-slate-200 hover:bg-slate-700/60 border-slate-700/50 hover:border-blue-500/50 hover:shadow-blue-500/20'
+                  ? 'btn-active text-white border-transparent'
+                  : 'btn-inactive text-slate-200'
               }`}
             >
               State {getSortIcon('state')}
             </button>
             <button
               onClick={() => handleSort('city')}
-              className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-300 border flex items-center gap-1 sm:gap-2 backdrop-blur-sm shadow-lg hover:scale-105 font-data ${
+              className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold state-transition border flex items-center gap-1 sm:gap-2 font-data ${
                 sortField === 'city'
-                  ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white border-transparent shadow-blue-500/50'
-                  : 'bg-slate-800/60 text-slate-200 hover:bg-slate-700/60 border-slate-700/50 hover:border-blue-500/50 hover:shadow-blue-500/20'
+                  ? 'btn-active text-white border-transparent'
+                  : 'btn-inactive text-slate-200'
               }`}
             >
               City {getSortIcon('city')}
             </button>
             <button
               onClick={() => handleSort('zipcode')}
-              className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-300 border flex items-center gap-1 sm:gap-2 backdrop-blur-sm shadow-lg hover:scale-105 font-data ${
+              className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold state-transition border flex items-center gap-1 sm:gap-2 font-data ${
                 sortField === 'zipcode'
-                  ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white border-transparent shadow-blue-500/50'
-                  : 'bg-slate-800/60 text-slate-200 hover:bg-slate-700/60 border-slate-700/50 hover:border-blue-500/50 hover:shadow-blue-500/20'
+                  ? 'btn-active text-white border-transparent'
+                  : 'btn-inactive text-slate-200'
               }`}
             >
               <span className="hidden sm:inline">Zipcode</span>
@@ -961,20 +961,20 @@ export default function EnrichedLeadsPage() {
             </button>
             <button
               onClick={() => handleSort('age')}
-              className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-300 border flex items-center gap-1 sm:gap-2 backdrop-blur-sm shadow-lg hover:scale-105 font-data ${
+              className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold state-transition border flex items-center gap-1 sm:gap-2 font-data ${
                 sortField === 'age'
-                  ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white border-transparent shadow-blue-500/50'
-                  : 'bg-slate-800/60 text-slate-200 hover:bg-slate-700/60 border-slate-700/50 hover:border-blue-500/50 hover:shadow-blue-500/20'
+                  ? 'btn-active text-white border-transparent'
+                  : 'btn-inactive text-slate-200'
               }`}
             >
               Age {getSortIcon('age')}
             </button>
             <button
               onClick={() => handleSort('searchFilter')}
-              className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-300 border flex items-center gap-1 sm:gap-2 backdrop-blur-sm shadow-lg hover:scale-105 font-data ${
+              className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold state-transition border flex items-center gap-1 sm:gap-2 font-data ${
                 sortField === 'searchFilter'
-                  ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white border-transparent shadow-blue-500/50'
-                  : 'bg-slate-800/60 text-slate-200 hover:bg-slate-700/60 border-slate-700/50 hover:border-blue-500/50 hover:shadow-blue-500/20'
+                  ? 'btn-active text-white border-transparent'
+                  : 'btn-inactive text-slate-200'
               }`}
             >
               <span className="hidden sm:inline">Search Filter</span>
@@ -982,7 +982,7 @@ export default function EnrichedLeadsPage() {
             </button>
             <button
               onClick={() => setSortField('none')}
-              className="flex items-center justify-center px-2 sm:px-2.5 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-300 border bg-slate-800/60 text-slate-200 hover:bg-slate-700/60 border-slate-700/50 hover:border-red-500/50 hover:shadow-red-500/20 backdrop-blur-sm shadow-lg hover:scale-105 font-data"
+              className="flex items-center justify-center px-2 sm:px-2.5 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold state-transition btn-inactive text-slate-200 font-data"
               title="Clear sort"
             >
               <X className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -993,12 +993,12 @@ export default function EnrichedLeadsPage() {
 
         {/* Leads Table */}
         {loading ? (
-          <div className="px-6 py-12 bg-slate-800/60 backdrop-blur-xl rounded-2xl border border-slate-700/50 shadow-xl text-center">
+          <div className="px-6 py-12 panel-inactive rounded-2xl text-center">
             <Loader2 className="w-8 h-8 text-blue-400 animate-spin mx-auto mb-4" />
             <p className="text-slate-300 font-medium">Loading enriched leads...</p>
           </div>
         ) : leads.length === 0 ? (
-          <div className="px-6 py-12 bg-slate-800/60 backdrop-blur-xl rounded-2xl border border-slate-700/50 shadow-xl text-center space-y-4">
+          <div className="px-6 py-12 panel-inactive rounded-2xl text-center space-y-4">
             <p className="text-slate-300 font-semibold text-lg">No enriched leads found.</p>
             <div className="text-left bg-slate-900/60 backdrop-blur-sm p-6 rounded-xl border border-slate-700/50 max-w-2xl mx-auto shadow-lg">
               <p className="text-sm font-semibold text-slate-200 mb-3 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">To see enriched leads here:</p>
@@ -1011,14 +1011,12 @@ export default function EnrichedLeadsPage() {
             </div>
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-2xl border border-slate-700/50 bg-gradient-to-br from-slate-900/50 via-slate-800/50 to-slate-900/50 backdrop-blur-xl shadow-2xl shadow-blue-500/10 relative">
-            {/* Animated gradient border */}
-            <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-blue-500/20 via-purple-500/20 to-pink-500/20 opacity-50 blur-xl animate-pulse pointer-events-none" />
+          <div className="overflow-x-auto rounded-2xl panel-inactive relative">
             <div className="relative z-10">
               
               <table className="w-full text-xs relative z-10 font-data" style={{ tableLayout: 'fixed', width: '100%' }}>
                 <thead>
-                  <tr className="border-b border-gradient-to-r from-blue-500/30 via-purple-500/30 to-pink-500/30 bg-gradient-to-r from-slate-800/80 to-slate-700/80 backdrop-blur-sm">
+                  <tr className="table-header">
                     <th className="px-2 py-2 text-left text-blue-400 font-semibold text-[10px] uppercase tracking-wider" style={{ width: '13%' }}>Name</th>
                     <th className="px-2 py-2 text-left text-blue-400 font-semibold text-[10px] uppercase tracking-wider" style={{ width: '10%' }}>Phone</th>
                     <th className="px-2 py-2 text-left text-blue-400 font-semibold text-[10px] uppercase tracking-wider" style={{ width: '17%' }}>Email</th>
@@ -1067,7 +1065,7 @@ export default function EnrichedLeadsPage() {
                   return (
                     <tr 
                       key={index} 
-                      className="group relative border-b border-slate-700/20 hover:border-blue-500/30 transition-all duration-500 ease-out hover:bg-gradient-to-r hover:from-slate-800/60 hover:via-slate-700/40 hover:to-slate-800/60 backdrop-blur-sm"
+                      className="group relative table-row-inactive"
                       style={{ animationDelay: `${index * 20}ms` }}
                     >
                       <td 
@@ -1188,11 +1186,11 @@ export default function EnrichedLeadsPage() {
                       />
                       <td className="px-2 py-2 text-slate-300 relative z-10">
                         {isScrubbingDNC && (!lead.dncStatus || lead.dncStatus === 'UNKNOWN') ? (
-                          <span className="text-xs text-slate-500">...</span>
+                          <span className="badge badge-info">...</span>
                         ) : lead.dncStatus === 'YES' ? (
-                          <span className="text-xs font-semibold text-red-400">DNC</span>
+                          <span className="badge badge-error">DNC</span>
                         ) : lead.dncStatus === 'NO' ? (
-                          <span className="text-xs font-semibold text-green-400">OK</span>
+                          <span className="badge badge-success">OK</span>
                         ) : (
                           <span className="text-xs text-slate-500">-</span>
                         )}
@@ -1208,34 +1206,34 @@ export default function EnrichedLeadsPage() {
 
         {/* Progress Modal */}
         {showProgressModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg border border-gray-200 shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+        <div className="modal-overlay">
+          <div className="modal-content w-full max-w-2xl max-h-[90vh] flex flex-col">
             {/* Current Lead Display */}
             {currentLead && (
-              <div className="p-6 border-b border-gray-200 bg-gray-50">
-                <h3 className="text-sm font-semibold text-gray-900 mb-2">Currently Processing</h3>
-                <div className="bg-white p-4 rounded-lg border border-gray-200">
-                  <div className="font-semibold text-gray-900 mb-2">{currentLead.name}</div>
-                  <div className="text-xs text-gray-600 mb-1">Step: {currentLead.step}</div>
+              <div className="p-6 border-b border-slate-700/50 panel-inactive">
+                <h3 className="text-sm font-semibold text-slate-200 mb-2">Currently Processing</h3>
+                <div className="panel-inactive p-4 rounded-lg">
+                  <div className="font-semibold text-slate-200 mb-2">{currentLead.name}</div>
+                  <div className="text-xs text-slate-400 mb-1">Step: {currentLead.step}</div>
                   {currentLead.details && Object.keys(currentLead.details).length > 0 && (
                     <div className="mt-2 space-y-1">
                       {currentLead.details.phone && (
-                        <div className="text-xs text-gray-700">📞 Phone: {formatPhoneNumber(currentLead.details.phone)}</div>
+                        <div className="text-xs text-slate-300">📞 Phone: {formatPhoneNumber(currentLead.details.phone)}</div>
                       )}
                       {currentLead.details.email && (
-                        <div className="text-xs text-gray-700">📧 Email: {currentLead.details.email}</div>
+                        <div className="text-xs text-slate-300">📧 Email: {currentLead.details.email}</div>
                       )}
                       {currentLead.details.zipCode && (
-                        <div className="text-xs text-gray-700">📍 ZIP: {currentLead.details.zipCode}</div>
+                        <div className="text-xs text-slate-300">📍 ZIP: {currentLead.details.zipCode}</div>
                       )}
                       {currentLead.details.lineType && (
-                        <div className="text-xs text-gray-700">📱 Line Type: {currentLead.details.lineType}</div>
+                        <div className="text-xs text-slate-300">📱 Line Type: {currentLead.details.lineType}</div>
                       )}
                       {currentLead.details.carrier && (
-                        <div className="text-xs text-gray-700">🏢 Carrier: {currentLead.details.carrier}</div>
+                        <div className="text-xs text-slate-300">🏢 Carrier: {currentLead.details.carrier}</div>
                       )}
                       {currentLead.details.age && (
-                        <div className="text-xs text-gray-700">🎂 Age: {currentLead.details.age}</div>
+                        <div className="text-xs text-slate-300">🎂 Age: {currentLead.details.age}</div>
                       )}
                     </div>
                   )}
@@ -1244,10 +1242,10 @@ export default function EnrichedLeadsPage() {
             )}
 
             {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+            <div className="flex items-center justify-between p-6 border-b border-slate-700/50">
               <div className="flex items-center gap-3">
                 <Loader2 className="w-5 h-5 text-blue-600 animate-spin" />
-                <h2 className="text-xl font-bold text-gray-900">Enriching Leads</h2>
+                <h2 className="text-xl font-bold text-slate-200">Enriching Leads</h2>
               </div>
               <button
                 onClick={() => {
@@ -1256,7 +1254,7 @@ export default function EnrichedLeadsPage() {
                     setLoadingSaved(false);
                   }
                 }}
-                className="text-gray-500 hover:text-gray-700 transition-colors"
+                className="text-slate-400 hover:text-slate-200 state-transition"
                 disabled={enrichmentProgress < 100}
               >
                 <X className="w-5 h-5" />
@@ -1264,14 +1262,14 @@ export default function EnrichedLeadsPage() {
             </div>
 
             {/* Progress Bar */}
-            <div className="p-6 border-b border-gray-200">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-gray-900">Progress</span>
-                <span className="text-sm text-gray-600">{Math.round(enrichmentProgress)}%</span>
+            <div className="p-6 border-b border-slate-700/50">
+                <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium text-slate-200">Progress</span>
+                <span className="text-sm text-slate-400">{Math.round(enrichmentProgress)}%</span>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+              <div className="w-full progress-bar-container h-2">
                 <div
-                  className="h-full bg-blue-600 transition-all duration-300 ease-out"
+                  className="progress-bar-fill h-full"
                   style={{ width: `${enrichmentProgress}%` }}
                 />
               </div>
@@ -1279,35 +1277,35 @@ export default function EnrichedLeadsPage() {
 
             {/* Statistics */}
             {enrichmentStats && (
-              <div className="p-6 border-b border-gray-200">
+              <div className="p-6 border-b border-slate-700/50">
                 {enrichmentStats && (
                   <>
-                <h3 className="text-sm font-semibold text-gray-900 mb-3">Statistics</h3>
+                <h3 className="text-sm font-semibold text-slate-200 mb-3">Statistics</h3>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
-                    <div className="text-xs text-gray-600 mb-1">Total Leads</div>
-                    <div className="text-lg font-bold text-gray-900">{enrichmentStats.totalLeads}</div>
+                  <div className="panel-inactive p-3 rounded-lg">
+                    <div className="text-xs text-slate-400 mb-1">Total Leads</div>
+                    <div className="text-lg font-bold text-slate-200">{enrichmentStats.totalLeads}</div>
                   </div>
-                  <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
-                    <div className="text-xs text-gray-600 mb-1">With Phone</div>
-                    <div className="text-lg font-bold text-blue-600">{enrichmentStats.withPhone}</div>
+                  <div className="panel-inactive p-3 rounded-lg">
+                    <div className="text-xs text-slate-400 mb-1">With Phone</div>
+                    <div className="text-lg font-bold text-blue-400">{enrichmentStats.withPhone}</div>
                   </div>
-                  <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
-                    <div className="text-xs text-gray-600 mb-1">With Email</div>
-                    <div className="text-lg font-bold text-blue-600">{enrichmentStats.withEmail}</div>
+                  <div className="panel-inactive p-3 rounded-lg">
+                    <div className="text-xs text-slate-400 mb-1">With Email</div>
+                    <div className="text-lg font-bold text-blue-400">{enrichmentStats.withEmail}</div>
                   </div>
-                  <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
-                    <div className="text-xs text-gray-600 mb-1">With Zipcode</div>
-                    <div className="text-lg font-bold text-blue-600">{enrichmentStats.withZipcode}</div>
+                  <div className="panel-inactive p-3 rounded-lg">
+                    <div className="text-xs text-slate-400 mb-1">With Zipcode</div>
+                    <div className="text-lg font-bold text-blue-400">{enrichmentStats.withZipcode}</div>
                   </div>
-                  <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
-                    <div className="text-xs text-gray-600 mb-1">Processed</div>
-                    <div className="text-lg font-bold text-gray-900">{enrichmentStats.processed}</div>
+                  <div className="panel-inactive p-3 rounded-lg">
+                    <div className="text-xs text-slate-400 mb-1">Processed</div>
+                    <div className="text-lg font-bold text-slate-200">{enrichmentStats.processed}</div>
                   </div>
                   {enrichmentStats.errors > 0 && (
-                    <div className="bg-red-50 p-3 rounded-lg border border-red-200">
-                      <div className="text-xs text-red-600 mb-1">Errors</div>
-                      <div className="text-lg font-bold text-red-600">{enrichmentStats.errors}</div>
+                    <div className="status-error p-3 rounded-lg">
+                      <div className="text-xs text-red-400 mb-1">Errors</div>
+                      <div className="text-lg font-bold text-red-400">{enrichmentStats.errors}</div>
                     </div>
                   )}
                 </div>
@@ -1318,10 +1316,10 @@ export default function EnrichedLeadsPage() {
 
             {/* Logs */}
             <div className="flex-1 overflow-hidden flex flex-col">
-              <div className="px-6 py-3 border-b border-gray-200">
-                <h3 className="text-sm font-semibold text-gray-900">Logs</h3>
+              <div className="px-6 py-3 border-b border-slate-700/50">
+                <h3 className="text-sm font-semibold text-slate-200">Logs</h3>
               </div>
-              <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
+              <div className="flex-1 overflow-y-auto p-6 panel-inactive">
                 <div className="space-y-2 font-mono text-xs">
                   {enrichmentLogs.length === 0 ? (
                     <div className="text-gray-500">Waiting for logs...</div>
@@ -1356,7 +1354,7 @@ export default function EnrichedLeadsPage() {
 
             {/* Footer */}
             {enrichmentProgress >= 100 && (
-              <div className="p-6 border-t border-gray-200">
+              <div className="p-6 border-t border-slate-700/50">
                 <button
                   onClick={() => {
                     setShowProgressModal(false);

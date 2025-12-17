@@ -4,14 +4,15 @@ import { useState, useEffect } from 'react';
 import { 
   Rocket, Users, Building2, Link2, ClipboardList, Eye, Zap, 
   CheckCircle, XCircle, Loader2, Download, DollarSign, Play,
-  Search, Filter, FileDown, ArrowRight
+  Search, Filter, FileDown, ArrowRight, Linkedin, Facebook
 } from 'lucide-react';
 import { ParsedData } from '@/utils/parseFile';
 import { enrichData, EnrichedData, EnrichedRow, EnrichmentProgress } from '@/utils/enrichData';
 import { extractLeadSummary, leadSummariesToCSV, LeadSummary } from '@/utils/extractLeadSummary';
 import { DNCResult } from './USHAScrubber';
 import LeadListViewer from './LeadListViewer';
-import type { LeadListItem } from '@/types/leadList';
+import FacebookLeadGenerator from './FacebookLeadGenerator';
+import type { LeadListItem, SourceDetails } from '@/types/leadList';
 
 interface LeadResult {
   [key: string]: unknown;
@@ -42,6 +43,7 @@ interface ScrapingProgress {
 }
 
 type WorkflowStep = 'search' | 'results' | 'enriching' | 'complete';
+type TabType = 'linkedin' | 'facebook';
 
 /**
  * Normalizes a name by removing credentials and suffixes after commas
@@ -57,7 +59,71 @@ function normalizeName(name: string): string {
   return namePart.replace(/\.$/, '').trim();
 }
 
+/**
+ * Extracts structured source details from LinkedIn search parameters
+ */
+function extractLinkedInSourceDetails(searchParams: Record<string, unknown>, lead?: any): SourceDetails {
+  const sourceDetails: SourceDetails = {};
+  
+  // Extract job title/occupation
+  if (lead?.currentPosition?.title || lead?.title || lead?.job_title || lead?.headline) {
+    sourceDetails.jobTitle = lead.currentPosition?.title || lead.title || lead.job_title || lead.headline;
+  } else if (searchParams.jobTitle || searchParams.title) {
+    sourceDetails.jobTitle = String(searchParams.jobTitle || searchParams.title);
+  }
+  
+  // Extract location
+  if (lead?.geoRegion || lead?.location) {
+    sourceDetails.location = lead.geoRegion || lead.location;
+  } else if (searchParams.location) {
+    sourceDetails.location = String(searchParams.location);
+  }
+  
+  // Check for self-employed filter (company headcount = 'A')
+  if (searchParams.companyHeadcount === 'A' || 
+      (Array.isArray(searchParams.companyHeadcount) && searchParams.companyHeadcount.includes('A'))) {
+    sourceDetails.isSelfEmployed = true;
+  }
+  
+  // Check for job change filter (years in filter)
+  if (searchParams.yearsIn) {
+    const yearsIn = Array.isArray(searchParams.yearsIn) ? searchParams.yearsIn : [searchParams.yearsIn];
+    const hasJobChange = yearsIn.some((y: any) => 
+      String(y).toLowerCase().includes('changed') || 
+      String(y).toLowerCase().includes('new')
+    );
+    if (hasJobChange) {
+      sourceDetails.changedJobs = true;
+    }
+  }
+  
+  // Extract company size
+  if (searchParams.companyHeadcount) {
+    const headcount = searchParams.companyHeadcount;
+    if (Array.isArray(headcount)) {
+      sourceDetails.companySize = headcount.join(', ');
+    } else {
+      sourceDetails.companySize = String(headcount);
+    }
+  }
+  
+  // Use jobTitle as occupation if available
+  if (sourceDetails.jobTitle) {
+    sourceDetails.occupation = sourceDetails.jobTitle;
+  }
+  
+  // Remove undefined values
+  Object.keys(sourceDetails).forEach(key => {
+    if (sourceDetails[key as keyof SourceDetails] === undefined) {
+      delete sourceDetails[key as keyof SourceDetails];
+    }
+  });
+  
+  return sourceDetails;
+}
+
 export default function LinkedInLeadGenerator() {
+  const [activeTab, setActiveTab] = useState<TabType>('linkedin');
   const [workflowStep, setWorkflowStep] = useState<WorkflowStep>('search');
   const [searchType, setSearchType] = useState<'person' | 'company' | 'person_via_url'>('person');
   const [searchParams, setSearchParams] = useState<Record<string, unknown>>({});
@@ -91,6 +157,13 @@ export default function LinkedInLeadGenerator() {
                 .join(' | ') : 
               'From Saved Results';
             
+      // Extract source details from saved search params
+      const savedSourceDetails = lead._searchParams ? extractLinkedInSourceDetails(lead._searchParams, lead) : undefined;
+      const sourceParts: string[] = ['LinkedIn'];
+      if (savedSourceDetails?.location) sourceParts.push(savedSourceDetails.location);
+      if (savedSourceDetails?.jobTitle) sourceParts.push(savedSourceDetails.jobTitle);
+      const sourceString = sourceParts.length > 1 ? sourceParts.join(' - ') : searchFilter;
+            
       return {
         id: `${Date.now()}-${idx}-${Math.random().toString(36).substr(2, 9)}`,
         name: fullName,
@@ -112,7 +185,9 @@ export default function LinkedInLeadGenerator() {
         dncReason: undefined,
         canContact: undefined,
               addedAt: lead._sourceTimestamp || new Date().toISOString(),
-              source: searchFilter,
+              source: sourceString,
+        platform: 'linkedin' as const,
+        sourceDetails: savedSourceDetails && Object.keys(savedSourceDetails).length > 0 ? savedSourceDetails : undefined,
         enriched: false,
         dncChecked: false,
       };
@@ -240,6 +315,12 @@ export default function LinkedInLeadGenerator() {
       const location = lead.geoRegion || lead.location || '';
       const locationParts = location.split(',').map((s: string) => s.trim());
       
+      const sourceDetails = extractLinkedInSourceDetails(searchParams, lead);
+      const sourceParts: string[] = ['LinkedIn'];
+      if (sourceDetails.location) sourceParts.push(sourceDetails.location);
+      if (sourceDetails.jobTitle) sourceParts.push(sourceDetails.jobTitle);
+      const sourceString = sourceParts.join(' - ');
+      
       return {
         id: `${Date.now()}-${idx}-${Math.random().toString(36).substr(2, 9)}`,
         name: fullName,
@@ -261,7 +342,9 @@ export default function LinkedInLeadGenerator() {
         dncReason: undefined,
         canContact: undefined,
         addedAt: new Date().toISOString(),
-        source: `Search: ${searchParams.location || 'All'}`,
+        source: sourceString || `LinkedIn: ${searchParams.location || 'All'}`,
+        platform: 'linkedin' as const,
+        sourceDetails: Object.keys(sourceDetails).length > 0 ? sourceDetails : undefined,
         enriched: false,
         dncChecked: false,
       };
@@ -310,9 +393,10 @@ export default function LinkedInLeadGenerator() {
 
     try {
       // Convert single lead to ParsedData format
-      const headers = ['Name', 'Title', 'Company', 'Location', 'LinkedIn URL', 'Email', 'Phone', 'First Name', 'Last Name', 'City', 'State', 'Zip', 'Search Filter'];
+      const headers = ['Name', 'Title', 'Company', 'Location', 'LinkedIn URL', 'Email', 'Phone', 'First Name', 'Last Name', 'City', 'State', 'Zip', 'Platform', 'Source Details', 'Search Filter'];
       const location = testLead.location || '';
       const locationParts = location.split(',').map((s: string) => s.trim());
+      const sourceDetailsStr = testLead.sourceDetails ? JSON.stringify(testLead.sourceDetails) : '';
       
       const row = {
         'Name': testLead.name || '',
@@ -327,6 +411,8 @@ export default function LinkedInLeadGenerator() {
         'City': testLead.city || locationParts[0] || '',
         'State': testLead.state || locationParts[1] || '',
         'Zip': testLead.zipCode || locationParts[2] || '',
+        'Platform': testLead.platform || 'linkedin',
+        'Source Details': sourceDetailsStr,
         'Search Filter': testLead.source || 'Test Lead',
       };
 
@@ -425,10 +511,13 @@ export default function LinkedInLeadGenerator() {
 
     try {
       // Convert leadList items to ParsedData format
-      const headers = ['Name', 'Title', 'Company', 'Location', 'LinkedIn URL', 'Email', 'Phone', 'First Name', 'Last Name', 'City', 'State', 'Zip', 'Search Filter'];
+      const headers = ['Name', 'Title', 'Company', 'Location', 'LinkedIn URL', 'Email', 'Phone', 'First Name', 'Last Name', 'City', 'State', 'Zip', 'Platform', 'Source Details', 'Search Filter'];
       const rows = leadList.map((lead) => {
         const location = lead.location || '';
         const locationParts = location.split(',').map((s: string) => s.trim());
+        
+        // Serialize sourceDetails to JSON string for storage
+        const sourceDetailsStr = lead.sourceDetails ? JSON.stringify(lead.sourceDetails) : '';
         
         return {
           'Name': lead.name || '',
@@ -443,6 +532,8 @@ export default function LinkedInLeadGenerator() {
           'City': lead.city || locationParts[0] || '',
           'State': lead.state || locationParts[1] || '',
           'Zip': lead.zipCode || locationParts[2] || '',
+          'Platform': lead.platform || '',
+          'Source Details': sourceDetailsStr,
           'Search Filter': lead.source || 'From Lead List',
         };
       });
@@ -505,6 +596,22 @@ export default function LinkedInLeadGenerator() {
 
       // Update leadList to mark leads as enriched
       setLeadList(prev => prev.map(lead => ({ ...lead, enriched: true })));
+
+      // Route enriched leads to configured destination
+      try {
+        const response = await fetch('/api/settings');
+        const data = await response.json();
+        if (data.success && data.settings) {
+          const destination = data.settings.output?.defaultDestination || 'csv';
+          if (destination === 'webhook' && data.settings.output?.webhookUrl) {
+            // Webhook routing is handled by backend during enrichment
+            // This is just for synchronous enrichment completion
+            console.log('[ENRICH_LIST] Leads will be routed to webhook if configured');
+          }
+        }
+      } catch (routingError) {
+        console.warn('[ENRICH_LIST] Failed to check output routing:', routingError);
+      }
 
       setWorkflowStep('complete');
       alert(`Successfully enriched ${summaries.length} leads! They are now available on the Enriched Leads page.`);
@@ -1179,6 +1286,45 @@ export default function LinkedInLeadGenerator() {
     return { headers, rows, rowCount: rows.length, columnCount: headers.length };
   };
 
+  const handleEnrichBackground = async () => {
+    console.log('✨ [ENRICH] Starting background enrichment job');
+    
+    if (!results || results.length === 0) {
+      setError('No leads to enrich. Please scrape leads first.');
+      return;
+    }
+
+    try {
+      const parsedData = convertResultsToParsedData(results);
+      
+      const response = await fetch('/api/jobs/enrich', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          parsedData,
+          metadata: {
+            source: 'linkedin-scraper',
+            leadCount: results.length,
+          },
+        }),
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        setError(null);
+        // Show success message
+        alert(`✅ Enrichment job started! Job ID: ${data.jobId}\n\nYou can monitor progress in the Background Jobs widget in the sidebar.`);
+        // Optionally redirect or show job status
+      } else {
+        setError(data.error || 'Failed to start enrichment job');
+      }
+    } catch (err) {
+      console.error('Error starting background enrichment:', err);
+      setError(err instanceof Error ? err.message : 'Failed to start enrichment job');
+    }
+  };
+
   const handleEnrichAndScrub = async () => {
     console.log('✨ [ENRICH] Starting handleEnrichAndScrub');
     console.log('✨ [ENRICH] Results:', results ? `${results.length} leads` : 'null');
@@ -1483,8 +1629,8 @@ export default function LinkedInLeadGenerator() {
 
   const getAPIStatusColor = (status: APIProgress['status']) => {
     switch (status) {
-      case 'completed': return 'bg-gradient-to-r from-blue-500 to-purple-500';
-      case 'running': return 'bg-gradient-to-r from-blue-500 to-purple-500 animate-pulse';
+      case 'completed': return 'status-success';
+      case 'running': return 'status-processing';
       case 'error': return 'bg-red-500';
       default: return 'bg-minimalist-border';
     }
@@ -1510,32 +1656,49 @@ export default function LinkedInLeadGenerator() {
   } | null>(null);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 relative overflow-hidden">
-      {/* Animated background elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
-        <div className="absolute top-1/2 left-1/2 w-96 h-96 bg-pink-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
-      </div>
-      
-      <div className="w-full px-4 sm:px-6 lg:px-8 py-8 space-y-8 relative z-10">
+    <div className="w-full space-y-6 relative z-10">
       {/* Header */}
       <div className="space-y-3 animate-fade-in">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center">
-              <svg
-                viewBox="0 0 24 24"
-                className="w-full h-full"
-                fill="#0077b5"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
-              </svg>
-            </div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent tracking-tight drop-shadow-lg">Lead Generation</h1>
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent tracking-tight drop-shadow-lg">Lead Generation</h1>
           </div>
         </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex items-center gap-2 border-b border-slate-700/50 -mt-4">
+        <button
+          onClick={() => setActiveTab('linkedin')}
+          className={`
+            flex items-center gap-2 px-6 py-3 font-medium text-sm transition-all duration-200
+            border-b-2 -mb-[1px]
+            ${
+              activeTab === 'linkedin'
+                ? 'border-blue-400 text-blue-400'
+                : 'border-transparent text-slate-400 hover:text-slate-200'
+            }
+          `}
+        >
+          <Linkedin className="w-5 h-5" />
+          <span>LinkedIn</span>
+        </button>
+        {/* Facebook tab hidden */}
+        {/* <button
+          onClick={() => setActiveTab('facebook')}
+          className={`
+            flex items-center gap-2 px-6 py-3 font-medium text-sm transition-all duration-200
+            border-b-2 -mb-[1px]
+            ${
+              activeTab === 'facebook'
+                ? 'border-blue-400 text-blue-400'
+                : 'border-transparent text-slate-400 hover:text-slate-200'
+            }
+          `}
+        >
+          <Facebook className="w-5 h-5" />
+          <span>Facebook</span>
+        </button> */}
       </div>
         
       {/* Active Progress Dashboard */}
@@ -1547,7 +1710,7 @@ export default function LinkedInLeadGenerator() {
           </div>
 
           {isSearching && (
-            <div className="group space-y-4 bg-slate-800/40 backdrop-blur-xl border-2 border-slate-700/50 rounded-2xl shadow-xl p-6 hover:border-blue-500/30 hover:shadow-2xl hover:shadow-blue-500/20 transition-all duration-300">
+            <div className="group space-y-4 panel-inactive rounded-2xl p-6 hover:border-blue-500/30">
               {/* Header */}
               <div className="flex items-center justify-between">
             <div>
@@ -1583,13 +1746,11 @@ export default function LinkedInLeadGenerator() {
               {/* Progress Bar */}
               {scrapingProgress.totalPages > 0 && (
                 <div className="space-y-2">
-                  <div className="w-full bg-slate-700/40 rounded-full h-3 overflow-hidden shadow-inner">
-                  <div 
-                      className="bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 h-3 rounded-full transition-all duration-500 shadow-lg shadow-blue-500/50 relative overflow-hidden"
-                    style={{ width: `${Math.min(100, (scrapingProgress.currentPage / scrapingProgress.totalPages) * 100)}%` }}
-                  >
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer" />
-                    </div>
+                  <div className="w-full progress-bar-container h-3">
+                    <div 
+                      className="progress-bar-fill h-3 rounded-full"
+                      style={{ width: `${Math.min(100, (scrapingProgress.currentPage / scrapingProgress.totalPages) * 100)}%` }}
+                    />
                   </div>
                   <div className="text-xs text-slate-400 text-center">
                     {Math.min(100, Math.round((scrapingProgress.currentPage / scrapingProgress.totalPages) * 100))}% complete
@@ -1600,7 +1761,7 @@ export default function LinkedInLeadGenerator() {
               {/* Metrics Grid */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-2">
                 {/* Leads Per Second */}
-                <div className="bg-slate-800/60 rounded-lg p-3 border border-slate-700/50">
+                <div className="panel-inactive rounded-lg p-3">
                   <div className="text-xs text-slate-400 mb-1">Speed</div>
                   <div className="text-lg font-semibold text-blue-400">
                     {scrapingProgress.leadsPerSecond > 0 ? scrapingProgress.leadsPerSecond.toFixed(2) : '0.00'}
@@ -1609,7 +1770,7 @@ export default function LinkedInLeadGenerator() {
                   </div>
 
                 {/* Estimated Time Remaining */}
-                <div className="bg-slate-800/60 rounded-lg p-3 border border-slate-700/50">
+                <div className="panel-inactive rounded-lg p-3">
                   <div className="text-xs text-slate-400 mb-1">ETA</div>
                   <div className="text-lg font-semibold text-purple-400">
                     {scrapingProgress.estimatedTimeRemaining > 0 ? (
@@ -1625,7 +1786,7 @@ export default function LinkedInLeadGenerator() {
                 </div>
 
                 {/* Elapsed Time */}
-                <div className="bg-slate-800/60 rounded-lg p-3 border border-slate-700/50">
+                <div className="panel-inactive rounded-lg p-3">
                   <div className="text-xs text-slate-400 mb-1">Elapsed</div>
                   <div className="text-lg font-semibold text-pink-400">
                     {Math.floor(scrapingProgress.elapsedTime / 60)}:
@@ -1635,7 +1796,7 @@ export default function LinkedInLeadGenerator() {
                 </div>
 
                 {/* Leads This Page */}
-                <div className="bg-slate-800/60 rounded-lg p-3 border border-slate-700/50">
+                <div className="panel-inactive rounded-lg p-3">
                   <div className="text-xs text-slate-400 mb-1">This Page</div>
                   <div className="text-lg font-semibold text-emerald-400">
                     {scrapingProgress.leadsThisPage}
@@ -1646,7 +1807,7 @@ export default function LinkedInLeadGenerator() {
 
               {/* Average Leads Per Page */}
               {scrapingProgress.averageLeadsPerPage > 0 && (
-                <div className="bg-slate-800/60 rounded-lg p-3 border border-slate-700/50">
+                <div className="panel-inactive rounded-lg p-3">
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-slate-400">Average per page</span>
                     <span className="text-sm font-semibold text-slate-200">
@@ -1659,25 +1820,23 @@ export default function LinkedInLeadGenerator() {
           )}
 
           {isEnriching && (
-            <div className="group space-y-3 bg-slate-800/40 backdrop-blur-xl border-2 border-slate-700/50 rounded-2xl shadow-xl p-6 hover:border-purple-500/30 hover:shadow-2xl hover:shadow-purple-500/20 transition-all duration-300">
+            <div className="group space-y-3 panel-inactive rounded-2xl p-6 hover:border-purple-500/30">
               <div className="flex items-center justify-between">
                 <p className="text-sm font-medium text-slate-200">Enriching Data</p>
                 <span className="text-xs text-slate-400">
                   {enrichmentProgress.current} of {enrichmentProgress.total}
                 </span>
               </div>
-              <div className="w-full bg-slate-700/40 rounded-full h-2 overflow-hidden shadow-inner">
+              <div className="w-full progress-bar-container h-2">
                 <div 
-                  className="bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 h-2 rounded-full transition-all duration-500 shadow-lg shadow-purple-500/50 relative overflow-hidden"
+                  className="progress-bar-fill h-2 rounded-full"
                   style={{ width: `${(enrichmentProgress.current / enrichmentProgress.total) * 100}%` }}
-                  >
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer" />
-                </div>
+                />
               </div>
 
               {/* Real-time Detailed Progress */}
               {detailedProgress && (
-                <div className="bg-slate-800/60 backdrop-blur-sm border border-slate-700/50 rounded-lg p-4 space-y-3">
+                <div className="panel-inactive rounded-lg p-4 space-y-3">
                   <div className="flex items-center justify-between">
                     <h3 className="text-sm font-semibold text-slate-200">
                       Currently Enriching: {detailedProgress.leadName}
@@ -1818,9 +1977,9 @@ export default function LinkedInLeadGenerator() {
                       <span className={`w-2 h-2 rounded-full ${getAPIStatusColor(api.status)}`} title={api.status} />
                     </div>
                     {api.total > 0 && (
-                      <div className="w-full bg-slate-700/60 rounded-full h-0.5">
+                      <div className="w-full progress-bar-container h-0.5">
                         <div 
-                          className="bg-gradient-to-r from-blue-500 to-purple-500 h-0.5 rounded-full transition-all"
+                          className="progress-bar-fill h-0.5 rounded-full"
                           style={{ width: `${(api.progress / api.total) * 100}%` }}
                   />
                 </div>
@@ -1842,56 +2001,63 @@ export default function LinkedInLeadGenerator() {
       )}
 
       {/* Search Configuration */}
+      {/* Tab Content */}
+      {activeTab === 'linkedin' && (
+        <>
       {workflowStep === 'search' && (
         <div className="space-y-6 animate-fade-in">
                 <div>
             <h2 className="text-2xl font-bold text-slate-200 tracking-tight mb-1 font-data">Configure Search</h2>
-            <p className="text-sm text-slate-400 font-data">Set your filters and parameters</p>
+            <p className="text-sm text-slate-400 font-data">Target and scrape leads from linkedin sales navigator.</p>
           </div>
           
-          <div className="space-y-6 bg-slate-800/30 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-6 shadow-xl">
+          <div className="space-y-6 panel-inactive rounded-2xl p-6">
             {/* Search Type */}
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-slate-200 mb-3 font-data">Search Type</label>
-              <div className="grid grid-cols-2 gap-3 w-full">
-                <button
-                  type="button"
-                  onClick={() => setSearchType('person')}
-                  className={`group relative w-full px-4 py-3.5 rounded-xl transition-all duration-300 border-2 overflow-hidden ${
-                    searchType === 'person' 
-                      ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white border-blue-400/50 shadow-lg shadow-blue-500/30 scale-105' 
-                      : 'bg-slate-800/40 backdrop-blur-xl text-slate-200 border-slate-700/50 hover:border-blue-500/60 hover:bg-slate-800/80 hover:scale-[1.02] hover:shadow-lg hover:shadow-blue-500/20'
-                  }`}
-                >
-                  {searchType !== 'person' && (
-                    <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 via-purple-500/0 to-pink-500/0 group-hover:from-blue-500/10 group-hover:via-purple-500/10 group-hover:to-pink-500/10 transition-all duration-500" />
-                  )}
-                  <div className={`relative flex items-center justify-center gap-2 text-sm font-semibold font-data ${
-                    searchType === 'person' ? 'text-white' : 'text-slate-200'
-                  }`}>
-                    <Users className={`w-5 h-5 transition-transform duration-300 ${searchType === 'person' ? 'text-white scale-110' : 'text-slate-300 group-hover:text-blue-400 group-hover:scale-110'}`} />
-                    <span className="relative z-10">People</span>
-                  </div>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSearchType('person_via_url')}
-                  className={`group relative w-full px-4 py-3.5 rounded-xl transition-all duration-300 border-2 overflow-hidden ${
-                    searchType === 'person_via_url' 
-                      ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white border-blue-400/50 shadow-lg shadow-blue-500/30 scale-105' 
-                      : 'bg-slate-800/40 backdrop-blur-xl text-slate-200 border-slate-700/50 hover:border-blue-500/60 hover:bg-slate-800/80 hover:scale-[1.02] hover:shadow-lg hover:shadow-blue-500/20'
-                  }`}
-                >
-                  {searchType !== 'person_via_url' && (
-                    <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 via-purple-500/0 to-pink-500/0 group-hover:from-blue-500/10 group-hover:via-purple-500/10 group-hover:to-pink-500/10 transition-all duration-500" />
-                  )}
-                  <div className={`relative flex items-center justify-center gap-2 text-sm font-semibold font-data ${
-                    searchType === 'person_via_url' ? 'text-white' : 'text-slate-200'
-                  }`}>
-                    <Link2 className={`w-5 h-5 transition-transform duration-300 ${searchType === 'person_via_url' ? 'text-white scale-110' : 'text-slate-300 group-hover:text-blue-400 group-hover:scale-110'}`} />
-                    <span className="relative z-10">Via URL</span>
-                  </div>
-                </button>
+            <div className="space-y-4">
+              <label className="block text-xs font-medium text-slate-200 font-data">Search Type</label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setSearchType('person')}
+                    className={`group relative w-full px-4 py-2.5 rounded-xl state-transition border-2 overflow-hidden ${
+                      searchType === 'person' 
+                        ? 'btn-active text-white' 
+                        : 'btn-inactive text-slate-200'
+                    }`}
+                  >
+                    {searchType !== 'person' && (
+                      <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 via-purple-500/0 to-pink-500/0 group-hover:from-blue-500/10 group-hover:via-purple-500/10 group-hover:to-pink-500/10 transition-all duration-500" />
+                    )}
+                    <div className={`relative flex items-center justify-center gap-2 text-sm font-semibold font-data ${
+                      searchType === 'person' ? 'text-white' : 'text-slate-200'
+                    }`}>
+                      <Users className={`w-5 h-5 transition-transform duration-300 ${searchType === 'person' ? 'text-white scale-110' : 'text-slate-300 group-hover:text-blue-400 group-hover:scale-110'}`} />
+                      <span className="relative z-10">People</span>
+                    </div>
+                  </button>
+                </div>
+                <div className="space-y-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setSearchType('person_via_url')}
+                    className={`group relative w-full px-4 py-2.5 rounded-xl state-transition border-2 overflow-hidden ${
+                      searchType === 'person_via_url' 
+                        ? 'btn-active text-white' 
+                        : 'btn-inactive text-slate-200'
+                    }`}
+                  >
+                    {searchType !== 'person_via_url' && (
+                      <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 via-purple-500/0 to-pink-500/0 group-hover:from-blue-500/10 group-hover:via-purple-500/10 group-hover:to-pink-500/10 transition-all duration-500" />
+                    )}
+                    <div className={`relative flex items-center justify-center gap-2 text-sm font-semibold font-data ${
+                      searchType === 'person_via_url' ? 'text-white' : 'text-slate-200'
+                    }`}>
+                      <Link2 className={`w-5 h-5 transition-transform duration-300 ${searchType === 'person_via_url' ? 'text-white scale-110' : 'text-slate-300 group-hover:text-blue-400 group-hover:scale-110'}`} />
+                      <span className="relative z-10">Via URL</span>
+                    </div>
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -1904,7 +2070,7 @@ export default function LinkedInLeadGenerator() {
                   value={String(searchParams.url || '')}
                   onChange={(e) => updateSearchParam('url', e.target.value)}
                   placeholder="https://www.linkedin.com/sales/search/people?..."
-                  className="group w-full px-4 py-3 rounded-xl bg-slate-800/40 backdrop-blur-xl border-2 border-slate-700/50 text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-blue-500/60 focus:ring-2 focus:ring-blue-500/20 focus:bg-slate-800/60 hover:border-slate-600/60 transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/10 font-data"
+                  className="group w-full px-4 py-3 rounded-xl field-inactive text-slate-200  focus:field-focused hover:border-slate-600/60 font-data"
                   />
                 </div>
             ) : (
@@ -1918,8 +2084,58 @@ export default function LinkedInLeadGenerator() {
                       value={String(searchParams.title_keywords || '')}
                       onChange={(e) => updateSearchParam('title_keywords', e.target.value)}
                       placeholder="Director, VP, Manager"
-                      className="group w-full px-4 py-2.5 rounded-xl bg-slate-800/40 backdrop-blur-xl border-2 border-slate-700/50 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-blue-500/60 focus:ring-2 focus:ring-blue-500/20 focus:bg-slate-800/60 hover:border-slate-600/60 transition-all duration-300 hover:shadow-md hover:shadow-blue-500/10 font-data"
+                      className="group w-full px-4 py-2.5 rounded-xl field-inactive text-sm text-slate-200  focus:field-focused hover:border-slate-600/60 font-data"
                   />
+                  <div className="flex items-center gap-4 mt-2">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={String(searchParams.title_keywords || '').toLowerCase().includes('self') || 
+                                 String(searchParams.title_keywords || '').toLowerCase().includes('freelancer') ||
+                                 String(searchParams.title_keywords || '').toLowerCase().includes('consultant') ||
+                                 String(searchParams.title_keywords || '').toLowerCase().includes('owner') ||
+                                 String(searchParams.title_keywords || '').toLowerCase().includes('founder')}
+                        onChange={(e) => {
+                          const selfEmployedKeywords = 'Self Employed, Self-Employed, Freelancer, Independent Contractor, Consultant, Owner, Founder';
+                          if (e.target.checked) {
+                            // Add self-employed keywords if not already present
+                            const current = String(searchParams.title_keywords || '').trim();
+                            if (!current.toLowerCase().includes('self') && 
+                                !current.toLowerCase().includes('freelancer') &&
+                                !current.toLowerCase().includes('consultant') &&
+                                !current.toLowerCase().includes('owner') &&
+                                !current.toLowerCase().includes('founder')) {
+                              updateSearchParam('title_keywords', current ? `${current}, ${selfEmployedKeywords}` : selfEmployedKeywords);
+                            }
+                          } else {
+                            // Remove self-employed keywords
+                            const current = String(searchParams.title_keywords || '').trim();
+                            const keywords = current.split(',').map(k => k.trim()).filter(k => {
+                              const lower = k.toLowerCase();
+                              return !lower.includes('self') && 
+                                     !lower.includes('freelancer') &&
+                                     !lower.includes('independent contractor') &&
+                                     !lower.includes('consultant') &&
+                                     !lower.includes('owner') &&
+                                     !lower.includes('founder');
+                            });
+                            updateSearchParam('title_keywords', keywords.join(', '));
+                          }
+                        }}
+                        className="w-4 h-4 text-blue-500 rounded"
+                      />
+                      <span className="text-xs text-slate-400 font-data">Self Employed</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={searchParams.changed_jobs_90_days === 'true' || searchParams.changed_jobs_90_days === true}
+                        onChange={(e) => updateSearchParam('changed_jobs_90_days', e.target.checked ? 'true' : undefined)}
+                        className="w-4 h-4 text-blue-500 rounded"
+                      />
+                      <span className="text-xs text-slate-400 font-data">Changed Jobs (90 days)</span>
+                    </label>
+                  </div>
                 </div>
                   <div className="space-y-1.5">
                     <label className="block text-xs font-medium text-slate-200 font-data">Location</label>
@@ -1928,7 +2144,7 @@ export default function LinkedInLeadGenerator() {
                     value={String(searchParams.location || '')}
                     onChange={(e) => updateSearchParam('location', e.target.value)}
                     placeholder="Maryland, MD, United States"
-                      className="group w-full px-4 py-2.5 rounded-xl bg-slate-800/40 backdrop-blur-xl border-2 border-slate-700/50 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-blue-500/60 focus:ring-2 focus:ring-blue-500/20 focus:bg-slate-800/60 hover:border-slate-600/60 transition-all duration-300 hover:shadow-md hover:shadow-blue-500/10 font-data"
+                      className="group w-full px-4 py-2.5 rounded-xl field-inactive text-sm text-slate-200  focus:field-focused hover:border-slate-600/60 font-data"
                   />
                   {locationDiscoveryStatus && (
                       <p className="text-xs text-blue-400 font-data">{locationDiscoveryStatus}</p>
@@ -1941,7 +2157,7 @@ export default function LinkedInLeadGenerator() {
                       value={String(searchParams.current_company || '')}
                       onChange={(e) => updateSearchParam('current_company', e.target.value)}
                       placeholder="Apple, Google, Microsoft"
-                      className="group w-full px-4 py-2.5 rounded-xl bg-slate-800/40 backdrop-blur-xl border-2 border-slate-700/50 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-blue-500/60 focus:ring-2 focus:ring-blue-500/20 focus:bg-slate-800/60 hover:border-slate-600/60 transition-all duration-300 hover:shadow-md hover:shadow-blue-500/10 font-data"
+                      className="group w-full px-4 py-2.5 rounded-xl field-inactive text-sm text-slate-200  focus:field-focused hover:border-slate-600/60 font-data"
                     />
                 </div>
                   <div className="space-y-1.5">
@@ -1951,7 +2167,7 @@ export default function LinkedInLeadGenerator() {
                     value={String(searchParams.industry || '')}
                     onChange={(e) => updateSearchParam('industry', e.target.value)}
                     placeholder="Technology, Finance, Healthcare"
-                      className="group w-full px-4 py-2.5 rounded-xl bg-slate-800/40 backdrop-blur-xl border-2 border-slate-700/50 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-blue-500/60 focus:ring-2 focus:ring-blue-500/20 focus:bg-slate-800/60 hover:border-slate-600/60 transition-all duration-300 hover:shadow-md hover:shadow-blue-500/10 font-data"
+                      className="group w-full px-4 py-2.5 rounded-xl field-inactive text-sm text-slate-200  focus:field-focused hover:border-slate-600/60 font-data"
                   />
                   </div>
                 </div>
@@ -1966,7 +2182,7 @@ export default function LinkedInLeadGenerator() {
                         value={String(searchParams.past_company || '')}
                         onChange={(e) => updateSearchParam('past_company', e.target.value)}
                         placeholder="Previous employer"
-                        className="w-full px-4 py-2 rounded-lg bg-slate-800/60 backdrop-blur-sm border border-slate-700/50 text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-blue-500 transition-colors font-data"
+                        className="w-full px-4 py-2 rounded-lg field-inactive text-slate-200  focus:field-focused font-data"
                   />
                 </div>
                     <div className="space-y-2">
@@ -1977,7 +2193,7 @@ export default function LinkedInLeadGenerator() {
                     value={String(searchParams.company_headcount_min || '')}
                         onChange={(e) => updateSearchParam('company_headcount_min', e.target.value.trim() || undefined)}
                         placeholder="0 = Self-employed"
-                        className="w-full px-4 py-2 rounded-lg bg-slate-800/60 backdrop-blur-sm border border-slate-700/50 text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-blue-500 transition-colors font-data"
+                        className="w-full px-4 py-2 rounded-lg field-inactive text-slate-200  focus:field-focused font-data"
                   />
                 </div>
                     <div className="space-y-2">
@@ -1988,7 +2204,7 @@ export default function LinkedInLeadGenerator() {
                     value={String(searchParams.company_headcount_max || '')}
                         onChange={(e) => updateSearchParam('company_headcount_max', e.target.value.trim() || undefined)}
                     placeholder="10000"
-                        className="w-full px-4 py-2 rounded-lg bg-slate-800/60 backdrop-blur-sm border border-slate-700/50 text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-blue-500 transition-colors font-data"
+                        className="w-full px-4 py-2 rounded-lg field-inactive text-slate-200  focus:field-focused font-data"
                   />
                     </div>
                   </div>
@@ -2006,7 +2222,7 @@ export default function LinkedInLeadGenerator() {
                     value={String(searchParams.years_experience_min || '')}
                         onChange={(e) => updateSearchParam('years_experience_min', e.target.value.trim() || undefined)}
                         placeholder="0"
-                        className="w-full px-4 py-2 rounded-lg bg-slate-800/60 backdrop-blur-sm border border-slate-700/50 text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-blue-500 transition-colors font-data"
+                        className="w-full px-4 py-2 rounded-lg field-inactive text-slate-200  focus:field-focused font-data"
                   />
                 </div>
                     <div className="space-y-2">
@@ -2017,7 +2233,7 @@ export default function LinkedInLeadGenerator() {
                     value={String(searchParams.years_experience_max || '')}
                         onChange={(e) => updateSearchParam('years_experience_max', e.target.value.trim() || undefined)}
                         placeholder="10"
-                        className="w-full px-4 py-2 rounded-lg bg-slate-800/60 backdrop-blur-sm border border-slate-700/50 text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-blue-500 transition-colors font-data"
+                        className="w-full px-4 py-2 rounded-lg field-inactive text-slate-200  focus:field-focused font-data"
                   />
                 </div>
                     <div className="space-y-2">
@@ -2031,20 +2247,9 @@ export default function LinkedInLeadGenerator() {
                           updateSearchParam('university', val || undefined);
                         }}
                         placeholder="Stanford, Harvard"
-                        className="w-full px-4 py-2 rounded-lg bg-slate-800/60 backdrop-blur-sm border border-slate-700/50 text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-blue-500 transition-colors font-data"
+                        className="w-full px-4 py-2 rounded-lg field-inactive text-slate-200  focus:field-focused font-data"
                       />
               </div>
-                    <div className="flex items-end">
-                      <label className="flex items-center gap-2 text-sm text-slate-200 cursor-pointer font-data">
-                        <input
-                          type="checkbox"
-                          checked={searchParams.changed_jobs_90_days === 'true' || searchParams.changed_jobs_90_days === true}
-                          onChange={(e) => updateSearchParam('changed_jobs_90_days', e.target.checked ? 'true' : undefined)}
-                          className="w-4 h-4 text-blue-400 rounded border-slate-700/50 focus:ring-minimalist-accent"
-                        />
-                        Changed Jobs (90 days)
-                      </label>
-                    </div>
                   </div>
                 </div>
               </div>
@@ -2079,7 +2284,7 @@ export default function LinkedInLeadGenerator() {
                           const val = parseInt(e.target.value) || 1;
                         setMaxPagesToFetch(Math.min(100, Math.max(1, val)));
                         }}
-                      className="group w-full px-4 py-2.5 rounded-xl bg-slate-800/40 backdrop-blur-xl border-2 border-slate-700/50 text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-blue-500/60 focus:ring-2 focus:ring-blue-500/20 focus:bg-slate-800/60 hover:border-slate-600/60 transition-all duration-300 hover:shadow-md hover:shadow-blue-500/10 font-data"
+                      className="group w-full px-4 py-2.5 rounded-xl field-inactive text-slate-200  focus:field-focused hover:border-slate-600/60 font-data"
                     />
                     </div>
                   <div className="space-y-2">
@@ -2093,7 +2298,7 @@ export default function LinkedInLeadGenerator() {
                       const val = parseInt(e.target.value) || 2500;
                         updateSearchParam('limit', String(Math.min(2500, Math.max(1, val))));
                     }}
-                      className="group w-full px-4 py-2.5 rounded-xl bg-slate-800/40 backdrop-blur-xl border-2 border-slate-700/50 text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-blue-500/60 focus:ring-2 focus:ring-blue-500/20 focus:bg-slate-800/60 hover:border-slate-600/60 transition-all duration-300 hover:shadow-md hover:shadow-blue-500/10 font-data"
+                      className="group w-full px-4 py-2.5 rounded-xl field-inactive text-slate-200  focus:field-focused hover:border-slate-600/60 font-data"
                     />
                 </div>
                 </div>
@@ -2187,21 +2392,21 @@ export default function LinkedInLeadGenerator() {
                     document.body.removeChild(a);
                     URL.revokeObjectURL(url);
                   }}
-                  className="group px-4 py-2.5 bg-slate-800/40 backdrop-blur-xl hover:bg-slate-800/70 border-2 border-slate-700/50 hover:border-blue-500/60 rounded-xl text-slate-200 text-sm font-medium transition-all duration-300 flex items-center gap-2 hover:scale-105 hover:shadow-lg hover:shadow-blue-500/20"
+                  className="group px-4 py-2.5 btn-inactive rounded-xl text-slate-200 text-sm font-medium flex items-center gap-2"
                 >
                   <Download className="w-4 h-4 group-hover:scale-110 group-hover:text-blue-400 transition-transform duration-300" />
                   Download CSV
             </button>
                 <button
                   onClick={addToLeadList}
-                  className="group px-4 py-2.5 bg-slate-800/40 backdrop-blur-xl hover:bg-slate-800/70 border-2 border-slate-700/50 hover:border-blue-500/60 rounded-xl text-slate-200 text-sm font-medium transition-all duration-300 flex items-center gap-2 hover:scale-105 hover:shadow-lg hover:shadow-blue-500/20"
+                  className="group px-4 py-2.5 btn-inactive rounded-xl text-slate-200 text-sm font-medium flex items-center gap-2"
                 >
                   <ClipboardList className="w-4 h-4 group-hover:scale-110 group-hover:text-blue-400 transition-transform duration-300" />
                   Add to List
                 </button>
                 <button
                   onClick={() => setShowLeadList(true)}
-                  className="group px-4 py-2.5 bg-slate-800/40 backdrop-blur-xl hover:bg-slate-800/70 border-2 border-slate-700/50 hover:border-blue-500/60 rounded-xl text-slate-200 text-sm transition-all duration-300 flex items-center gap-2 hover:scale-105 hover:shadow-lg hover:shadow-blue-500/20"
+                  className="group px-4 py-2.5 btn-inactive rounded-xl text-slate-200 text-sm flex items-center gap-2"
                 >
                   <Eye className="w-4 h-4 group-hover:scale-110 group-hover:text-blue-400 transition-transform duration-300" />
                   View List ({leadList.length})
@@ -2244,6 +2449,7 @@ export default function LinkedInLeadGenerator() {
                     )}
                   </button>
                 )}
+                <div className="flex items-center gap-2">
                 <button
                   onClick={handleEnrichAndScrub}
                   disabled={isEnriching || isScrubbing}
@@ -2262,6 +2468,16 @@ export default function LinkedInLeadGenerator() {
                     </>
                   )}
                 </button>
+                  <button
+                    onClick={handleEnrichBackground}
+                    disabled={isEnriching || isScrubbing || !results || results.length === 0}
+                    className="group relative px-4 py-2.5 bg-slate-700/60 hover:bg-slate-700/80 border border-slate-600/50 hover:border-slate-500/60 rounded-xl text-slate-200 text-sm font-medium transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-lg hover:shadow-xl hover:scale-105 active:scale-[0.98]"
+                    title="Run enrichment in the background (non-blocking)"
+                  >
+                    <Play className="w-4 h-4 group-hover:scale-110 transition-transform duration-300" />
+                    <span>Background</span>
+                </button>
+                </div>
               </div>
             )}
                 </div>
@@ -2271,7 +2487,7 @@ export default function LinkedInLeadGenerator() {
               <div className="overflow-x-auto rounded-xl border border-slate-700/50 bg-slate-800/20 backdrop-blur-xl">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-slate-700/50 bg-slate-800/40">
+                    <tr className="table-header">
                       <th className="px-6 py-4 text-left text-slate-200 font-semibold">Name</th>
                       <th className="px-6 py-4 text-left text-slate-200 font-semibold">Title</th>
                       <th className="px-6 py-4 text-left text-slate-200 font-semibold">Company</th>
@@ -2349,7 +2565,7 @@ export default function LinkedInLeadGenerator() {
             </div>
             </>
           ) : (
-            <div className="px-6 py-8 bg-slate-800/60 backdrop-blur-sm rounded-lg border border-slate-700/50 text-center">
+            <div className="px-6 py-8 panel-inactive rounded-lg text-center">
               <p className="text-slate-400">No leads found. Try adjusting your search filters.</p>
             </div>
           )}
@@ -2378,7 +2594,7 @@ export default function LinkedInLeadGenerator() {
                     document.body.removeChild(a);
                     window.URL.revokeObjectURL(url);
                   }}
-                className="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-500 hover:bg-gradient-to-r from-blue-500 to-purple-500-hover rounded-lg text-white text-sm font-medium transition-all flex items-center"
+                className="px-4 py-2 btn-active rounded-lg text-white text-sm font-medium state-transition flex items-center"
                 >
                 <Download className="w-4 h-4 mr-2" />
                 Export CSV
@@ -2391,23 +2607,68 @@ export default function LinkedInLeadGenerator() {
               <thead>
                 <tr className="border-b border-slate-700/50">
                   <th className="px-4 py-3 text-left text-slate-200 font-medium">Name</th>
+                  <th className="px-4 py-3 text-left text-slate-200 font-medium">Platform</th>
                   <th className="px-4 py-3 text-left text-slate-200 font-medium">Phone</th>
                   <th className="px-4 py-3 text-left text-slate-200 font-medium">Email</th>
                   <th className="px-4 py-3 text-left text-slate-200 font-medium">City</th>
                   <th className="px-4 py-3 text-left text-slate-200 font-medium">State</th>
                   <th className="px-4 py-3 text-left text-slate-200 font-medium">Income</th>
+                  <th className="px-4 py-3 text-left text-slate-200 font-medium">Source</th>
                   <th className="px-4 py-3 text-left text-slate-200 font-medium">DNC</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {getSortedSummaries().map((summary, index) => (
+                  {getSortedSummaries().map((summary, index) => {
+                    // Format platform badge
+                    const platformDisplay = summary.platform ? (
+                      <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${
+                        summary.platform === 'linkedin' 
+                          ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' 
+                          : 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
+                      }`}>
+                        {summary.platform === 'linkedin' ? 'LinkedIn' : 'Facebook'}
+                      </span>
+                    ) : 'N/A';
+                    
+                    // Format source details
+                    let sourceDisplay = summary.searchFilter || 'N/A';
+                    if (summary.sourceDetails) {
+                      const parts: string[] = [];
+                      if (summary.sourceDetails.occupation || summary.sourceDetails.jobTitle) {
+                        parts.push(summary.sourceDetails.occupation || summary.sourceDetails.jobTitle || '');
+                      }
+                      if (summary.sourceDetails.location) {
+                        parts.push(summary.sourceDetails.location);
+                      }
+                      if (summary.sourceDetails.isSelfEmployed) {
+                        parts.push('Self-Employed');
+                      }
+                      if (summary.sourceDetails.changedJobs) {
+                        parts.push('Changed Jobs');
+                      }
+                      if (summary.sourceDetails.groupName) {
+                        parts.push(`Group: ${summary.sourceDetails.groupName}`);
+                      }
+                      if (summary.sourceDetails.keywords && summary.sourceDetails.keywords.length > 0) {
+                        parts.push(`Keywords: ${summary.sourceDetails.keywords.slice(0, 2).join(', ')}`);
+                      }
+                      if (parts.length > 0) {
+                        sourceDisplay = parts.join(' | ');
+                      }
+                    }
+                    
+                    return (
                   <tr key={index} className="border-b border-slate-700/50-subtle hover:bg-minimalist-border/10 transition-colors">
                     <td className="px-4 py-3 text-slate-200">{summary.name || 'N/A'}</td>
+                        <td className="px-4 py-3">{platformDisplay}</td>
                     <td className="px-4 py-3 text-slate-200 font-medium">{summary.phone || 'N/A'}</td>
                     <td className="px-4 py-3 text-slate-400">{summary.email || 'N/A'}</td>
                     <td className="px-4 py-3 text-slate-400">{summary.city || 'N/A'}</td>
                     <td className="px-4 py-3 text-slate-400">{summary.state || 'N/A'}</td>
                     <td className="px-4 py-3 text-slate-200">{summary.income ? `$${Number(summary.income).toLocaleString()}` : 'N/A'}</td>
+                        <td className="px-4 py-3 text-slate-400 text-xs max-w-xs truncate" title={sourceDisplay}>
+                          {sourceDisplay}
+                        </td>
                     <td className={`px-4 py-3 font-medium ${
                       summary.dncStatus === 'YES' ? 'text-red-500' : 
                       summary.dncStatus === 'NO' ? 'text-blue-400' : 
@@ -2416,7 +2677,8 @@ export default function LinkedInLeadGenerator() {
                         {summary.dncStatus || 'UNKNOWN'}
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -2439,7 +2701,13 @@ export default function LinkedInLeadGenerator() {
           onEnrichList={enrichAllLeadsFromList}
         />
       )}
-      </div>
+        </>
+      )}
+
+      {/* Facebook Tab - Hidden */}
+      {/* {activeTab === 'facebook' && (
+        <FacebookLeadGenerator />
+      )} */}
     </div>
   );
 }
