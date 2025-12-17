@@ -170,7 +170,9 @@ export async function POST(request: NextRequest) {
 
     // PHASE 3: Auto-use via_url endpoint for location searches (100% accuracy, 0% waste)
     // If location is specified and we have a location ID, use via_url endpoint automatically
-    if (requiresFilters && searchParams.location && RAPIDAPI_KEY) {
+    // NOTE: Skip via_url if changed_jobs_90_days is used (may cause 403 errors)
+    const hasChangedJobsFilter = searchParams.changed_jobs_90_days === 'true' || searchParams.changed_jobs_90_days === true;
+    if (requiresFilters && searchParams.location && RAPIDAPI_KEY && !hasChangedJobsFilter) {
       const locationText = String(searchParams.location);
       
       try {
@@ -565,6 +567,22 @@ export async function POST(request: NextRequest) {
             }
           } else {
             // json_to_url failed, fall through to regular search
+            logger.warn(`⚠️ json_to_url endpoint failed (${jsonToUrlResponse.status}), falling back to regular search`);
+          }
+        } else {
+          // json_to_url returned error - check if it's a 403 (filter not supported)
+          const errorText = await jsonToUrlResponse.text();
+          let errorData;
+          try {
+            errorData = JSON.parse(errorText);
+          } catch {
+            errorData = { error: errorText };
+          }
+          
+          if (jsonToUrlResponse.status === 403) {
+            logger.warn(`⚠️ json_to_url returned 403 (filter may not be supported), falling back to regular search`);
+            logger.warn(`⚠️ Error details:`, errorData);
+          } else {
             logger.warn(`⚠️ json_to_url endpoint failed (${jsonToUrlResponse.status}), falling back to regular search`);
           }
         }
