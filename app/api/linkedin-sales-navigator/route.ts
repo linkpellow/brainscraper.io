@@ -1459,6 +1459,29 @@ export async function POST(request: NextRequest) {
         );
       }
       
+      // Special handling for 403 errors - might be filter combination issue
+      if (response.status === 403) {
+        logger.error('LinkedIn Sales Navigator API 403 Forbidden - Possible Filter Issue', {
+          status: 403,
+          endpoint,
+          hasChangedJobsFilter: hasChangedJobsFilter,
+          filterTypes: Array.isArray(requestBody.filters) ? requestBody.filters.map((f: any) => f.type) : [],
+          errorDetails: typeof errorDetails === 'object' ? errorDetails : { message: String(errorDetails) },
+          requestBody: JSON.stringify(requestBody, null, 2),
+        });
+        
+        return NextResponse.json(
+          { 
+            success: false,
+            error: 'Request failed with status code 403',
+            message: 'The API returned a 403 Forbidden error. This may indicate that the filter combination is not supported by your API subscription tier, or there is an issue with the filter format.',
+            details: typeof errorDetails === 'object' ? errorDetails : { message: String(errorDetails) },
+            suggestion: 'Try removing the changed_jobs_90_days filter or using a different filter combination.',
+          },
+          { status: 403 }
+        );
+      }
+      
       // Log error (production-safe)
       logger.error('LinkedIn Sales Navigator API Error', {
         status: response.status,
