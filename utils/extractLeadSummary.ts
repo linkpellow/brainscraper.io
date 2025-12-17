@@ -31,6 +31,8 @@ export interface LeadSummary {
   email: string;
   dncStatus: string; // "YES", "NO", or "UNKNOWN"
   dncLastChecked?: string; // ISO date string of last DNC check (YYYY-MM-DD format) - tracks when lead was last scrubbed
+  canContact?: boolean; // Whether lead can be contacted (not DNC)
+  dncReason?: string; // Reason for DNC status
   income?: number; // Income value for sorting
   lineType?: string; // From Telnyx portability.line_type
   carrier?: string; // From Telnyx carrier.name
