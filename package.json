@@ -29,7 +29,7 @@
     "@types/react-dom": "^19.2.3",
     "autoprefixer": "^10.4.22",
     "eslint": "^9.39.1",
-    "eslint-config-next": "^16.0.5",
+    "eslint-config-next": "^16.0.10",
     "inngest": "^3.48.0",
     "lucide-react": "^0.561.0",
     "next": "^16.0.10",

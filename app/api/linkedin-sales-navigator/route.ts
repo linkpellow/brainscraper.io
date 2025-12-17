@@ -87,8 +87,22 @@ export async function POST(request: NextRequest) {
     const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY;
     
     if (!RAPIDAPI_KEY) {
+      const isDevelopment = process.env.NODE_ENV === 'development';
+      const errorMessage = isDevelopment
+        ? 'RAPIDAPI_KEY not configured. Please add RAPIDAPI_KEY=your-api-key to your .env.local file and restart the development server.'
+        : 'RAPIDAPI_KEY not configured. Please set the RAPIDAPI_KEY environment variable in your deployment platform (Vercel, Railway, etc.).';
+      
+      console.error('[LINKEDIN_SALES_NAVIGATOR] Missing RAPIDAPI_KEY environment variable');
+      console.error(`[LINKEDIN_SALES_NAVIGATOR] ${errorMessage}`);
+      
       return NextResponse.json(
-        { error: 'RAPIDAPI_KEY not configured. Please add it to your .env.local file' },
+        { 
+          error: 'RAPIDAPI_KEY not configured',
+          message: errorMessage,
+          hint: isDevelopment 
+            ? 'Create or edit .env.local in the project root and add: RAPIDAPI_KEY=your-api-key-here'
+            : 'Set RAPIDAPI_KEY in your deployment platform\'s environment variables settings'
+        },
         { status: 500 }
       );
     }
