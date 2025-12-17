@@ -46,7 +46,15 @@ async function callEmailFinderAPI(
   const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY;
   
   if (!RAPIDAPI_KEY) {
-    return { error: 'RAPIDAPI_KEY not configured' };
+    const isDevelopment = process.env.NODE_ENV === 'development';
+    const errorMessage = isDevelopment
+      ? 'RAPIDAPI_KEY not configured. Please add RAPIDAPI_KEY=your-api-key to your .env.local file and restart the development server.'
+      : 'RAPIDAPI_KEY not configured. Please set the RAPIDAPI_KEY environment variable in your deployment platform.';
+    
+    console.error('[ENRICH_SINGLE_FIELD] Missing RAPIDAPI_KEY environment variable for Email Finder API');
+    console.error(`[ENRICH_SINGLE_FIELD] ${errorMessage}`);
+    
+    return { error: errorMessage };
   }
 
   try {
@@ -120,7 +128,15 @@ async function callSkipTracingAPI(
   const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY;
   
   if (!RAPIDAPI_KEY) {
-    return { error: 'RAPIDAPI_KEY not configured' };
+    const isDevelopment = process.env.NODE_ENV === 'development';
+    const errorMessage = isDevelopment
+      ? 'RAPIDAPI_KEY not configured. Please add RAPIDAPI_KEY=your-api-key to your .env.local file and restart the development server.'
+      : 'RAPIDAPI_KEY not configured. Please set the RAPIDAPI_KEY environment variable in your deployment platform.';
+    
+    console.error('[ENRICH_SINGLE_FIELD] Missing RAPIDAPI_KEY environment variable for Skip-tracing API');
+    console.error(`[ENRICH_SINGLE_FIELD] ${errorMessage}`);
+    
+    return { error: errorMessage };
   }
 
   try {
@@ -300,8 +316,20 @@ export async function POST(request: NextRequest) {
     }
 
     if (result.error) {
+      // Check if it's a configuration error
+      const isConfigError = result.error.includes('RAPIDAPI_KEY not configured');
+      const isDevelopment = process.env.NODE_ENV === 'development';
+      
       return NextResponse.json(
-        { success: false, error: result.error },
+        { 
+          success: false, 
+          error: result.error,
+          ...(isConfigError && {
+            hint: isDevelopment 
+              ? 'Create or edit .env.local in the project root and add: RAPIDAPI_KEY=your-api-key-here'
+              : 'Set RAPIDAPI_KEY in your deployment platform\'s environment variables settings'
+          })
+        },
         { status: 500 }
       );
     }
