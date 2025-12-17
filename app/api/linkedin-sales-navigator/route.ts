@@ -170,9 +170,7 @@ export async function POST(request: NextRequest) {
 
     // PHASE 3: Auto-use via_url endpoint for location searches (100% accuracy, 0% waste)
     // If location is specified and we have a location ID, use via_url endpoint automatically
-    // NOTE: Skip via_url if changed_jobs_90_days is used (may cause 403 errors)
-    const hasChangedJobsFilter = searchParams.changed_jobs_90_days === 'true' || searchParams.changed_jobs_90_days === true;
-    if (requiresFilters && searchParams.location && RAPIDAPI_KEY && !hasChangedJobsFilter) {
+    if (requiresFilters && searchParams.location && RAPIDAPI_KEY) {
       const locationText = String(searchParams.location);
       
       try {
@@ -1456,29 +1454,6 @@ export async function POST(request: NextRequest) {
               'Retry-After': String(retryAfterSeconds),
             }
           }
-        );
-      }
-      
-      // Special handling for 403 errors - might be filter combination issue
-      if (response.status === 403) {
-        logger.error('LinkedIn Sales Navigator API 403 Forbidden - Possible Filter Issue', {
-          status: 403,
-          endpoint,
-          hasChangedJobsFilter: hasChangedJobsFilter,
-          filterTypes: Array.isArray(requestBody.filters) ? requestBody.filters.map((f: any) => f.type) : [],
-          errorDetails: typeof errorDetails === 'object' ? errorDetails : { message: String(errorDetails) },
-          requestBody: JSON.stringify(requestBody, null, 2),
-        });
-        
-        return NextResponse.json(
-          { 
-            success: false,
-            error: 'Request failed with status code 403',
-            message: 'The API returned a 403 Forbidden error. This may indicate that the filter combination is not supported by your API subscription tier, or there is an issue with the filter format.',
-            details: typeof errorDetails === 'object' ? errorDetails : { message: String(errorDetails) },
-            suggestion: 'Try removing the changed_jobs_90_days filter or using a different filter combination.',
-          },
-          { status: 403 }
         );
       }
       
