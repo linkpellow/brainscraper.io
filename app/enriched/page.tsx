@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Download, ArrowUpDown, ArrowUp, ArrowDown, Loader2, Zap, X, CheckCircle2, AlertCircle, Search, Copy, Check, Smartphone, Phone } from 'lucide-react';
+import { Download, ArrowUpDown, ArrowUp, ArrowDown, Loader2, Zap, X, CheckCircle2, AlertCircle, Search, Copy, Check, Smartphone, Phone, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { LeadSummary, leadSummariesToCSV, formatPhoneNumber } from '@/utils/extractLeadSummary';
 import AppLayout from '../components/AppLayout';
@@ -82,6 +82,7 @@ export default function EnrichedLeadsPage() {
   const [isScrubbingDNC, setIsScrubbingDNC] = useState(false);
   const [dncScrubProgress, setDncScrubProgress] = useState({ current: 0, total: 0 });
   const [dncError, setDncError] = useState<string | null>(null);
+  const [enrichingFields, setEnrichingFields] = useState<Set<string>>(new Set());
   const logsEndRef = useRef<HTMLDivElement>(null);
 
   const addLog = (message: string, type: EnrichmentLog['type'] = 'info') => {
@@ -508,6 +509,137 @@ export default function EnrichedLeadsPage() {
     }
   };
 
+  /**
+   * Check if a field can be enriched
+   */
+  const canEnrichField = (lead: LeadSummary, field: 'phone' | 'email'): boolean => {
+    // Field must be empty
+    const fieldValue = field === 'phone' ? lead.phone : lead.email;
+    if (fieldValue && fieldValue !== 'N/A' && fieldValue.trim() !== '') {
+      return false;
+    }
+
+    // Must have name (first + last)
+    if (!lead.name || lead.name.trim() === '') {
+      return false;
+    }
+    const nameParts = lead.name.trim().split(/\s+/);
+    if (nameParts.length < 2) {
+      return false;
+    }
+
+    // Must have either:
+    // 1. Domain (extracted from email if available)
+    // 2. City/State (for skip-tracing)
+    const hasDomain = !!(lead.email && lead.email.includes('@'));
+    const hasLocation = !!((lead.city && lead.state) || lead.state);
+
+    return hasDomain || hasLocation;
+  };
+
+  /**
+   * Handle single field enrichment
+   */
+  const handleEnrichField = async (lead: LeadSummary, field: 'phone' | 'email', index: number) => {
+    const fieldKey = `${field}-${index}`;
+    
+    // Check if already enriching
+    if (enrichingFields.has(fieldKey)) {
+      return;
+    }
+
+    // Check if enrichment is possible
+    if (!canEnrichField(lead, field)) {
+      return;
+    }
+
+    setEnrichingFields(prev => new Set(prev).add(fieldKey));
+
+    try {
+      const response = await fetch('/api/enrich-single-field', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          lead: {
+            name: lead.name,
+            phone: lead.phone,
+            email: lead.email,
+            city: lead.city,
+            state: lead.state,
+            linkedinUrl: lead.linkedinUrl,
+          },
+          field,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.success && result.value) {
+        // Update the lead in state
+        const updatedLead: LeadSummary = {
+          ...lead,
+          [field]: result.value,
+          // Also update bonus field if provided
+          ...(result.bonus && field === 'phone' ? { email: result.bonus } : {}),
+          ...(result.bonus && field === 'email' ? { phone: result.bonus } : {}),
+        };
+
+        setLeads(prevLeads => {
+          const updated = [...prevLeads];
+          // Find the lead by name (most reliable identifier)
+          const leadIndex = updated.findIndex(l => l.name === lead.name);
+          
+          if (leadIndex >= 0) {
+            updated[leadIndex] = updatedLead;
+          }
+          
+          // Update localStorage
+          localStorage.setItem('enrichedLeads', JSON.stringify(updated));
+          
+          return updated;
+        });
+
+        // Save to disk via API
+        try {
+          // Convert LeadSummary to EnrichedRow format for saving
+          const enrichedRow: Record<string, string | number> = {
+            'Name': updatedLead.name,
+            'Phone': updatedLead.phone || '',
+            'Email': updatedLead.email || '',
+            'City': updatedLead.city || '',
+            'State': updatedLead.state || '',
+            'Zipcode': updatedLead.zipcode || '',
+            'DOB': updatedLead.dobOrAge || '',
+            'LinkedIn URL': updatedLead.linkedinUrl || '',
+          };
+
+          await fetch('/api/save-enriched-lead', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              enrichedRow,
+              leadSummary: updatedLead,
+            }),
+          });
+        } catch (saveError) {
+          console.error('Failed to save enriched lead to disk:', saveError);
+          // Don't fail the enrichment if save fails
+        }
+      } else {
+        console.error('Enrichment failed:', result.error);
+        // Could show a toast/notification here
+      }
+    } catch (error) {
+      console.error('Error enriching field:', error);
+    } finally {
+      setEnrichingFields(prev => {
+        const next = new Set(prev);
+        next.delete(fieldKey);
+        return next;
+      });
+    }
+  };
+
   const CopyableCell = ({ value, fieldId, className = '', hoverColor = 'hover:bg-gradient-to-r hover:from-blue-500/10 hover:to-purple-500/10', truncate = true }: { 
     value: string; 
     fieldId: string; 
@@ -538,6 +670,91 @@ export default function EnrichedLeadsPage() {
           )}
         </span>
         {canCopy && (
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 via-purple-500/0 to-pink-500/0 group-hover:from-blue-500/5 group-hover:via-purple-500/5 group-hover:to-pink-500/5 rounded-lg transition-all duration-500 -z-0" />
+        )}
+      </td>
+    );
+  };
+
+  /**
+   * Enrichable cell component for phone and email fields
+   */
+  const EnrichableCell = ({ 
+    value, 
+    fieldId, 
+    lead, 
+    index,
+    field,
+    className = '', 
+    truncate = true 
+  }: { 
+    value: string; 
+    fieldId: string;
+    lead: LeadSummary;
+    index: number;
+    field: 'phone' | 'email';
+    className?: string;
+    truncate?: boolean;
+  }) => {
+    const displayValue = value || 'N/A';
+    const isEmpty = !value || value === 'N/A' || value.trim() === '';
+    const canEnrich = canEnrichField(lead, field);
+    const isEnriching = enrichingFields.has(`${field}-${index}`);
+    const canCopy = value && value !== 'N/A';
+    const isCopied = copiedField === fieldId;
+
+    const handleClick = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (isEmpty && canEnrich && !isEnriching) {
+        handleEnrichField(lead, field, index);
+      } else if (canCopy) {
+        copyToClipboard(value, fieldId);
+      }
+    };
+
+    return (
+      <td 
+        className={`px-2 py-2 ${className} ${canCopy || (isEmpty && canEnrich) ? 'cursor-pointer transition-all duration-300 ease-out hover:scale-[1.02] hover:shadow-lg hover:shadow-blue-500/20' : ''} relative group`}
+        onClick={handleClick}
+        title={
+          isEnriching 
+            ? 'Enriching...' 
+            : isEmpty && canEnrich 
+            ? 'Click to enrich' 
+            : canCopy 
+            ? (value.length > 50 ? value : 'Click to copy') 
+            : ''
+        }
+      >
+        <span className="flex items-center gap-1 relative z-10 min-w-0">
+          {isEnriching ? (
+            <>
+              <Loader2 className="w-3 h-3 animate-spin text-blue-400" />
+              <span className="text-xs text-blue-400">Enriching...</span>
+            </>
+          ) : (
+            <>
+              <span className={`transition-all duration-300 ${canCopy ? 'group-hover:text-blue-400' : ''} ${truncate ? 'truncate block max-w-full' : ''}`}>
+                {field === 'phone' ? formatPhoneNumber(displayValue) : displayValue}
+              </span>
+              {isEmpty && canEnrich && (
+                <span className="opacity-0 group-hover:opacity-100 transition-all duration-300 transform group-hover:scale-110 flex-shrink-0">
+                  <Sparkles className="w-3 h-3 text-purple-400 drop-shadow-lg" />
+                </span>
+              )}
+              {canCopy && (
+                <span className="opacity-0 group-hover:opacity-100 transition-all duration-300 transform group-hover:scale-110 flex-shrink-0">
+                  {isCopied ? (
+                    <Check className="w-3 h-3 text-emerald-400 drop-shadow-lg" />
+                  ) : (
+                    <Copy className="w-3 h-3 text-blue-400 drop-shadow-lg" />
+                  )}
+                </span>
+              )}
+            </>
+          )}
+        </span>
+        {(canCopy || (isEmpty && canEnrich)) && (
           <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 via-purple-500/0 to-pink-500/0 group-hover:from-blue-500/5 group-hover:via-purple-500/5 group-hover:to-pink-500/5 rounded-lg transition-all duration-500 -z-0" />
         )}
       </td>
@@ -1089,28 +1306,21 @@ export default function EnrichedLeadsPage() {
                           <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 via-purple-500/0 to-pink-500/0 group-hover/name:from-blue-500/5 group-hover/name:via-purple-500/5 group-hover/name:to-pink-500/5 rounded-lg transition-all duration-500 -z-0" />
                         )}
                       </td>
-                      <td 
-                        className="px-2 py-2 text-slate-100 whitespace-nowrap cursor-pointer transition-all duration-300 ease-out group/phone relative z-10 hover:scale-[1.02] hover:text-emerald-300 hover:drop-shadow-[0_0_12px_rgba(16,185,129,0.6)]"
-                        onClick={() => copyToClipboard(lead.phone, `phone-${index}`)}
-                        title={lead.phone ? 'Click to copy' : ''}
-                      >
-                        <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/0 to-green-500/0 group-hover/phone:from-emerald-500/20 group-hover/phone:to-green-500/20 rounded-lg transition-all duration-300 -z-0" />
-                        <span className="flex items-center gap-1 relative z-10">
-                          <span className="font-medium text-xs">{formatPhoneNumber(lead.phone)}</span>
-                          {lead.phone && (
-                            <span className="opacity-0 group-hover/phone:opacity-100 transition-all duration-300 transform group-hover/phone:scale-110 group-hover/phone:rotate-12 flex-shrink-0">
-                              {copiedField === `phone-${index}` ? (
-                                <Check className="w-3 h-3 text-emerald-400 drop-shadow-lg" />
-                              ) : (
-                                <Copy className="w-3 h-3 text-emerald-400 drop-shadow-lg" />
-                              )}
-                            </span>
-                          )}
-                        </span>
-                      </td>
-                      <CopyableCell 
-                        value={lead.email || ''} 
+                      <EnrichableCell
+                        value={lead.phone || ''}
+                        fieldId={`phone-${index}`}
+                        lead={lead}
+                        index={index}
+                        field="phone"
+                        className="text-slate-100 whitespace-nowrap relative z-10"
+                        truncate={false}
+                      />
+                      <EnrichableCell
+                        value={lead.email || ''}
                         fieldId={`email-${index}`}
+                        lead={lead}
+                        index={index}
+                        field="email"
                         className="text-slate-300 relative z-10"
                         truncate={true}
                       />
