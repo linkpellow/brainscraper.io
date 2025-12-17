@@ -205,17 +205,17 @@ export async function POST(request: NextRequest) {
           // Build filters for json_to_url
           const filtersForUrl: any[] = [];
           
-          // Add location filter - CRITICAL FIX: Use REGION type with numeric ID (not LOCATION with URN)
-          // Verified from LinkedIn URL: type:REGION, id:105763813 (numeric, not URN)
-          const locationId = discovery.fullId ? discovery.fullId.replace('urn:li:fs_geo:', '') : discovery.locationId;
-          filtersForUrl.push({
-            type: 'REGION',  // Use REGION (not LOCATION) - verified from LinkedIn URLs
-            values: [{
-              id: locationId,  // Numeric ID: "105763813" (not URN format)
-              text: locationText,
-              selectionType: 'INCLUDED',
-            }],
-          });
+          // Add location filter - Use LOCATION type with full URN format (verified in test results)
+          if (discovery.fullId) {
+            filtersForUrl.push({
+              type: 'LOCATION',  // Use LOCATION with URN format (verified in tests)
+              values: [{
+                id: discovery.fullId,  // Full URN: "urn:li:fs_geo:105763813"
+                text: locationText,
+                selectionType: 'INCLUDED',
+              }],
+            });
+          }
           
           // Add ALL other filters to via_url for maximum accuracy
           // CRITICAL: Use URN format for companies (verified - normalized names don't work)
@@ -657,14 +657,13 @@ export async function POST(request: NextRequest) {
               
               if (discovery.fullId && discovery.source !== 'failed') {
                 // Found via discovery - use it (more accurate than static mapping)
-                // CRITICAL FIX: Use REGION type with numeric ID (verified from real LinkedIn URLs)
-                // Real URL shows: type:REGION, id:105763813 (numeric, not URN)
-                const locationId = discovery.fullId ? discovery.fullId.replace('urn:li:fs_geo:', '') : (discovery.locationId || '');
-                if (locationId) {
+                // Use LOCATION type with full URN format (verified in test results)
+                // Test results show: type: 'LOCATION', id: 'urn:li:fs_geo:103644278' works
+                if (discovery.fullId) {
                 locationFilter = {
-                  type: 'REGION',  // Use REGION (not LOCATION) - verified from real LinkedIn URLs
+                  type: 'LOCATION',  // Use LOCATION with URN format (verified in tests)
                   values: [{
-                    id: locationId,  // Numeric ID: "105763813" (not URN format)
+                    id: discovery.fullId,  // Full URN: "urn:li:fs_geo:105763813"
                     text: locationText,
                     selectionType: 'INCLUDED',
                   }],
@@ -736,19 +735,16 @@ export async function POST(request: NextRequest) {
                   }
                   
                   if (stateDiscovery.fullId) {
-                    // CRITICAL FIX: Use REGION type with numeric ID (verified from LinkedIn URLs)
-                    const stateId = stateDiscovery.fullId ? stateDiscovery.fullId.replace('urn:li:fs_geo:', '') : (stateDiscovery.locationId || '');
-                    if (stateId) {
+                    // Use LOCATION type with full URN format (verified in test results)
                     stateFilter = {
-                      type: 'REGION',  // Use REGION (not LOCATION) - verified from LinkedIn URLs
+                      type: 'LOCATION',  // Use LOCATION with URN format (verified in tests)
                       values: [{
-                        id: stateId,  // Numeric ID: "105763813" (not URN format)
+                        id: stateDiscovery.fullId,  // Full URN: "urn:li:fs_geo:105763813"
                         text: state,
                         selectionType: 'INCLUDED',
                       }],
                     };
                     logger.log(`📍 Using state-level location ID for "${state}" (fallback from "${locationText}"): ${stateDiscovery.fullId}`);
-                    }
                   }
                 } catch (error) {
                   logger.warn(`Error discovering state-level location ID for "${state}":`, error);
