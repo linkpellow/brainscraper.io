@@ -2086,8 +2086,8 @@ export default function LinkedInLeadGenerator() {
                       placeholder="Director, VP, Manager"
                       className="group w-full px-4 py-2.5 rounded-xl field-inactive text-sm text-slate-200  focus:field-focused hover:border-slate-600/60 font-data"
                   />
-                  <div className="flex items-center gap-4 mt-2">
-                    <label className="flex items-center gap-2 cursor-pointer">
+                  <div className="flex items-center gap-4 mt-2 relative z-10">
+                    <label className="flex items-center gap-2 cursor-pointer relative z-10 pointer-events-auto">
                       <input
                         type="checkbox"
                         checked={String(searchParams.title_keywords || '').toLowerCase().includes('self') || 
@@ -2122,18 +2122,18 @@ export default function LinkedInLeadGenerator() {
                             updateSearchParam('title_keywords', keywords.join(', '));
                           }
                         }}
-                        className="w-4 h-4 text-blue-500 rounded"
+                        className="w-4 h-4 text-blue-500 rounded cursor-pointer relative z-10 pointer-events-auto"
                       />
-                      <span className="text-xs text-slate-400 font-data">Self Employed</span>
+                      <span className="text-xs text-slate-400 font-data pointer-events-none">Self Employed</span>
                     </label>
-                    <label className="flex items-center gap-2 cursor-pointer">
+                    <label className="flex items-center gap-2 cursor-pointer relative z-10 pointer-events-auto">
                       <input
                         type="checkbox"
                         checked={searchParams.changed_jobs_90_days === 'true' || searchParams.changed_jobs_90_days === true}
                         onChange={(e) => updateSearchParam('changed_jobs_90_days', e.target.checked ? 'true' : undefined)}
-                        className="w-4 h-4 text-blue-500 rounded"
+                        className="w-4 h-4 text-blue-500 rounded cursor-pointer relative z-10 pointer-events-auto"
                       />
-                      <span className="text-xs text-slate-400 font-data">Changed Jobs (90 days)</span>
+                      <span className="text-xs text-slate-400 font-data pointer-events-none">Changed Jobs (90 days)</span>
                     </label>
                   </div>
                 </div>
