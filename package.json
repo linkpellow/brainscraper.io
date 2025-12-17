@@ -12,7 +12,8 @@
     "test": "vitest",
     "test:ui": "vitest --ui",
     "verify:api": "tsx scripts/comprehensive-api-verification.ts",
-    "dnc-scrub": "tsx scripts/dnc-scrub-leads-one-by-one.ts"
+    "dnc-scrub": "tsx scripts/dnc-scrub-leads-one-by-one.ts",
+    "test:single-lead": "tsx scripts/test-single-lead-production.ts"
   },
   "keywords": [
     "spreadsheet",
