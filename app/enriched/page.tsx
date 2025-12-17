@@ -83,6 +83,7 @@ export default function EnrichedLeadsPage() {
   const [dncScrubProgress, setDncScrubProgress] = useState({ current: 0, total: 0 });
   const [dncError, setDncError] = useState<string | null>(null);
   const [enrichingFields, setEnrichingFields] = useState<Set<string>>(new Set());
+  const [enrichmentErrors, setEnrichmentErrors] = useState<Map<string, string>>(new Map());
   const logsEndRef = useRef<HTMLDivElement>(null);
 
   const addLog = (message: string, type: EnrichmentLog['type'] = 'info') => {
@@ -512,13 +513,19 @@ export default function EnrichedLeadsPage() {
   /**
    * Check if a field can be enriched
    */
-  const canEnrichField = (lead: LeadSummary, field: 'phone' | 'email'): boolean => {
+  const canEnrichField = (lead: LeadSummary, field: 'phone' | 'email' | 'zipcode'): boolean => {
     // Field must be empty
-    const fieldValue = field === 'phone' ? lead.phone : lead.email;
+    const fieldValue = field === 'phone' ? lead.phone : field === 'email' ? lead.email : lead.zipcode;
     if (fieldValue && fieldValue !== 'N/A' && fieldValue.trim() !== '') {
       return false;
     }
 
+    // Zipcode enrichment only needs city + state (free, local lookup)
+    if (field === 'zipcode') {
+      return !!(lead.city && lead.state);
+    }
+
+    // Phone/email enrichment requirements
     // Must have name (first + last)
     if (!lead.name || lead.name.trim() === '') {
       return false;
@@ -540,7 +547,7 @@ export default function EnrichedLeadsPage() {
   /**
    * Handle single field enrichment
    */
-  const handleEnrichField = async (lead: LeadSummary, field: 'phone' | 'email', index: number) => {
+  const handleEnrichField = async (lead: LeadSummary, field: 'phone' | 'email' | 'zipcode', index: number) => {
     const fieldKey = `${field}-${index}`;
     
     // Check if already enriching
@@ -554,20 +561,28 @@ export default function EnrichedLeadsPage() {
     }
 
     setEnrichingFields(prev => new Set(prev).add(fieldKey));
+    
+    // Clear any previous error for this field
+    setEnrichmentErrors(prev => {
+      const next = new Map(prev);
+      next.delete(fieldKey);
+      return next;
+    });
 
     try {
       const response = await fetch('/api/enrich-single-field', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          lead: {
-            name: lead.name,
-            phone: lead.phone,
-            email: lead.email,
-            city: lead.city,
-            state: lead.state,
-            linkedinUrl: lead.linkedinUrl,
-          },
+            lead: {
+              name: lead.name,
+              phone: lead.phone,
+              email: lead.email,
+              city: lead.city,
+              state: lead.state,
+              zipcode: lead.zipcode,
+              linkedinUrl: lead.linkedinUrl,
+            },
           field,
         }),
       });
@@ -611,6 +626,9 @@ export default function EnrichedLeadsPage() {
             'Zipcode': updatedLead.zipcode || '',
             'DOB': updatedLead.dobOrAge || '',
             'LinkedIn URL': updatedLead.linkedinUrl || '',
+            // Preserve other fields if they exist
+            ...(updatedLead.lineType ? { 'Line Type': updatedLead.lineType } : {}),
+            ...(updatedLead.carrier ? { 'Carrier': updatedLead.carrier } : {}),
           };
 
           await fetch('/api/save-enriched-lead', {
@@ -677,7 +695,7 @@ export default function EnrichedLeadsPage() {
   };
 
   /**
-   * Enrichable cell component for phone and email fields
+   * Enrichable cell component for phone, email, and zipcode fields
    */
   const EnrichableCell = ({ 
     value, 
@@ -692,7 +710,7 @@ export default function EnrichedLeadsPage() {
     fieldId: string;
     lead: LeadSummary;
     index: number;
-    field: 'phone' | 'email';
+    field: 'phone' | 'email' | 'zipcode';
     className?: string;
     truncate?: boolean;
   }) => {
@@ -702,6 +720,7 @@ export default function EnrichedLeadsPage() {
     const isEnriching = enrichingFields.has(`${field}-${index}`);
     const canCopy = value && value !== 'N/A';
     const isCopied = copiedField === fieldId;
+    const errorMessage = enrichmentErrors.get(`${field}-${index}`);
 
     const handleClick = (e: React.MouseEvent) => {
       e.stopPropagation();
@@ -731,6 +750,13 @@ export default function EnrichedLeadsPage() {
             <>
               <Loader2 className="w-3 h-3 animate-spin text-blue-400" />
               <span className="text-xs text-blue-400">Enriching...</span>
+            </>
+          ) : errorMessage ? (
+            <>
+              <AlertCircle className="w-3 h-3 text-red-400 flex-shrink-0" />
+              <span className="text-xs text-red-400 truncate max-w-[200px]" title={errorMessage}>
+                {errorMessage.length > 30 ? `${errorMessage.substring(0, 30)}...` : errorMessage}
+              </span>
             </>
           ) : (
             <>
@@ -1336,9 +1362,12 @@ export default function EnrichedLeadsPage() {
                         className="text-slate-300 relative z-10"
                         truncate={false}
                       />
-                      <CopyableCell 
-                        value={lead.zipcode || ''} 
+                      <EnrichableCell
+                        value={lead.zipcode || ''}
                         fieldId={`zipcode-${index}`}
+                        lead={lead}
+                        index={index}
+                        field="zipcode"
                         className="text-slate-300 relative z-10"
                         truncate={false}
                       />

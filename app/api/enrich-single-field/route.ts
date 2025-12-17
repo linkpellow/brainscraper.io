@@ -4,6 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { geocodeCityStateToZip } from '@/utils/geocoding';
 
 /**
  * Extract domain from email (if available)
@@ -207,9 +208,10 @@ export async function POST(request: NextRequest) {
         email?: string;
         city?: string;
         state?: string;
+        zipcode?: string;
         linkedinUrl?: string;
       };
-      field: 'phone' | 'email';
+      field: 'phone' | 'email' | 'zipcode';
     } = body;
 
     if (!lead || !lead.name) {
@@ -219,11 +221,39 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!field || (field !== 'phone' && field !== 'email')) {
+    if (!field || (field !== 'phone' && field !== 'email' && field !== 'zipcode')) {
       return NextResponse.json(
-        { success: false, error: 'Field must be "phone" or "email"' },
+        { success: false, error: 'Field must be "phone", "email", or "zipcode"' },
         { status: 400 }
       );
+    }
+
+    // Handle zipcode enrichment (Nominatim → Geocodio → Local lookup)
+    if (field === 'zipcode') {
+      if (!lead.city || !lead.state) {
+        return NextResponse.json(
+          { success: false, error: 'City and state are required for zipcode enrichment' },
+          { status: 400 }
+        );
+      }
+
+      // Get Geocodio API key from environment or use provided default
+      const geocodioApiKey = process.env.GEOCODIO_API_KEY || '9096555690482e699e56682ebc49d4602445584';
+      
+      const zipcode = await geocodeCityStateToZip(lead.city, lead.state, geocodioApiKey);
+      
+      if (!zipcode) {
+        return NextResponse.json(
+          { success: false, error: 'Could not find zipcode for this city/state combination' },
+          { status: 404 }
+        );
+      }
+
+      return NextResponse.json({
+        success: true,
+        value: zipcode,
+        field: 'zipcode',
+      });
     }
 
     // Parse name
