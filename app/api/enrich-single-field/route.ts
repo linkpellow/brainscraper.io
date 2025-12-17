@@ -52,6 +52,9 @@ async function callEmailFinderAPI(
       : 'RAPIDAPI_KEY not configured. Please set the RAPIDAPI_KEY environment variable in your deployment platform.';
     
     console.error('[ENRICH_SINGLE_FIELD] Missing RAPIDAPI_KEY environment variable for Email Finder API');
+    console.error(`[ENRICH_SINGLE_FIELD] NODE_ENV: ${process.env.NODE_ENV}`);
+    console.error(`[ENRICH_SINGLE_FIELD] Available env vars starting with RAPID: ${Object.keys(process.env).filter(k => k.startsWith('RAPID')).join(', ') || 'none'}`);
+    console.error(`[ENRICH_SINGLE_FIELD] RAPIDAPI_KEY value (first 10 chars): ${process.env.RAPIDAPI_KEY ? process.env.RAPIDAPI_KEY.substring(0, 10) + '...' : 'undefined'}`);
     console.error(`[ENRICH_SINGLE_FIELD] ${errorMessage}`);
     
     return { error: errorMessage };
@@ -134,6 +137,9 @@ async function callSkipTracingAPI(
       : 'RAPIDAPI_KEY not configured. Please set the RAPIDAPI_KEY environment variable in your deployment platform.';
     
     console.error('[ENRICH_SINGLE_FIELD] Missing RAPIDAPI_KEY environment variable for Skip-tracing API');
+    console.error(`[ENRICH_SINGLE_FIELD] NODE_ENV: ${process.env.NODE_ENV}`);
+    console.error(`[ENRICH_SINGLE_FIELD] Available env vars starting with RAPID: ${Object.keys(process.env).filter(k => k.startsWith('RAPID')).join(', ') || 'none'}`);
+    console.error(`[ENRICH_SINGLE_FIELD] RAPIDAPI_KEY value (first 10 chars): ${process.env.RAPIDAPI_KEY ? process.env.RAPIDAPI_KEY.substring(0, 10) + '...' : 'undefined'}`);
     console.error(`[ENRICH_SINGLE_FIELD] ${errorMessage}`);
     
     return { error: errorMessage };

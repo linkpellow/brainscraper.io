@@ -86,13 +86,18 @@ export async function POST(request: NextRequest) {
     // Get API key from environment variables
     const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY;
     
+    // Debug logging to help diagnose environment variable issues
     if (!RAPIDAPI_KEY) {
       const isDevelopment = process.env.NODE_ENV === 'development';
       const errorMessage = isDevelopment
         ? 'RAPIDAPI_KEY not configured. Please add RAPIDAPI_KEY=your-api-key to your .env.local file and restart the development server.'
         : 'RAPIDAPI_KEY not configured. Please set the RAPIDAPI_KEY environment variable in your deployment platform (Vercel, Railway, etc.).';
       
+      // Diagnostic logging
       console.error('[LINKEDIN_SALES_NAVIGATOR] Missing RAPIDAPI_KEY environment variable');
+      console.error(`[LINKEDIN_SALES_NAVIGATOR] NODE_ENV: ${process.env.NODE_ENV}`);
+      console.error(`[LINKEDIN_SALES_NAVIGATOR] Available env vars starting with RAPID: ${Object.keys(process.env).filter(k => k.startsWith('RAPID')).join(', ') || 'none'}`);
+      console.error(`[LINKEDIN_SALES_NAVIGATOR] RAPIDAPI_KEY value (first 10 chars): ${process.env.RAPIDAPI_KEY ? process.env.RAPIDAPI_KEY.substring(0, 10) + '...' : 'undefined'}`);
       console.error(`[LINKEDIN_SALES_NAVIGATOR] ${errorMessage}`);
       
       return NextResponse.json(
@@ -101,10 +106,21 @@ export async function POST(request: NextRequest) {
           message: errorMessage,
           hint: isDevelopment 
             ? 'Create or edit .env.local in the project root and add: RAPIDAPI_KEY=your-api-key-here'
-            : 'Set RAPIDAPI_KEY in your deployment platform\'s environment variables settings'
+            : 'Set RAPIDAPI_KEY in your deployment platform\'s environment variables settings',
+          diagnostic: {
+            nodeEnv: process.env.NODE_ENV,
+            hasRapidApiKey: !!process.env.RAPIDAPI_KEY,
+            rapidApiKeyLength: process.env.RAPIDAPI_KEY?.length || 0,
+            availableRapidVars: Object.keys(process.env).filter(k => k.startsWith('RAPID'))
+          }
         },
         { status: 500 }
       );
+    }
+    
+    // Log successful key detection (first 10 chars only for security)
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[LINKEDIN_SALES_NAVIGATOR] RAPIDAPI_KEY loaded (length: ${RAPIDAPI_KEY.length})`);
     }
 
     // Determine which endpoint to use
