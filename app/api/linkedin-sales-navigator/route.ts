@@ -170,6 +170,8 @@ export async function POST(request: NextRequest) {
 
     // PHASE 3: Auto-use via_url endpoint for location searches (100% accuracy, 0% waste)
     // If location is specified and we have a location ID, use via_url endpoint automatically
+    // Track if we attempted via_url so we can fall back properly
+    let attemptedViaUrl = false;
     if (requiresFilters && searchParams.location && RAPIDAPI_KEY) {
       const locationText = String(searchParams.location);
       
@@ -200,6 +202,7 @@ export async function POST(request: NextRequest) {
         
         if (discovery.fullId && discovery.source !== 'failed') {
           // We have a location ID - use via_url endpoint for 100% accuracy
+          attemptedViaUrl = true;
           logger.log(`🎯 Auto-using via_url endpoint for location "${locationText}" (100% accuracy, 0% waste)`);
           
           // Build filters for json_to_url
@@ -522,66 +525,90 @@ export async function POST(request: NextRequest) {
                   if (data.data && typeof data.data === 'object' && data.data.success === false && data.data.error) {
                     const errorMessage = typeof data.data.error === 'string' ? data.data.error : 'Request failed with status code 403';
                     const is403Error = errorMessage.includes('403') || errorMessage.toLowerCase().includes('forbidden');
+                    const is400Error = errorMessage.includes('400') || errorMessage.toLowerCase().includes('bad request');
                     
-                    logger.error('via_url endpoint returned 403 error in 200 OK response', {
-                      endpoint: viaUrlEndpoint,
-                      httpStatus: 200,
-                      errorMessage,
-                      fullError: data.data.error,
-                      fullResponse: JSON.stringify(data, null, 2),
-                      requestUrl: generatedUrl,
-                      requestBody: JSON.stringify(viaUrlBody, null, 2),
-                    });
-                    
-                    // Return 403 error instead of treating as success
-                    return NextResponse.json(
-                      {
-                        success: false,
-                        error: is403Error ? 'Rate limit exceeded' : (data.data.error || 'API request failed'),
-                        message: is403Error ? 'Rate limit exceeded' : errorMessage,
-                        details: {
-                          ...data.data,
-                          rapidApiError: data.data.error,
-                          endpoint: viaUrlEndpoint,
-                          requestUrl: generatedUrl,
-                          requestBody: viaUrlBody,
-                        }
-                      },
-                      { status: 403 }
-                    );
+                    // 400 errors mean the URL is invalid - fall back to regular search
+                    if (is400Error) {
+                      logger.warn('via_url endpoint returned 400 error in nested response (invalid URL), falling back to regular search', {
+                        endpoint: viaUrlEndpoint,
+                        httpStatus: 200,
+                        errorMessage,
+                        requestUrl: generatedUrl,
+                      });
+                      // Don't return - fall through to regular search
+                    } else {
+                      logger.error('via_url endpoint returned error in 200 OK response', {
+                        endpoint: viaUrlEndpoint,
+                        httpStatus: 200,
+                        errorMessage,
+                        fullError: data.data.error,
+                        fullResponse: JSON.stringify(data, null, 2),
+                        requestUrl: generatedUrl,
+                        requestBody: JSON.stringify(viaUrlBody, null, 2),
+                      });
+                      
+                      // Return 403 error instead of treating as success (only for non-400 errors)
+                      return NextResponse.json(
+                        {
+                          success: false,
+                          error: is403Error ? 'Rate limit exceeded' : (data.data.error || 'API request failed'),
+                          message: is403Error ? 'Rate limit exceeded' : errorMessage,
+                          details: {
+                            ...data.data,
+                            rapidApiError: data.data.error,
+                            endpoint: viaUrlEndpoint,
+                            requestUrl: generatedUrl,
+                            requestBody: viaUrlBody,
+                          }
+                        },
+                        { status: 403 }
+                      );
+                    }
                   }
                   
                   // Check for error at top level
                   if (data.success === false && data.error) {
                     const errorMessage = typeof data.error === 'string' ? data.error : 'Request failed';
                     const is403Error = errorMessage.includes('403') || errorMessage.toLowerCase().includes('forbidden');
+                    const is400Error = errorMessage.includes('400') || errorMessage.toLowerCase().includes('bad request');
                     
-                    logger.error('via_url endpoint returned 403 error in 200 OK response (top level)', {
-                      endpoint: viaUrlEndpoint,
-                      httpStatus: 200,
-                      errorMessage,
-                      fullError: data.error,
-                      fullResponse: JSON.stringify(data, null, 2),
-                      requestUrl: generatedUrl,
-                      requestBody: JSON.stringify(viaUrlBody, null, 2),
-                    });
-                    
-                    // Return 403 error instead of treating as success
-                    return NextResponse.json(
-                      {
-                        success: false,
-                        error: is403Error ? 'Rate limit exceeded' : (data.error || 'API request failed'),
-                        message: is403Error ? 'Rate limit exceeded' : errorMessage,
-                        details: {
-                          ...data,
-                          rapidApiError: data.error,
-                          endpoint: viaUrlEndpoint,
-                          requestUrl: generatedUrl,
-                          requestBody: viaUrlBody,
-                        }
-                      },
-                      { status: 403 }
-                    );
+                    // 400 errors mean the URL is invalid - fall back to regular search
+                    if (is400Error) {
+                      logger.warn('via_url endpoint returned 400 error (invalid URL), falling back to regular search', {
+                        endpoint: viaUrlEndpoint,
+                        httpStatus: 200,
+                        errorMessage,
+                        requestUrl: generatedUrl,
+                      });
+                      // Don't return - fall through to regular search
+                    } else {
+                      logger.error('via_url endpoint returned error in 200 OK response (top level)', {
+                        endpoint: viaUrlEndpoint,
+                        httpStatus: 200,
+                        errorMessage,
+                        fullError: data.error,
+                        fullResponse: JSON.stringify(data, null, 2),
+                        requestUrl: generatedUrl,
+                        requestBody: JSON.stringify(viaUrlBody, null, 2),
+                      });
+                      
+                      // Return 403 error instead of treating as success (only for non-400 errors)
+                      return NextResponse.json(
+                        {
+                          success: false,
+                          error: is403Error ? 'Rate limit exceeded' : (data.error || 'API request failed'),
+                          message: is403Error ? 'Rate limit exceeded' : errorMessage,
+                          details: {
+                            ...data,
+                            rapidApiError: data.error,
+                            endpoint: viaUrlEndpoint,
+                            requestUrl: generatedUrl,
+                            requestBody: viaUrlBody,
+                          }
+                        },
+                        { status: 403 }
+                      );
+                    }
                   }
                 }
                 
@@ -634,16 +661,42 @@ export async function POST(request: NextRequest) {
                   errorData = { error: errorText };
                 }
                 
-                logger.error('via_url endpoint failed with HTTP error', {
-                  endpoint: viaUrlEndpoint,
-                  httpStatus: viaUrlResponse.status,
-                  errorText,
-                  errorData,
-                  requestUrl: generatedUrl,
-                  requestBody: JSON.stringify(viaUrlBody, null, 2),
-                });
+                // Check if it's a 400 error (bad request) - means URL is invalid, definitely fall back
+                // Check both HTTP status and error message content
+                const errorMessage = errorData?.error || errorData?.message || errorText || '';
+                const errorStr = String(errorMessage);
+                // Also check details.error and details.message for nested error messages
+                const detailsError = errorData?.details?.error || errorData?.details?.message || '';
+                const allErrorText = `${errorStr} ${detailsError} ${errorText}`.toLowerCase();
+                const is400Error = viaUrlResponse.status === 400 || 
+                  errorStr.includes('400') ||
+                  allErrorText.includes('400') ||
+                  errorStr.toLowerCase().includes('bad request') ||
+                  allErrorText.includes('bad request') ||
+                  (errorData?.details?.error && String(errorData.details.error).includes('400'));
                 
-                logger.warn(`⚠️ via_url endpoint failed (${viaUrlResponse.status}), falling back to regular search`);
+                if (is400Error) {
+                  logger.warn(`⚠️ via_url endpoint returned 400 (invalid URL), falling back to regular search`, {
+                    endpoint: viaUrlEndpoint,
+                    httpStatus: viaUrlResponse.status,
+                    requestUrl: generatedUrl,
+                    errorData,
+                    errorMessage,
+                  });
+                  // Fall through to regular search - don't return
+                } else {
+                  logger.error('via_url endpoint failed with HTTP error', {
+                    endpoint: viaUrlEndpoint,
+                    httpStatus: viaUrlResponse.status,
+                    errorText,
+                    errorData,
+                    requestUrl: generatedUrl,
+                    requestBody: JSON.stringify(viaUrlBody, null, 2),
+                  });
+                  
+                  logger.warn(`⚠️ via_url endpoint failed (${viaUrlResponse.status}), falling back to regular search`);
+                  // Fall through to regular search - don't return
+                }
               }
             } else {
               // URL generation failed, fall through to regular search
@@ -1515,6 +1568,21 @@ export async function POST(request: NextRequest) {
         // Keep as text if not JSON
       }
       
+      // If we attempted via_url and got 400/403, check if it's a 400 error in the message
+      // This means the URL was invalid - we should have already fallen back, but if we're here,
+      // it means the via_url flow didn't work. For regular endpoint calls, 400/403 are real errors.
+      if (attemptedViaUrl && (response.status === 400 || response.status === 403)) {
+        const errorStr = String(errorDetails);
+        const is400Error = response.status === 400 || 
+          errorStr.includes('400') ||
+          errorStr.toLowerCase().includes('bad request');
+        
+        if (is400Error) {
+          logger.warn(`⚠️ Regular endpoint returned 400 after via_url attempt failed - this should have been caught in via_url fallback`);
+          // Continue to return error - via_url should have handled this
+        }
+      }
+      
       // CRITICAL: Rate limit (429) should stop immediately - don't waste more API calls
       if (response.status === 429) {
         // Extract retry-after from headers if available
@@ -1594,13 +1662,24 @@ export async function POST(request: NextRequest) {
           // Check if this is a 403 error and format message accordingly
           const errorMessage = typeof data.data.error === 'string' ? data.data.error : 'Request failed with status code 403';
           const is403Error = errorMessage.includes('403') || errorMessage.toLowerCase().includes('forbidden');
+          const is400Error = errorMessage.includes('400') || errorMessage.toLowerCase().includes('bad request');
           const userMessage = is403Error ? 'Rate limit exceeded' : errorMessage;
           
+          // 400 errors from via_url should have already been handled in the via_url block
+          // But if we get here, it means via_url wasn't used or the error wasn't caught
+          // For regular endpoint calls, 400 means bad request - return error
+          if (is400Error && endpoint.includes('via_url')) {
+            // This shouldn't happen if via_url fallback worked, but log it
+            logger.warn('⚠️ 400 error in regular endpoint response (via_url should have handled this)');
+          }
+          
           // Log full error details for debugging
-          logger.error('RapidAPI 403 Error Details', {
+          logger.error('RapidAPI Error Details', {
             endpoint,
             httpStatus: 200, // HTTP status was 200 but body contains error
             errorMessage,
+            is400Error,
+            is403Error,
             fullError: data.data.error,
             fullResponse: JSON.stringify(data, null, 2),
             requestBody: JSON.stringify(requestBody, null, 2),
@@ -1633,13 +1712,21 @@ export async function POST(request: NextRequest) {
           // Check if this is a 403 error and format message accordingly
           const errorMessage = typeof data.error === 'string' ? data.error : 'Request failed';
           const is403Error = errorMessage.includes('403') || errorMessage.toLowerCase().includes('forbidden');
+          const is400Error = errorMessage.includes('400') || errorMessage.toLowerCase().includes('bad request');
           const userMessage = is403Error ? 'Rate limit exceeded' : errorMessage;
           
+          // 400 errors from via_url should have already been handled in the via_url block
+          if (is400Error && endpoint.includes('via_url')) {
+            logger.warn('⚠️ 400 error in regular endpoint response (via_url should have handled this)');
+          }
+          
           // Log full error details for debugging
-          logger.error('RapidAPI 403 Error Details (Top Level)', {
+          logger.error('RapidAPI Error Details (Top Level)', {
             endpoint,
             httpStatus: 200, // HTTP status was 200 but body contains error
             errorMessage,
+            is400Error,
+            is403Error,
             fullError: data.error,
             fullResponse: JSON.stringify(data, null, 2),
             requestBody: JSON.stringify(requestBody, null, 2),
