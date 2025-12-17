@@ -205,17 +205,17 @@ export async function POST(request: NextRequest) {
           // Build filters for json_to_url
           const filtersForUrl: any[] = [];
           
-          // Add location filter - Use LOCATION type with full URN format (verified in test results)
-          if (discovery.fullId) {
-            filtersForUrl.push({
-              type: 'LOCATION',  // Use LOCATION with URN format (verified in tests)
-              values: [{
-                id: discovery.fullId,  // Full URN: "urn:li:fs_geo:105763813"
-                text: locationText,
-                selectionType: 'INCLUDED',
-              }],
-            });
-          }
+          // Add location filter - CRITICAL FIX: Use REGION type with numeric ID (not LOCATION with URN)
+          // Verified from LinkedIn URL: type:REGION, id:105763813 (numeric, not URN)
+          const locationId = discovery.fullId ? discovery.fullId.replace('urn:li:fs_geo:', '') : discovery.locationId;
+          filtersForUrl.push({
+            type: 'REGION',  // Use REGION (not LOCATION) - verified from LinkedIn URLs
+            values: [{
+              id: locationId,  // Numeric ID: "105763813" (not URN format)
+              text: locationText,
+              selectionType: 'INCLUDED',
+            }],
+          });
           
           // Add ALL other filters to via_url for maximum accuracy
           // CRITICAL: Use URN format for companies (verified - normalized names don't work)
@@ -657,13 +657,14 @@ export async function POST(request: NextRequest) {
               
               if (discovery.fullId && discovery.source !== 'failed') {
                 // Found via discovery - use it (more accurate than static mapping)
-                // Use LOCATION type with full URN format (verified in test results)
-                // Test results show: type: 'LOCATION', id: 'urn:li:fs_geo:103644278' works
-                if (discovery.fullId) {
+                // CRITICAL FIX: Use REGION type with numeric ID (verified from real LinkedIn URLs)
+                // Real URL shows: type:REGION, id:105763813 (numeric, not URN)
+                const locationId = discovery.fullId ? discovery.fullId.replace('urn:li:fs_geo:', '') : (discovery.locationId || '');
+                if (locationId) {
                 locationFilter = {
-                  type: 'LOCATION',  // Use LOCATION with URN format (verified in tests)
+                  type: 'REGION',  // Use REGION (not LOCATION) - verified from real LinkedIn URLs
                   values: [{
-                    id: discovery.fullId,  // Full URN: "urn:li:fs_geo:105763813"
+                    id: locationId,  // Numeric ID: "105763813" (not URN format)
                     text: locationText,
                     selectionType: 'INCLUDED',
                   }],
@@ -735,16 +736,19 @@ export async function POST(request: NextRequest) {
                   }
                   
                   if (stateDiscovery.fullId) {
-                    // Use LOCATION type with full URN format (verified in test results)
+                    // CRITICAL FIX: Use REGION type with numeric ID (verified from LinkedIn URLs)
+                    const stateId = stateDiscovery.fullId ? stateDiscovery.fullId.replace('urn:li:fs_geo:', '') : (stateDiscovery.locationId || '');
+                    if (stateId) {
                     stateFilter = {
-                      type: 'LOCATION',  // Use LOCATION with URN format (verified in tests)
+                      type: 'REGION',  // Use REGION (not LOCATION) - verified from LinkedIn URLs
                       values: [{
-                        id: stateDiscovery.fullId,  // Full URN: "urn:li:fs_geo:105763813"
+                        id: stateId,  // Numeric ID: "105763813" (not URN format)
                         text: state,
                         selectionType: 'INCLUDED',
                       }],
                     };
                     logger.log(`📍 Using state-level location ID for "${state}" (fallback from "${locationText}"): ${stateDiscovery.fullId}`);
+                    }
                   }
                 } catch (error) {
                   logger.warn(`Error discovering state-level location ID for "${state}":`, error);
@@ -1489,6 +1493,48 @@ export async function POST(request: NextRequest) {
     try {
       data = JSON.parse(result);
       logger.log('✅ Successfully parsed JSON response');
+      
+      // CRITICAL: Check if RapidAPI returned an error in a 200 OK response
+      // RapidAPI sometimes returns HTTP 200 with { success: false, error: "..." } in the body
+      if (data && typeof data === 'object' && !Array.isArray(data)) {
+        // Check for error in data.data (nested error response)
+        if (data.data && typeof data.data === 'object' && data.data.success === false && data.data.error) {
+          logger.error('RapidAPI returned error in 200 OK response', {
+            endpoint,
+            error: data.data.error,
+            fullResponse: data
+          });
+          
+          return NextResponse.json(
+            {
+              success: false,
+              error: data.data.error || 'API request failed',
+              message: typeof data.data.error === 'string' ? data.data.error : 'Request failed with status code 403',
+              details: data.data
+            },
+            { status: 403 }
+          );
+        }
+        
+        // Check for error at top level
+        if (data.success === false && data.error) {
+          logger.error('RapidAPI returned error in 200 OK response', {
+            endpoint,
+            error: data.error,
+            fullResponse: data
+          });
+          
+          return NextResponse.json(
+            {
+              success: false,
+              error: data.error || 'API request failed',
+              message: typeof data.error === 'string' ? data.error : 'Request failed',
+              details: data
+            },
+            { status: 403 }
+          );
+        }
+      }
     } catch (parseError) {
       logger.warn('⚠️ Failed to parse JSON, using raw text', {
         error: parseError instanceof Error ? parseError.message : String(parseError),
