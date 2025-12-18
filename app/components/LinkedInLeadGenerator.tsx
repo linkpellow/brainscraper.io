@@ -130,6 +130,8 @@ export default function LinkedInLeadGenerator() {
   const [isSearching, setIsSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [results, setResults] = useState<LeadResult[] | null>(null);
+  const [retryAfterExpiration, setRetryAfterExpiration] = useState<number | null>(null); // Timestamp when retry is allowed
+  const [countdownSeconds, setCountdownSeconds] = useState<number>(0);
   
   // Check for imported leads from enriched page on mount
   useEffect(() => {
@@ -275,6 +277,33 @@ export default function LinkedInLeadGenerator() {
 
     return () => clearInterval(interval);
   }, [isSearching, scrapingProgress.startTime, scrapingProgress.leadsCollected, scrapingProgress.estimatedTotal]);
+
+  // Countdown timer for rate limits and account freezes
+  useEffect(() => {
+    if (!retryAfterExpiration) {
+      setCountdownSeconds(0);
+      return;
+    }
+
+    const updateCountdown = () => {
+      const now = Date.now();
+      const remaining = Math.max(0, Math.ceil((retryAfterExpiration - now) / 1000));
+      setCountdownSeconds(remaining);
+
+      if (remaining === 0) {
+        setRetryAfterExpiration(null);
+        setError(null); // Clear error when countdown expires
+      }
+    };
+
+    // Update immediately
+    updateCountdown();
+
+    // Update every second
+    const interval = setInterval(updateCountdown, 1000);
+
+    return () => clearInterval(interval);
+  }, [retryAfterExpiration]);
 
   const initializeAPIProgress = () => {
     const apis: APIProgress[] = [
@@ -681,10 +710,31 @@ export default function LinkedInLeadGenerator() {
     URL.revokeObjectURL(url);
   };
 
+  // Format countdown seconds to MM:SS or HH:MM:SS
+  const formatCountdown = (seconds: number): string => {
+    if (seconds <= 0) return '0:00';
+    
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    
+    if (hours > 0) {
+      return `${hours}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    }
+    return `${minutes}:${String(secs).padStart(2, '0')}`;
+  };
+
   const handleSearch = async () => {
     // Prevent concurrent searches - if already searching, ignore new request
     if (isSearching) {
       console.warn('🔍 [SEARCH] ⚠️ Search already in progress, ignoring duplicate request');
+      return;
+    }
+    
+    // Check if still in countdown period
+    if (retryAfterExpiration && Date.now() < retryAfterExpiration) {
+      const remaining = Math.ceil((retryAfterExpiration - Date.now()) / 1000);
+      console.warn(`🔍 [SEARCH] ⚠️ Still in cooldown period, ${remaining} seconds remaining`);
       return;
     }
     
@@ -696,6 +746,7 @@ export default function LinkedInLeadGenerator() {
     setIsSearching(true);
     setError(null);
     setResults(null);
+    setRetryAfterExpiration(null); // Clear any previous retry expiration
     setWorkflowStep('search');
     setScrapingProgress({
       currentPage: 0,
@@ -786,15 +837,30 @@ export default function LinkedInLeadGenerator() {
           const retryAfter = result.retryAfter || 60;
           console.error('🔍 [SEARCH] Rate limit exceeded, retry after:', retryAfter);
           setError(`Rate limit exceeded. Please wait ${retryAfter} seconds.`);
+          // Set retry expiration time for countdown
+          setRetryAfterExpiration(Date.now() + (retryAfter * 1000));
           setScrapingProgress(prev => ({ ...prev, status: 'error', currentOperation: 'Rate limited' }));
           return;
         }
+        
+        // Check for account freeze in error message
         const errorMsg = result.message || result.error || 'Failed to process request';
+        if (errorMsg.toLowerCase().includes('frozen') || errorMsg.toLowerCase().includes('60 mins')) {
+          const freezeMatch = errorMsg.match(/(\d+)\s*(mins?|minutes?|hours?)/i);
+          const freezeDuration = freezeMatch ? parseInt(freezeMatch[1], 10) * 60 : 3600; // Convert to seconds
+          setError(errorMsg);
+          // Set retry expiration time for countdown
+          setRetryAfterExpiration(Date.now() + (freezeDuration * 1000));
+          setScrapingProgress(prev => ({ ...prev, status: 'error', currentOperation: 'Account frozen' }));
+          return;
+        }
+        
+        // Generic error handling
         console.error('🔍 [SEARCH] Setting error:', errorMsg);
         setError(errorMsg);
         setScrapingProgress(prev => ({ ...prev, status: 'error', currentOperation: 'Error occurred' }));
-          return;
-        }
+        return;
+      }
 
       if (result.data) {
         console.log('🔍 [SEARCH] Result has data property');
@@ -995,6 +1061,8 @@ export default function LinkedInLeadGenerator() {
               
               console.error(`📄 [PAGINATION] 🔴 Account frozen - stopping immediately (no retries)`);
               setError(freezeMessage || `Account frozen for ${freezeDurationMinutes} minutes. Please wait before trying again.`);
+              // Set retry expiration time for countdown
+              setRetryAfterExpiration(Date.now() + (freezeDurationSeconds * 1000));
               setScrapingProgress(prev => ({ 
                 ...prev, 
                 status: 'error', 
@@ -1024,6 +1092,8 @@ export default function LinkedInLeadGenerator() {
               if (consecutive429Errors >= CIRCUIT_BREAKER_THRESHOLD) {
                 console.error(`📄 [PAGINATION] 🔴 Circuit breaker triggered: ${consecutive429Errors} consecutive rate limits. Stopping pagination.`);
                 setError(`Rate limit exceeded multiple times. Please wait ${retryAfterSeconds} seconds before trying again.`);
+                // Set retry expiration time for countdown
+                setRetryAfterExpiration(Date.now() + (retryAfterSeconds * 1000));
                 setScrapingProgress(prev => ({ 
                   ...prev, 
                   status: 'error', 
@@ -1069,6 +1139,8 @@ export default function LinkedInLeadGenerator() {
                 console.error(`📄 [PAGINATION] ❌ Rate limit exceeded after ${maxRetries} retries. Stopping pagination.`);
                 const finalRetryAfter = retryAfterSeconds;
                 setError(`Rate limit exceeded. Please wait ${finalRetryAfter} seconds before trying again.`);
+                // Set retry expiration time for countdown
+                setRetryAfterExpiration(Date.now() + (finalRetryAfter * 1000));
                 setScrapingProgress(prev => ({ 
                   ...prev, 
                   status: 'error', 
@@ -2769,12 +2841,24 @@ export default function LinkedInLeadGenerator() {
 
 
             {/* Search Button */}
-            <div className="pt-6 border-t border-slate-700/50">
-          <button
-            onClick={handleSearch}
-            disabled={isSearching}
+            <div className="pt-6 border-t border-slate-700/50 space-y-3">
+              {/* Countdown Timer */}
+              {countdownSeconds > 0 && (
+                <div className="flex items-center justify-center px-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-xl">
+                  <div className="flex items-center gap-2 text-slate-300">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span className="text-sm font-medium">
+                      Try again in <span className="text-blue-400 font-mono font-bold">{formatCountdown(countdownSeconds)}</span>
+                    </span>
+                  </div>
+                </div>
+              )}
+              
+              <button
+                onClick={handleSearch}
+                disabled={isSearching || countdownSeconds > 0}
                 className="group relative w-full py-4 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 hover:from-blue-600 hover:via-purple-600 hover:to-pink-600 rounded-xl text-white text-base font-semibold transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 hover:scale-[1.02] active:scale-[0.98] overflow-hidden font-data"
-          >
+              >
                 <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
                 {isSearching ? (
                   <>
@@ -2787,8 +2871,8 @@ export default function LinkedInLeadGenerator() {
                     <span className="text-white relative z-10">Start Search</span>
                   </>
                 )}
-          </button>
-        </div>
+              </button>
+            </div>
           </div>
           </div>
         )}
