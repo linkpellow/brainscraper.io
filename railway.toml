@@ -13,6 +13,6 @@ restartPolicyMaxRetries = 10
 
 # Environment variables (set these in Railway dashboard)
 # DATA_DIR=/data (for persistent volume)
-# USHA_JWT_TOKEN=your-token (optional, will use Crokodial API)
+# USHA_JWT_TOKEN=your-token (optional, Cognito refresh token recommended: COGNITO_REFRESH_TOKEN)
 # CRON_SECRET=your-secret (optional, for cron job security)
 # NODE_VERSION=20 (forces Node.js 20 for Next.js 16 compatibility)

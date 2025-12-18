@@ -1565,6 +1565,9 @@ export default function LinkedInLeadGenerator() {
       const dncResults = new Map<string, { status: string; isDNC: boolean }>();
       const totalBatches = Math.ceil(phoneNumbers.length / batchSize);
 
+      let failedBatches = 0;
+      let processedBatches = 0;
+
       for (let i = 0; i < phoneNumbers.length; i += batchSize) {
         const batchNum = Math.floor(i / batchSize) + 1;
         const batch = phoneNumbers.slice(i, i + batchSize);
@@ -1580,27 +1583,53 @@ export default function LinkedInLeadGenerator() {
           
           if (response.ok) {
             const result = await response.json();
-            if (result.success && result.results) {
+            if (result.success && result.results && Array.isArray(result.results)) {
               result.results.forEach((r: any) => {
-                dncResults.set(r.phone, {
-                  status: r.status === 'DNC' ? 'YES' : r.status === 'OK' ? 'NO' : 'UNKNOWN',
-                  isDNC: r.isDNC || r.status === 'DNC'
-                });
+                // Normalize phone number for consistent matching
+                const normalizedPhone = String(r.phone || '').replace(/\D/g, '');
+                if (normalizedPhone && normalizedPhone.length >= 10) {
+                  dncResults.set(normalizedPhone, {
+                    status: r.status === 'DNC' ? 'YES' : r.status === 'OK' ? 'NO' : 'UNKNOWN',
+                    isDNC: r.isDNC || r.status === 'DNC'
+                  });
+                }
               });
+              processedBatches++;
+            } else {
+              console.warn(`⚠️ [SCRUB_ONLY] Batch ${batchNum} returned invalid response structure`);
+              failedBatches++;
             }
           } else {
             const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-            throw new Error(errorData.error || response.statusText);
+            const errorMessage = errorData.error || response.statusText;
+            console.error(`❌ [SCRUB_ONLY] Batch ${batchNum} failed: ${errorMessage}`);
+            failedBatches++;
+            
+            // Check if it's a token error - stop all batches if so
+            if (errorMessage.includes('USHA JWT token') || errorMessage.includes('token is required')) {
+              throw new Error(`Token error: ${errorMessage}. Please configure USHA_JWT_TOKEN.`);
+            }
+            // For other errors, continue processing remaining batches
           }
         } catch (error) {
-          console.error(`❌ [SCRUB_ONLY] Batch ${batchNum} failed:`, error);
-          throw error;
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+          console.error(`❌ [SCRUB_ONLY] Batch ${batchNum} exception:`, errorMessage);
+          failedBatches++;
+          
+          // Only throw if it's a token error, otherwise continue
+          if (errorMessage.includes('Token error')) {
+            throw error;
+          }
         }
         
         // Small delay between batches
         if (i + batchSize < phoneNumbers.length) {
           await new Promise(resolve => setTimeout(resolve, 200));
         }
+      }
+
+      if (failedBatches > 0) {
+        console.warn(`⚠️ [SCRUB_ONLY] ${failedBatches} batch(es) failed, but continuing with successful results`);
       }
 
       // Update leadList with DNC status
@@ -1617,59 +1646,72 @@ export default function LinkedInLeadGenerator() {
           return 'Unknown';
         };
         
-        setLeadList(prev => prev.map(lead => {
-          const phone = lead.phone?.replace(/\D/g, '');
-          if (phone && dncResults.has(phone)) {
-            const result = dncResults.get(phone)!;
-            const convertedStatus: 'Safe' | 'Do Not Call' | 'Unknown' = convertDNCStatus(result.status);
-            return {
-              ...lead,
-              dncStatus: convertedStatus,
-              dncChecked: true,
-            };
-          }
-          return lead;
-        }));
+        // Update leadList with DNC status and capture updated leads for server save
+        let updatedLeadsForServer: LeadSummary[] = [];
+        
+        setLeadList(prev => {
+          const updated = prev.map(lead => {
+            // Normalize phone number for consistent matching
+            const phone = lead.phone?.replace(/\D/g, '');
+            if (phone && phone.length >= 10 && dncResults.has(phone)) {
+              const result = dncResults.get(phone)!;
+              const convertedStatus: 'Safe' | 'Do Not Call' | 'Unknown' = convertDNCStatus(result.status);
+              return {
+                ...lead,
+                dncStatus: convertedStatus,
+                dncChecked: true,
+              };
+            }
+            return lead;
+          });
 
-        // Save to server via aggregate endpoint
-        const updatedLeads: LeadSummary[] = leadList.map(lead => {
-          const phone = lead.phone?.replace(/\D/g, '');
-          const baseLead: LeadSummary = {
-            name: lead.name || '',
-            phone: lead.phone || '',
-            email: lead.email || '',
-            dobOrAge: lead.dateOfBirth || lead.age?.toString() || '',
-            zipcode: lead.zipCode || '',
-            state: lead.state || '',
-            city: lead.city || '',
-            dncStatus: 'UNKNOWN',
-            linkedinUrl: lead.linkedinUrl,
-          };
-          
-          if (phone && dncResults.has(phone)) {
-            const result = dncResults.get(phone)!;
-            baseLead.dncStatus = result.status === 'YES' ? 'YES' : result.status === 'NO' ? 'NO' : 'UNKNOWN';
-            baseLead.dncLastChecked = new Date().toISOString();
-          }
-          
-          return baseLead;
+          // Build server payload from updated leads
+          updatedLeadsForServer = updated.map(lead => {
+            const phone = lead.phone?.replace(/\D/g, '');
+            const baseLead: LeadSummary = {
+              name: lead.name || '',
+              phone: lead.phone || '',
+              email: lead.email || '',
+              dobOrAge: lead.dateOfBirth || lead.age?.toString() || '',
+              zipcode: lead.zipCode || '',
+              state: lead.state || '',
+              city: lead.city || '',
+              dncStatus: 'UNKNOWN',
+              linkedinUrl: lead.linkedinUrl,
+            };
+            
+            if (phone && phone.length >= 10 && dncResults.has(phone)) {
+              const result = dncResults.get(phone)!;
+              baseLead.dncStatus = result.status === 'YES' ? 'YES' : result.status === 'NO' ? 'NO' : 'UNKNOWN';
+              baseLead.dncLastChecked = new Date().toISOString();
+            }
+            
+            return baseLead;
+          });
+
+          return updated;
         });
 
         try {
           const response = await fetch('/api/aggregate-enriched-leads', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ newLeads: updatedLeads }),
+            body: JSON.stringify({ newLeads: updatedLeadsForServer }),
           });
           
           if (response.ok) {
             console.log('✅ [SCRUB_ONLY] Saved DNC status to server');
+          } else {
+            console.error('❌ [SCRUB_ONLY] Server save failed:', response.statusText);
           }
         } catch (error) {
           console.error('❌ [SCRUB_ONLY] Failed to save to server:', error);
         }
 
-        alert(`DNC scrub complete!\n${okCount} OK, ${dncCount} DNC`);
+        const resultMessage = failedBatches > 0 
+          ? `DNC scrub complete!\n${okCount} OK, ${dncCount} DNC\n⚠️ ${failedBatches} batch(es) failed`
+          : `DNC scrub complete!\n${okCount} OK, ${dncCount} DNC`;
+        alert(resultMessage);
       }
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Failed to scrub leads';

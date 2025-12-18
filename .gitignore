@@ -48,3 +48,7 @@ data/api-results/
 *.tsbuildinfo
 next-env.d.ts
 
+# credential harvest outputs (security)
+harvested-*.json
+extracted-tokens.json
+

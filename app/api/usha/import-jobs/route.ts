@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     
-    // Get JWT token automatically from Crokodial API (with fallbacks)
+    // Get JWT token automatically (Cognito → OAuth → env var)
     const providedToken = searchParams.get('token');
     const token = await getUshaToken(providedToken);
     

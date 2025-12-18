@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
     
     console.log(`📞 [DNC SCRUB] Received ${phoneNumbers?.length || 0} phone numbers to scrub`);
     
-    // Get JWT token automatically from Crokodial API (with fallbacks)
+    // Get JWT token automatically (Cognito → OAuth → env var)
     let token: string;
     try {
       token = await getUshaToken();
@@ -74,21 +74,27 @@ export async function POST(request: NextRequest) {
       
       const batchPromises = batch.map(async (phone: string, idx: number) => {
         try {
-          // Clean phone number - remove all non-digits
-          const cleanedPhone = phone.replace(/\D/g, '');
+          // Clean phone number - remove all non-digits and ensure it's a string
+          const cleanedPhone = String(phone || '').replace(/\D/g, '');
           
-          if (cleanedPhone.length < 10) {
-            console.log(`  ⚠️  [DNC SCRUB] Invalid phone: ${phone} (too short)`);
+          // Validate phone number length (10 digits minimum for US numbers)
+          if (!cleanedPhone || cleanedPhone.length < 10) {
+            console.log(`  ⚠️  [DNC SCRUB] Invalid phone: ${phone} (cleaned: ${cleanedPhone}, too short)`);
             return {
-              phone: cleanedPhone || phone,
+              phone: cleanedPhone || String(phone || '').substring(0, 10),
               isDNC: false,
               status: 'INVALID',
-              error: 'Invalid phone number format'
+              error: 'Invalid phone number format (must be at least 10 digits)'
             };
           }
+          
+          // Handle 11-digit numbers (with country code 1) - strip leading 1
+          const normalizedPhone = cleanedPhone.length === 11 && cleanedPhone.startsWith('1') 
+            ? cleanedPhone.substring(1) 
+            : cleanedPhone;
 
-          // Build USHA API URL
-          const url = `https://api-business-agent.ushadvisors.com/Leads/api/leads/scrubphonenumber?currentContextAgentNumber=${encodeURIComponent(currentContextAgentNumber)}&phone=${encodeURIComponent(cleanedPhone)}`;
+          // Build USHA API URL (use normalized phone)
+          const url = `https://api-business-agent.ushadvisors.com/Leads/api/leads/scrubphonenumber?currentContextAgentNumber=${encodeURIComponent(currentContextAgentNumber)}&phone=${encodeURIComponent(normalizedPhone)}`;
 
           const headers = {
             'Authorization': `Bearer ${token}`,
@@ -105,7 +111,7 @@ export async function POST(request: NextRequest) {
 
           // Retry once on auth failure (should be rare with backend validation)
           if (response.status === 401 || response.status === 403) {
-            console.log(`  🔄 [DNC SCRUB] ${cleanedPhone}: Token expired (${response.status}), refreshing and retrying...`);
+            console.log(`  🔄 [DNC SCRUB] ${normalizedPhone}: Token expired (${response.status}), refreshing and retrying...`);
             clearTokenCache();
             const freshToken = await getUshaToken(null, true);
             if (freshToken) {
@@ -119,17 +125,28 @@ export async function POST(request: NextRequest) {
           const requestTime = Date.now() - requestStart;
 
           if (!response.ok) {
-            const errorText = await response.text();
-            console.log(`  ❌ [DNC SCRUB] ${cleanedPhone}: ERROR (${response.status}) - ${response.statusText}`);
+            const errorText = await response.text().catch(() => 'Unable to read error response');
+            console.log(`  ❌ [DNC SCRUB] ${normalizedPhone}: ERROR (${response.status}) - ${response.statusText}`);
             return {
-              phone: cleanedPhone,
+              phone: normalizedPhone,
               isDNC: false,
               status: 'ERROR',
-              error: `USHA API error: ${response.statusText}`
+              error: `USHA API error: ${response.status} ${response.statusText}`
             };
           }
 
-          const result = await response.json();
+          let result;
+          try {
+            result = await response.json();
+          } catch (parseError) {
+            console.log(`  ❌ [DNC SCRUB] ${normalizedPhone}: Failed to parse JSON response`);
+            return {
+              phone: normalizedPhone,
+              isDNC: false,
+              status: 'ERROR',
+              error: 'Invalid JSON response from USHA API'
+            };
+          }
           
           // Parse response - check nested data structure first, then fallback to top-level
           const responseData = result.data || result;
@@ -144,18 +161,20 @@ export async function POST(request: NextRequest) {
           const statusIcon = isDNC ? '🚫' : '✅';
           const reason = responseData.contactStatus?.reason || responseData.reason || (isDNC ? 'Do Not Call' : undefined);
           
-          console.log(`  ${statusIcon} [DNC SCRUB] ${cleanedPhone}: ${status}${reason ? ` (${reason})` : ''} (${requestTime}ms)`);
+          console.log(`  ${statusIcon} [DNC SCRUB] ${normalizedPhone}: ${status}${reason ? ` (${reason})` : ''} (${requestTime}ms)`);
           
           return {
-            phone: cleanedPhone,
+            phone: normalizedPhone,
             isDNC: isDNC,
             status: status,
             reason: reason,
           };
         } catch (error) {
-          console.log(`  ❌ [DNC SCRUB] ${phone}: EXCEPTION - ${error instanceof Error ? error.message : 'Unknown error'}`);
+          const originalPhone = String(phone || '');
+          const fallbackPhone = originalPhone.replace(/\D/g, '').substring(0, 10) || 'unknown';
+          console.log(`  ❌ [DNC SCRUB] ${originalPhone}: EXCEPTION - ${error instanceof Error ? error.message : 'Unknown error'}`);
           return {
-            phone: phone.replace(/\D/g, '') || phone,
+            phone: fallbackPhone,
             isDNC: false,
             status: 'ERROR',
             error: error instanceof Error ? error.message : 'Unknown error'

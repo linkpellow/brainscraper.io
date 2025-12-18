@@ -1,24 +1,16 @@
 /**
- * Automatic USHA JWT Token Fetcher from Crokodial API
+ * Automatic USHA JWT Token Fetcher
  * 
- * Backend validates tokens before returning them, so we trust tokens from the API.
- * Basic format validation is kept for user-provided tokens (env var, request params).
+ * Supports multiple authentication methods in priority order:
+ * 1. Provided token (request parameter)
+ * 2. Cached token (if valid)
+ * 3. Environment variable (USHA_JWT_TOKEN or COGNITO_ID_TOKEN)
+ * 4. Cognito authentication (automatic refresh via COGNITO_REFRESH_TOKEN)
+ * 5. Direct OAuth authentication (USHA_USERNAME/USHA_PASSWORD or USHA_CLIENT_ID/USHA_CLIENT_SECRET)
+ * 
+ * Configure COGNITO_REFRESH_TOKEN for seamless automatic token refresh.
+ * System automatically handles token expiration and refresh without manual intervention.
  */
-
-interface CrokodialTokenResponse {
-  success: boolean;
-  data?: {
-    token: string;
-    timestamp: string;
-    extensionId: string;
-    isFresh: boolean;
-    ageSeconds: number;
-  };
-  timestamp?: string;
-  error?: string;
-  refreshRequired?: boolean;
-  refreshFlag?: boolean;
-}
 
 interface CachedToken {
   token: string;
@@ -28,10 +20,6 @@ interface CachedToken {
 
 // In-memory cache (server-side only)
 let tokenCache: CachedToken | null = null;
-
-const CROKODIAL_API_KEY = '667afcac0137b28fe98fb6becbf684f355e38cba003436ab4ad695f7fbf42f';
-const CROKODIAL_API_URL = 'https://crokodial.com/api/token';
-const TOKEN_BUFFER_SECONDS = 60; // Refresh token 60 seconds before expiration
 
 /**
  * Basic JWT format validation (not expiration check - backend handles that)
@@ -51,99 +39,16 @@ function isValidJWTFormat(token: string): boolean {
 }
 
 /**
- * Fetches a fresh token from Crokodial API
- */
-async function fetchTokenFromCrokodial(): Promise<string | null> {
-  try {
-    console.log('🔑 [USHA_TOKEN] Fetching token from crokodial.com...');
-    
-    const response = await fetch(CROKODIAL_API_URL, {
-      method: 'GET',
-      headers: {
-        'X-API-Key': CROKODIAL_API_KEY,
-      },
-      // Add cache control to prevent caching
-      cache: 'no-store',
-    });
-
-    if (!response.ok) {
-      console.error(`❌ [USHA_TOKEN] Crokodial API error: ${response.status} ${response.statusText}`);
-      return null;
-    }
-
-    const data: CrokodialTokenResponse = await response.json();
-    
-    if (!data.success || !data.data?.token) {
-      if (data.error) {
-        console.error(`❌ [USHA_TOKEN] Crokodial API error: ${data.error}`);
-        if (data.refreshRequired || data.refreshFlag) {
-          console.error('❌ [USHA_TOKEN] Backend token refresh required - token not available');
-        }
-      } else {
-        console.error('❌ [USHA_TOKEN] Invalid response from Crokodial API:', data);
-      }
-      return null;
-    }
-
-    const token = data.data.token;
-    const ageSeconds = data.data.ageSeconds || 0;
-    
-    // Check if token is a test/placeholder token (not a real JWT)
-    // Backend validates expiration, but we still check format
-    const isTestToken = token === 'test-token-123' || !isValidJWTFormat(token);
-    
-    if (isTestToken) {
-      console.warn(`⚠️ [USHA_TOKEN] Crokodial returned test/placeholder token`);
-      return null; // Return null to trigger error (no fallback)
-    }
-    
-    // Backend validates token expiration, so we trust it
-    
-    // Calculate expiration time
-    // If token is very old (ageSeconds > 1 hour), don't cache it - fetch fresh next time
-    // Otherwise, estimate remaining lifetime (JWT tokens typically last hours)
-    // Default to 1 hour expiration if ageSeconds not provided or invalid
-    let estimatedLifetimeSeconds: number;
-    if (ageSeconds > 3600) {
-      // Token is already very old, cache for only 5 minutes (will refresh soon)
-      estimatedLifetimeSeconds = 300;
-    } else if (ageSeconds > 0) {
-      // Token is relatively fresh, estimate remaining time (assume 1 hour total lifetime)
-      estimatedLifetimeSeconds = Math.max(3600 - ageSeconds, 300);
-    } else {
-      // No age info, assume 1 hour lifetime
-      estimatedLifetimeSeconds = 3600;
-    }
-    
-    const expiresAt = Date.now() + (estimatedLifetimeSeconds * 1000) - (TOKEN_BUFFER_SECONDS * 1000);
-    
-    // Cache the token
-    tokenCache = {
-      token,
-      expiresAt,
-      fetchedAt: Date.now(),
-    };
-
-    console.log(`✅ [USHA_TOKEN] Successfully fetched token from Crokodial (age: ${ageSeconds}s, expires in ~${Math.floor(estimatedLifetimeSeconds / 60)}min)`);
-    return token;
-  } catch (error) {
-    console.error('❌ [USHA_TOKEN] Error fetching token from Crokodial:', error);
-    return null;
-  }
-}
-
-/**
  * Gets a valid USHA JWT token with automatic fetching and caching
  * 
- * Backend (Crokodial API) validates tokens before returning them, so we trust API tokens.
- * Basic format validation is kept for user-provided tokens (env var, request params).
- * 
  * Priority order:
- * 1. Cached token (if still within cache expiration window)
- * 2. Environment variable (USHA_JWT_TOKEN) - basic format check
- * 3. Fresh fetch from Crokodial API - backend validates, we trust it
+ * 1. Provided token (request parameter)
+ * 2. Cached token (if still valid)
+ * 3. Environment variable (USHA_JWT_TOKEN or COGNITO_ID_TOKEN)
+ * 4. Cognito authentication (automatic refresh via COGNITO_REFRESH_TOKEN)
+ * 5. Direct OAuth authentication (USHA_USERNAME/USHA_PASSWORD or USHA_CLIENT_ID/USHA_CLIENT_SECRET)
  * 
- * Throws error if all sources fail (no hardcoded fallback for security/maintainability)
+ * Throws error if all sources fail. Configure COGNITO_REFRESH_TOKEN for seamless automation.
  * 
  * @param providedToken - Optional token provided in request (highest priority)
  * @param forceRefresh - Force token refresh even if cached token exists
@@ -169,33 +74,102 @@ export async function getUshaToken(providedToken?: string | null, forceRefresh: 
     return tokenCache.token;
   }
 
-  // Priority 3: Check environment variable (basic format check)
+  // Priority 3: Check environment variable (with expiration validation)
   const envToken = process.env.USHA_JWT_TOKEN;
   if (envToken && envToken.trim()) {
     const token = envToken.trim();
     if (isValidJWTFormat(token)) {
+      // Check token expiration
+      try {
+        const parts = token.split('.');
+        if (parts.length === 3) {
+          const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString());
+          if (payload.exp) {
+            const expiration = payload.exp * 1000;
+            const now = Date.now();
+            const expiresIn = Math.floor((expiration - now) / 1000 / 60);
+            
+            if (expiration > now) {
+              console.log(`🔑 [USHA_TOKEN] Using token from environment variable (expires in ${expiresIn}min)`);
+              // Cache it for future use
+              tokenCache = {
+                token,
+                expiresAt: expiration,
+                fetchedAt: now
+              };
+              return token;
+            } else {
+              console.warn(`⚠️ [USHA_TOKEN] Environment token expired ${Math.abs(expiresIn)} minutes ago, attempting refresh...`);
+              // Token expired, try to refresh via direct auth
+            }
+          } else {
+            // No expiration in token, assume valid
+            console.log('🔑 [USHA_TOKEN] Using token from environment variable (no expiration in token)');
+            return token;
+          }
+        }
+      } catch (e) {
+        // Couldn't decode, but format is valid, use it
       console.log('🔑 [USHA_TOKEN] Using token from environment variable');
       return token;
+      }
     } else {
       console.warn('⚠️ [USHA_TOKEN] Environment token has invalid format, fetching fresh token');
       // Fall through to fetch fresh token
     }
   }
 
-  // Priority 4: Fetch fresh token from Crokodial (backend validates, we trust it)
-  console.log('🔑 [USHA_TOKEN] Fetching fresh token from Crokodial API...');
-  const crokodialToken = await fetchTokenFromCrokodial();
-  if (crokodialToken) {
-    return crokodialToken;
+  // Priority 4: Try Cognito authentication (AWS Cognito for Tampa/LeadArena API)
+  try {
+    const { getCognitoIdToken } = await import('./cognitoAuth');
+    console.log('🔑 [USHA_TOKEN] Attempting Cognito authentication...');
+    const cognitoToken = await getCognitoIdToken(null, forceRefresh);
+    if (cognitoToken) {
+      // Cache it
+      try {
+        const parts = cognitoToken.split('.');
+        if (parts.length === 3) {
+          const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString());
+          if (payload.exp) {
+            tokenCache = {
+              token: cognitoToken,
+              expiresAt: payload.exp * 1000,
+              fetchedAt: Date.now()
+            };
+          }
+        }
+      } catch (e) {
+        // Couldn't decode expiration, but token is valid
+      }
+      return cognitoToken;
+    }
+  } catch (e) {
+    // Cognito auth not configured or failed, continue to fallback
+    console.log('⚠️ [USHA_TOKEN] Cognito authentication not available, trying direct OAuth...');
+  }
+
+  // Priority 5: Try direct OAuth authentication (no middleman)
+  try {
+    const { getUshaTokenDirect } = await import('./ushaDirectAuth');
+    console.log('🔑 [USHA_TOKEN] Attempting direct OAuth authentication...');
+    const directToken = await getUshaTokenDirect(null, forceRefresh);
+    if (directToken) {
+      return directToken;
+    }
+  } catch (e) {
+    // Direct auth not configured or failed
+    console.log('⚠️ [USHA_TOKEN] Direct OAuth authentication not available');
   }
 
   // All token sources failed - this is a critical error
-  // No fallback token - we require proper configuration (env var or working Crokodial API)
   console.error('❌ [USHA_TOKEN] CRITICAL: All token sources failed!');
   throw new Error(
     'Failed to obtain valid USHA token. ' +
-    'Please ensure USHA_JWT_TOKEN environment variable is set with a valid token, ' +
-    'or that the Crokodial API is accessible and returning valid tokens.'
+    'Please configure one of the following:\n' +
+    '  1. Cognito refresh token (RECOMMENDED): COGNITO_REFRESH_TOKEN\n' +
+    '  2. Cognito credentials: COGNITO_USERNAME/COGNITO_PASSWORD\n' +
+    '  3. Direct OAuth: USHA_USERNAME/USHA_PASSWORD or USHA_CLIENT_ID/USHA_CLIENT_SECRET\n' +
+    '  4. Environment variable: USHA_JWT_TOKEN or COGNITO_ID_TOKEN'
   );
 }
 

@@ -12,7 +12,7 @@ async function testIntegration() {
   clearTokenCache();
   
   // Test 1: Get token
-  console.log('\n📋 Step 1: Fetching token from Crokodial...');
+  console.log('\n📋 Step 1: Fetching token (Cognito → OAuth → env var)...');
   let token: string;
   try {
     token = await getUshaToken();
@@ -62,7 +62,7 @@ async function testIntegration() {
       if (response.status === 401) {
         console.error('\n⚠️  Authentication failed - token may be invalid or expired');
         console.error('   This could mean:');
-        console.error('   1. The token from Crokodial is a test token');
+        console.error('   1. The token is a test/placeholder token');
         console.error('   2. The token format is incorrect');
         console.error('   3. The token has expired');
       }

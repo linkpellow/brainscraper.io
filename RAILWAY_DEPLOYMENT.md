@@ -66,7 +66,8 @@ CRON_SECRET=your-random-secret-here
 | Variable | Required | Description | Default |
 |----------|----------|-------------|---------|
 | `DATA_DIR` | Yes | Path to persistent data directory | `/data` (Railway) or `./data` (local) |
-| `USHA_JWT_TOKEN` | No | USHA JWT token (optional, uses Crokodial API if not set) | - |
+| `COGNITO_REFRESH_TOKEN` | No | Cognito refresh token for automatic token refresh (recommended) | - |
+| `USHA_JWT_TOKEN` | No | USHA JWT token (optional, temporary) | - |
 | `CRON_SECRET` | No | Secret for securing cron endpoints | - |
 | `NODE_ENV` | Yes | Environment mode | `production` |
 

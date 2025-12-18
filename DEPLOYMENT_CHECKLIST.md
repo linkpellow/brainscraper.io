@@ -28,7 +28,7 @@
    - [ ] `DATA_DIR=/data` (required)
    - [ ] `NODE_ENV=production` (required)
    - [ ] `CRON_SECRET=your-secret` (optional, for cron security)
-   - [ ] `USHA_JWT_TOKEN=token` (optional, uses Crokodial if not set)
+   - [ ] `COGNITO_REFRESH_TOKEN=token` (recommended) or `USHA_JWT_TOKEN=token` (optional)
 
 4. **Deploy Application**
    - [ ] Railway auto-detects Next.js

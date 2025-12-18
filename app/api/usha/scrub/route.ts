@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
     
-    // Get JWT token automatically from Crokodial API (with fallbacks)
+    // Get JWT token automatically (Cognito → OAuth → env var)
     const providedToken = formData.get('token')?.toString();
     const token = await getUshaToken(providedToken);
     

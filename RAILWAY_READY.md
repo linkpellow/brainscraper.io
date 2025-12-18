@@ -36,7 +36,7 @@ Your codebase is now fully prepared for Railway deployment with persistent data 
 ✅ **File Locking**: Prevents concurrent write conflicts  
 ✅ **Error Handling**: Graceful failures with logging  
 ✅ **Environment Aware**: Works locally and on Railway  
-✅ **Automatic Token Fetching**: DNC checks use Crokodial API automatically  
+✅ **Automatic Token Fetching**: DNC checks use Cognito refresh token automatically  
 
 ## Quick Start
 

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getUshaToken } from '@/utils/getUshaToken';
+import { getUshaToken, clearTokenCache } from '@/utils/getUshaToken';
 
 /**
  * USHA Single Phone Number Scrub API endpoint
@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     const phone = searchParams.get('phone');
     const currentContextAgentNumber = searchParams.get('currentContextAgentNumber') || '00044447';
     
-    // Get JWT token automatically from Crokodial API (with fallbacks)
+    // Get JWT token automatically (Cognito → OAuth → env var)
     const providedToken = searchParams.get('token');
     const token = await getUshaToken(providedToken);
     
@@ -49,15 +49,30 @@ export async function GET(request: NextRequest) {
     // Build USHA API URL
     const url = `https://api-business-agent.ushadvisors.com/Leads/api/leads/scrubphonenumber?currentContextAgentNumber=${encodeURIComponent(currentContextAgentNumber)}&phone=${encodeURIComponent(cleanedPhone)}`;
 
-    const response = await fetch(url, {
+    const headers = {
+      'Authorization': `Bearer ${token}`,
+      'Origin': 'https://agent.ushadvisors.com',
+      'Referer': 'https://agent.ushadvisors.com',
+      'Content-Type': 'application/json',
+    };
+
+    let response = await fetch(url, {
       method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Origin': 'https://agent.ushadvisors.com',
-        'Referer': 'https://agent.ushadvisors.com',
-        'Content-Type': 'application/json',
-      },
+      headers,
     });
+
+    // Retry once on auth failure (automatic token refresh)
+    if (response.status === 401 || response.status === 403) {
+      console.log(`🔄 [SCRUB_PHONE] Token expired (${response.status}), refreshing and retrying...`);
+      clearTokenCache();
+      const freshToken = await getUshaToken(null, true);
+      if (freshToken) {
+        response = await fetch(url, {
+          method: 'GET',
+          headers: { ...headers, 'Authorization': `Bearer ${freshToken}` },
+        });
+      }
+    }
 
     if (!response.ok) {
       const errorText = await response.text();

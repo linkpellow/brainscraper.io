@@ -22,7 +22,7 @@
   - `/api/usha/import-log` - Get DNC results
   - `/api/usha/scrub-phone` - Single phone check
 - **Status**: ✅ All use automatic token fetching (`getUshaToken`)
-- **Flow**: DNC scrubbing works automatically with Crokodial token
+- **Flow**: DNC scrubbing works automatically with Cognito refresh token
 
 ### ✅ **USHA Scrubber Component** (`app/components/USHAScrubber.tsx`)
 - **Calls**: 

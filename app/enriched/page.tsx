@@ -307,16 +307,22 @@ export default function EnrichedLeadsPage() {
             
             if (response.ok) {
               const result = await response.json();
-              if (result.success && result.results) {
+              if (result.success && result.results && Array.isArray(result.results)) {
                 const batchDncCount = result.dncCount || 0;
                 const batchOkCount = result.okCount || 0;
                 
                 console.log(`📥 [FRONTEND DNC] Batch ${batchNum} received: ${batchOkCount} OK, ${batchDncCount} DNC (${batchTime}ms)`);
                 
                 result.results.forEach((r: any) => {
-                  dncResults.set(r.phone, r.status === 'DNC' ? 'YES' : r.status === 'OK' ? 'NO' : 'UNKNOWN');
+                  // Normalize phone number for consistent matching
+                  const normalizedPhone = String(r.phone || '').replace(/\D/g, '');
+                  if (normalizedPhone && normalizedPhone.length >= 10) {
+                    dncResults.set(normalizedPhone, r.status === 'DNC' ? 'YES' : r.status === 'OK' ? 'NO' : 'UNKNOWN');
+                  }
                 });
                 setDncError(null); // Clear any previous errors
+              } else {
+                console.warn(`⚠️ [FRONTEND DNC] Batch ${batchNum} returned invalid response structure`);
               }
             } else {
               const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
@@ -337,9 +343,12 @@ export default function EnrichedLeadsPage() {
                 console.error('⚠️  [FRONTEND DNC] ============================================\n');
                 break; // Stop processing more batches
               }
+              // For other errors, continue processing remaining batches
             }
           } catch (error) {
-            console.error(`❌ [FRONTEND DNC] Batch ${batchNum} exception:`, error);
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+            console.error(`❌ [FRONTEND DNC] Batch ${batchNum} exception:`, errorMessage);
+            // Continue processing remaining batches unless it's a critical error
           }
           
           const progress = Math.min(i + batchSize, leadsToScrub.length);
@@ -362,8 +371,9 @@ export default function EnrichedLeadsPage() {
           
           setLeads(prevLeads => {
             const updatedLeads = prevLeads.map((lead: LeadSummary) => {
+              // Normalize phone number for consistent matching
               const phone = lead.phone?.replace(/\D/g, '');
-              if (phone && dncResults.has(phone)) {
+              if (phone && phone.length >= 10 && dncResults.has(phone)) {
                 return { 
                   ...lead, 
                   dncStatus: dncResults.get(phone) || 'UNKNOWN',
