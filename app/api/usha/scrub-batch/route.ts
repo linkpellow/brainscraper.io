@@ -20,28 +20,29 @@ export async function POST(request: NextRequest) {
     
     console.log(`📞 [DNC SCRUB] Received ${phoneNumbers?.length || 0} phone numbers to scrub`);
     
-    // Get JWT token automatically (Cognito → OAuth → env var)
+    // Get USHA JWT token (required for USHA DNC API)
     let token: string;
     try {
       token = await getUshaToken();
+      console.log('✅ [DNC SCRUB] Using USHA JWT token for DNC API');
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Token fetch failed';
-      console.error(`❌ [DNC SCRUB] USHA JWT token fetch failed: ${errorMsg}`);
+      console.error(`❌ [DNC SCRUB] USHA token fetch failed: ${errorMsg}`);
       return NextResponse.json(
         { 
           success: false,
-          error: `Failed to obtain valid USHA token. ${errorMsg}` 
+          error: `Failed to obtain valid USHA JWT token. ${errorMsg}` 
         },
         { status: 500 }
       );
     }
     
     if (!token) {
-      console.error('❌ [DNC SCRUB] USHA JWT token is null/undefined');
+      console.error('❌ [DNC SCRUB] Token is null/undefined');
       return NextResponse.json(
         { 
           success: false,
-          error: 'USHA JWT token is required. Token fetch returned null.' 
+          error: 'Token is required. Token fetch returned null.' 
         },
         { status: 401 }
       );
@@ -93,13 +94,23 @@ export async function POST(request: NextRequest) {
             ? cleanedPhone.substring(1) 
             : cleanedPhone;
 
-          // Build USHA API URL (use normalized phone)
+          // Use USHA DNC API directly (requires USHA JWT token)
+          // Get USHA JWT token (token might be Cognito, so get USHA JWT)
+          let ushaJwtToken = token;
+          try {
+            // Try to get USHA JWT token directly
+            const { getUshaToken } = await import('@/utils/getUshaToken');
+            ushaJwtToken = await getUshaToken();
+          } catch (e) {
+            // If that fails, token might already be USHA JWT, use it
+            console.log(`  ⚠️ [DNC SCRUB] ${normalizedPhone}: Using provided token (may need to be USHA JWT)`);
+          }
+          
           const url = `https://api-business-agent.ushadvisors.com/Leads/api/leads/scrubphonenumber?currentContextAgentNumber=${encodeURIComponent(currentContextAgentNumber)}&phone=${encodeURIComponent(normalizedPhone)}`;
-
-          const headers = {
-            'Authorization': `Bearer ${token}`,
-            'Origin': 'https://agent.ushadvisors.com',
-            'Referer': 'https://agent.ushadvisors.com',
+          let headers: Record<string, string> = {
+            'Authorization': `Bearer ${ushaJwtToken}`,
+            'accept': 'application/json, text/plain, */*',
+            'Referer': 'https://agent.ushadvisors.com/',
             'Content-Type': 'application/json',
           };
 
@@ -109,119 +120,130 @@ export async function POST(request: NextRequest) {
             headers,
           });
 
-          // Retry once on auth failure (should be rare with backend validation)
+          // Retry once on auth failure (automatic USHA token refresh)
           if (response.status === 401 || response.status === 403) {
-            console.log(`  🔄 [DNC SCRUB] ${normalizedPhone}: Token expired (${response.status}), refreshing and retrying...`);
+            console.log(`  🔄 [DNC SCRUB] ${normalizedPhone}: Token expired (${response.status}), refreshing USHA token and retrying...`);
             clearTokenCache();
-            const freshToken = await getUshaToken(null, true);
-            if (freshToken) {
-              response = await fetch(url, {
-                method: 'GET',
-                headers: { ...headers, 'Authorization': `Bearer ${freshToken}` },
-              });
+            try {
+              const { getUshaToken } = await import('@/utils/getUshaToken');
+              const freshUshaToken = await getUshaToken(null, true);
+              if (freshUshaToken) {
+                headers = { ...headers, 'Authorization': `Bearer ${freshUshaToken}` };
+                response = await fetch(url, {
+                  method: 'GET',
+                  headers,
+                });
+              }
+            } catch (e) {
+              console.log(`  ⚠️ [DNC SCRUB] ${normalizedPhone}: USHA token refresh failed:`, e);
             }
           }
-
-          const requestTime = Date.now() - requestStart;
-
+          
           if (!response.ok) {
-            const errorText = await response.text().catch(() => 'Unable to read error response');
-            console.log(`  ❌ [DNC SCRUB] ${normalizedPhone}: ERROR (${response.status}) - ${response.statusText}`);
+            const errorText = await response.text().catch(() => 'Unknown error');
+            console.log(`  ❌ [DNC SCRUB] ${normalizedPhone}: API error ${response.status}: ${errorText.substring(0, 100)}`);
             return {
               phone: normalizedPhone,
               isDNC: false,
               status: 'ERROR',
-              error: `USHA API error: ${response.status} ${response.statusText}`
-            };
-          }
-
-          let result;
-          try {
-            result = await response.json();
-          } catch (parseError) {
-            console.log(`  ❌ [DNC SCRUB] ${normalizedPhone}: Failed to parse JSON response`);
-            return {
-              phone: normalizedPhone,
-              isDNC: false,
-              status: 'ERROR',
-              error: 'Invalid JSON response from USHA API'
+              error: `API error: ${response.status} ${response.statusText}`
             };
           }
           
-          // Parse response - check nested data structure first, then fallback to top-level
+          const result = await response.json();
+          
+          // Parse USHA DNC API response format:
+          // {
+          //   "status": "Success",
+          //   "data": {
+          //     "phoneNumber": "2694621403",
+          //     "contactStatus": {
+          //       "canContact": false,
+          //       "reason": "Federal DNC"
+          //     },
+          //     "isDoNotCall": true
+          //   }
+          // }
           const responseData = result.data || result;
+          const contactStatus = responseData.contactStatus || {};
+          
+          // DNC status: isDoNotCall is the primary indicator
           const isDNC = responseData.isDoNotCall === true || 
-                       responseData.contactStatus?.canContact === false ||
-                       result.isDNC === true || 
+                       contactStatus.canContact === false ||
                        result.isDoNotCall === true || 
-                       result.status === 'DNC' || 
-                       result.status === 'Do Not Call';
+                       result.canContact === false;
           
-          const status = isDNC ? 'DNC' : 'OK';
-          const statusIcon = isDNC ? '🚫' : '✅';
-          const reason = responseData.contactStatus?.reason || responseData.reason || (isDNC ? 'Do Not Call' : undefined);
+          // Can contact: opposite of isDNC, or explicit canContact field
+          const canContact = contactStatus.canContact !== false && !isDNC;
           
-          console.log(`  ${statusIcon} [DNC SCRUB] ${normalizedPhone}: ${status}${reason ? ` (${reason})` : ''} (${requestTime}ms)`);
+          // Reason: from contactStatus.reason
+          const reason = contactStatus.reason || responseData.reason || result.reason || 
+                        (isDNC ? 'Do Not Call' : undefined);
+          
+          const duration = Date.now() - requestStart;
+          console.log(`  ✅ [DNC SCRUB] ${normalizedPhone}: ${isDNC ? 'DNC' : 'OK'} (${duration}ms)`);
           
           return {
             phone: normalizedPhone,
             isDNC: isDNC,
-            status: status,
-            reason: reason,
+            canContact: canContact,
+            status: isDNC ? 'DNC' : 'OK',
+            reason: reason
           };
         } catch (error) {
-          const originalPhone = String(phone || '');
-          const fallbackPhone = originalPhone.replace(/\D/g, '').substring(0, 10) || 'unknown';
-          console.log(`  ❌ [DNC SCRUB] ${originalPhone}: EXCEPTION - ${error instanceof Error ? error.message : 'Unknown error'}`);
+          const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+          console.error(`  ❌ [DNC SCRUB] ${phone}: Exception: ${errorMsg}`);
           return {
-            phone: fallbackPhone,
+            phone: String(phone || '').replace(/\D/g, '').substring(0, 10),
             isDNC: false,
             status: 'ERROR',
-            error: error instanceof Error ? error.message : 'Unknown error'
+            error: errorMsg
           };
         }
       });
-
+      
       const batchResults = await Promise.all(batchPromises);
       results.push(...batchResults);
-      
-      const dncInBatch = batchResults.filter(r => r.isDNC).length;
-      const okInBatch = batchResults.filter(r => r.status === 'OK').length;
-      console.log(`  📊 [DNC SCRUB] Batch ${batchNum} complete: ${okInBatch} OK, ${dncInBatch} DNC, ${batchResults.length - okInBatch - dncInBatch} errors\n`);
       
       // Small delay between batches to avoid rate limiting
       if (i + batchSize < phoneNumbers.length) {
         await new Promise(resolve => setTimeout(resolve, 100));
       }
     }
-
-    const totalTime = Date.now() - startTime;
-    const dncCount = results.filter(r => r.isDNC).length;
-    const okCount = results.filter(r => r.status === 'OK').length;
-    const errorCount = results.length - dncCount - okCount;
-
-    console.log('✅ [DNC SCRUB] ============================================');
-    console.log(`✅ [DNC SCRUB] Batch Scrubbing Complete!`);
-    console.log(`✅ [DNC SCRUB] Total: ${results.length} numbers`);
-    console.log(`✅ [DNC SCRUB] OK: ${okCount} | DNC: ${dncCount} | Errors: ${errorCount}`);
-    console.log(`✅ [DNC SCRUB] Time: ${totalTime}ms (${(totalTime / 1000).toFixed(2)}s)`);
-    console.log('✅ [DNC SCRUB] ============================================\n');
-
+    
+    const duration = Date.now() - startTime;
+    const stats = {
+      total: results.length,
+      success: results.filter(r => r.status === 'OK' || r.status === 'DNC').length,
+      failed: results.filter(r => r.status === 'ERROR' || r.status === 'INVALID').length,
+      dnc: results.filter(r => r.isDNC).length,
+      ok: results.filter(r => !r.isDNC && r.status === 'OK').length
+    };
+    
+    console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('📊 [DNC SCRUB] Batch Scrubbing Complete');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log(`Total: ${stats.total}`);
+    console.log(`Success: ${stats.success}`);
+    console.log(`Failed: ${stats.failed}`);
+    console.log(`DNC: ${stats.dnc}`);
+    console.log(`OK: ${stats.ok}`);
+    console.log(`Duration: ${duration}ms`);
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+    
     return NextResponse.json({
       success: true,
       results: results,
-      total: results.length,
-      dncCount: dncCount,
-      okCount: okCount,
+      stats: stats
     });
   } catch (error) {
-    const totalTime = Date.now() - startTime;
-    console.error('❌ [DNC SCRUB] ============================================');
-    console.error('❌ [DNC SCRUB] Fatal Error:', error);
-    console.error(`❌ [DNC SCRUB] Time before error: ${totalTime}ms`);
-    console.error('❌ [DNC SCRUB] ============================================\n');
+    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+    console.error(`❌ [DNC SCRUB] Request error: ${errorMsg}`);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Unknown error occurred' },
+      { 
+        success: false,
+        error: errorMsg 
+      },
       { status: 500 }
     );
   }

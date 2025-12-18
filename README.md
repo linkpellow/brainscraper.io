@@ -10,6 +10,12 @@ A hacker-themed website for uploading and viewing spreadsheets (CSV, Excel files
 - Data visualization
 - **Lead Enrichment**: Auto-enrich leads with skip-tracing, income data, company info, LinkedIn profiles, Facebook data, and more
 - **DNC Scrubbing**: Bulk scrub leads for Do-Not-Call status using USHA API
+  - ✅ Automatic token acquisition and refresh
+  - ✅ Seamless lead processing without interruptions
+  - 📖 [Full Documentation](./docs/DNC_SCRUBBING_IMPLEMENTATION.md) | [Quick Reference](./docs/DNC_QUICK_REFERENCE.md)
+  - ✅ Automatic token acquisition and refresh
+  - ✅ Seamless lead processing without interruptions
+  - 📖 [Full Documentation](./docs/DNC_SCRUBBING_IMPLEMENTATION.md) | [Quick Reference](./docs/DNC_QUICK_REFERENCE.md)
 
 ## Getting Started
 
@@ -92,6 +98,8 @@ For basic functionality, no environment variables are required. All file process
 
 **For USHA DNC Scrubbing:**
 - Add to `.env.local`: `USHA_JWT_TOKEN=your-jwt-token-here`
+- System automatically refreshes tokens on expiration (401/403 errors)
+- 📖 **Documentation**: [Full Implementation Guide](./docs/DNC_SCRUBBING_IMPLEMENTATION.md) | [Quick Reference](./docs/DNC_QUICK_REFERENCE.md)
 - Alternatively, you can enter the token manually in the UI when scrubbing
 - Get your JWT token from USHA's authentication system
 

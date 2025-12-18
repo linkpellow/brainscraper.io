@@ -7,6 +7,7 @@ import { isLeadProcessed, saveEnrichedLeadImmediate, getLeadKey } from './increm
 import { extractLeadSummary } from './extractLeadSummary';
 import { callAPIWithConfig } from './apiToggleMiddleware';
 import { getUshaToken, clearTokenCache } from './getUshaToken';
+import { getCognitoIdToken, clearCognitoTokenCache } from './cognitoAuth';
 
 /**
  * Detailed progress information for real-time tracking
@@ -1145,27 +1146,56 @@ function shouldContinueEnrichment(
 
 /**
  * Helper: Makes DNC API call with automatic token refresh on auth failure
- * Backend guarantees valid tokens, so retries should be rare (network/race conditions only)
+ * 
+ * Uses USHA DNC API which accepts phone numbers directly and requires USHA JWT tokens.
+ * 
+ * Endpoint: GET https://api-business-agent.ushadvisors.com/Leads/api/leads/scrubphonenumber
+ * 
+ * Response format:
+ * {
+ *   "status": "Success",
+ *   "data": {
+ *     "phoneNumber": "2694621403",
+ *     "contactStatus": {
+ *       "canContact": false,
+ *       "reason": "Federal DNC"
+ *     },
+ *     "isDoNotCall": true
+ *   }
+ * }
+ * 
+ * Automatic refresh: On 401/403, refreshes USHA JWT token and retries automatically.
  */
 async function callDNCAPI(phone: string, token: string): Promise<Response> {
+  const USHA_DNC_API_BASE = 'https://api-business-agent.ushadvisors.com';
   const currentContextAgentNumber = '00044447';
-  const url = `https://api-business-agent.ushadvisors.com/Leads/api/leads/scrubphonenumber?currentContextAgentNumber=${encodeURIComponent(currentContextAgentNumber)}&phone=${encodeURIComponent(phone)}`;
   
-  const headers = {
+  // Use provided token (should be USHA JWT token from getUshaToken())
+  // Call USHA DNC API directly
+  const url = `${USHA_DNC_API_BASE}/Leads/api/leads/scrubphonenumber?currentContextAgentNumber=${encodeURIComponent(currentContextAgentNumber)}&phone=${encodeURIComponent(phone)}`;
+  let headers: Record<string, string> = {
     'Authorization': `Bearer ${token}`,
-    'Origin': 'https://agent.ushadvisors.com',
-    'Referer': 'https://agent.ushadvisors.com',
+    'accept': 'application/json, text/plain, */*',
+    'Referer': 'https://agent.ushadvisors.com/',
     'Content-Type': 'application/json',
   };
   
   let response = await fetch(url, { method: 'GET', headers });
   
-  // Retry once on auth failure (should be rare with backend validation)
+  // Retry once on auth failure (automatic USHA token refresh)
   if (response.status === 401 || response.status === 403) {
+    console.log('[DNC_CHECK] Token expired, refreshing USHA token...');
     clearTokenCache();
-    const freshToken = await getUshaToken(null, true);
-    if (freshToken) {
-      response = await fetch(url, { method: 'GET', headers: { ...headers, 'Authorization': `Bearer ${freshToken}` } });
+    
+    try {
+      // Get fresh USHA JWT token
+      const freshUshaToken = await getUshaToken(null, true);
+      if (freshUshaToken) {
+        headers = { ...headers, 'Authorization': `Bearer ${freshUshaToken}` };
+        response = await fetch(url, { method: 'GET', headers });
+      }
+    } catch (e) {
+      console.log('[DNC_CHECK] USHA token refresh failed:', e);
     }
   }
   
@@ -1191,14 +1221,21 @@ async function checkDNCStatus(
       return { isDNC: false, canContact: true, reason: 'Invalid phone number format' };
     }
     
-    // Get USHA token
-    const token = await getUshaToken();
-    if (!token) {
-      console.log(`[DNC_CHECK] ⚠️  Failed to get USHA token - skipping DNC check`);
+    // Get USHA JWT token (required for USHA DNC API)
+    let token: string | null = null;
+    try {
+      token = await getUshaToken();
+    } catch (e) {
+      console.log(`[DNC_CHECK] ⚠️  Failed to get USHA token - skipping DNC check:`, e);
       return { isDNC: false, canContact: true, reason: 'Token fetch failed' };
     }
     
-    // Call USHA DNC API (with automatic retry on auth failure)
+    if (!token) {
+      console.log(`[DNC_CHECK] ⚠️  No token available - skipping DNC check`);
+      return { isDNC: false, canContact: true, reason: 'Token fetch failed' };
+    }
+    
+    // Call USHA DNC API with automatic token refresh
     const response = await callDNCAPI(cleanedPhone, token);
     
     if (!response.ok) {
@@ -1208,14 +1245,36 @@ async function checkDNCStatus(
     
     const result = await response.json();
     
-    // Parse response - check nested data structure first, then fallback to top-level
+    // Parse USHA DNC API response format:
+    // {
+    //   "status": "Success",
+    //   "data": {
+    //     "phoneNumber": "2694621403",
+    //     "contactStatus": {
+    //       "phoneNumber": "2694621403",
+    //       "canContact": false,
+    //       "reason": "Federal DNC",
+    //       "expiryDateUTC": null
+    //     },
+    //     "isDoNotCall": true,
+    //     "objectState": 0
+    //   }
+    // }
     const responseData = result.data || result;
+    const contactStatus = responseData.contactStatus || {};
+    
+    // DNC status: isDoNotCall is the primary indicator
     const isDNC = responseData.isDoNotCall === true || 
-                responseData.contactStatus?.canContact === false ||
-                result.isDNC === true || 
-                result.isDoNotCall === true;
-    const canContact = responseData.contactStatus?.canContact !== false && !isDNC;
-    const reason = responseData.contactStatus?.reason || responseData.reason || (isDNC ? 'Do Not Call' : undefined);
+                contactStatus.canContact === false ||
+                result.isDoNotCall === true || 
+                result.canContact === false;
+    
+    // Can contact: explicit canContact field from contactStatus
+    const canContact = contactStatus.canContact !== false && !isDNC;
+    
+    // Reason: from contactStatus.reason
+    const reason = contactStatus.reason || responseData.reason || result.reason || 
+                  (isDNC ? 'Do Not Call' : undefined);
     
     return {
       isDNC,
