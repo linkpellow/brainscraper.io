@@ -326,15 +326,15 @@ export async function getUshaTokenDirect(
       } else {
         console.log('⚠️ [USHA_AUTH] Environment token expired, attempting refresh...');
         // Token expired, try to refresh if we have refresh_token
-        const refreshToken = process.env.USHA_REFRESH_TOKEN;
-        if (refreshToken) {
-          const refreshed = await refreshToken(refreshToken);
+        const envRefreshToken = process.env.USHA_REFRESH_TOKEN;
+        if (envRefreshToken) {
+          const refreshed = await refreshToken(envRefreshToken);
           if (refreshed) {
             const expiration = getTokenExpiration(refreshed.access_token) || 
                             (Date.now() + (refreshed.expires_in * 1000));
             tokenCache = {
               access_token: refreshed.access_token,
-              refresh_token: refreshed.refresh_token || refreshToken,
+              refresh_token: refreshed.refresh_token || envRefreshToken,
               expiresAt: expiration,
               fetchedAt: Date.now()
             };
