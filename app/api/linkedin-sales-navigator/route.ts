@@ -1714,6 +1714,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Extract rate limit headers from response (if available)
+    const rateLimitHeaders = {
+      limit: response.headers.get('x-ratelimit-requests-limit'),
+      remaining: response.headers.get('x-ratelimit-requests-remaining'),
+      reset: response.headers.get('x-ratelimit-requests-reset'),
+      retryAfter: response.headers.get('retry-after') || response.headers.get('Retry-After'),
+    };
+    
+    // Log rate limit headers for monitoring
+    if (rateLimitHeaders.limit || rateLimitHeaders.remaining) {
+      logger.log('Rate Limit Headers from RapidAPI', {
+        endpoint,
+        monthlyLimit: rateLimitHeaders.limit,
+        remaining: rateLimitHeaders.remaining,
+        resetIn: rateLimitHeaders.reset ? `${Math.floor(parseInt(rateLimitHeaders.reset, 10) / 3600)} hours` : 'unknown',
+        retryAfter: rateLimitHeaders.retryAfter,
+      });
+    }
+    
     const result = await response.text();
     
     // EXTENSIVE LOGGING: Log raw response
@@ -1721,7 +1740,8 @@ export async function POST(request: NextRequest) {
       endpoint,
       responseLength: result.length,
       responsePreview: result.substring(0, 500),
-      responseType: typeof result
+      responseType: typeof result,
+      rateLimitHeaders,
     });
     
     // Try to parse as JSON, fallback to text
