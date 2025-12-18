@@ -682,6 +682,12 @@ export default function LinkedInLeadGenerator() {
   };
 
   const handleSearch = async () => {
+    // Prevent concurrent searches - if already searching, ignore new request
+    if (isSearching) {
+      console.warn('🔍 [SEARCH] ⚠️ Search already in progress, ignoring duplicate request');
+      return;
+    }
+    
     console.log('🔍 [SEARCH] Starting handleSearch');
     console.log('🔍 [SEARCH] Search params:', JSON.stringify(searchParams, null, 2));
     console.log('🔍 [SEARCH] Search type:', searchType);
@@ -906,7 +912,12 @@ export default function LinkedInLeadGenerator() {
     const maxPages = maxPagesToFetch;
     const maxResults = parseInt(String(searchParams.limit || '2500')) || 2500;
     let consecutive429Errors = 0;
-    let baseDelayMs = 2000; // Base delay between pages (2 seconds)
+    // Calculate delay to match rate limiter: 5 requests per minute = 12 seconds between requests
+    // Use 13 seconds to be conservative and account for processing time
+    const rateLimitPerMinute = parseInt(process.env.RAPIDAPI_RATE_LIMIT_MAX || '5', 10);
+    const calculatedDelayMs = Math.ceil((60 * 1000) / rateLimitPerMinute); // 12000ms = 12 seconds for 5/min
+    const MINIMUM_DELAY_MS = Math.max(calculatedDelayMs, 13000); // Minimum 13 seconds between pages to respect rate limits
+    let baseDelayMs = MINIMUM_DELAY_MS; // Use constant to prevent accidental resets
     
     // Circuit breaker: if we get too many consecutive 429s, stop early
     const CIRCUIT_BREAKER_THRESHOLD = 3; // Stop after 3 consecutive 429s
@@ -961,18 +972,45 @@ export default function LinkedInLeadGenerator() {
           try {
             pageResults = await fetchSinglePage(page);
             
-            // Success - reset rate limit tracking
+            // Success - reset rate limit tracking (but keep minimum delay)
             if (consecutive429Errors > 0) {
               console.log(`📄 [PAGINATION] ✅ Recovered from rate limit, resetting adaptive delays`);
               consecutive429Errors = 0;
-              baseDelayMs = 2000;
+              baseDelayMs = MINIMUM_DELAY_MS; // Reset to minimum, not 2 seconds!
             }
             break; // Success, exit retry loop
             
           } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
             
-            // Check if it's a rate limit error (429)
+            // Check if it's an account freeze (should stop immediately, no retries)
+            const isAccountFrozen = errorMessage.includes('ACCOUNT_FROZEN:');
+            
+            if (isAccountFrozen) {
+              // Account freeze - stop immediately, don't retry
+              const match = errorMessage.match(/ACCOUNT_FROZEN:(\d+):(.+)/);
+              const freezeDurationSeconds = match ? parseInt(match[1], 10) : 3600;
+              const freezeMessage = match ? match[2] : errorMessage;
+              const freezeDurationMinutes = Math.ceil(freezeDurationSeconds / 60);
+              
+              console.error(`📄 [PAGINATION] 🔴 Account frozen - stopping immediately (no retries)`);
+              setError(freezeMessage || `Account frozen for ${freezeDurationMinutes} minutes. Please wait before trying again.`);
+              setScrapingProgress(prev => ({ 
+                ...prev, 
+                status: 'error', 
+                currentOperation: `Account frozen - please wait ${freezeDurationMinutes} minutes` 
+              }));
+              
+              // Return partial results if we have any
+              if (allResults.length > 0) {
+                console.log(`📄 [PAGINATION] Returning ${allResults.length} leads collected before account freeze`);
+                setResults(allResults);
+                setWorkflowStep('results');
+              }
+              return; // Exit immediately - no retries for account freezes
+            }
+            
+            // Check if it's a rate limit error (429) - can retry with backoff
             const isRateLimit = errorMessage.includes('RATE_LIMIT:') || 
                                errorMessage.includes('429') || 
                                errorMessage.includes('Rate limit');
@@ -1180,8 +1218,55 @@ export default function LinkedInLeadGenerator() {
     console.log(`📄 [FETCH_PAGE] Response result keys:`, Object.keys(result));
     console.log(`📄 [FETCH_PAGE] Response result (first 500 chars):`, JSON.stringify(result, null, 2).substring(0, 500));
 
+    // Check for errors in response body (even if HTTP status is 200)
+    // RapidAPI sometimes returns 200 OK with success: false in the body
+    if (result.success === false || (result.data && typeof result.data === 'object' && result.data.success === false)) {
+      const errorMessage = result.message || result.error || result.data?.message || result.data?.error || 'API request failed';
+      
+      // Detect account freeze separately (should NOT retry - it's a 60-minute block)
+      const isAccountFrozen = errorMessage.toLowerCase().includes('frozen') || 
+                             errorMessage.toLowerCase().includes('60 mins') ||
+                             errorMessage.toLowerCase().includes('account system');
+      
+      // Regular rate limits (can retry with backoff)
+      const isRateLimit = result.isRateLimit || 
+                         errorMessage.toLowerCase().includes('rate limit') ||
+                         errorMessage.toLowerCase().includes('429');
+      
+      console.error(`📄 [FETCH_PAGE] ❌ API returned error in response body:`, errorMessage);
+      
+      if (isAccountFrozen) {
+        // Account freeze - stop immediately, don't retry
+        const freezeMatch = errorMessage.match(/(\d+)\s*(mins?|minutes?|hours?)/i);
+        const freezeDuration = freezeMatch ? parseInt(freezeMatch[1], 10) * 60 : 3600; // Convert to seconds
+        console.error(`📄 [FETCH_PAGE] Account frozen detected - stopping immediately (no retries)`);
+        throw new Error(`ACCOUNT_FROZEN:${freezeDuration}:${errorMessage}`);
+      } else if (isRateLimit) {
+        // Regular rate limit - can retry with backoff
+        const retryAfter = result.retryAfter || result.details?.retryAfter || 60;
+        console.error(`📄 [FETCH_PAGE] Rate limit detected, retry after: ${retryAfter}s`);
+        throw new Error(`RATE_LIMIT:${retryAfter}:${errorMessage}`);
+      }
+      
+      throw new Error(errorMessage);
+    }
+
     if (!response.ok) {
       console.error(`📄 [FETCH_PAGE] ❌ API error:`, result);
+      
+      const errorMessage = result.message || result.error || result.details?.message || result.details?.error || 'Failed to fetch page';
+      
+      // Check for account freeze first (should stop immediately, no retries)
+      const isAccountFrozen = errorMessage.toLowerCase().includes('frozen') || 
+                             errorMessage.toLowerCase().includes('60 mins') ||
+                             errorMessage.toLowerCase().includes('account system');
+      
+      if (isAccountFrozen) {
+        const freezeMatch = errorMessage.match(/(\d+)\s*(mins?|minutes?|hours?)/i);
+        const freezeDuration = freezeMatch ? parseInt(freezeMatch[1], 10) * 60 : 3600; // Convert to seconds
+        console.error(`📄 [FETCH_PAGE] Account frozen detected - stopping immediately (no retries)`);
+        throw new Error(`ACCOUNT_FROZEN:${freezeDuration}:${errorMessage}`);
+      }
       
       // Check for 429 rate limit in multiple places:
       // 1. HTTP status code (429)
@@ -1203,7 +1288,7 @@ export default function LinkedInLeadGenerator() {
         throw new Error(`RATE_LIMIT:${retryAfter}:Rate limit exceeded`);
       }
       
-      throw new Error(result.message || result.error || 'Failed to fetch page');
+      throw new Error(errorMessage);
     }
 
     let rawResults: LeadResult[] = [];

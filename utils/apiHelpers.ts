@@ -195,10 +195,11 @@ class RateLimiter {
 
 // Singleton rate limiter instance
 // Adjust limits based on your RapidAPI subscription tier
-// Default: 10 requests per minute (conservative to avoid hitting limits)
+// Default: 5 requests per minute (very conservative to avoid account freezes)
+// Account freezes happen at 60-minute blocks, so we need to be very careful
 // For higher tiers, set RAPIDAPI_RATE_LIMIT_MAX in .env.local
 export const rateLimiter = new RateLimiter(
-  parseInt(process.env.RAPIDAPI_RATE_LIMIT_MAX || '8', 10), // Reduced default to 8 to be safer
+  parseInt(process.env.RAPIDAPI_RATE_LIMIT_MAX || '5', 10), // Reduced to 5 per minute to prevent freezes
   parseInt(process.env.RAPIDAPI_RATE_LIMIT_WINDOW_MS || '60000', 10) // Per minute
 );
 

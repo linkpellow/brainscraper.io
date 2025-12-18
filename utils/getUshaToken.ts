@@ -119,29 +119,47 @@ export async function getUshaToken(providedToken?: string | null, forceRefresh: 
     }
   }
 
-  // Priority 4: Try Cognito authentication (AWS Cognito for Tampa/LeadArena API)
+  // Priority 4: Try Cognito authentication (exchange Cognito ID token for USHA JWT)
   try {
     const { getCognitoIdToken } = await import('./cognitoAuth');
     console.log('🔑 [USHA_TOKEN] Attempting Cognito authentication...');
     const cognitoToken = await getCognitoIdToken(null, forceRefresh);
     if (cognitoToken) {
-      // Cache it
+      // Exchange Cognito ID token for USHA JWT token
       try {
-        const parts = cognitoToken.split('.');
-        if (parts.length === 3) {
-          const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString());
-          if (payload.exp) {
-            tokenCache = {
-              token: cognitoToken,
-              expiresAt: payload.exp * 1000,
-              fetchedAt: Date.now()
-            };
+        const { exchangeCognitoForUshaJwt } = await import('./exchangeCognitoForUshaJwt');
+        console.log('🔄 [USHA_TOKEN] Exchanging Cognito ID token for USHA JWT token...');
+        const ushaJwtToken = await exchangeCognitoForUshaJwt(cognitoToken);
+        
+        if (ushaJwtToken) {
+          // Cache the USHA JWT token
+          try {
+            const parts = ushaJwtToken.split('.');
+            if (parts.length === 3) {
+              const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString());
+              if (payload.exp) {
+                tokenCache = {
+                  token: ushaJwtToken,
+                  expiresAt: payload.exp * 1000,
+                  fetchedAt: Date.now()
+                };
+              }
+            }
+          } catch (e) {
+            // Couldn't decode expiration, but token is valid
           }
+          console.log('✅ [USHA_TOKEN] Successfully exchanged Cognito token for USHA JWT');
+          return ushaJwtToken;
+        } else {
+          console.log('⚠️ [USHA_TOKEN] Token exchange failed, using Cognito ID token directly (may not work)');
+          // Fallback: try using Cognito ID token directly (may not work)
+          return cognitoToken;
         }
       } catch (e) {
-        // Couldn't decode expiration, but token is valid
+        console.log('⚠️ [USHA_TOKEN] Token exchange error, using Cognito ID token directly:', e);
+        // Fallback: try using Cognito ID token directly
+        return cognitoToken;
       }
-      return cognitoToken;
     }
   } catch (e) {
     // Cognito auth not configured or failed, continue to fallback

@@ -54,6 +54,8 @@ export async function GET(request: NextRequest) {
       'Origin': 'https://agent.ushadvisors.com',
       'Referer': 'https://agent.ushadvisors.com',
       'Content-Type': 'application/json',
+      // Add headers that TampaUSHA uses (may help with Cognito token acceptance)
+      'x-domain': 'app.tampausha.com',
     };
 
     let response = await fetch(url, {
@@ -70,7 +72,7 @@ export async function GET(request: NextRequest) {
         response = await fetch(url, {
           method: 'GET',
           headers: { ...headers, 'Authorization': `Bearer ${freshToken}` },
-        });
+    });
       }
     }
 

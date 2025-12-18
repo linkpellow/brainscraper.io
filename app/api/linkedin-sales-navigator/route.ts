@@ -1540,8 +1540,15 @@ export async function POST(request: NextRequest) {
 
     // Check rate limiting
     const rateLimitKey = `linkedin-sales-navigator-${endpoint}`;
-    if (!rateLimiter.isAllowed(rateLimitKey)) {
+    const isAllowed = rateLimiter.isAllowed(rateLimitKey);
+    
+    if (!isAllowed) {
       const timeUntilNext = rateLimiter.getTimeUntilNext(rateLimitKey);
+      logger.warn('Rate limit blocked request', {
+        endpoint,
+        rateLimitKey,
+        timeUntilNext: Math.ceil(timeUntilNext / 1000),
+      });
       return NextResponse.json(
         { 
           error: 'Rate limit exceeded',
@@ -1556,6 +1563,12 @@ export async function POST(request: NextRequest) {
         }
       );
     }
+    
+    // Log rate limit check passed (for debugging)
+    logger.log('Rate limit check passed', {
+      endpoint,
+      rateLimitKey,
+    });
 
     // EXTENSIVE LOGGING: Log exact request being sent to API
     logger.log('LinkedIn Sales Navigator API Request - EXACT FORMAT', {
@@ -1721,18 +1734,44 @@ export async function POST(request: NextRequest) {
       // RapidAPI sometimes returns HTTP 200 with { success: false, error: "..." } in the body
       if (data && typeof data === 'object' && !Array.isArray(data)) {
         // Check for error in data.data (nested error response)
-        if (data.data && typeof data.data === 'object' && data.data.success === false && data.data.error) {
+        // RapidAPI can return errors in either 'error' or 'message' fields
+        const hasError = data.data && typeof data.data === 'object' && data.data.success === false && 
+                        (data.data.error || data.data.message);
+        
+        if (hasError) {
+          // Get error message from either 'error' or 'message' field
+          const rawError = data.data.error || data.data.message || '';
+          const errorMessage = typeof rawError === 'string' ? rawError : 'Request failed with status code 403';
+          
           logger.error('RapidAPI returned error in 200 OK response', {
             endpoint,
-            error: data.data.error,
+            error: errorMessage,
+            errorField: data.data.error ? 'error' : 'message',
             fullResponse: data
           });
           
-          // Check if this is a 403 error and format message accordingly
-          const errorMessage = typeof data.data.error === 'string' ? data.data.error : 'Request failed with status code 403';
-          const is403Error = errorMessage.includes('403') || errorMessage.toLowerCase().includes('forbidden');
+          // Detect account freeze errors (frozen, 60 mins, etc.)
+          const isAccountFrozen = errorMessage.toLowerCase().includes('frozen') || 
+                                 errorMessage.toLowerCase().includes('60 mins') ||
+                                 errorMessage.toLowerCase().includes('account system');
+          
+          // Check if this is a 403 error, rate limit, or account freeze
+          const is403Error = errorMessage.includes('403') || 
+                            errorMessage.toLowerCase().includes('forbidden') ||
+                            errorMessage.toLowerCase().includes('rate limit') ||
+                            isAccountFrozen;
           const is400Error = errorMessage.includes('400') || errorMessage.toLowerCase().includes('bad request');
-          const userMessage = is403Error ? 'Rate limit exceeded' : errorMessage;
+          
+          // Format user-friendly message
+          let userMessage: string;
+          if (isAccountFrozen) {
+            // Extract freeze duration if available (e.g., "60 mins")
+            const freezeMatch = errorMessage.match(/(\d+)\s*(mins?|minutes?|hours?)/i);
+            const freezeDuration = freezeMatch ? `${freezeMatch[1]} ${freezeMatch[2]}` : '60 minutes';
+            userMessage = `Account frozen for ${freezeDuration} due to too many requests. Please wait before trying again.`;
+          } else {
+            userMessage = is403Error ? 'Rate limit exceeded' : errorMessage;
+          }
           
           // 400 errors from via_url should have already been handled in the via_url block
           // But if we get here, it means via_url wasn't used or the error wasn't caught
@@ -1749,40 +1788,68 @@ export async function POST(request: NextRequest) {
             errorMessage,
             is400Error,
             is403Error,
-            fullError: data.data.error,
+            isAccountFrozen,
+            fullError: rawError,
             fullResponse: JSON.stringify(data, null, 2),
             requestBody: JSON.stringify(requestBody, null, 2),
           });
           
+          // Return appropriate HTTP status: 429 for rate limits/freezes, 403 for other errors
+          const httpStatus = (is403Error || isAccountFrozen) ? 429 : 403;
+          
           return NextResponse.json(
             {
               success: false,
-              error: is403Error ? 'Rate limit exceeded' : (data.data.error || 'API request failed'),
+              error: is403Error || isAccountFrozen ? 'Rate limit exceeded' : (rawError || 'API request failed'),
               message: userMessage,
+              isRateLimit: is403Error || isAccountFrozen,
               details: {
                 ...data.data,
-                rapidApiError: data.data.error,
+                rapidApiError: rawError,
                 endpoint,
                 requestBody: requestBody, // Include request body for debugging
               }
             },
-            { status: 403 }
+            { status: httpStatus }
           );
         }
         
-        // Check for error at top level
-        if (data.success === false && data.error) {
-          logger.error('RapidAPI returned error in 200 OK response', {
+        // Check for error at top level (can be in 'error' or 'message' field)
+        const hasTopLevelError = data.success === false && (data.error || data.message);
+        
+        if (hasTopLevelError) {
+          // Get error message from either 'error' or 'message' field
+          const rawError = data.error || data.message || '';
+          const errorMessage = typeof rawError === 'string' ? rawError : 'Request failed';
+          
+          logger.error('RapidAPI returned error in 200 OK response (Top Level)', {
             endpoint,
-            error: data.error,
+            error: errorMessage,
+            errorField: data.error ? 'error' : 'message',
             fullResponse: data
           });
           
-          // Check if this is a 403 error and format message accordingly
-          const errorMessage = typeof data.error === 'string' ? data.error : 'Request failed';
-          const is403Error = errorMessage.includes('403') || errorMessage.toLowerCase().includes('forbidden');
+          // Detect account freeze errors
+          const isAccountFrozen = errorMessage.toLowerCase().includes('frozen') || 
+                                 errorMessage.toLowerCase().includes('60 mins') ||
+                                 errorMessage.toLowerCase().includes('account system');
+          
+          // Check if this is a 403 error, rate limit, or account freeze
+          const is403Error = errorMessage.includes('403') || 
+                            errorMessage.toLowerCase().includes('forbidden') ||
+                            errorMessage.toLowerCase().includes('rate limit') ||
+                            isAccountFrozen;
           const is400Error = errorMessage.includes('400') || errorMessage.toLowerCase().includes('bad request');
-          const userMessage = is403Error ? 'Rate limit exceeded' : errorMessage;
+          
+          // Format user-friendly message
+          let userMessage: string;
+          if (isAccountFrozen) {
+            const freezeMatch = errorMessage.match(/(\d+)\s*(mins?|minutes?|hours?)/i);
+            const freezeDuration = freezeMatch ? `${freezeMatch[1]} ${freezeMatch[2]}` : '60 minutes';
+            userMessage = `Account frozen for ${freezeDuration} due to too many requests. Please wait before trying again.`;
+          } else {
+            userMessage = is403Error ? 'Rate limit exceeded' : errorMessage;
+          }
           
           // 400 errors from via_url should have already been handled in the via_url block
           if (is400Error && endpoint.includes('via_url')) {
@@ -1796,24 +1863,29 @@ export async function POST(request: NextRequest) {
             errorMessage,
             is400Error,
             is403Error,
-            fullError: data.error,
+            isAccountFrozen,
+            fullError: rawError,
             fullResponse: JSON.stringify(data, null, 2),
             requestBody: JSON.stringify(requestBody, null, 2),
           });
           
+          // Return appropriate HTTP status: 429 for rate limits/freezes, 403 for other errors
+          const httpStatus = (is403Error || isAccountFrozen) ? 429 : 403;
+          
           return NextResponse.json(
             {
               success: false,
-              error: is403Error ? 'Rate limit exceeded' : (data.error || 'API request failed'),
+              error: is403Error || isAccountFrozen ? 'Rate limit exceeded' : (rawError || 'API request failed'),
               message: userMessage,
+              isRateLimit: is403Error || isAccountFrozen,
               details: {
                 ...data,
-                rapidApiError: data.error,
+                rapidApiError: rawError,
                 endpoint,
                 requestBody: requestBody, // Include request body for debugging
               }
             },
-            { status: 403 }
+            { status: httpStatus }
           );
         }
       }
