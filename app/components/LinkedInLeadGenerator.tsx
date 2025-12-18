@@ -899,13 +899,18 @@ export default function LinkedInLeadGenerator() {
     console.log('📄 [PAGINATION] Starting fetchAllPagesSequentially');
     console.log('📄 [PAGINATION] Max pages to fetch:', maxPagesToFetch);
     console.log('📄 [PAGINATION] Search params limit:', searchParams.limit);
-    
+
     const allResults: LeadResult[] = [];
     let page = 1;
     let hasMore = true;
     const maxPages = maxPagesToFetch;
     const maxResults = parseInt(String(searchParams.limit || '2500')) || 2500;
+    let consecutive429Errors = 0;
+    let baseDelayMs = 2000; // Base delay between pages (2 seconds)
     
+    // Circuit breaker: if we get too many consecutive 429s, stop early
+    const CIRCUIT_BREAKER_THRESHOLD = 3; // Stop after 3 consecutive 429s
+
     console.log('📄 [PAGINATION] Max results target:', maxResults);
     
     const startTime = Date.now();
@@ -936,20 +941,135 @@ export default function LinkedInLeadGenerator() {
           currentOperation: `Fetching page ${page}/${maxPages}...`
         }));
         
+        // Calculate delay with exponential backoff for rate limits
+        const currentDelay = baseDelayMs + (consecutive429Errors * 1000); // Add 1 second per consecutive 429
         if (page > 1) {
-          console.log('📄 [PAGINATION] Waiting 2 seconds before next page...');
-          await new Promise(resolve => setTimeout(resolve, 2000));
+          console.log(`📄 [PAGINATION] Waiting ${currentDelay}ms before next page (${consecutive429Errors} consecutive 429s)...`);
+          await new Promise(resolve => setTimeout(resolve, currentDelay));
         }
         
         console.log(`📄 [PAGINATION] Calling fetchSinglePage(${page})`);
-        const pageResults = await fetchSinglePage(page);
+        
+        // Industry-standard retry with exponential backoff, jitter, and Retry-After header respect
+        let pageResults: { leads: LeadResult[]; pagination: any } | null = null;
+        let retryCount = 0;
+        const maxRetries = 3;
+        const baseBackoffMs = 2000; // 2 seconds base
+        
+        // Retry loop with exponential backoff + jitter (prevents thundering herd problem)
+        while (retryCount <= maxRetries) {
+          try {
+            pageResults = await fetchSinglePage(page);
+            
+            // Success - reset rate limit tracking
+            if (consecutive429Errors > 0) {
+              console.log(`📄 [PAGINATION] ✅ Recovered from rate limit, resetting adaptive delays`);
+              consecutive429Errors = 0;
+              baseDelayMs = 2000;
+            }
+            break; // Success, exit retry loop
+            
+          } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            
+            // Check if it's a rate limit error (429)
+            const isRateLimit = errorMessage.includes('RATE_LIMIT:') || 
+                               errorMessage.includes('429') || 
+                               errorMessage.includes('Rate limit');
+            
+            if (isRateLimit) {
+              consecutive429Errors++;
+              const match = errorMessage.match(/RATE_LIMIT:(\d+):/);
+              const retryAfterSeconds = match ? parseInt(match[1], 10) : 60;
+              
+              // Circuit breaker: if too many consecutive 429s across pages, stop early
+              if (consecutive429Errors >= CIRCUIT_BREAKER_THRESHOLD) {
+                console.error(`📄 [PAGINATION] 🔴 Circuit breaker triggered: ${consecutive429Errors} consecutive rate limits. Stopping pagination.`);
+                setError(`Rate limit exceeded multiple times. Please wait ${retryAfterSeconds} seconds before trying again.`);
+                setScrapingProgress(prev => ({ 
+                  ...prev, 
+                  status: 'error', 
+                  currentOperation: `Circuit breaker: too many rate limits` 
+                }));
+                
+                // Return partial results
+                if (allResults.length > 0) {
+                  console.log(`📄 [PAGINATION] Returning ${allResults.length} leads collected before circuit breaker`);
+                  setResults(allResults);
+                  setWorkflowStep('results');
+                }
+                return; // Exit gracefully
+              }
+              
+              if (retryCount < maxRetries) {
+                // Industry-standard exponential backoff with jitter
+                // Formula: retryAfter + (base * 2^retryCount) + random jitter (0-25%)
+                // This prevents thundering herd and respects server's Retry-After header
+                const exponentialDelay = baseBackoffMs * Math.pow(2, retryCount);
+                const jitter = Math.random() * exponentialDelay * 0.25; // 0-25% randomization
+                const backoffDelay = Math.min(
+                  retryAfterSeconds * 1000 + exponentialDelay + jitter,
+                  300000 // Max 5 minutes (industry standard cap)
+                );
+                
+                console.warn(`📄 [PAGINATION] ⚠️ Rate limit (429) on page ${page}, attempt ${retryCount + 1}/${maxRetries + 1}`);
+                console.warn(`📄 [PAGINATION] Backoff: ${Math.round(backoffDelay / 1000)}s (retryAfter: ${retryAfterSeconds}s + exp: ${Math.round(exponentialDelay / 1000)}s + jitter: ${Math.round(jitter / 1000)}s)`);
+                
+                setScrapingProgress(prev => ({
+                  ...prev,
+                  currentOperation: `Rate limited - waiting ${Math.round(backoffDelay / 1000)}s before retry (${retryCount + 1}/${maxRetries})...`
+                }));
+                
+                await new Promise(resolve => setTimeout(resolve, Math.round(backoffDelay)));
+                retryCount++;
+                
+                // Adaptive delay increase for subsequent pages (circuit breaker pattern)
+                baseDelayMs = Math.min(baseDelayMs * 1.5, 10000); // Max 10 seconds between pages
+                continue; // Retry
+              } else {
+                // Max retries exceeded - stop gracefully with partial results
+                console.error(`📄 [PAGINATION] ❌ Rate limit exceeded after ${maxRetries} retries. Stopping pagination.`);
+                const finalRetryAfter = retryAfterSeconds;
+                setError(`Rate limit exceeded. Please wait ${finalRetryAfter} seconds before trying again.`);
+                setScrapingProgress(prev => ({ 
+                  ...prev, 
+                  status: 'error', 
+                  currentOperation: `Rate limited - please wait ${finalRetryAfter}s` 
+                }));
+                
+                // Return partial results if we have any (graceful degradation)
+                if (allResults.length > 0) {
+                  console.log(`📄 [PAGINATION] Returning ${allResults.length} leads collected before rate limit`);
+                  setResults(allResults);
+                  setWorkflowStep('results');
+                }
+                return; // Exit function gracefully
+              }
+            } else {
+              // Non-rate-limit error - throw immediately (don't retry non-retryable errors)
+              throw error;
+            }
+          }
+        }
+        
+        if (!pageResults) {
+          console.log(`📄 [PAGINATION] ⚠️ Failed to fetch page ${page} after ${maxRetries} retries`);
+          // Graceful degradation: return partial results if available
+          if (allResults.length > 0) {
+            console.log(`📄 [PAGINATION] Returning ${allResults.length} leads collected so far`);
+            setResults(allResults);
+            setWorkflowStep('results');
+          }
+          break;
+        }
+        
         console.log(`📄 [PAGINATION] Page ${page} results:`, pageResults ? {
           leadsCount: pageResults.leads?.length || 0,
           hasPagination: !!pageResults.pagination,
           pagination: pageResults.pagination
         } : 'null');
         
-        if (!pageResults || !pageResults.leads || pageResults.leads.length === 0) {
+        if (!pageResults.leads || pageResults.leads.length === 0) {
           console.log(`📄 [PAGINATION] ⚠️ No results for page ${page}, stopping`);
           break;
         }
@@ -1062,11 +1182,28 @@ export default function LinkedInLeadGenerator() {
 
     if (!response.ok) {
       console.error(`📄 [FETCH_PAGE] ❌ API error:`, result);
-      if (response.status === 429) {
-        const retryAfter = result.retryAfter || 60;
+      
+      // Check for 429 rate limit in multiple places:
+      // 1. HTTP status code (429)
+      // 2. Error message text
+      // 3. Error details object
+      // 4. RapidAPI error field
+      const isRateLimit = 
+        response.status === 429 || 
+        response.status === 403 && (result.error?.includes('429') || result.rapidApiError?.includes('429')) || // 403 can contain 429 in error
+        result.error?.includes('429') || 
+        result.message?.includes('429') || 
+        result.rapidApiError?.includes('429') ||
+        result.details?.error?.includes('429') ||
+        result.details?.rapidApiError?.includes('429');
+      
+      if (isRateLimit) {
+        const retryAfter = result.retryAfter || result.details?.retryAfter || 60;
+        console.error(`📄 [FETCH_PAGE] Rate limit detected (429), retry after: ${retryAfter}s`);
         throw new Error(`RATE_LIMIT:${retryAfter}:Rate limit exceeded`);
       }
-      throw new Error(result.message || 'Failed to fetch page');
+      
+      throw new Error(result.message || result.error || 'Failed to fetch page');
     }
 
     let rawResults: LeadResult[] = [];

@@ -1639,13 +1639,24 @@ export async function POST(request: NextRequest) {
       }
       
       // CRITICAL: Rate limit (429) should stop immediately - don't waste more API calls
-      if (response.status === 429) {
+      // Check both HTTP status code AND error message (RapidAPI sometimes returns 403 with "429" in error message)
+      const errorStr = String(errorDetails);
+      const isRateLimit = 
+        response.status === 429 ||
+        errorStr.includes('429') ||
+        errorStr.includes('Rate limit') ||
+        errorStr.includes('rate limit') ||
+        (typeof errorDetails === 'object' && errorDetails !== null && 
+         ('error' in errorDetails && String(errorDetails.error).includes('429'));
+      
+      if (isRateLimit) {
         // Extract retry-after from headers if available
         const retryAfter = response.headers.get('Retry-After') || response.headers.get('retry-after');
         const retryAfterSeconds = retryAfter ? parseInt(retryAfter, 10) : 60; // Default to 60 seconds
         
         logger.error('LinkedIn Sales Navigator API Rate Limited - STOPPING', {
-          status: 429,
+          httpStatus: response.status,
+          errorContains429: errorStr.includes('429'),
           retryAfter: retryAfterSeconds,
           endpoint,
         });
@@ -1656,9 +1667,12 @@ export async function POST(request: NextRequest) {
             message: `Too many requests. Please wait ${retryAfterSeconds} seconds before trying again.`,
             retryAfter: retryAfterSeconds,
             isRateLimit: true, // Flag for frontend to stop immediately
+            rapidApiError: typeof errorDetails === 'object' && errorDetails !== null && 'rapidApiError' in errorDetails 
+              ? errorDetails.rapidApiError 
+              : undefined,
           },
           { 
-            status: 429,
+            status: 429, // Always return 429 status when rate limited, even if RapidAPI returned 403
             headers: {
               'Retry-After': String(retryAfterSeconds),
             }
