@@ -2596,26 +2596,24 @@ export default function LinkedInLeadGenerator() {
                     </>
                   )}
                 </button>
-                {leadList.length > 0 && (
-                  <button
-                    onClick={handleScrubOnly}
-                    disabled={isScrubbing}
-                    className="group px-4 py-2.5 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 rounded-xl text-white text-sm font-semibold transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-lg shadow-green-500/30 hover:shadow-xl hover:shadow-green-500/40 hover:scale-105 active:scale-[0.98]"
-                    title="Scrub DNC status for all leads with phone numbers"
-                  >
-                    {isScrubbing ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Scrubbing...
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="w-4 h-4 group-hover:scale-110 group-hover:rotate-12 transition-transform duration-300" />
-                        Scrub DNC
-                      </>
-                    )}
-                  </button>
-                )}
+                <button
+                  onClick={handleScrubOnly}
+                  disabled={isScrubbing || leadList.length === 0}
+                  className="group px-4 py-2.5 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 rounded-xl text-white text-sm font-semibold transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-lg shadow-green-500/30 hover:shadow-xl hover:shadow-green-500/40 hover:scale-105 active:scale-[0.98]"
+                  title={leadList.length === 0 ? "Add at least one lead with a phone number first" : "Scrub DNC status for all leads with phone numbers"}
+                >
+                  {isScrubbing ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Scrubbing...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4 group-hover:scale-110 group-hover:rotate-12 transition-transform duration-300" />
+                      Scrub DNC
+                    </>
+                  )}
+                </button>
                 <div className="flex items-center gap-2">
                 <button
                   onClick={handleEnrichAndScrub}
