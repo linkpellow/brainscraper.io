@@ -103,6 +103,13 @@ For basic functionality, no environment variables are required. All file process
 - Alternatively, you can enter the token manually in the UI when scrubbing
 - Get your JWT token from USHA's authentication system
 
+**For Production Deployment:**
+- Add to `.env.local` (or production environment variables):
+  - `NEXT_PUBLIC_SITE_URL=https://brainscraper.io` (recommended)
+  - Or `BASE_URL=https://brainscraper.io` (alternative)
+- This ensures API calls use the correct production URL instead of localhost
+- Prevents CORS errors when the app runs in production
+
 ### Build Command
 
 ```bash

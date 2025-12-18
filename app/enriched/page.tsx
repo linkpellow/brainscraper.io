@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Download, ArrowUpDown, ArrowUp, ArrowDown, Loader2, Zap, X, CheckCircle2, AlertCircle, Search, Copy, Check, Smartphone, Phone, Sparkles } from 'lucide-react';
+import { Download, ArrowUpDown, ArrowUp, ArrowDown, Loader2, Zap, X, CheckCircle2, AlertCircle, Search, Copy, Check, Smartphone, Phone, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import { LeadSummary, leadSummariesToCSV, formatPhoneNumber } from '@/utils/extractLeadSummary';
 import AppLayout from '../components/AppLayout';
@@ -84,6 +84,8 @@ export default function EnrichedLeadsPage() {
   const [dncError, setDncError] = useState<string | null>(null);
   const [enrichingFields, setEnrichingFields] = useState<Set<string>>(new Set());
   const [enrichmentErrors, setEnrichmentErrors] = useState<Map<string, string>>(new Map());
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(50);
   const logsEndRef = useRef<HTMLDivElement>(null);
 
   const addLog = (message: string, type: EnrichmentLog['type'] = 'info') => {
@@ -98,12 +100,12 @@ export default function EnrichedLeadsPage() {
     setEnrichmentProgress(0);
     setEnrichmentLogs([]);
     
-    // Validation function: lead must have name AND (phone OR email)
+    // Validation function: lead must have name AND phone (email-only leads are excluded)
     const isValidLead = (lead: any): boolean => {
       const name = (lead.name || '').trim();
-      const phone = (lead.phone || '').trim();
-      const email = (lead.email || '').trim();
-      return name.length > 0 && (phone.length > 0 || email.length > 0);
+      const phone = (lead.phone || '').trim().replace(/\D/g, ''); // Remove non-digits for validation
+      // Require phone number (10+ digits) - leads with only email are excluded
+      return name.length > 0 && phone.length >= 10;
     };
 
     // Load enriched leads from localStorage and API
@@ -1086,6 +1088,17 @@ export default function EnrichedLeadsPage() {
 
   const sortedLeads = getSortedLeads();
   
+  // Pagination calculations
+  const totalPages = Math.ceil(sortedLeads.length / rowsPerPage);
+  const startIndex = (currentPage - 1) * rowsPerPage;
+  const endIndex = startIndex + rowsPerPage;
+  const paginatedLeads = sortedLeads.slice(startIndex, endIndex);
+  
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, ageMin, ageMax, mobileOnly, filterDNC, sortField, sortDirection]);
+  
   // Debug logging
   useEffect(() => {
     console.log('🔍 [ENRICHED_PAGE] Leads state:', {
@@ -1115,7 +1128,8 @@ export default function EnrichedLeadsPage() {
             <p className="text-xs sm:text-sm text-slate-400 mt-1 sm:mt-2 font-medium font-data">
               {searchQuery || ageMin !== '' || ageMax !== '' || mobileOnly || filterDNC ? (
                 <>
-                  {getSortedLeads().length} of {leads.length} leads
+                  {sortedLeads.length} of {leads.length} leads
+                  {totalPages > 1 && ` (Page ${currentPage}/${totalPages})`}
                   {searchQuery && ` (search: "${searchQuery}")`}
                   {(ageMin !== '' || ageMax !== '') && ` (age: ${ageMin !== '' ? ageMin : '0'}-${ageMax !== '' ? ageMax : '99+'})`}
                   {mobileOnly && ' (mobile only)'}
@@ -1124,6 +1138,7 @@ export default function EnrichedLeadsPage() {
               ) : (
                 <>
                   {leads.length} total enriched leads
+                  {totalPages > 1 && ` • Page ${currentPage}/${totalPages}`}
                   {isScrubbingDNC && ` • Scrubbing DNC: ${dncScrubProgress.current}/${dncScrubProgress.total}`}
                 </>
               )}
@@ -1376,7 +1391,8 @@ export default function EnrichedLeadsPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-700/30">
-                {sortedLeads.map((lead, index) => {
+                {paginatedLeads.map((lead, index) => {
+                  const globalIndex = startIndex + index;
                   // Extract age from dobOrAge
                   let age = '';
                   if (lead.dobOrAge) {
@@ -1409,20 +1425,20 @@ export default function EnrichedLeadsPage() {
 
                   return (
                     <tr 
-                      key={index} 
+                      key={globalIndex} 
                       className="group relative table-row-inactive"
                       style={{ animationDelay: `${index * 20}ms` }}
                     >
                       <td 
                         className="px-2 py-2 text-slate-100 font-semibold relative z-10 cursor-pointer transition-all duration-300 ease-out hover:scale-[1.02] hover:text-blue-400 group/name"
-                        onClick={() => lead.name && copyToClipboard(lead.name, `name-${index}`)}
+                        onClick={() => lead.name && copyToClipboard(lead.name, `name-${globalIndex}`)}
                         title={lead.name ? (lead.name.length > 30 ? lead.name : 'Click to copy') : ''}
                       >
                         <span className="flex items-center gap-1 relative z-10 min-w-0">
                           <span className="transition-all duration-300 group-hover/name:text-blue-400 truncate block max-w-full">{lead.name || 'N/A'}</span>
                           {lead.name && (
                             <span className="opacity-0 group-hover/name:opacity-100 transition-all duration-300 transform group-hover/name:scale-110 flex-shrink-0">
-                              {copiedField === `name-${index}` ? (
+                              {copiedField === `name-${globalIndex}` ? (
                                 <Check className="w-3 h-3 text-blue-400 drop-shadow-lg" />
                               ) : (
                                 <Copy className="w-3 h-3 text-blue-400 drop-shadow-lg" />
@@ -1436,39 +1452,39 @@ export default function EnrichedLeadsPage() {
                       </td>
                       <EnrichableCell
                         value={lead.phone || ''}
-                        fieldId={`phone-${index}`}
+                        fieldId={`phone-${globalIndex}`}
                         lead={lead}
-                        index={index}
+                        index={globalIndex}
                         field="phone"
                         className="text-slate-100 whitespace-nowrap relative z-10"
                         truncate={false}
                       />
                       <EnrichableCell
                         value={lead.email || ''}
-                        fieldId={`email-${index}`}
+                        fieldId={`email-${globalIndex}`}
                         lead={lead}
-                        index={index}
+                        index={globalIndex}
                         field="email"
                         className="text-slate-300 relative z-10"
                         truncate={true}
                       />
                       <CopyableCell 
                         value={lead.city || ''} 
-                        fieldId={`city-${index}`}
+                        fieldId={`city-${globalIndex}`}
                         className="text-slate-300 relative z-10"
                         truncate={true}
                       />
                       <CopyableCell 
                         value={getStateAbbreviation(lead.state)} 
-                        fieldId={`state-${index}`}
+                        fieldId={`state-${globalIndex}`}
                         className="text-slate-300 relative z-10"
                         truncate={false}
                       />
                       <EnrichableCell
                         value={lead.zipcode || ''}
-                        fieldId={`zipcode-${index}`}
+                        fieldId={`zipcode-${globalIndex}`}
                         lead={lead}
-                        index={index}
+                        index={globalIndex}
                         field="zipcode"
                         className="text-slate-300 relative z-10"
                         truncate={false}
@@ -1477,8 +1493,8 @@ export default function EnrichedLeadsPage() {
                         <span className="flex items-center gap-1 relative z-10">
                           <span className="transition-all duration-300 group-hover/age:text-blue-400 text-xs">{age || 'N/A'}</span>
                           {age && (
-                            <span className="opacity-0 group-hover/age:opacity-100 transition-all duration-300 transform group-hover/age:scale-110 flex-shrink-0" onClick={() => copyToClipboard(age, `age-${index}`)}>
-                              {copiedField === `age-${index}` ? (
+                            <span className="opacity-0 group-hover/age:opacity-100 transition-all duration-300 transform group-hover/age:scale-110 flex-shrink-0" onClick={() => copyToClipboard(age, `age-${globalIndex}`)}>
+                              {copiedField === `age-${globalIndex}` ? (
                                 <Check className="w-3 h-3 text-blue-400 drop-shadow-lg" />
                               ) : (
                                 <Copy className="w-3 h-3 text-blue-400 drop-shadow-lg" />
@@ -1492,7 +1508,7 @@ export default function EnrichedLeadsPage() {
                       </td>
                       <td 
                         className={`px-2 py-2 ${lineTypeColor} cursor-pointer transition-all duration-300 ease-out group/line relative z-10 hover:scale-[1.05] hover:drop-shadow-lg`}
-                        onClick={() => lead.lineType && lead.lineType !== 'N/A' && copyToClipboard(lead.lineType, `lineType-${index}`)}
+                        onClick={() => lead.lineType && lead.lineType !== 'N/A' && copyToClipboard(lead.lineType, `lineType-${globalIndex}`)}
                         title={lead.lineType && lead.lineType !== 'N/A' ? 'Click to copy' : ''}
                       >
                         <span className="flex items-center gap-1 relative z-10 min-w-0">
@@ -1504,7 +1520,7 @@ export default function EnrichedLeadsPage() {
                           <span className="truncate block max-w-full text-xs">{lead.lineType || 'N/A'}</span>
                           {lead.lineType && lead.lineType !== 'N/A' && (
                             <span className="opacity-0 group-hover/line:opacity-100 transition-all duration-300 transform group-hover/line:scale-110 flex-shrink-0">
-                              {copiedField === `lineType-${index}` ? (
+                              {copiedField === `lineType-${globalIndex}` ? (
                                 <Check className="w-3 h-3 drop-shadow-lg" />
                               ) : (
                                 <Copy className="w-3 h-3 drop-shadow-lg" />
@@ -1515,13 +1531,13 @@ export default function EnrichedLeadsPage() {
                       </td>
                       <CopyableCell 
                         value={lead.carrier || ''} 
-                        fieldId={`carrier-${index}`}
+                        fieldId={`carrier-${globalIndex}`}
                         className="text-slate-300 relative z-10"
                         truncate={true}
                       />
                       <CopyableCell 
                         value={lead.dateScraped ? formatDate(lead.dateScraped) : ''} 
-                        fieldId={`dateScraped-${index}`}
+                        fieldId={`dateScraped-${globalIndex}`}
                         className="text-slate-300 relative z-10"
                         truncate={false}
                       />
@@ -1541,6 +1557,91 @@ export default function EnrichedLeadsPage() {
                 })}
               </tbody>
             </table>
+            </div>
+          </div>
+        )}
+
+        {/* Pagination Controls */}
+        {!loading && sortedLeads.length > 0 && totalPages > 1 && (
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-4 py-4 panel-inactive rounded-xl">
+            <div className="flex items-center gap-2 text-xs sm:text-sm text-slate-400">
+              <span>Showing</span>
+              <select
+                value={rowsPerPage}
+                onChange={(e) => {
+                  setRowsPerPage(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+                className="px-2 py-1 bg-slate-800 border border-slate-600 rounded text-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50"
+              >
+                <option value={25}>25</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+                <option value={200}>200</option>
+              </select>
+              <span>per page</span>
+              <span className="text-slate-500">•</span>
+              <span>
+                {startIndex + 1}-{Math.min(endIndex, sortedLeads.length)} of {sortedLeads.length}
+              </span>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+                className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all flex items-center gap-1 ${
+                  currentPage === 1
+                    ? 'opacity-50 cursor-not-allowed btn-inactive text-slate-500'
+                    : 'btn-inactive text-slate-200 hover:text-white hover:bg-slate-700/50'
+                }`}
+              >
+                <ChevronLeft className="w-4 h-4" />
+                <span className="hidden sm:inline">Previous</span>
+              </button>
+              
+              <div className="flex items-center gap-1">
+                {/* Page numbers */}
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  let pageNum: number;
+                  if (totalPages <= 5) {
+                    pageNum = i + 1;
+                  } else if (currentPage <= 3) {
+                    pageNum = i + 1;
+                  } else if (currentPage >= totalPages - 2) {
+                    pageNum = totalPages - 4 + i;
+                  } else {
+                    pageNum = currentPage - 2 + i;
+                  }
+                  
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => setCurrentPage(pageNum)}
+                      className={`px-2 py-1 min-w-[32px] rounded text-xs sm:text-sm font-medium transition-all ${
+                        currentPage === pageNum
+                          ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/50'
+                          : 'btn-inactive text-slate-300 hover:text-white hover:bg-slate-700/50'
+                      }`}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
+              </div>
+              
+              <button
+                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                disabled={currentPage === totalPages}
+                className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all flex items-center gap-1 ${
+                  currentPage === totalPages
+                    ? 'opacity-50 cursor-not-allowed btn-inactive text-slate-500'
+                    : 'btn-inactive text-slate-200 hover:text-white hover:bg-slate-700/50'
+                }`}
+              >
+                <span className="hidden sm:inline">Next</span>
+                <ChevronRight className="w-4 h-4" />
+              </button>
             </div>
           </div>
         )}

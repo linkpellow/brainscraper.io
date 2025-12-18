@@ -49,12 +49,12 @@ export async function POST(request: NextRequest) {
         }
       }
     
-      // Validation function: lead must have name AND (phone OR email)
+      // Validation function: lead must have name AND phone (email-only leads are excluded)
       const isValidLead = (lead: LeadSummary): boolean => {
         const name = (lead.name || '').trim();
-        const phone = (lead.phone || '').trim();
-        const email = (lead.email || '').trim();
-        return name.length > 0 && (phone.length > 0 || email.length > 0);
+        const phone = (lead.phone || '').trim().replace(/\D/g, ''); // Remove non-digits for validation
+        // Require phone number (10+ digits) - leads with only email are excluded
+        return name.length > 0 && phone.length >= 10;
       };
       
       // Filter existing leads to only valid ones

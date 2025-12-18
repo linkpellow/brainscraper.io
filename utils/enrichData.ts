@@ -762,11 +762,14 @@ const skipTracingRateLimiter = new SkipTracingRateLimiter();
  */
 function getServerBaseUrl(): string {
   // Prefer explicit config (works in dev/prod)
+  // NEXT_PUBLIC_* vars are available on both client and server
   const explicit =
     process.env.NEXT_PUBLIC_SITE_URL ||
     process.env.SITE_URL ||
     process.env.NEXT_PUBLIC_APP_URL ||
     process.env.APP_URL ||
+    process.env.BASE_URL ||
+    process.env.NEXT_PUBLIC_BASE_URL ||
     '';
 
   if (explicit) {
@@ -777,8 +780,14 @@ function getServerBaseUrl(): string {
   const vercel = process.env.VERCEL_URL;
   if (vercel) return `https://${vercel}`;
 
-  // Local dev fallback
-  return 'http://localhost:3000';
+  // Railway provides RAILWAY_PUBLIC_DOMAIN
+  const railway = process.env.RAILWAY_PUBLIC_DOMAIN;
+  if (railway) return `https://${railway}`;
+
+  // For relative URLs, return empty string so they work correctly
+  // This allows server-side code to call same-origin API routes
+  // When running server-side, relative URLs will resolve to the same server
+  return '';
 }
 
 /**
@@ -814,10 +823,31 @@ async function callAPIImpl(
       console.log(`[RATE_LIMIT] Request approved for ${apiName}`);
     }
 
-    const finalUrl =
-      url.startsWith('/')
-        ? new URL(url, getServerBaseUrl()).toString()
-        : url;
+    // For relative URLs (starting with /), construct absolute URL
+    // Server-side fetch requires absolute URLs
+    const baseUrl = getServerBaseUrl();
+    let finalUrl: string;
+    
+    if (url.startsWith('/')) {
+      if (baseUrl) {
+        // Use configured base URL
+        finalUrl = new URL(url, baseUrl).toString();
+      } else {
+        // Fallback: try to detect from environment or use production URL
+        // This handles cases where env vars aren't set but we're in production
+        const isProduction = process.env.NODE_ENV === 'production';
+        if (isProduction) {
+          // Default to production domain if no env var is set
+          finalUrl = `https://brainscraper.io${url}`;
+        } else {
+          // Development fallback
+          finalUrl = `http://localhost:3000${url}`;
+        }
+      }
+    } else {
+      // Absolute URL - use as-is
+      finalUrl = url;
+    }
 
     console.log(`[CALL_API] Calling ${apiName} at ${finalUrl}`);
     
@@ -2234,10 +2264,16 @@ export async function enrichData(
     }
 
     // CRITICAL: Save immediately after enrichment to ensure data persistence
+    // Filter: Only save leads with valid phone numbers (exclude email-only leads)
     try {
       const leadSummary = extractLeadSummary(enrichedRow, enrichment);
-      saveEnrichedLeadImmediate(enrichedRow, leadSummary);
-      console.log(`💾 [ENRICH_DATA] Saved lead immediately: ${leadName}`);
+      const phone = (leadSummary.phone || '').trim().replace(/\D/g, '');
+      if (phone.length >= 10) {
+        saveEnrichedLeadImmediate(enrichedRow, leadSummary);
+        console.log(`💾 [ENRICH_DATA] Saved lead immediately: ${leadName}`);
+      } else {
+        console.log(`🚫 [ENRICH_DATA] Skipping lead "${leadName}" - no valid phone number (email-only leads excluded)`);
+      }
     } catch (saveError) {
       console.error(`❌ [ENRICH_DATA] Failed to save lead ${leadName}:`, saveError);
       // Continue processing even if save fails - don't lose the enrichment

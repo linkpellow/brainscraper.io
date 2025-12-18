@@ -113,6 +113,13 @@ export function saveEnrichedLeadImmediate(
   enrichedRow: EnrichedRow,
   leadSummary: LeadSummary
 ): void {
+  // Filter out leads that only have email (no phone)
+  const phone = (leadSummary.phone || '').trim().replace(/\D/g, '');
+  if (phone.length < 10) {
+    console.log(`🚫 [INCREMENTAL_SAVE] Skipping lead "${leadSummary.name}" - no valid phone number (email-only leads excluded)`);
+    return; // Don't save leads without phone numbers
+  }
+  
   if (!ensureServerModules()) {
     // On client, save via API call
     if (typeof fetch !== 'undefined') {

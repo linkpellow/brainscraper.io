@@ -577,7 +577,17 @@ export default function LinkedInLeadGenerator() {
       setEnrichedData(enriched);
 
       // Extract lead summaries
-      const summaries: LeadSummary[] = enriched.rows.map((row: EnrichedRow) => extractLeadSummary(row, row._enriched));
+      // Extract summaries and filter out email-only leads (require phone)
+      const allSummaries: LeadSummary[] = enriched.rows.map((row: EnrichedRow) => extractLeadSummary(row, row._enriched));
+      const summaries = allSummaries.filter((lead: LeadSummary) => {
+        const phone = (lead.phone || '').trim().replace(/\D/g, '');
+        const hasValidPhone = phone.length >= 10;
+        if (!hasValidPhone) {
+          console.log(`🚫 [ENRICH_LIST] Filtering out lead "${lead.name}" - no valid phone number (email-only leads excluded)`);
+        }
+        return hasValidPhone;
+      });
+      console.log(`✨ [ENRICH_LIST] Filtered to ${summaries.length} leads with phone (removed ${allSummaries.length - summaries.length} email-only leads)`);
       setLeadSummaries(summaries);
 
       // Save enriched leads to localStorage for the enriched leads page
@@ -1426,8 +1436,17 @@ export default function LinkedInLeadGenerator() {
       setEnrichedData(enriched);
       
       console.log('✨ [ENRICH] Extracting lead summaries...');
-      const summaries: LeadSummary[] = enriched.rows.map((row: EnrichedRow) => extractLeadSummary(row, row._enriched));
-      console.log('✨ [ENRICH] Lead summaries:', summaries.length);
+      // Extract summaries and filter out email-only leads (require phone)
+      const allSummaries: LeadSummary[] = enriched.rows.map((row: EnrichedRow) => extractLeadSummary(row, row._enriched));
+      const summaries = allSummaries.filter((lead: LeadSummary) => {
+        const phone = (lead.phone || '').trim().replace(/\D/g, '');
+        const hasValidPhone = phone.length >= 10;
+        if (!hasValidPhone) {
+          console.log(`🚫 [ENRICH] Filtering out lead "${lead.name}" - no valid phone number (email-only leads excluded)`);
+        }
+        return hasValidPhone;
+      });
+      console.log(`✨ [ENRICH] Lead summaries: ${summaries.length} (filtered from ${allSummaries.length} - removed ${allSummaries.length - summaries.length} email-only leads)`);
       setLeadSummaries(summaries);
       
       // Load existing enriched leads from disk (incremental saves)
@@ -1441,8 +1460,13 @@ export default function LinkedInLeadGenerator() {
             const seenKeys = new Set<string>();
             const allSummaries: LeadSummary[] = [];
             
-            // Add disk leads first
+            // Add disk leads first (filter out email-only leads - require phone)
             for (const lead of diskData.leads) {
+              const phone = (lead.phone || '').trim().replace(/\D/g, '');
+              if (phone.length < 10) {
+                console.log(`🚫 [ENRICH] Filtering out disk lead "${lead.name}" - no valid phone number (email-only leads excluded)`);
+                continue; // Skip email-only leads
+              }
               const key = lead.linkedinUrl || `${lead.name}-${lead.email}-${lead.phone}`;
               if (!seenKeys.has(key)) {
                 seenKeys.add(key);
@@ -1450,7 +1474,7 @@ export default function LinkedInLeadGenerator() {
               }
             }
             
-            // Add newly enriched leads
+            // Add newly enriched leads (already filtered above)
             for (const lead of summaries) {
               const key = lead.linkedinUrl || `${lead.name}-${lead.email}-${lead.phone}`;
               if (!seenKeys.has(key)) {
@@ -1487,8 +1511,15 @@ export default function LinkedInLeadGenerator() {
           }
         }
         
-        // Add new summaries
+        // Add new summaries (filter out email-only leads - require phone)
         for (const lead of summaries) {
+          // Filter: require phone number (10+ digits), exclude email-only leads
+          const phone = (lead.phone || '').trim().replace(/\D/g, '');
+          if (phone.length < 10) {
+            console.log(`🚫 [ENRICH] Skipping lead "${lead.name}" - no valid phone number (email-only leads excluded)`);
+            continue; // Skip leads without phone numbers
+          }
+          
           const key = lead.linkedinUrl || `${lead.name}-${lead.email}-${lead.phone}`;
           if (!seenKeys.has(key)) {
             seenKeys.add(key);

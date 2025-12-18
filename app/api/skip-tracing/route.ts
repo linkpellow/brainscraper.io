@@ -18,6 +18,30 @@ import { NextRequest, NextResponse } from 'next/server';
  * - client: "fetch"
  */
 
+// CORS headers helper
+function getCorsHeaders(origin: string | null) {
+  const allowedOrigins = [
+    'https://brainscraper.io',
+    'https://www.brainscraper.io',
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+  ];
+  
+  const isAllowed = origin && allowedOrigins.some(allowed => origin.startsWith(allowed));
+  
+  return {
+    'Access-Control-Allow-Origin': isAllowed ? origin : allowedOrigins[0],
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Access-Control-Max-Age': '86400',
+  };
+}
+
+export async function OPTIONS(request: NextRequest) {
+  const origin = request.headers.get('origin');
+  return NextResponse.json({}, { headers: getCorsHeaders(origin) });
+}
+
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
@@ -32,9 +56,10 @@ export async function GET(request: NextRequest) {
     const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY;
     
     if (!RAPIDAPI_KEY) {
+      const origin = request.headers.get('origin');
       return NextResponse.json(
         { error: 'RAPIDAPI_KEY not configured. Please add it to your .env.local file' },
-        { status: 500 }
+        { status: 500, headers: getCorsHeaders(origin) }
       );
     }
 
@@ -69,9 +94,10 @@ export async function GET(request: NextRequest) {
       params.append('phone', phone);
       url = `https://skip-tracing-working-api.p.rapidapi.com/search/byphone?${params.toString()}`;
     } else {
+      const origin = request.headers.get('origin');
       return NextResponse.json(
         { error: 'Either email, phone, name, or person_id parameter is required' },
-        { status: 400 }
+        { status: 400, headers: getCorsHeaders(origin) }
       );
     }
 
@@ -86,6 +112,7 @@ export async function GET(request: NextRequest) {
     if (!response.ok) {
       const errorText = await response.text();
       console.error(`[SKIP-TRACING] API error ${response.status}:`, errorText.substring(0, 500));
+      const origin = request.headers.get('origin');
       return NextResponse.json(
         { 
           success: false,
@@ -93,7 +120,7 @@ export async function GET(request: NextRequest) {
           details: errorText.substring(0, 1000),
           status: response.status 
         },
-        { status: response.status }
+        { status: response.status, headers: getCorsHeaders(origin) }
       );
     }
 
@@ -102,12 +129,17 @@ export async function GET(request: NextRequest) {
     console.log(`[SKIP-TRACING] Response keys:`, Object.keys(data));
     console.log(`[SKIP-TRACING] Response preview:`, JSON.stringify(data).substring(0, 500));
 
-    return NextResponse.json({ success: true, data });
+    const origin = request.headers.get('origin');
+    return NextResponse.json(
+      { success: true, data },
+      { headers: getCorsHeaders(origin) }
+    );
   } catch (error) {
     console.error('Skip tracing API error:', error);
+    const origin = request.headers.get('origin');
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Unknown error occurred' },
-      { status: 500 }
+      { status: 500, headers: getCorsHeaders(origin) }
     );
   }
 }
@@ -122,9 +154,10 @@ export async function POST(request: NextRequest) {
     const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY;
     
     if (!RAPIDAPI_KEY) {
+      const origin = request.headers.get('origin');
       return NextResponse.json(
         { error: 'RAPIDAPI_KEY not configured. Please add it to your .env.local file' },
-        { status: 500 }
+        { status: 500, headers: getCorsHeaders(origin) }
       );
     }
 
@@ -159,9 +192,10 @@ export async function POST(request: NextRequest) {
       params.append('phone', phone);
       url = `https://skip-tracing-working-api.p.rapidapi.com/search/byphone?${params.toString()}`;
     } else {
+      const origin = request.headers.get('origin');
       return NextResponse.json(
         { error: 'Either email, phone, name, person_id, or peo_id is required in request body' },
-        { status: 400 }
+        { status: 400, headers: getCorsHeaders(origin) }
       );
     }
 
@@ -176,6 +210,7 @@ export async function POST(request: NextRequest) {
     if (!response.ok) {
       const errorText = await response.text();
       console.error(`[SKIP-TRACING POST] API error ${response.status}:`, errorText.substring(0, 500));
+      const origin = request.headers.get('origin');
       return NextResponse.json(
         { 
           success: false,
@@ -183,7 +218,7 @@ export async function POST(request: NextRequest) {
           details: errorText.substring(0, 1000),
           status: response.status 
         },
-        { status: response.status }
+        { status: response.status, headers: getCorsHeaders(origin) }
       );
     }
 
@@ -192,12 +227,17 @@ export async function POST(request: NextRequest) {
     console.log(`[SKIP-TRACING POST] Response keys:`, Object.keys(data));
     console.log(`[SKIP-TRACING POST] Response preview:`, JSON.stringify(data).substring(0, 500));
 
-    return NextResponse.json({ success: true, data });
+    const origin = request.headers.get('origin');
+    return NextResponse.json(
+      { success: true, data },
+      { headers: getCorsHeaders(origin) }
+    );
   } catch (error) {
     console.error('Skip tracing API error:', error);
+    const origin = request.headers.get('origin');
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Unknown error occurred' },
-      { status: 500 }
+      { status: 500, headers: getCorsHeaders(origin) }
     );
   }
 }
