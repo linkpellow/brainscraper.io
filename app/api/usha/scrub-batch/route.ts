@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getUshaToken } from '@/utils/getUshaToken';
+import { getUshaToken, clearTokenCache } from '@/utils/getUshaToken';
 
 /**
  * USHA Batch Phone Number Scrub API endpoint
@@ -21,12 +21,28 @@ export async function POST(request: NextRequest) {
     console.log(`📞 [DNC SCRUB] Received ${phoneNumbers?.length || 0} phone numbers to scrub`);
     
     // Get JWT token automatically from Crokodial API (with fallbacks)
-    const token = await getUshaToken();
+    let token: string;
+    try {
+      token = await getUshaToken();
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : 'Token fetch failed';
+      console.error(`❌ [DNC SCRUB] USHA JWT token fetch failed: ${errorMsg}`);
+      return NextResponse.json(
+        { 
+          success: false,
+          error: `Failed to obtain valid USHA token. ${errorMsg}` 
+        },
+        { status: 500 }
+      );
+    }
     
     if (!token) {
-      console.error('❌ [DNC SCRUB] USHA JWT token fetch failed');
+      console.error('❌ [DNC SCRUB] USHA JWT token is null/undefined');
       return NextResponse.json(
-        { error: 'USHA JWT token is required. Token fetch failed.' },
+        { 
+          success: false,
+          error: 'USHA JWT token is required. Token fetch returned null.' 
+        },
         { status: 401 }
       );
     }
@@ -74,16 +90,31 @@ export async function POST(request: NextRequest) {
           // Build USHA API URL
           const url = `https://api-business-agent.ushadvisors.com/Leads/api/leads/scrubphonenumber?currentContextAgentNumber=${encodeURIComponent(currentContextAgentNumber)}&phone=${encodeURIComponent(cleanedPhone)}`;
 
+          const headers = {
+            'Authorization': `Bearer ${token}`,
+            'Origin': 'https://agent.ushadvisors.com',
+            'Referer': 'https://agent.ushadvisors.com',
+            'Content-Type': 'application/json',
+          };
+
           const requestStart = Date.now();
-          const response = await fetch(url, {
+          let response = await fetch(url, {
             method: 'GET',
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Origin': 'https://agent.ushadvisors.com',
-              'Referer': 'https://agent.ushadvisors.com',
-              'Content-Type': 'application/json',
-            },
+            headers,
           });
+
+          // Retry once on auth failure (should be rare with backend validation)
+          if (response.status === 401 || response.status === 403) {
+            console.log(`  🔄 [DNC SCRUB] ${cleanedPhone}: Token expired (${response.status}), refreshing and retrying...`);
+            clearTokenCache();
+            const freshToken = await getUshaToken(null, true);
+            if (freshToken) {
+              response = await fetch(url, {
+                method: 'GET',
+                headers: { ...headers, 'Authorization': `Bearer ${freshToken}` },
+              });
+            }
+          }
 
           const requestTime = Date.now() - requestStart;
 
