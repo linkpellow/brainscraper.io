@@ -7,14 +7,17 @@
 
 interface CrokodialTokenResponse {
   success: boolean;
-  data: {
+  data?: {
     token: string;
     timestamp: string;
     extensionId: string;
     isFresh: boolean;
     ageSeconds: number;
   };
-  timestamp: string;
+  timestamp?: string;
+  error?: string;
+  refreshRequired?: boolean;
+  refreshFlag?: boolean;
 }
 
 interface CachedToken {
@@ -71,7 +74,14 @@ async function fetchTokenFromCrokodial(): Promise<string | null> {
     const data: CrokodialTokenResponse = await response.json();
     
     if (!data.success || !data.data?.token) {
-      console.error('❌ [USHA_TOKEN] Invalid response from Crokodial API:', data);
+      if (data.error) {
+        console.error(`❌ [USHA_TOKEN] Crokodial API error: ${data.error}`);
+        if (data.refreshRequired || data.refreshFlag) {
+          console.error('❌ [USHA_TOKEN] Backend token refresh required - token not available');
+        }
+      } else {
+        console.error('❌ [USHA_TOKEN] Invalid response from Crokodial API:', data);
+      }
       return null;
     }
 
