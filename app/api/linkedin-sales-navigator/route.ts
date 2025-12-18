@@ -1647,7 +1647,7 @@ export async function POST(request: NextRequest) {
         errorStr.includes('Rate limit') ||
         errorStr.includes('rate limit') ||
         (typeof errorDetails === 'object' && errorDetails !== null && 
-         ('error' in errorDetails && String(errorDetails.error).includes('429'));
+         'error' in errorDetails && String(errorDetails.error).includes('429'));
       
       if (isRateLimit) {
         // Extract retry-after from headers if available
