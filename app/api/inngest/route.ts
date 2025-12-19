@@ -9,6 +9,16 @@ import { inngest } from '@/utils/inngest';
 import { enrichmentFunctions } from '@/utils/inngest/enrichment';
 import { scrapingFunctions } from '@/utils/inngest/scraping';
 
+// Start automatic orphan recovery
+if (typeof window === 'undefined') {
+  try {
+    const { startOrphanRecovery } = require('@/utils/orphanRecoveryJob');
+    startOrphanRecovery();
+  } catch (error) {
+    console.warn('[INNGEST] Failed to start orphan recovery:', error);
+  }
+}
+
 // Validate Inngest configuration (warn if missing in production)
 if (process.env.NODE_ENV === 'production') {
   if (!process.env.INNGEST_EVENT_KEY && !process.env.INNGEST_SIGNING_KEY) {

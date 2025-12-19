@@ -1,0 +1,61 @@
+# CRITICAL: DO NOT DELETE LEADS
+
+## Data Protection Rules
+
+### 1. REQUIRED AGGREGATION
+- **ALL** background enrichment jobs MUST call `aggregateLeadsWithVerification()` from `leadDataManager.ts`
+- This step is **REQUIRED** and **CANNOT BE SKIPPED**
+- If aggregation fails, the entire job fails and retries
+- Location: `utils/inngest/enrichment.ts` - step name: `aggregate-leads`
+
+### 2. SINGLE ENTRY POINT
+- **ALL** lead data writes MUST go through `leadDataManager.ts`
+- **NO** direct writes to `enriched-all-leads.json` allowed
+- Use `aggregateLeadsWithVerification()` for all aggregations
+- Use `recoverOrphanedLeads()` for recovery operations
+
+### 3. IDEMPOTENCY
+- All aggregation operations use idempotency keys
+- Same operation can be safely retried without duplication
+- Idempotency records stored in `data/idempotency/`
+
+### 4. VERIFICATION
+- All writes are verified with SHA-256 checksums
+- Post-write verification: read back and verify checksum matches
+- If verification fails, operation is rolled back and retried
+
+### 5. AUTOMATIC RECOVERY
+- Orphan recovery job runs every 5 minutes
+- Scans `enriched-leads/` directory for orphaned leads
+- Automatically aggregates any missing leads
+- Started automatically in `app/api/inngest/route.ts`
+
+### 6. FILE OPERATIONS
+- All file writes use atomic write pattern (temp file → rename)
+- File locking prevents concurrent writes
+- Backups created before writes: `enriched-all-leads-BACKUP-{timestamp}.json`
+
+### 7. VALIDATION
+- All leads validated before aggregation
+- Must have: name (non-empty) AND phone (10+ digits)
+- Invalid leads are filtered out, not saved
+
+## Enforcement
+
+- Pre-commit hooks should check for direct file writes to data files
+- All data operations must go through `leadDataManager.ts`
+- Background jobs MUST include aggregation step
+- Aggregation step MUST verify success before job completion
+
+## Recovery
+
+- Manual recovery: `POST /api/recover-orphans`
+- Automatic recovery: Runs every 5 minutes via `orphanRecoveryJob.ts`
+- Orphaned leads are automatically detected and aggregated
+
+## Testing
+
+- Test: Enrichment → Aggregation → Verification
+- Test: Background job → Aggregation → Verification  
+- Test: Orphan recovery → Aggregation
+- Test: Idempotency (same operation twice = same result)

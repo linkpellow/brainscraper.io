@@ -60,6 +60,23 @@ export const enrichLeadsFunction = inngest.createFunction(
         );
       });
 
+      // CRITICAL: Aggregate leads to enriched-all-leads.json
+      // THIS STEP IS REQUIRED AND CANNOT BE SKIPPED
+      // If this fails, the entire job fails and retries
+      const aggregationResult = await step.run('aggregate-leads', async () => {
+        const { aggregateLeadsWithVerification } = await import('../leadDataManager');
+        const result = await aggregateLeadsWithVerification(enriched.rows, jobId);
+        
+        if (!result.success || !result.verified) {
+          const errorMsg = result.error || 'Aggregation failed verification';
+          console.error(`[ENRICHMENT] ❌ Aggregation failed: ${errorMsg}`);
+          throw new Error(`Lead aggregation failed: ${errorMsg}. This is a critical step and cannot be skipped.`);
+        }
+        
+        console.log(`[ENRICHMENT] ✅ Aggregated ${result.newLeadsAdded} new leads (total: ${result.totalLeads})`);
+        return result;
+      });
+
       // Route enriched leads to configured destination
       await step.run('route-output', async () => {
         try {
@@ -87,6 +104,8 @@ export const enrichLeadsFunction = inngest.createFunction(
         await completeJob(jobId, {
           enrichedCount: enriched.rows.length,
           totalLeads: parsedData.rows.length,
+          aggregatedCount: aggregationResult.totalLeads,
+          newLeadsAdded: aggregationResult.newLeadsAdded,
         });
         return { success: true };
       });
@@ -95,6 +114,8 @@ export const enrichLeadsFunction = inngest.createFunction(
         success: true,
         jobId,
         enrichedCount: enriched.rows.length,
+        aggregatedCount: aggregationResult.totalLeads,
+        newLeadsAdded: aggregationResult.newLeadsAdded,
       };
     } catch (error) {
       // Record error for cooldown tracking
@@ -182,6 +203,21 @@ export const enrichLeadFunction = inngest.createFunction(
         });
       });
 
+      // CRITICAL: Aggregate lead to enriched-all-leads.json
+      // THIS STEP IS REQUIRED AND CANNOT BE SKIPPED
+      const aggregationResult = await step.run('aggregate-lead', async () => {
+        const { aggregateLeadsWithVerification } = await import('../leadDataManager');
+        const result = await aggregateLeadsWithVerification(enriched.rows, jobId);
+        
+        if (!result.success || !result.verified) {
+          const errorMsg = result.error || 'Aggregation failed verification';
+          console.error(`[ENRICHMENT] ❌ Single lead aggregation failed: ${errorMsg}`);
+          throw new Error(`Lead aggregation failed: ${errorMsg}. This is a critical step and cannot be skipped.`);
+        }
+        
+        return result;
+      });
+
       // Route enriched lead to configured destination
       await step.run('route-output', async () => {
         try {
@@ -197,6 +233,8 @@ export const enrichLeadFunction = inngest.createFunction(
       await step.run('complete', async () => {
         await completeJob(jobId, {
           enriched: true,
+          aggregated: true,
+          newLeadsAdded: aggregationResult.newLeadsAdded,
         });
         return { success: true };
       });
