@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { 
   Rocket, Users, Building2, Link2, ClipboardList, Eye, Zap, 
   CheckCircle, XCircle, Loader2, Download, DollarSign, Play,
-  Search, Filter, FileDown, ArrowRight, Linkedin, Facebook, Sparkles
+  Search, Filter, FileDown, ArrowRight, Linkedin, Facebook, Sparkles, X
 } from 'lucide-react';
 import { ParsedData } from '@/utils/parseFile';
 import { enrichData, EnrichedData, EnrichedRow, EnrichmentProgress } from '@/utils/enrichData';
@@ -123,6 +124,7 @@ function extractLinkedInSourceDetails(searchParams: Record<string, unknown>, lea
 }
 
 export default function LinkedInLeadGenerator() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabType>('linkedin');
   const [workflowStep, setWorkflowStep] = useState<WorkflowStep>('search');
   const [searchType, setSearchType] = useState<'person' | 'company' | 'person_via_url'>('person');
@@ -132,6 +134,7 @@ export default function LinkedInLeadGenerator() {
   const [results, setResults] = useState<LeadResult[] | null>(null);
   const [retryAfterExpiration, setRetryAfterExpiration] = useState<number | null>(null); // Timestamp when retry is allowed
   const [countdownSeconds, setCountdownSeconds] = useState<number>(0);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   
   // Check for imported leads from enriched page on mount
   useEffect(() => {
@@ -304,6 +307,11 @@ export default function LinkedInLeadGenerator() {
 
     return () => clearInterval(interval);
   }, [retryAfterExpiration]);
+
+  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 5000); // Auto-dismiss after 5 seconds
+  };
 
   const initializeAPIProgress = () => {
     const apis: APIProgress[] = [
@@ -635,6 +643,7 @@ export default function LinkedInLeadGenerator() {
 
       // Aggregate and save enriched leads to server (enriched-all-leads.json)
       try {
+        console.log('✨ [ENRICH_LIST] Aggregating enriched leads to server...');
         const aggregateResponse = await fetch('/api/aggregate-enriched-leads', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -643,13 +652,28 @@ export default function LinkedInLeadGenerator() {
         
         if (aggregateResponse.ok) {
           const aggregateData = await aggregateResponse.json();
-          console.log('✨ [ENRICH_LIST] Aggregated and saved leads to server:', aggregateData.totalLeads);
+          const totalLeads = aggregateData.totalLeads || summaries.length;
+          const newLeadsAdded = aggregateData.newLeadsAdded || summaries.length;
+          console.log('✨ [ENRICH_LIST] ✅ Aggregated and saved leads to server:', {
+            totalLeads,
+            newLeadsAdded,
+            message: aggregateData.message
+          });
+
+          // Show toast notification
+          showToast(`${newLeadsAdded} enriched lead${newLeadsAdded === 1 ? '' : 's'} added to brainscraper database`, 'success');
+          
+          // Redirect to enriched leads page
+          router.push('/enriched');
         } else {
-          console.warn('✨ [ENRICH_LIST] Failed to aggregate leads on server:', await aggregateResponse.text());
+          const errorText = await aggregateResponse.text();
+          console.error('✨ [ENRICH_LIST] ❌ Failed to aggregate leads on server:', errorText);
+          showToast('Failed to save enriched leads to database', 'error');
         }
       } catch (aggregateError) {
-        console.error('✨ [ENRICH_LIST] Error aggregating leads:', aggregateError);
-        // Don't fail the enrichment if aggregation fails
+        console.error('✨ [ENRICH_LIST] ❌ Error aggregating leads:', aggregateError);
+        showToast('Error saving enriched leads to database', 'error');
+        // Don't fail the enrichment if aggregation fails, but log it
       }
 
       // Update leadList to mark leads as enriched
@@ -671,9 +695,8 @@ export default function LinkedInLeadGenerator() {
         console.warn('[ENRICH_LIST] Failed to check output routing:', routingError);
       }
 
-      setWorkflowStep('complete');
-      alert(`Successfully enriched ${summaries.length} leads! They are now available on the Enriched Leads page.`);
-      console.log('✨ [ENRICH_LIST] ✅ Successfully completed enrichment');
+      // Don't set workflowStep to 'complete' - we're redirecting to /enriched instead
+      console.log('✨ [ENRICH_LIST] ✅ Successfully completed enrichment and redirected');
     } catch (err) {
       console.error('✨ [ENRICH_LIST] ❌ Error:', err);
       setError(err instanceof Error ? err.message : 'Failed to enrich leads');
@@ -1879,10 +1902,45 @@ export default function LinkedInLeadGenerator() {
       //   await handleDNCScrub(enriched);
       //   updateAPIProgress('USHA DNC Scrub', { status: 'completed', progress: enriched.rows.length, total: enriched.rows.length });
       // }
+
+      // CRITICAL: Aggregate and save enriched leads to server (enriched-all-leads.json)
+      // This ensures leads appear on the /enriched page
+      try {
+        console.log('✨ [ENRICH] Aggregating enriched leads to server...');
+        const aggregateResponse = await fetch('/api/aggregate-enriched-leads', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ newLeads: summaries }),
+        });
+
+        if (aggregateResponse.ok) {
+          const aggregateData = await aggregateResponse.json();
+          const totalLeads = aggregateData.totalLeads || summaries.length;
+          const newLeadsAdded = aggregateData.newLeadsAdded || summaries.length;
+
+          console.log('✨ [ENRICH] ✅ Aggregated and saved leads to server:', {
+            totalLeads,
+            newLeadsAdded,
+            message: aggregateData.message
+          });
+
+          // Show toast notification
+          showToast(`${newLeadsAdded} enriched lead${newLeadsAdded === 1 ? '' : 's'} added to brainscraper database`, 'success');
+          
+          // Redirect to enriched leads page
+          router.push('/enriched');
+        } else {
+          const errorText = await aggregateResponse.text();
+          console.error('✨ [ENRICH] ❌ Failed to aggregate leads on server:', errorText);
+          showToast('Failed to save enriched leads to database', 'error');
+        }
+      } catch (aggregateError) {
+        console.error('✨ [ENRICH] ❌ Error aggregating leads:', aggregateError);
+        showToast('Error saving enriched leads to database', 'error');
+        // Don't fail the enrichment if aggregation fails, but log it
+      }
       
-      console.log('✨ [ENRICH] Setting workflow step to "complete"');
-      setWorkflowStep('complete');
-      console.log('✨ [ENRICH] ✅ Successfully completed enrichment');
+      console.log('✨ [ENRICH] ✅ Successfully completed enrichment and redirected');
     } catch (err) {
       console.error('✨ [ENRICH] ❌ Error in handleEnrichAndScrub:', err);
       console.error('✨ [ENRICH] Error details:', {
@@ -3295,6 +3353,29 @@ export default function LinkedInLeadGenerator() {
       {/* {activeTab === 'facebook' && (
         <FacebookLeadGenerator />
       )} */}
+
+      {/* Toast Notification */}
+      {toast && (
+        <div className={`fixed top-4 right-4 z-50 flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg ${
+          toast.type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+        } animate-in slide-in-from-top-5`}>
+          <div className="flex items-center gap-2">
+            {toast.type === 'success' ? (
+              <CheckCircle className="w-5 h-5" />
+            ) : (
+              <XCircle className="w-5 h-5" />
+            )}
+            <span className="font-medium">{toast.message}</span>
+          </div>
+          <button
+            onClick={() => setToast(null)}
+            className="ml-2 hover:opacity-70 transition-opacity"
+            aria-label="Close"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
     </div>
   );
 }
