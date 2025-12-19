@@ -1775,6 +1775,25 @@ export async function POST(request: NextRequest) {
                                  errorMessage.toLowerCase().includes('60 mins') ||
                                  errorMessage.toLowerCase().includes('account system');
           
+          // Log account freeze with detailed timestamps
+          if (isAccountFrozen) {
+            const freezeMatch = errorMessage.match(/(\d+)\s*(mins?|minutes?|hours?)/i);
+            const freezeDuration = freezeMatch ? parseInt(freezeMatch[1], 10) * 60 : 3600; // Convert to seconds
+            const freezeStartTime = new Date();
+            const freezeExpirationTime = new Date(Date.now() + (freezeDuration * 1000));
+            
+            logger.error('🔴 ACCOUNT FROZEN - DETAILED LOG', {
+              endpoint,
+              freezeStartTime: freezeStartTime.toISOString(),
+              freezeDurationMinutes: Math.ceil(freezeDuration / 60),
+              freezeDurationSeconds: freezeDuration,
+              freezeExpirationTime: freezeExpirationTime.toISOString(),
+              timeUntilExpiry: `${Math.ceil(freezeDuration / 60)} minutes`,
+              errorMessage,
+              requestBody: JSON.stringify(requestBody, null, 2),
+            });
+          }
+          
           // Check if this is a 403 error, rate limit, or account freeze
           const is403Error = errorMessage.includes('403') || 
                             errorMessage.toLowerCase().includes('forbidden') ||

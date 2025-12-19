@@ -848,6 +848,18 @@ export default function LinkedInLeadGenerator() {
         if (errorMsg.toLowerCase().includes('frozen') || errorMsg.toLowerCase().includes('60 mins')) {
           const freezeMatch = errorMsg.match(/(\d+)\s*(mins?|minutes?|hours?)/i);
           const freezeDuration = freezeMatch ? parseInt(freezeMatch[1], 10) * 60 : 3600; // Convert to seconds
+          const freezeDurationMinutes = Math.ceil(freezeDuration / 60);
+          
+          // Log freeze with timestamps
+          const freezeStartTime = new Date();
+          const freezeExpirationTime = new Date(Date.now() + (freezeDuration * 1000));
+          console.error(`🔍 [SEARCH] 🔴 ACCOUNT FROZEN - DETAILED LOG`);
+          console.error(`   Freeze Start: ${freezeStartTime.toISOString()}`);
+          console.error(`   Freeze Duration: ${freezeDurationMinutes} minutes (${freezeDuration} seconds)`);
+          console.error(`   Freeze Expires: ${freezeExpirationTime.toISOString()}`);
+          console.error(`   Time Until Expiry: ${freezeDurationMinutes} minutes`);
+          console.error(`   Message: ${errorMsg}`);
+          
           setError(errorMsg);
           // Set retry expiration time for countdown
           setRetryAfterExpiration(Date.now() + (freezeDuration * 1000));
@@ -1059,7 +1071,16 @@ export default function LinkedInLeadGenerator() {
               const freezeMessage = match ? match[2] : errorMessage;
               const freezeDurationMinutes = Math.ceil(freezeDurationSeconds / 60);
               
-              console.error(`📄 [PAGINATION] 🔴 Account frozen - stopping immediately (no retries)`);
+              // Log freeze with timestamps
+              const freezeStartTime = new Date();
+              const freezeExpirationTime = new Date(Date.now() + (freezeDurationSeconds * 1000));
+              console.error(`📄 [PAGINATION] 🔴 ACCOUNT FROZEN - DETAILED LOG`);
+              console.error(`   Freeze Start: ${freezeStartTime.toISOString()}`);
+              console.error(`   Freeze Duration: ${freezeDurationMinutes} minutes (${freezeDurationSeconds} seconds)`);
+              console.error(`   Freeze Expires: ${freezeExpirationTime.toISOString()}`);
+              console.error(`   Time Until Expiry: ${freezeDurationMinutes} minutes`);
+              console.error(`   Message: ${freezeMessage}`);
+              
               setError(freezeMessage || `Account frozen for ${freezeDurationMinutes} minutes. Please wait before trying again.`);
               // Set retry expiration time for countdown
               setRetryAfterExpiration(Date.now() + (freezeDurationSeconds * 1000));
@@ -1311,7 +1332,18 @@ export default function LinkedInLeadGenerator() {
         // Account freeze - stop immediately, don't retry
         const freezeMatch = errorMessage.match(/(\d+)\s*(mins?|minutes?|hours?)/i);
         const freezeDuration = freezeMatch ? parseInt(freezeMatch[1], 10) * 60 : 3600; // Convert to seconds
-        console.error(`📄 [FETCH_PAGE] Account frozen detected - stopping immediately (no retries)`);
+        const freezeDurationMinutes = Math.ceil(freezeDuration / 60);
+        
+        // Log freeze with timestamps
+        const freezeStartTime = new Date();
+        const freezeExpirationTime = new Date(Date.now() + (freezeDuration * 1000));
+        console.error(`📄 [FETCH_PAGE] 🔴 ACCOUNT FROZEN - DETAILED LOG`);
+        console.error(`   Freeze Start: ${freezeStartTime.toISOString()}`);
+        console.error(`   Freeze Duration: ${freezeDurationMinutes} minutes (${freezeDuration} seconds)`);
+        console.error(`   Freeze Expires: ${freezeExpirationTime.toISOString()}`);
+        console.error(`   Time Until Expiry: ${freezeDurationMinutes} minutes`);
+        console.error(`   Message: ${errorMessage}`);
+        
         throw new Error(`ACCOUNT_FROZEN:${freezeDuration}:${errorMessage}`);
       } else if (isRateLimit) {
         // Regular rate limit - can retry with backoff
@@ -1336,7 +1368,18 @@ export default function LinkedInLeadGenerator() {
       if (isAccountFrozen) {
         const freezeMatch = errorMessage.match(/(\d+)\s*(mins?|minutes?|hours?)/i);
         const freezeDuration = freezeMatch ? parseInt(freezeMatch[1], 10) * 60 : 3600; // Convert to seconds
-        console.error(`📄 [FETCH_PAGE] Account frozen detected - stopping immediately (no retries)`);
+        const freezeDurationMinutes = Math.ceil(freezeDuration / 60);
+        
+        // Log freeze with timestamps
+        const freezeStartTime = new Date();
+        const freezeExpirationTime = new Date(Date.now() + (freezeDuration * 1000));
+        console.error(`📄 [FETCH_PAGE] 🔴 ACCOUNT FROZEN - DETAILED LOG`);
+        console.error(`   Freeze Start: ${freezeStartTime.toISOString()}`);
+        console.error(`   Freeze Duration: ${freezeDurationMinutes} minutes (${freezeDuration} seconds)`);
+        console.error(`   Freeze Expires: ${freezeExpirationTime.toISOString()}`);
+        console.error(`   Time Until Expiry: ${freezeDurationMinutes} minutes`);
+        console.error(`   Message: ${errorMessage}`);
+        
         throw new Error(`ACCOUNT_FROZEN:${freezeDuration}:${errorMessage}`);
       }
       
