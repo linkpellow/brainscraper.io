@@ -16,7 +16,7 @@ export default function Sidebar() {
     },
     {
       href: '/enrichment-queue',
-      label: 'Enrichment Queue',
+      label: 'Scrape History',
       icon: ListTodo,
     },
     {
