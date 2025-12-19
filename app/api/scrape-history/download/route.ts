@@ -72,7 +72,7 @@ export async function GET(request: NextRequest) {
     }
 
     const fileContent = fs.readFileSync(filePath, 'utf-8');
-    const savedResult: SavedApiResult = JSON.parse(fileContent);
+    const savedResult: SavedApiResult & { results?: any[] } = JSON.parse(fileContent);
 
     // Extract leads from different possible structures
     let leads: any[] = [];
