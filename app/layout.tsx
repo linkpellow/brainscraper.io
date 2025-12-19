@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Orbitron } from "next/font/google";
 import "./globals.css";
+import GlobalCountdownTimer from "./components/GlobalCountdownTimer";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -31,7 +32,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" data-scroll-behavior="smooth" className={`${orbitron.variable} ${inter.variable}`}>
-      <body className="font-futuristic antialiased">{children}</body>
+      <body className="font-futuristic antialiased">
+        <GlobalCountdownTimer />
+        {children}
+      </body>
     </html>
   );
 }

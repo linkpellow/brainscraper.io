@@ -14,6 +14,7 @@ import { DNCResult } from './USHAScrubber';
 import LeadListViewer from './LeadListViewer';
 import FacebookLeadGenerator from './FacebookLeadGenerator';
 import type { LeadListItem, SourceDetails } from '@/types/leadList';
+import { setCountdownState, getRemainingSeconds, formatCountdown as formatCountdownUtil, isCountdownActive } from '@/utils/countdownTimer';
 
 interface LeadResult {
   [key: string]: unknown;
@@ -132,8 +133,7 @@ export default function LinkedInLeadGenerator() {
   const [isSearching, setIsSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [results, setResults] = useState<LeadResult[] | null>(null);
-  const [retryAfterExpiration, setRetryAfterExpiration] = useState<number | null>(null); // Timestamp when retry is allowed
-  const [countdownSeconds, setCountdownSeconds] = useState<number>(0);
+  const [countdownSeconds, setCountdownSeconds] = useState<number>(0); // Local state for UI updates
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   
   // Check for imported leads from enriched page on mount
@@ -281,20 +281,14 @@ export default function LinkedInLeadGenerator() {
     return () => clearInterval(interval);
   }, [isSearching, scrapingProgress.startTime, scrapingProgress.leadsCollected, scrapingProgress.estimatedTotal]);
 
-  // Countdown timer for rate limits and account freezes
+  // Countdown timer for rate limits and account freezes (using global state)
   useEffect(() => {
-    if (!retryAfterExpiration) {
-      setCountdownSeconds(0);
-      return;
-    }
-
+    // Load initial countdown state from localStorage
     const updateCountdown = () => {
-      const now = Date.now();
-      const remaining = Math.max(0, Math.ceil((retryAfterExpiration - now) / 1000));
+      const remaining = getRemainingSeconds();
       setCountdownSeconds(remaining);
 
       if (remaining === 0) {
-        setRetryAfterExpiration(null);
         setError(null); // Clear error when countdown expires
       }
     };
@@ -305,8 +299,18 @@ export default function LinkedInLeadGenerator() {
     // Update every second
     const interval = setInterval(updateCountdown, 1000);
 
-    return () => clearInterval(interval);
-  }, [retryAfterExpiration]);
+    // Listen for countdown state changes
+    const handleCountdownChange = () => {
+      updateCountdown();
+    };
+
+    window.addEventListener('countdownStateChanged', handleCountdownChange);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('countdownStateChanged', handleCountdownChange);
+    };
+  }, []);
 
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
     setToast({ message, type });
@@ -733,18 +737,50 @@ export default function LinkedInLeadGenerator() {
     URL.revokeObjectURL(url);
   };
 
-  // Format countdown seconds to MM:SS or HH:MM:SS
-  const formatCountdown = (seconds: number): string => {
-    if (seconds <= 0) return '0:00';
-    
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const secs = seconds % 60;
-    
-    if (hours > 0) {
-      return `${hours}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  // Use formatCountdown from utility (handles MM:SS and HH:MM:SS)
+  const formatCountdown = formatCountdownUtil;
+
+  const handleSearchBackground = async () => {
+    // Check if still in countdown period
+    if (isCountdownActive()) {
+      const remaining = getRemainingSeconds();
+      console.warn(`🔍 [SEARCH] ⚠️ Still in cooldown period, ${remaining} seconds remaining`);
+      return;
     }
-    return `${minutes}:${String(secs).padStart(2, '0')}`;
+
+    console.log('🔍 [SEARCH] Starting background scraping job');
+    
+    try {
+      const response = await fetch('/api/jobs/scrape', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          searchParams,
+          maxPages: fetchAllPages ? maxPagesToFetch : 1,
+          maxResults: fetchAllPages ? maxPagesToFetch * 100 : 100,
+          metadata: {
+            searchType,
+            fetchAllPages,
+            source: 'linkedin-scraper-ui',
+          },
+        }),
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        setError(null);
+        showToast(`✅ Scraping job started! Job ID: ${data.jobId}\n\nYou can monitor progress in the Background Jobs widget.`, 'success');
+        // Optionally show job status or redirect
+      } else {
+        setError(data.error || 'Failed to start scraping job');
+        showToast(data.error || 'Failed to start scraping job', 'error');
+      }
+    } catch (err) {
+      console.error('Error starting background scraping:', err);
+      setError(err instanceof Error ? err.message : 'Failed to start scraping job');
+      showToast(err instanceof Error ? err.message : 'Failed to start scraping job', 'error');
+    }
   };
 
   const handleSearch = async () => {
@@ -755,9 +791,16 @@ export default function LinkedInLeadGenerator() {
     }
     
     // Check if still in countdown period
-    if (retryAfterExpiration && Date.now() < retryAfterExpiration) {
-      const remaining = Math.ceil((retryAfterExpiration - Date.now()) / 1000);
+    if (isCountdownActive()) {
+      const remaining = getRemainingSeconds();
       console.warn(`🔍 [SEARCH] ⚠️ Still in cooldown period, ${remaining} seconds remaining`);
+      return;
+    }
+    
+    // If fetching all pages, use background job automatically
+    if (fetchAllPages && maxPagesToFetch > 1) {
+      console.log('🔍 [SEARCH] Fetching multiple pages - using background job');
+      await handleSearchBackground();
       return;
     }
     
@@ -769,7 +812,7 @@ export default function LinkedInLeadGenerator() {
     setIsSearching(true);
     setError(null);
     setResults(null);
-    setRetryAfterExpiration(null); // Clear any previous retry expiration
+    setCountdownState(null); // Clear any previous countdown
     setWorkflowStep('search');
     setScrapingProgress({
       currentPage: 0,
@@ -860,8 +903,8 @@ export default function LinkedInLeadGenerator() {
           const retryAfter = result.retryAfter || 60;
           console.error('🔍 [SEARCH] Rate limit exceeded, retry after:', retryAfter);
           setError(`Rate limit exceeded. Please wait ${retryAfter} seconds.`);
-          // Set retry expiration time for countdown
-          setRetryAfterExpiration(Date.now() + (retryAfter * 1000));
+          // Set countdown timer (persists globally)
+          setCountdownState(Date.now() + (retryAfter * 1000), 'Rate limit exceeded');
           setScrapingProgress(prev => ({ ...prev, status: 'error', currentOperation: 'Rate limited' }));
           return;
         }
@@ -884,8 +927,8 @@ export default function LinkedInLeadGenerator() {
           console.error(`   Message: ${errorMsg}`);
           
           setError(errorMsg);
-          // Set retry expiration time for countdown
-          setRetryAfterExpiration(Date.now() + (freezeDuration * 1000));
+          // Set countdown timer (persists globally)
+          setCountdownState(Date.now() + (freezeDuration * 1000), 'Account frozen - 60 minute cooldown');
           setScrapingProgress(prev => ({ ...prev, status: 'error', currentOperation: 'Account frozen' }));
           return;
         }
@@ -1105,8 +1148,8 @@ export default function LinkedInLeadGenerator() {
               console.error(`   Message: ${freezeMessage}`);
               
               setError(freezeMessage || `Account frozen for ${freezeDurationMinutes} minutes. Please wait before trying again.`);
-              // Set retry expiration time for countdown
-              setRetryAfterExpiration(Date.now() + (freezeDurationSeconds * 1000));
+              // Set countdown timer (persists globally)
+              setCountdownState(Date.now() + (freezeDurationSeconds * 1000), 'Account frozen - 60 minute cooldown');
               setScrapingProgress(prev => ({ 
                 ...prev, 
                 status: 'error', 
@@ -1136,8 +1179,8 @@ export default function LinkedInLeadGenerator() {
               if (consecutive429Errors >= CIRCUIT_BREAKER_THRESHOLD) {
                 console.error(`📄 [PAGINATION] 🔴 Circuit breaker triggered: ${consecutive429Errors} consecutive rate limits. Stopping pagination.`);
                 setError(`Rate limit exceeded multiple times. Please wait ${retryAfterSeconds} seconds before trying again.`);
-                // Set retry expiration time for countdown
-                setRetryAfterExpiration(Date.now() + (retryAfterSeconds * 1000));
+                // Set countdown timer (persists globally)
+                setCountdownState(Date.now() + (retryAfterSeconds * 1000), 'Rate limit exceeded');
                 setScrapingProgress(prev => ({ 
                   ...prev, 
                   status: 'error', 
@@ -1183,8 +1226,8 @@ export default function LinkedInLeadGenerator() {
                 console.error(`📄 [PAGINATION] ❌ Rate limit exceeded after ${maxRetries} retries. Stopping pagination.`);
                 const finalRetryAfter = retryAfterSeconds;
                 setError(`Rate limit exceeded. Please wait ${finalRetryAfter} seconds before trying again.`);
-                // Set retry expiration time for countdown
-                setRetryAfterExpiration(Date.now() + (finalRetryAfter * 1000));
+                // Set countdown timer (persists globally)
+                setCountdownState(Date.now() + (finalRetryAfter * 1000), 'Rate limit exceeded');
                 setScrapingProgress(prev => ({ 
                   ...prev, 
                   status: 'error', 
@@ -1716,6 +1759,53 @@ export default function LinkedInLeadGenerator() {
 
   const handleEnrichAndScrub = async () => {
     console.log('✨ [ENRICH] Starting handleEnrichAndScrub');
+    console.log('✨ [ENRICH] Results:', results ? `${results.length} leads` : 'null');
+    
+    if (!results || results.length === 0) {
+      console.error('✨ [ENRICH] ❌ No results to enrich');
+      setError('No leads to enrich. Please scrape leads first.');
+      return;
+    }
+
+    // Use background job for enrichment (continues even if user navigates away)
+    console.log('✨ [ENRICH] Using background enrichment job');
+    
+    try {
+      const parsedData = convertResultsToParsedData(results);
+      
+      const response = await fetch('/api/jobs/enrich', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          parsedData,
+          metadata: {
+            source: 'linkedin-scraper',
+            leadCount: results.length,
+          },
+        }),
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        setError(null);
+        showToast(`✅ Enrichment job started! Job ID: ${data.jobId}\n\nYou can monitor progress in the Background Jobs widget. The job will continue even if you navigate away.`, 'success');
+        setIsEnriching(false); // Don't set to true since it's running in background
+        setWorkflowStep('results'); // Stay on results page
+      } else {
+        setError(data.error || 'Failed to start enrichment job');
+        showToast(data.error || 'Failed to start enrichment job', 'error');
+      }
+    } catch (err) {
+      console.error('Error starting background enrichment:', err);
+      setError(err instanceof Error ? err.message : 'Failed to start enrichment job');
+      showToast(err instanceof Error ? err.message : 'Failed to start enrichment job', 'error');
+    }
+  };
+
+  const handleEnrichAndScrubSync = async () => {
+    // Synchronous enrichment (original behavior) - kept for backward compatibility
+    console.log('✨ [ENRICH] Starting synchronous handleEnrichAndScrub');
     console.log('✨ [ENRICH] Results:', results ? `${results.length} leads` : 'null');
     
     if (!results || results.length === 0) {
