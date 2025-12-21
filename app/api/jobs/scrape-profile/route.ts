@@ -85,43 +85,81 @@ export async function POST(request: NextRequest) {
     };
     saveJobStatus(initialStatus);
 
+    // Validate Inngest configuration
+    const isProduction = process.env.NODE_ENV === 'production';
+    const hasInngestKeys = process.env.INNGEST_EVENT_KEY && process.env.INNGEST_SIGNING_KEY;
+    
+    if (!hasInngestKeys) {
+      if (isProduction) {
+        const { failJob } = await import('@/utils/jobStatus');
+        await failJob(jobId, 'Inngest keys not configured. Set INNGEST_EVENT_KEY and INNGEST_SIGNING_KEY environment variables.');
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Background jobs are not configured. Please set INNGEST_EVENT_KEY and INNGEST_SIGNING_KEY environment variables.',
+            jobId,
+          },
+          { status: 500 }
+        );
+      } else {
+        console.warn('[JOBS_SCRAPE_PROFILE] ⚠️ Inngest keys not set. For local development, run: npx inngest-cli@latest dev');
+      }
+    }
+
     // Send notification
     await notifyScrapeStarted(jobId, profile.platform);
 
     // Apply scheduling delay if needed
-    if (scheduleCheck.delayMs > 0) {
-      // Schedule for later using Inngest's delay
-      await inngest.send({
-        name: scrapingEvents.scrapeLinkedIn,
-        data: {
-          jobId,
-          searchParams,
-          maxPages: 10,
-          maxResults: 250,
-          metadata: {
-            ...metadata,
-            profileId,
-            profileName: profile.name,
+    try {
+      if (scheduleCheck.delayMs > 0) {
+        // Schedule for later using Inngest's delay
+        await inngest.send({
+          name: scrapingEvents.scrapeLinkedIn,
+          data: {
+            jobId,
+            searchParams,
+            maxPages: 10,
+            maxResults: 250,
+            metadata: {
+              ...metadata,
+              profileId,
+              profileName: profile.name,
+            },
           },
-        },
-        ts: Date.now() + scheduleCheck.delayMs,
-      });
-    } else {
-      // Execute immediately
-      await inngest.send({
-        name: scrapingEvents.scrapeLinkedIn,
-        data: {
-          jobId,
-          searchParams,
-          maxPages: 10,
-          maxResults: 250,
-          metadata: {
-            ...metadata,
-            profileId,
-            profileName: profile.name,
+          ts: Date.now() + scheduleCheck.delayMs,
+        });
+      } else {
+        // Execute immediately
+        await inngest.send({
+          name: scrapingEvents.scrapeLinkedIn,
+          data: {
+            jobId,
+            searchParams,
+            maxPages: 10,
+            maxResults: 250,
+            metadata: {
+              ...metadata,
+              profileId,
+              profileName: profile.name,
+            },
           },
+        });
+      }
+    } catch (sendError) {
+      // Mark job as failed if Inngest send fails
+      const { failJob } = await import('@/utils/jobStatus');
+      const errorMessage = sendError instanceof Error ? sendError.message : 'Unknown error';
+      await failJob(jobId, `Failed to start background job: ${errorMessage}. Check Inngest configuration.`);
+      
+      console.error('[JOBS_SCRAPE_PROFILE] Failed to send Inngest event:', sendError);
+      return NextResponse.json(
+        {
+          success: false,
+          error: `Failed to start background job: ${errorMessage}. Please check Inngest configuration.`,
+          jobId,
         },
-      });
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({
