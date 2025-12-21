@@ -1767,8 +1767,8 @@ export default function LinkedInLeadGenerator() {
       return;
     }
 
-    // Use background job for enrichment (continues even if user navigates away)
-    console.log('✨ [ENRICH] Using background enrichment job');
+    // Try background job first, fall back to sync if Inngest not configured
+    console.log('✨ [ENRICH] Attempting background enrichment job');
     
     try {
       const parsedData = convertResultsToParsedData(results);
@@ -1792,15 +1792,27 @@ export default function LinkedInLeadGenerator() {
         showToast(`✅ Enrichment job started! Job ID: ${data.jobId}\n\nYou can monitor progress in the Background Jobs widget. The job will continue even if you navigate away.`, 'success');
         setIsEnriching(false); // Don't set to true since it's running in background
         setWorkflowStep('results'); // Stay on results page
+        return;
       } else {
-        setError(data.error || 'Failed to start enrichment job');
-        showToast(data.error || 'Failed to start enrichment job', 'error');
+        // If background job failed due to Inngest not configured, fall back to sync
+        if (data.fallbackToSync || (data.error && (data.error.includes('Inngest') || data.error.includes('not configured')))) {
+          console.log('✨ [ENRICH] Background jobs not available, falling back to synchronous enrichment');
+          // Fall through to sync enrichment
+        } else {
+          setError(data.error || 'Failed to start enrichment job');
+          showToast(data.error || 'Failed to start enrichment job', 'error');
+          return;
+        }
       }
     } catch (err) {
-      console.error('Error starting background enrichment:', err);
-      setError(err instanceof Error ? err.message : 'Failed to start enrichment job');
-      showToast(err instanceof Error ? err.message : 'Failed to start enrichment job', 'error');
+      // If network error or Inngest not available, fall back to sync
+      console.warn('✨ [ENRICH] Background job failed, falling back to synchronous enrichment:', err);
+      // Fall through to sync enrichment
     }
+
+    // Fallback to synchronous enrichment (original behavior)
+    console.log('✨ [ENRICH] Using synchronous enrichment (fallback)');
+    await handleEnrichAndScrubSync();
   };
 
   const handleEnrichAndScrubSync = async () => {

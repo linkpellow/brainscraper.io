@@ -110,6 +110,39 @@ export async function POST(request: NextRequest) {
     };
     saveJobStatus(initialStatus);
 
+    // Validate Inngest configuration
+    const isProduction = process.env.NODE_ENV === 'production';
+    const hasInngestKeys = process.env.INNGEST_EVENT_KEY && process.env.INNGEST_SIGNING_KEY;
+    
+    if (!hasInngestKeys) {
+      if (isProduction) {
+        // In production, fail hard if Inngest not configured
+        const { failJob } = await import('@/utils/jobStatus');
+        await failJob(jobId, 'Inngest keys not configured. Set INNGEST_EVENT_KEY and INNGEST_SIGNING_KEY environment variables.');
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Background jobs are not configured. Please set INNGEST_EVENT_KEY and INNGEST_SIGNING_KEY environment variables.',
+            jobId,
+            fallbackToSync: false,
+          },
+          { status: 500 }
+        );
+      } else {
+        // In development, allow fallback to sync
+        console.warn('[JOBS_ENRICH] ⚠️ Inngest keys not set. For local development, run: npx inngest-cli@latest dev');
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Inngest not configured. Run: npx inngest-cli@latest dev (or use synchronous enrichment)',
+            jobId,
+            fallbackToSync: true,
+          },
+          { status: 503 }
+        );
+      }
+    }
+
     // Send notification
     try {
       const { notifyScrapeStarted } = await import('@/utils/notifications');
@@ -128,15 +161,32 @@ export async function POST(request: NextRequest) {
       },
     };
 
-    if (scheduleCheck.delayMs > 0) {
-      // Schedule for later
-      await inngest.send({
-        ...eventData,
-        ts: Date.now() + scheduleCheck.delayMs,
-      });
-    } else {
-      // Execute immediately
-      await inngest.send(eventData);
+    try {
+      if (scheduleCheck.delayMs > 0) {
+        // Schedule for later
+        await inngest.send({
+          ...eventData,
+          ts: Date.now() + scheduleCheck.delayMs,
+        });
+      } else {
+        // Execute immediately
+        await inngest.send(eventData);
+      }
+    } catch (sendError) {
+      // Mark job as failed if Inngest send fails
+      const { failJob } = await import('@/utils/jobStatus');
+      const errorMessage = sendError instanceof Error ? sendError.message : 'Unknown error';
+      await failJob(jobId, `Failed to start background job: ${errorMessage}. Check Inngest configuration.`);
+      
+      console.error('[JOBS_ENRICH] Failed to send Inngest event:', sendError);
+      return NextResponse.json(
+        {
+          success: false,
+          error: `Failed to start background job: ${errorMessage}. Please check Inngest configuration.`,
+          jobId,
+        },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({

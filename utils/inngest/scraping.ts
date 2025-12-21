@@ -66,52 +66,93 @@ export const scrapeLinkedInFunction = inngest.createFunction(
           throw new Error('RAPIDAPI_KEY not configured');
         }
 
+        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 
+          (process.env.NODE_ENV === 'production' 
+            ? (() => { throw new Error('NEXT_PUBLIC_BASE_URL must be set in production'); })()
+            : 'http://localhost:3000');
+
+        // Update progress at start
+        updateJobProgress(jobId, {
+          current: 0,
+          total: maxPages,
+        });
+
         while (hasMore && page <= maxPages && leads.length < maxResults) {
-          // Call LinkedIn Sales Navigator API
-          const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/linkedin-sales-navigator`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              ...searchParams,
-              start: (page - 1) * 25, // LinkedIn pagination
-              count: 25,
-            }),
-          });
-
-          if (!response.ok) {
-            throw new Error(`API request failed: ${response.statusText}`);
-          }
-
-          const result = await response.json();
-          
-          // Store full response for saving
-          if (page === 1) {
-            fullResponse = result;
-          }
-          
-          if (result.data?.response?.data) {
-            const pageLeads = result.data.response.data;
-            leads.push(...pageLeads);
+          let timeoutId: NodeJS.Timeout | null = null;
+          try {
+            // Call LinkedIn Sales Navigator API with timeout
+            const controller = new AbortController();
+            timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
             
-            // Update progress (sync version for callbacks)
-            updateJobProgress(jobId, {
-              current: page,
-              total: maxPages,
+            const response = await fetch(`${baseUrl}/api/linkedin-sales-navigator`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                ...searchParams,
+                start: (page - 1) * 25, // LinkedIn pagination
+                count: 25,
+              }),
+              signal: controller.signal,
             });
 
-            // Check if there are more pages
-            hasMore = result.pagination?.hasMore || false;
-          } else {
-            hasMore = false;
-          }
+            if (timeoutId) {
+              clearTimeout(timeoutId);
+              timeoutId = null;
+            }
 
-          page++;
+            if (!response.ok) {
+              const errorText = await response.text().catch(() => response.statusText);
+              throw new Error(`API request failed (${response.status}): ${errorText}`);
+            }
 
-          // Rate limiting delay
-          if (hasMore && page <= maxPages) {
-            await new Promise(resolve => setTimeout(resolve, 2000));
+            const result = await response.json();
+          
+            // Store full response for saving
+            if (page === 1) {
+              fullResponse = result;
+            }
+            
+            if (result.data?.response?.data) {
+              const pageLeads = result.data.response.data;
+              leads.push(...pageLeads);
+              
+              // Update progress (sync version for callbacks)
+              updateJobProgress(jobId, {
+                current: page,
+                total: maxPages,
+              });
+
+              // Check if there are more pages
+              hasMore = result.pagination?.hasMore || false;
+            } else {
+              hasMore = false;
+            }
+
+            page++;
+
+            // Rate limiting delay
+            if (hasMore && page <= maxPages) {
+              await new Promise(resolve => setTimeout(resolve, 2000));
+            }
+          } catch (fetchError) {
+            if (timeoutId) {
+              clearTimeout(timeoutId);
+            }
+            
+            const errorMessage = fetchError instanceof Error 
+              ? fetchError.message 
+              : 'Unknown error during API fetch';
+            
+            // Update progress before failing
+            updateJobProgress(jobId, {
+              current: page - 1,
+              total: maxPages,
+            });
+            
+            console.error(`[SCRAPING] Failed to fetch page ${page}:`, errorMessage);
+            throw new Error(`Failed to scrape page ${page}: ${errorMessage}`);
           }
         }
 
