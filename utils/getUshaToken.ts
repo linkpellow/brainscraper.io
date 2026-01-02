@@ -2,6 +2,7 @@
  * Automatic USHA JWT Token Fetcher
  * 
  * Supports multiple authentication methods in priority order:
+ * Updated to use /account/refresh endpoint for token self-refresh
  * 1. Provided token (request parameter)
  * 2. Cached token (if valid)
  * 3. Environment variable (USHA_JWT_TOKEN or COGNITO_ID_TOKEN)
