@@ -81,6 +81,17 @@ export const scrapeLinkedInFunction = inngest.createFunction(
         while (hasMore && page <= maxPages && leads.length < maxResults) {
           let timeoutId: NodeJS.Timeout | null = null;
           try {
+            // Determine endpoint from searchParams or metadata
+            // If endpoint is not in searchParams, infer it from searchType in metadata
+            let endpoint = searchParams.endpoint as string | undefined;
+            if (!endpoint && metadata?.searchType) {
+              endpoint = metadata.searchType === 'person' ? 'premium_search_person' : 'premium_search_company';
+            }
+            // Default to person search if still not set
+            if (!endpoint) {
+              endpoint = 'premium_search_person';
+            }
+
             // Call LinkedIn Sales Navigator API with timeout
             const controller = new AbortController();
             timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
@@ -91,6 +102,7 @@ export const scrapeLinkedInFunction = inngest.createFunction(
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
+              endpoint, // Include endpoint parameter (required by API)
               ...searchParams,
               start: (page - 1) * 25, // LinkedIn pagination
               count: 25,
