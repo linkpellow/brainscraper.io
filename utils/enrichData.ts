@@ -1147,6 +1147,12 @@ function shouldContinueEnrichment(
   // IF linetype = VOIP → STOP
   if (lineType?.toLowerCase() === 'voip') return false;
   
+  // IF linetype = FIXED/LANDLINE → STOP (mobile only)
+  const fixedTypes = ['fixed', 'landline', 'fixed line', 'fixed-line', 'land line'];
+  if (lineType && fixedTypes.some(fixed => lineType.toLowerCase().includes(fixed))) {
+    return false;
+  }
+  
   // IF carrier ∈ junk_carriers → STOP
   const junkCarriers = ['google voice', 'textnow', 'burner', 'hushed', 'line2', 'bandwidth', 'twilio'];
   if (carrierName && junkCarriers.some(junk => carrierName.toLowerCase().includes(junk))) {
