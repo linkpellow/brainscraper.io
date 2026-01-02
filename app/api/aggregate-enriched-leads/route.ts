@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
         lineType: lead.lineType,
         carrierName: lead.carrier,
       },
-    }));
+    } as EnrichedRow));
     
     // Use DataManager for aggregation (ensures verification and idempotency)
     const { aggregateLeadsWithVerification } = await import('@/utils/leadDataManager');
