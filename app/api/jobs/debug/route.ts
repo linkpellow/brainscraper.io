@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
     };
 
     // Check for stuck pending jobs
-    const stuckJobs = diagnostics.jobs.active.filter(job => 
+    const stuckJobs = diagnostics.jobs.active.filter((job: { status: string; ageMinutes: number }) => 
       job.status === 'pending' && job.ageMinutes > 5
     );
     
