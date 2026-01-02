@@ -84,10 +84,13 @@ export async function GET(request: NextRequest) {
     }
 
     // Get all timestamped JSON files
-    const files = fs.readdirSync(resultsDir)
+    const allFiles = fs.readdirSync(resultsDir);
+    const files = allFiles
       .filter(file => file.endsWith('.json') && file.startsWith('20'))
       .sort()
       .reverse(); // Most recent first
+
+    console.log(`[SCRAPE_HISTORY] Found ${files.length} scrape files in ${resultsDir} (total files: ${allFiles.length})`);
 
     const scrapes: ScrapeHistoryItem[] = [];
 
@@ -96,6 +99,11 @@ export async function GET(request: NextRequest) {
         const filePath = path.join(resultsDir, file);
         const fileContent = fs.readFileSync(filePath, 'utf-8');
         const savedResult: SavedApiResult = JSON.parse(fileContent);
+
+        if (!savedResult.metadata) {
+          console.warn(`[SCRAPE_HISTORY] File ${file} missing metadata, skipping`);
+          continue;
+        }
 
         const metadata = savedResult.metadata;
         const timestamp = new Date(metadata.timestamp);
@@ -134,10 +142,12 @@ export async function GET(request: NextRequest) {
           totalAvailable: metadata.pagination?.total,
         });
       } catch (fileError) {
-        console.error(`Error processing file ${file}:`, fileError);
+        console.error(`[SCRAPE_HISTORY] Error processing file ${file}:`, fileError);
         // Continue with other files
       }
     }
+
+    console.log(`[SCRAPE_HISTORY] Successfully loaded ${scrapes.length} scrapes from ${files.length} files`);
 
     return NextResponse.json({
       success: true,

@@ -11,7 +11,7 @@
   3. API reads from `/data/enriched-all-leads.json` (Railway persistent volume)
   4. Updates localStorage with fresh data
 
-### ✅ **Enrichment Queue Page** (`app/enrichment-queue/page.tsx`)
+### ✅ **Scrape History Page** (`app/scrape-history/page.tsx`)
 - **Calls**: `/api/load-unenriched-leads`
 - **Status**: ✅ Updated to use `DATA_DIR`
 - **Flow**: Loads unenriched leads from `/data/api-results/`

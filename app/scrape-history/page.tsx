@@ -41,15 +41,19 @@ export default function ScrapeHistoryPage() {
     try {
       setLoading(true);
       setError(null);
-      const response = await fetch('/api/scrape-history');
+      console.log('[SCRAPE_HISTORY] Loading scrape history...');
+      const response = await fetch(`/api/scrape-history?t=${Date.now()}`); // Add cache busting
       const data = await response.json();
 
       if (data.success) {
+        console.log(`[SCRAPE_HISTORY] Loaded ${data.scrapes?.length || 0} scrapes`);
         setScrapes(data.scrapes || []);
       } else {
+        console.error('[SCRAPE_HISTORY] Failed to load:', data.error);
         setError(data.error || 'Failed to load scrape history');
       }
     } catch (err) {
+      console.error('[SCRAPE_HISTORY] Error:', err);
       setError(err instanceof Error ? err.message : 'Unknown error occurred');
     } finally {
       setLoading(false);
