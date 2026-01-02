@@ -9,6 +9,11 @@ const publicRoutes = [
   '/api/inngest', // Inngest webhooks must be public (authenticated via signing key)
   '/api/linkedin-sales-navigator', // Used by Inngest background jobs (server-to-server)
   '/api/skip-tracing', // Used by enrichment pipeline (server-to-server)
+  '/api/telnyx', // Used by enrichment pipeline (server-to-server)
+  '/api/usha', // Used by enrichment pipeline (server-to-server)
+  '/api/income-by-zip', // Used by enrichment pipeline (server-to-server)
+  '/api/website-extractor', // Used by enrichment pipeline (server-to-server)
+  '/api/website-contacts', // Used by enrichment pipeline (server-to-server)
 ];
 
 export function middleware(request: NextRequest) {
