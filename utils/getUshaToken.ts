@@ -131,9 +131,9 @@ export async function getUshaToken(providedToken?: string | null, forceRefresh: 
     if (cognitoToken) {
       // Exchange Cognito ID token for USHA JWT token (try both ID and Access tokens)
       try {
-        const { exchangeCognitoForUshaJwt } = await import('./exchangeCognitoForUshaJwt');
+        const exchangeModule = await import('./exchangeCognitoForUshaJwt');
         console.log('🔄 [USHA_TOKEN] Exchanging Cognito token for USHA JWT token...');
-        const ushaJwtToken = await exchangeCognitoForUshaJwt(cognitoToken, cognitoAccessToken);
+        const ushaJwtToken = await exchangeModule.exchangeCognitoForUshaJwt(cognitoToken, cognitoAccessToken);
         
         if (ushaJwtToken) {
           // Cache the USHA JWT token
