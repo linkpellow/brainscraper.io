@@ -272,7 +272,9 @@ export class LeadDataManager {
         for (const lead of summaries) {
           // Final Zod validation before adding
           if (!this.validateLeadSummary(lead)) {
-            console.warn(`[DATA_MANAGER] Skipping invalid lead (Zod validation failed): ${lead.name || 'Unknown'}`);
+            // Capture name before type narrowing for logging
+            const leadName = (lead as any).name || 'Unknown';
+            console.warn(`[DATA_MANAGER] Skipping invalid lead (Zod validation failed): ${leadName}`);
             continue;
           }
           
