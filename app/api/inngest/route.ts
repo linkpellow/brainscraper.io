@@ -70,12 +70,14 @@ if (typeof window === 'undefined') {
 }
 
 // Export the Inngest serve handler
+// Note: baseUrl in serve() is for Inngest API, not your endpoint
+// Inngest auto-discovers your endpoint when you visit /api/inngest
 export const { GET, POST, PUT } = serve({
   client: inngest,
   functions: [
     ...enrichmentFunctions,
     ...scrapingFunctions,
   ],
-  // Explicitly set base URL so Inngest knows where to send webhooks
-  baseUrl: getInngestBaseUrl(),
+  // Signing key for webhook verification
+  signingKey: process.env.INNGEST_SIGNING_KEY,
 });
