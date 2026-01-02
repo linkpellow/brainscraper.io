@@ -61,23 +61,33 @@ function getInngestBaseUrl(): string {
 // Log function registration
 if (typeof window === 'undefined') {
   const baseUrl = getInngestBaseUrl();
+  const signingKey = process.env.INNGEST_SIGNING_KEY;
   console.log(`[INNGEST] Registering ${enrichmentFunctions.length} enrichment functions and ${scrapingFunctions.length} scraping functions`);
   console.log(`[INNGEST] Base URL: ${baseUrl}`);
+  console.log(`[INNGEST] Signing key present: ${!!signingKey}`);
+  console.log(`[INNGEST] Signing key prefix: ${signingKey ? signingKey.substring(0, 20) + '...' : 'NOT SET'}`);
   console.log(`[INNGEST] Functions:`, {
     enrichment: enrichmentFunctions.map(f => f.id || 'unknown'),
     scraping: scrapingFunctions.map(f => f.id || 'unknown'),
   });
+  
+  if (!signingKey) {
+    console.error('❌ [INNGEST] CRITICAL: INNGEST_SIGNING_KEY is not set! Authentication will fail.');
+  } else if (!signingKey.startsWith('signkey-')) {
+    console.warn('⚠️ [INNGEST] Signing key does not start with "signkey-". Verify it is correct.');
+  }
 }
 
 // Export the Inngest serve handler
 // Note: baseUrl in serve() is for Inngest API, not your endpoint
 // Inngest auto-discovers your endpoint when you visit /api/inngest
+// The signing key is used to verify webhook requests from Inngest
 export const { GET, POST, PUT } = serve({
   client: inngest,
   functions: [
     ...enrichmentFunctions,
     ...scrapingFunctions,
   ],
-  // Signing key for webhook verification
+  // Signing key for webhook verification - must match Inngest dashboard
   signingKey: process.env.INNGEST_SIGNING_KEY,
 });
