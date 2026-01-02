@@ -27,9 +27,42 @@ if (process.env.NODE_ENV === 'production') {
   }
 }
 
+// Get base URL for Inngest webhooks
+function getInngestBaseUrl(): string {
+  // Explicit configuration
+  const explicit = 
+    process.env.NEXT_PUBLIC_BASE_URL ||
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    process.env.SITE_URL ||
+    process.env.BASE_URL ||
+    '';
+  
+  if (explicit) {
+    return explicit.startsWith('http') ? explicit : `https://${explicit}`;
+  }
+  
+  // Railway provides RAILWAY_PUBLIC_DOMAIN
+  const railway = process.env.RAILWAY_PUBLIC_DOMAIN;
+  if (railway) return `https://${railway}`;
+  
+  // Vercel provides VERCEL_URL
+  const vercel = process.env.VERCEL_URL;
+  if (vercel) return `https://${vercel}`;
+  
+  // Default to brainscraper.io if in production
+  if (process.env.NODE_ENV === 'production') {
+    return 'https://brainscraper.io';
+  }
+  
+  // Development fallback
+  return 'http://localhost:3000';
+}
+
 // Log function registration
 if (typeof window === 'undefined') {
+  const baseUrl = getInngestBaseUrl();
   console.log(`[INNGEST] Registering ${enrichmentFunctions.length} enrichment functions and ${scrapingFunctions.length} scraping functions`);
+  console.log(`[INNGEST] Base URL: ${baseUrl}`);
   console.log(`[INNGEST] Functions:`, {
     enrichment: enrichmentFunctions.map(f => f.id || 'unknown'),
     scraping: scrapingFunctions.map(f => f.id || 'unknown'),
@@ -43,4 +76,6 @@ export const { GET, POST, PUT } = serve({
     ...enrichmentFunctions,
     ...scrapingFunctions,
   ],
+  // Explicitly set base URL so Inngest knows where to send webhooks
+  baseUrl: getInngestBaseUrl(),
 });
