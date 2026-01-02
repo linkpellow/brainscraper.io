@@ -161,17 +161,26 @@ export async function POST(request: NextRequest) {
       },
     };
 
+    console.log(`[JOBS_ENRICH] 📤 Sending Inngest event for job ${jobId}...`);
+    console.log(`[JOBS_ENRICH] Event key present: ${!!process.env.INNGEST_EVENT_KEY}`);
+    console.log(`[JOBS_ENRICH] Event name: ${eventData.name}`);
+    console.log(`[JOBS_ENRICH] Job ID: ${jobId}`);
+    
     try {
+      let result;
       if (scheduleCheck.delayMs > 0) {
         // Schedule for later
-        await inngest.send({
+        console.log(`[JOBS_ENRICH] Scheduling job with ${scheduleCheck.delayMs}ms delay`);
+        result = await inngest.send({
           ...eventData,
           ts: Date.now() + scheduleCheck.delayMs,
         });
       } else {
         // Execute immediately
-        await inngest.send(eventData);
+        console.log(`[JOBS_ENRICH] Sending event immediately`);
+        result = await inngest.send(eventData);
       }
+      console.log(`[JOBS_ENRICH] ✅ Event sent successfully. Result:`, JSON.stringify(result, null, 2));
     } catch (sendError) {
       // Mark job as failed if Inngest send fails
       const { failJob } = await import('@/utils/jobStatus');
