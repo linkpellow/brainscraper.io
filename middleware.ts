@@ -7,6 +7,7 @@ const publicRoutes = [
   '/api/auth/login', 
   '/api/auth/check',
   '/api/inngest', // Inngest webhooks must be public (authenticated via signing key)
+  '/api/linkedin-sales-navigator', // Used by Inngest background jobs (server-to-server)
 ];
 
 export function middleware(request: NextRequest) {
