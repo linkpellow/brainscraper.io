@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
       },
       inngestClient: {
         id: inngest.id,
-        name: inngest.name,
+        name: 'BrainScraper.io', // Hardcoded to match utils/inngest.ts
       },
       jobs: {
         active: getActiveJobs().map(job => ({
