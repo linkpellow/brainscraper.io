@@ -225,11 +225,48 @@ async function authenticateWithClientCredentials(
 }
 
 /**
- * Refresh token using refresh_token
+ * Refresh token using refresh_token or existing USHA JWT token
  */
-async function refreshToken(refreshToken: string): Promise<UshaTokenResponse | null> {
+async function refreshToken(refreshToken: string, existingUshaJwt?: string): Promise<UshaTokenResponse | null> {
   try {
+    // Priority 1: Use the USHA refresh endpoint with existing JWT token (if available)
+    if (existingUshaJwt) {
+      try {
+        const response = await fetch('https://api-identity-agent.ushadvisors.com/account/refresh', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${existingUshaJwt}`,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'Origin': 'https://agent.ushadvisors.com',
+            'Referer': 'https://agent.ushadvisors.com/'
+          },
+          body: JSON.stringify({}),
+          credentials: 'include'
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.token || data.access_token || data.jwt_token || data.accessToken || data.jwtToken) {
+            const newToken = data.token || data.access_token || data.jwt_token || data.accessToken || data.jwtToken;
+            console.log(`✅ [USHA_AUTH] Token refreshed via /account/refresh`);
+            return {
+              access_token: newToken,
+              token_type: data.token_type || 'Bearer',
+              expires_in: data.expires_in || 3600,
+              refresh_token: data.refresh_token || refreshToken
+            };
+          }
+        }
+      } catch (e) {
+        // Continue to fallback methods
+        console.log(`⚠️ [USHA_AUTH] /account/refresh failed, trying other endpoints...`);
+      }
+    }
+
+    // Priority 2: Try standard OAuth refresh token endpoints
     const refreshEndpoints = [
+      'https://api-identity-agent.ushadvisors.com/account/refresh', // USHA-specific endpoint
       `${USHA_AUTH_BASE}/connect/token`,
       `${USHA_AUTH_BASE}/api/token/refresh`,
       `${USHA_AUTH_BASE}/api/token`,
@@ -325,7 +362,21 @@ export async function getUshaTokenDirect(
         return token;
       } else {
         console.log('⚠️ [USHA_AUTH] Environment token expired, attempting refresh...');
-        // Token expired, try to refresh if we have refresh_token
+        // Token expired, try to refresh using the token itself (USHA /account/refresh endpoint)
+        const refreshed = await refreshToken('', token); // Use expired token to refresh
+        if (refreshed) {
+          const expiration = getTokenExpiration(refreshed.access_token) || 
+                            (Date.now() + (refreshed.expires_in * 1000));
+          tokenCache = {
+            access_token: refreshed.access_token,
+            refresh_token: refreshed.refresh_token || process.env.USHA_REFRESH_TOKEN,
+            expiresAt: expiration,
+            fetchedAt: Date.now()
+          };
+          console.log('✅ [USHA_AUTH] Token refreshed from environment token');
+          return refreshed.access_token;
+        }
+        // Fallback: try refresh token if available
         const envRefreshToken = process.env.USHA_REFRESH_TOKEN;
         if (envRefreshToken) {
           const refreshed = await refreshToken(envRefreshToken);
@@ -346,16 +397,37 @@ export async function getUshaTokenDirect(
     }
   }
 
-  // Priority 4: Try refresh token if available
-  if (tokenCache?.refresh_token) {
-    console.log('🔑 [USHA_AUTH] Attempting token refresh...');
-    const refreshed = await refreshToken(tokenCache.refresh_token);
+  // Priority 4: Try refreshing existing USHA JWT token (even if expired)
+  // The /account/refresh endpoint can refresh a USHA JWT token using itself
+  const existingToken = tokenCache?.access_token || process.env.USHA_JWT_TOKEN;
+  if (existingToken) {
+    console.log('🔑 [USHA_AUTH] Attempting to refresh existing USHA JWT token...');
+    const refreshed = await refreshToken('', existingToken); // Pass empty string for refresh_token, use existing JWT
     if (refreshed) {
       const expiration = getTokenExpiration(refreshed.access_token) || 
                         (Date.now() + (refreshed.expires_in * 1000));
       tokenCache = {
         access_token: refreshed.access_token,
-        refresh_token: refreshed.refresh_token || tokenCache.refresh_token,
+        refresh_token: refreshed.refresh_token || tokenCache?.refresh_token,
+        expiresAt: expiration,
+        fetchedAt: Date.now()
+      };
+      console.log('✅ [USHA_AUTH] Token refreshed successfully via /account/refresh');
+      return refreshed.access_token;
+    }
+  }
+
+  // Priority 5: Try refresh token if available (from cache or environment)
+  const refreshTokenToUse = tokenCache?.refresh_token || process.env.USHA_REFRESH_TOKEN;
+  if (refreshTokenToUse) {
+    console.log('🔑 [USHA_AUTH] Attempting token refresh with refresh token...');
+    const refreshed = await refreshToken(refreshTokenToUse);
+    if (refreshed) {
+      const expiration = getTokenExpiration(refreshed.access_token) || 
+                        (Date.now() + (refreshed.expires_in * 1000));
+      tokenCache = {
+        access_token: refreshed.access_token,
+        refresh_token: refreshed.refresh_token || refreshTokenToUse,
         expiresAt: expiration,
         fetchedAt: Date.now()
       };

@@ -121,15 +121,23 @@ export async function getUshaToken(providedToken?: string | null, forceRefresh: 
 
   // Priority 4: Try Cognito authentication (exchange Cognito ID token for USHA JWT)
   try {
-    const { getCognitoIdToken } = await import('./cognitoAuth');
+    const { getCognitoIdToken, getCognitoAccessToken } = await import('./cognitoAuth');
     console.log('🔑 [USHA_TOKEN] Attempting Cognito authentication...');
     const cognitoToken = await getCognitoIdToken(null, forceRefresh);
+    // Also try to get access token - it might be needed for exchange
+    let cognitoAccessToken: string | undefined;
+    try {
+      cognitoAccessToken = await getCognitoAccessToken(null, forceRefresh);
+    } catch (e) {
+      // Access token not available, continue with ID token only
+    }
+    
     if (cognitoToken) {
-      // Exchange Cognito ID token for USHA JWT token
+      // Exchange Cognito ID token for USHA JWT token (try both ID and Access tokens)
       try {
         const { exchangeCognitoForUshaJwt } = await import('./exchangeCognitoForUshaJwt');
-        console.log('🔄 [USHA_TOKEN] Exchanging Cognito ID token for USHA JWT token...');
-        const ushaJwtToken = await exchangeCognitoForUshaJwt(cognitoToken);
+        console.log('🔄 [USHA_TOKEN] Exchanging Cognito token for USHA JWT token...');
+        const ushaJwtToken = await exchangeCognitoForUshaJwt(cognitoToken, cognitoAccessToken);
         
         if (ushaJwtToken) {
           // Cache the USHA JWT token
@@ -151,13 +159,25 @@ export async function getUshaToken(providedToken?: string | null, forceRefresh: 
           console.log('✅ [USHA_TOKEN] Successfully exchanged Cognito token for USHA JWT');
           return ushaJwtToken;
         } else {
-          console.log('⚠️ [USHA_TOKEN] Token exchange failed, using Cognito ID token directly (may not work)');
+          console.log('⚠️ [USHA_TOKEN] Token exchange failed, trying Cognito Access Token...');
+          // Try using Cognito Access Token instead of ID token
+          if (cognitoAccessToken) {
+            console.log('🔄 [USHA_TOKEN] Attempting to use Cognito Access Token directly...');
+            return cognitoAccessToken;
+          }
+          console.log('⚠️ [USHA_TOKEN] No Access Token available, using Cognito ID token directly (may not work)');
           // Fallback: try using Cognito ID token directly (may not work)
           return cognitoToken;
         }
       } catch (e) {
-        console.log('⚠️ [USHA_TOKEN] Token exchange error, using Cognito ID token directly:', e);
+        console.log('⚠️ [USHA_TOKEN] Token exchange error, trying Cognito Access Token...', e);
+        // Try using Cognito Access Token instead
+        if (cognitoAccessToken) {
+          console.log('🔄 [USHA_TOKEN] Using Cognito Access Token as fallback...');
+          return cognitoAccessToken;
+        }
         // Fallback: try using Cognito ID token directly
+        console.log('⚠️ [USHA_TOKEN] Using Cognito ID token directly (may not work)');
         return cognitoToken;
       }
     }
@@ -166,7 +186,23 @@ export async function getUshaToken(providedToken?: string | null, forceRefresh: 
     console.log('⚠️ [USHA_TOKEN] Cognito authentication not available, trying direct OAuth...');
   }
 
-  // Priority 5: Try direct OAuth authentication (no middleman)
+  // Priority 5: Try USHA refresh token (direct OAuth refresh)
+  // This is the permanent solution - if we have a USHA refresh token, we can refresh USHA JWTs directly
+  if (process.env.USHA_REFRESH_TOKEN) {
+    try {
+      const { getUshaTokenDirect } = await import('./ushaDirectAuth');
+      console.log('🔑 [USHA_TOKEN] Attempting USHA refresh token authentication...');
+      const directToken = await getUshaTokenDirect(null, forceRefresh);
+      if (directToken) {
+        console.log('✅ [USHA_TOKEN] Successfully obtained token via USHA refresh token');
+        return directToken;
+      }
+    } catch (e) {
+      console.log('⚠️ [USHA_TOKEN] USHA refresh token authentication failed, trying direct OAuth...');
+    }
+  }
+
+  // Priority 6: Try direct OAuth authentication (username/password or client credentials)
   try {
     const { getUshaTokenDirect } = await import('./ushaDirectAuth');
     console.log('🔑 [USHA_TOKEN] Attempting direct OAuth authentication...');
