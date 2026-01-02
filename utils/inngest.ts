@@ -10,6 +10,7 @@ import { Inngest } from 'inngest';
 export const inngest = new Inngest({
   id: 'brainscraper-io',
   name: 'BrainScraper.io',
+  eventKey: process.env.INNGEST_EVENT_KEY,
 });
 
 // Event types for type safety
