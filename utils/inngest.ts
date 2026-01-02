@@ -12,18 +12,19 @@ const eventKey = process.env.INNGEST_EVENT_KEY;
 // Log event key status (only in server context)
 if (typeof window === 'undefined') {
   if (!eventKey) {
-    console.error('❌ [INNGEST] INNGEST_EVENT_KEY is not set! Background jobs will not work.');
-    console.error('   Set INNGEST_EVENT_KEY environment variable in Railway');
+    console.warn('⚠️ [INNGEST] INNGEST_EVENT_KEY not found at module load. SDK will read from environment at runtime.');
   } else {
-    console.log(`✅ [INNGEST] Event key configured: ${eventKey.substring(0, 15)}...`);
+    console.log(`✅ [INNGEST] Event key found: ${eventKey.substring(0, 15)}...`);
   }
 }
 
 // Create Inngest client
+// Only pass eventKey if it's defined - otherwise let SDK read from env automatically
+// This is important because Next.js may not have env vars at build time, but they're available at runtime
 export const inngest = new Inngest({
   id: 'brainscraper-io',
   name: 'BrainScraper.io',
-  eventKey: eventKey,
+  ...(eventKey ? { eventKey } : {}), // Only include eventKey if it's defined
 });
 
 // Event types for type safety
