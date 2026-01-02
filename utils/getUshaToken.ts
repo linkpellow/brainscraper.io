@@ -121,13 +121,15 @@ export async function getUshaToken(providedToken?: string | null, forceRefresh: 
 
   // Priority 4: Try Cognito authentication (exchange Cognito ID token for USHA JWT)
   try {
-    const { getCognitoIdToken, getCognitoAccessToken } = await import('./cognitoAuth');
+    const cognitoAuth = await import('./cognitoAuth');
     console.log('🔑 [USHA_TOKEN] Attempting Cognito authentication...');
-    const cognitoToken = await getCognitoIdToken(null, forceRefresh);
+    const cognitoToken = await cognitoAuth.getCognitoIdToken(null, forceRefresh);
     // Also try to get access token - it might be needed for exchange
     let cognitoAccessToken: string | undefined;
     try {
-      cognitoAccessToken = await getCognitoAccessToken(null, forceRefresh);
+      if (cognitoAuth.getCognitoAccessToken) {
+        cognitoAccessToken = await cognitoAuth.getCognitoAccessToken(null, forceRefresh);
+      }
     } catch (e) {
       // Access token not available, continue with ID token only
     }
