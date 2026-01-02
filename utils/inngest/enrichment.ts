@@ -28,6 +28,7 @@ export const enrichLeadsFunction = inngest.createFunction(
     event: enrichmentEvents.enrichLeads,
   },
   async ({ event, step }) => {
+    console.log(`[ENRICHMENT] 🚀 Function triggered! Job ID: ${event.data?.jobId}`);
     const { jobId, parsedData, metadata } = event.data as {
       jobId: string;
       parsedData: ParsedData;

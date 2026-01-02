@@ -27,6 +27,15 @@ if (process.env.NODE_ENV === 'production') {
   }
 }
 
+// Log function registration
+if (typeof window === 'undefined') {
+  console.log(`[INNGEST] Registering ${enrichmentFunctions.length} enrichment functions and ${scrapingFunctions.length} scraping functions`);
+  console.log(`[INNGEST] Functions:`, {
+    enrichment: enrichmentFunctions.map(f => f.id || 'unknown'),
+    scraping: scrapingFunctions.map(f => f.id || 'unknown'),
+  });
+}
+
 // Export the Inngest serve handler
 export const { GET, POST, PUT } = serve({
   client: inngest,

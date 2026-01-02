@@ -26,6 +26,7 @@ export const scrapeLinkedInFunction = inngest.createFunction(
     event: scrapingEvents.scrapeLinkedIn,
   },
   async ({ event, step }) => {
+    console.log(`[SCRAPING] 🚀 Function triggered! Job ID: ${event.data?.jobId}`);
     const { jobId, searchParams, maxPages, maxResults, metadata } = event.data as {
       jobId: string;
       searchParams: Record<string, unknown>;
@@ -85,56 +86,56 @@ export const scrapeLinkedInFunction = inngest.createFunction(
             timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
             
             const response = await fetch(`${baseUrl}/api/linkedin-sales-navigator`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                ...searchParams,
-                start: (page - 1) * 25, // LinkedIn pagination
-                count: 25,
-              }),
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              ...searchParams,
+              start: (page - 1) * 25, // LinkedIn pagination
+              count: 25,
+            }),
               signal: controller.signal,
-            });
+          });
 
             if (timeoutId) {
               clearTimeout(timeoutId);
               timeoutId = null;
             }
 
-            if (!response.ok) {
+          if (!response.ok) {
               const errorText = await response.text().catch(() => response.statusText);
               throw new Error(`API request failed (${response.status}): ${errorText}`);
-            }
+          }
 
-            const result = await response.json();
+          const result = await response.json();
           
-            // Store full response for saving
-            if (page === 1) {
-              fullResponse = result;
-            }
+          // Store full response for saving
+          if (page === 1) {
+            fullResponse = result;
+          }
+          
+          if (result.data?.response?.data) {
+            const pageLeads = result.data.response.data;
+            leads.push(...pageLeads);
             
-            if (result.data?.response?.data) {
-              const pageLeads = result.data.response.data;
-              leads.push(...pageLeads);
-              
-              // Update progress (sync version for callbacks)
-              updateJobProgress(jobId, {
-                current: page,
-                total: maxPages,
-              });
+            // Update progress (sync version for callbacks)
+            updateJobProgress(jobId, {
+              current: page,
+              total: maxPages,
+            });
 
-              // Check if there are more pages
-              hasMore = result.pagination?.hasMore || false;
-            } else {
-              hasMore = false;
-            }
+            // Check if there are more pages
+            hasMore = result.pagination?.hasMore || false;
+          } else {
+            hasMore = false;
+          }
 
-            page++;
+          page++;
 
-            // Rate limiting delay
-            if (hasMore && page <= maxPages) {
-              await new Promise(resolve => setTimeout(resolve, 2000));
+          // Rate limiting delay
+          if (hasMore && page <= maxPages) {
+            await new Promise(resolve => setTimeout(resolve, 2000));
             }
           } catch (fetchError) {
             if (timeoutId) {
