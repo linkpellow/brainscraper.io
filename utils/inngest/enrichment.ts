@@ -66,14 +66,44 @@ export const enrichLeadsFunction = inngest.createFunction(
       // If this fails, the entire job fails and retries
       const aggregationResult = await step.run('aggregate-leads', async () => {
         const { aggregateLeadsWithVerification } = await import('../leadDataManager');
+        const { extractLeadSummary } = await import('../extractLeadSummary');
         
         console.log(`[ENRICHMENT] 📊 Starting aggregation: ${enriched.rows.length} enriched rows to process`);
+        
+        // DIAGNOSTIC: Check what we're trying to aggregate before validation
+        if (enriched.rows.length > 0) {
+          const sampleRow = enriched.rows[0];
+          const sampleSummary = extractLeadSummary(sampleRow, sampleRow._enriched);
+          console.log(`[ENRICHMENT] 🔍 Sample lead before validation:`, {
+            name: sampleSummary.name || 'MISSING',
+            phone: sampleSummary.phone || 'MISSING',
+            phoneLength: sampleSummary.phone?.length || 0,
+            phoneDigits: sampleSummary.phone ? sampleSummary.phone.replace(/\D/g, '').length : 0,
+            email: sampleSummary.email || 'MISSING',
+            rowHasPhone: !!(sampleRow['Phone'] || sampleRow['phone']),
+            enrichedHasPhone: !!sampleRow._enriched?.phone,
+            enrichedPhone: sampleRow._enriched?.phone || 'MISSING',
+          });
+        }
+        
         const result = await aggregateLeadsWithVerification(enriched.rows, jobId);
         
         if (!result.success || !result.verified) {
           const errorMsg = result.error || 'Aggregation failed verification';
           console.error(`[ENRICHMENT] ❌ Aggregation failed: ${errorMsg}`);
           console.error(`[ENRICHMENT] ❌ Input: ${enriched.rows.length} enriched rows, Output: ${result.newLeadsAdded} new leads added`);
+          
+          // DIAGNOSTIC: Log sample of failed leads to understand why
+          if (enriched.rows.length > 0) {
+            console.error(`[ENRICHMENT] 🔍 Diagnostic: Checking first 3 leads for validation issues:`);
+            for (let i = 0; i < Math.min(3, enriched.rows.length); i++) {
+              const testRow = enriched.rows[i];
+              const testSummary = extractLeadSummary(testRow, testRow._enriched);
+              const phoneDigits = testSummary.phone ? testSummary.phone.replace(/\D/g, '').length : 0;
+              console.error(`[ENRICHMENT]   Lead ${i + 1}: name="${testSummary.name || 'MISSING'}" (${testSummary.name?.length || 0} chars), phone="${testSummary.phone || 'MISSING'}" (${phoneDigits} digits)`);
+            }
+          }
+          
           throw new Error(`Lead aggregation failed: ${errorMsg}. This is a critical step and cannot be skipped.`);
         }
         
@@ -150,13 +180,28 @@ export const enrichLeadsFunction = inngest.createFunction(
         return { success: true };
       });
 
-      // Mark as failed
+      // Mark as failed - CRITICAL: This must execute even if other steps fail
       await step.run('mark-failed', async () => {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        await failJob(jobId, errorMessage);
+        console.error(`[ENRICHMENT] ❌ Marking job ${jobId} as failed: ${errorMessage}`);
+        try {
+          await failJob(jobId, errorMessage);
+          console.log(`[ENRICHMENT] ✅ Job ${jobId} marked as failed successfully`);
+        } catch (failError) {
+          console.error(`[ENRICHMENT] ❌ CRITICAL: Failed to mark job as failed:`, failError);
+          // Try sync version as fallback
+          try {
+            const { failJob: failJobSync } = await import('../jobStatus');
+            // Note: failJob is async, but we'll try anyway
+            await failJobSync(jobId, errorMessage);
+          } catch (syncError) {
+            console.error(`[ENRICHMENT] ❌ CRITICAL: Sync fallback also failed:`, syncError);
+          }
+        }
         return { error: errorMessage };
       });
 
+      // Re-throw to ensure Inngest knows the function failed
       throw error;
     }
   }
