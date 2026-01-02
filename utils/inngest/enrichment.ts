@@ -65,12 +65,21 @@ export const enrichLeadsFunction = inngest.createFunction(
       // If this fails, the entire job fails and retries
       const aggregationResult = await step.run('aggregate-leads', async () => {
         const { aggregateLeadsWithVerification } = await import('../leadDataManager');
+        
+        console.log(`[ENRICHMENT] 📊 Starting aggregation: ${enriched.rows.length} enriched rows to process`);
         const result = await aggregateLeadsWithVerification(enriched.rows, jobId);
         
         if (!result.success || !result.verified) {
           const errorMsg = result.error || 'Aggregation failed verification';
           console.error(`[ENRICHMENT] ❌ Aggregation failed: ${errorMsg}`);
+          console.error(`[ENRICHMENT] ❌ Input: ${enriched.rows.length} enriched rows, Output: ${result.newLeadsAdded} new leads added`);
           throw new Error(`Lead aggregation failed: ${errorMsg}. This is a critical step and cannot be skipped.`);
+        }
+        
+        if (result.newLeadsAdded === 0 && enriched.rows.length > 0) {
+          console.warn(`[ENRICHMENT] ⚠️ WARNING: ${enriched.rows.length} enriched rows processed but 0 new leads added!`);
+          console.warn(`[ENRICHMENT] ⚠️ This usually means all leads were duplicates or failed validation.`);
+          console.warn(`[ENRICHMENT] ⚠️ Check that leads have: name (non-empty) AND phone (10+ digits)`);
         }
         
         console.log(`[ENRICHMENT] ✅ Aggregated ${result.newLeadsAdded} new leads (total: ${result.totalLeads})`);

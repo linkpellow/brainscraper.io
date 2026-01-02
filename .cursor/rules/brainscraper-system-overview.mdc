@@ -1,0 +1,77 @@
+# BrainScraper.io — System Overview
+
+## What it is
+A lead generation and enrichment platform that:
+- Scrapes leads from LinkedIn Sales Navigator and Facebook
+- Enriches leads with contact info, demographics, and business data
+- Scrubs leads against DNC (Do Not Call) lists
+- Manages and exports enriched lead data
+
+## Core Workflow
+
+### 1. Lead Scraping Phase
+- **LinkedIn Sales Navigator**: search people/companies with filters (location, job title, company size, etc.)
+- **Facebook**: discover and scrape Facebook pages/groups
+- **Results**: raw lead data (name, title, company, location, LinkedIn URL)
+
+### 2. Lead Enrichment Phase
+Multi-step pipeline that adds:
+- Phone numbers (via skip-tracing APIs)
+- Email addresses (via skip-tracing/website extraction)
+- Age/DOB (via skip-tracing)
+- Zip codes (via geo database lookup)
+- Income data (by zip code)
+- Phone carrier info (Telnyx lookup)
+- LinkedIn profile data
+- Company information
+- Website contacts
+
+### 3. DNC Scrubbing Phase
+- Checks phone numbers against USHA DNC database
+- Marks leads as YES/NO/UNKNOWN for DNC status
+- Prevents calling DNC numbers
+
+### 4. Data Management Phase
+- Saves enriched leads to `enriched-all-leads.json`
+- Aggregates all leads in one place
+- Provides `/enriched` page to view/manage leads
+- Export to CSV functionality
+
+## Architecture Components
+
+### Frontend (Next.js/React)
+- `LinkedInLeadGenerator.tsx` — main scraping interface
+- `FacebookLeadGenerator.tsx` — Facebook scraping
+- `enriched/page.tsx` — enriched leads viewer
+- `settings/page.tsx` — configuration
+- `BackgroundJobs.tsx` — job monitoring widget
+
+### Backend APIs (Next.js API Routes)
+- `/api/linkedin-sales-navigator` — LinkedIn search
+- `/api/jobs/enrich` — trigger enrichment jobs
+- `/api/jobs/scrape` — trigger scraping jobs
+- `/api/load-enriched-results` — load saved leads
+- `/api/aggregate-enriched-leads` — aggregate leads
+- `/api/usha/scrub-*` — DNC scrubbing
+- 30+ other API endpoints for enrichment services
+
+### Background Jobs (Inngest)
+- Background enrichment (non-blocking)
+- Background scraping (multi-page)
+- Job status tracking
+- Automatic retries
+
+### Data Storage
+- `data/enriched-all-leads.json` — master lead database
+- `data/enriched-leads/` — individual lead files
+- `data/api-results/` — raw scraped data
+- `data/jobs/` — job status files
+- Railway persistent volume for production
+
+### Data Protection System
+- `leadDataManager.ts` — single entry point for all writes
+- Idempotency (safe retries)
+- Checksum verification
+- Automatic orphan recovery
+- File locking (prevents data corruption)
+

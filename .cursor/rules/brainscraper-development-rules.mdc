@@ -1,0 +1,101 @@
+# BrainScraper.io Development Rules
+
+ Data## Core Principles
+
+### 1. Protection is Paramount
+- **NEVER** write directly to `data/enriched-all-leads.json` or any data files
+- **ALWAYS** use `LeadDataManager.getInstance()` from `utils/leadDataManager.ts` for all lead data operations
+- All writes must go through `aggregateLeadsWithVerification()` or other LeadDataManager methods
+- See `.cursor/rules/donotfuckingdeletemyleads.mdc` for detailed data protection rules
+
+### 2. Understand the Workflow Before Making Changes
+The system follows a 4-phase workflow:
+1. **Scraping** → Raw lead data (LinkedIn/Facebook)
+2. **Enrichment** → Add contact info, demographics, business data
+3. **DNC Scrubbing** → Check against Do Not Call lists
+4. **Data Management** → Aggregate, store, and export
+
+When modifying any phase, understand how it affects downstream phases.
+
+### 3. Background Jobs Pattern
+- Use **Inngest** for all background/async operations
+- Background jobs are defined in `utils/inngest/`
+- Jobs must include aggregation step that cannot be skipped
+- Job status is tracked in `data/jobs/`
+- Always handle retries gracefully (operations are idempotent)
+
+### 4. API Endpoint Structure
+- API routes live in `app/api/`
+- Follow existing patterns for error handling and response formats
+- Use TypeScript types from `types/` directory
+- Validate inputs with Zod schemas when available
+- Background operations should use Inngest, not long-running API routes
+
+### 5. Data Storage Patterns
+- **Master database**: `data/enriched-all-leads.json` (read-only, managed by LeadDataManager)
+- **Individual leads**: `data/enriched-leads/` (temporary, aggregated to master)
+- **Raw scraped data**: `data/api-results/` (preserved for debugging)
+- **Job status**: `data/jobs/` (temporary, can be cleaned up)
+- Production uses Railway persistent volume
+
+### 6. Frontend Component Patterns
+- Main components: `LinkedInLeadGenerator.tsx`, `FacebookLeadGenerator.tsx`
+- Use `BackgroundJobs.tsx` widget to show job status
+- State management: prefer React hooks, avoid global state when possible
+- API calls: use fetch with proper error handling
+
+### 7. Enrichment Pipeline
+- Enrichment steps are modular and can be skipped if data already exists
+- Each enrichment service has its own API endpoint
+- Enrichment results are merged into the lead object
+- Invalid or missing data should not break the pipeline
+
+### 8. DNC Compliance
+- All phone numbers must be scrubbed against USHA DNC database
+- DNC status: YES/NO/UNKNOWN
+- DNC scrubbing endpoints: `/api/usha/scrub-*`
+- Never call numbers marked as DNC
+
+## Development Guidelines
+
+### When Adding New Features
+1. Check if it fits into existing workflow phases
+2. Determine if it needs background job (use Inngest)
+3. Use LeadDataManager for any data writes
+4. Add proper error handling and validation
+5. Consider idempotency for retry safety
+
+### When Modifying Existing Code
+1. Understand the data flow first
+2. Check if changes affect data protection mechanisms
+3. Ensure aggregation still works after changes
+4. Test with background jobs, not just direct API calls
+5. Verify orphan recovery still works
+
+### When Debugging
+1. Check `data/jobs/` for job status
+2. Check `data/enriched-leads/` for individual lead files
+3. Check `data/api-results/` for raw API responses
+4. Use `/api/recover-orphans` if leads seem missing
+5. Verify checksums in LeadDataManager logs
+
+### Code Quality
+- Use TypeScript strictly (no `any` unless necessary)
+- Follow existing naming conventions
+- Add error handling for all external API calls
+- Log important operations (use consistent prefixes)
+- Validate data with Zod schemas when available
+
+## Common Pitfalls to Avoid
+
+1. ❌ Writing directly to data files
+2. ❌ Skipping aggregation step in background jobs
+3. ❌ Not handling retries/idempotency
+4. ❌ Blocking API routes with long operations (use Inngest)
+5. ❌ Breaking the data protection system
+6. ❌ Not validating lead data before saving
+7. ❌ Ignoring DNC status when processing leads
+
+## Reference Documents
+- System Overview: `.cursor/rules/brainscraper-system-overview.mdc`
+- Data Protection: `.cursor/rules/donotfuckingdeletemyleads.mdc`

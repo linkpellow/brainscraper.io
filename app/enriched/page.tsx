@@ -86,6 +86,7 @@ export default function EnrichedLeadsPage() {
   const [enrichmentErrors, setEnrichmentErrors] = useState<Map<string, string>>(new Map());
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(50);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
   const logsEndRef = useRef<HTMLDivElement>(null);
 
   const addLog = (message: string, type: EnrichmentLog['type'] = 'info') => {
@@ -111,6 +112,7 @@ export default function EnrichedLeadsPage() {
     // Load enriched leads from localStorage and API
     const loadLeads = async () => {
       try {
+        console.log('🔄 [ENRICHED_PAGE] Refreshing leads from server...');
         const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
         
         // Try localStorage first (preserve user's current view)
@@ -240,7 +242,7 @@ export default function EnrichedLeadsPage() {
       window.removeEventListener('enrichedLeadsUpdated', handleCustomStorage);
       clearInterval(interval);
     };
-  }, []); // Empty dependency array - only run on mount
+  }, [refreshTrigger]); // Re-run when refreshTrigger changes
 
   // Auto-scrub DNC status in background after leads are loaded
   useEffect(() => {
@@ -1163,6 +1165,23 @@ export default function EnrichedLeadsPage() {
                   <span className="sm:hidden">⚡</span>
                 </>
             )}
+            </button>
+            <button
+              onClick={() => {
+                console.log('🔄 [ENRICHED_PAGE] Manual refresh triggered');
+                setRefreshTrigger(prev => prev + 1);
+              }}
+              disabled={loading}
+              className="px-3 sm:px-4 py-1.5 sm:py-2 btn-inactive rounded-lg text-slate-200 hover:text-white text-xs sm:text-sm font-medium flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Refresh leads from server"
+            >
+              {loading ? (
+                <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 animate-spin" />
+              ) : (
+                <ArrowUpDown className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+              )}
+              <span className="hidden sm:inline">Refresh</span>
+              <span className="sm:hidden">↻</span>
             </button>
             <button
               onClick={handleExportCSV}

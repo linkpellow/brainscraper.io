@@ -169,13 +169,22 @@ export class LeadDataManager {
         .filter((lead) => this.validateLeadSummary(lead)); // Zod schema validation
       
       if (summaries.length === 0) {
-        console.warn('[DATA_MANAGER] No valid leads to aggregate (all failed Zod validation)');
+        const totalInput = enrichedRows.length;
+        console.error(`[DATA_MANAGER] ❌ CRITICAL: All ${totalInput} leads failed validation and were filtered out!`);
+        console.error(`[DATA_MANAGER] This usually means leads are missing required fields: name (non-empty) AND phone (10+ digits)`);
+        console.error(`[DATA_MANAGER] Sample of filtered leads:`, enrichedRows.slice(0, 3).map(row => ({
+          name: row['Name'] || row.name || 'MISSING',
+          phone: row['Phone'] || row.phone || 'MISSING',
+          email: row['Email'] || row.email || 'MISSING',
+        })));
+        // Return error instead of success to make the issue visible
         return {
-          success: true,
+          success: false,
           totalLeads: 0,
           newLeadsAdded: 0,
-          verified: true,
+          verified: false,
           checksum: '',
+          error: `All ${totalInput} leads failed validation. Leads must have both name and phone (10+ digits). Check enrichment pipeline.`,
         };
       }
       
