@@ -1827,9 +1827,13 @@ export async function enrichRow(
         }
       } else {
         console.log(`[ENRICH_ROW] ⚠️  STEP 3: Skip-tracing API returned no data`);
+        console.log(`[ENRICH_ROW] ⚠️  STEP 3: This means skip-tracing database doesn't have phone data for: ${fullName}${citystatezip ? ` in ${citystatezip}` : ''}`);
+        console.log(`[ENRICH_ROW] ⚠️  STEP 3: Lead will fail validation because phone is required (10+ digits)`);
       }
       if (error) {
         console.error(`[ENRICH_ROW] ❌ STEP 3: Skip-tracing API error:`, error);
+        console.error(`[ENRICH_ROW] ❌ STEP 3: API call failed for: ${fullName}${citystatezip ? ` in ${citystatezip}` : ''}`);
+        console.error(`[ENRICH_ROW] ❌ STEP 3: Lead will fail validation because phone is required (10+ digits)`);
         addError(result, error);
     }
   } else {
