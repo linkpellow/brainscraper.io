@@ -281,6 +281,82 @@ export async function failJob(jobId: string, error: string): Promise<void> {
 }
 
 /**
+ * Cancel a job (marks as cancelled)
+ */
+export async function cancelJob(jobId: string, reason?: string): Promise<void> {
+  const job = getJobStatus(jobId);
+  if (!job) return;
+  
+  const updated: JobStatus = {
+    ...job,
+    status: 'cancelled',
+    completedAt: new Date().toISOString(),
+    error: reason || 'Job cancelled by user',
+  };
+  
+  await saveJobStatusAsync(updated);
+}
+
+/**
+ * Find and fail stuck pending jobs
+ * Jobs that have been pending for longer than the specified timeout (default: 5 minutes)
+ */
+export async function failStuckPendingJobs(timeoutMinutes: number = 5): Promise<{ failed: number; errors: number }> {
+  try {
+    const dataDir = getDataDirectory();
+    const jobsDir = `${dataDir}/jobs`;
+    
+    const fs = require('fs');
+    const path = require('path');
+    
+    if (!fs.existsSync(jobsDir)) {
+      return { failed: 0, errors: 0 };
+    }
+    
+    const timeoutMs = timeoutMinutes * 60 * 1000;
+    const cutoffTime = Date.now() - timeoutMs;
+    
+    const files = fs.readdirSync(jobsDir)
+      .filter((file: string) => file.endsWith('.json'));
+    
+    let failed = 0;
+    let errors = 0;
+    
+    for (const file of files) {
+      try {
+        const filePath = path.join(jobsDir, file);
+        const content = safeReadFile(filePath);
+        if (!content) continue;
+        
+        const job: JobStatus = JSON.parse(content);
+        
+        // Only process pending jobs
+        if (job.status !== 'pending') continue;
+        
+        // Check if job is stuck (older than timeout)
+        const jobStartTime = new Date(job.startedAt).getTime();
+        if (jobStartTime < cutoffTime) {
+          await failJob(
+            job.jobId,
+            `Job stuck in pending state for more than ${timeoutMinutes} minutes. This usually means the Inngest event was not received.`
+          );
+          failed++;
+          console.log(`[JOB_STATUS] Failed stuck pending job: ${job.jobId}`);
+        }
+      } catch (error) {
+        console.error(`Error processing job file ${file}:`, error);
+        errors++;
+      }
+    }
+    
+    return { failed, errors };
+  } catch (error) {
+    console.error('Error failing stuck pending jobs:', error);
+    return { failed: 0, errors: 1 };
+  }
+}
+
+/**
  * Generate unique job ID
  */
 export function generateJobId(type: 'enrichment' | 'scraping'): string {
