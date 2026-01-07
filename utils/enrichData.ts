@@ -1147,6 +1147,12 @@ function shouldContinueEnrichment(
   // IF linetype = VOIP → STOP
   if (lineType?.toLowerCase() === 'voip') return false;
   
+  // IF linetype = fixed line or landline → STOP (only enrich mobile numbers)
+  const lineTypeLower = lineType?.toLowerCase();
+  if (lineTypeLower === 'fixed line' || lineTypeLower === 'landline' || lineTypeLower === 'fixed-line') {
+    return false;
+  }
+  
   // IF carrier ∈ junk_carriers → STOP
   const junkCarriers = ['google voice', 'textnow', 'burner', 'hushed', 'line2', 'bandwidth', 'twilio'];
   if (carrierName && junkCarriers.some(junk => carrierName.toLowerCase().includes(junk))) {
@@ -1325,7 +1331,7 @@ async function checkDNCStatus(
  * 2. Local geo DB → Zipcode (free)
  * 3. Skip trace (phones only) → Get a phone number (address only if bundled)
  * 4. Telnyx Number Lookup → Linetype + carrier
- * 5. Gatekeep → Filter VoIP/junk carriers (cost saver)
+ * 5. Gatekeep → Filter VoIP/fixed-line/junk carriers (cost saver - only enrich mobile numbers)
  * 5.5. DNC Check → Check DNC status (FREE - only on valid mobile numbers)
  * 6. Skip trace (conditional) → Age only if the number is valid AND not DNC
  * 
@@ -1904,52 +1910,52 @@ export async function enrichRow(
   );
   
   // Report gatekeep step progress
+  let gatekeepError: string[] | undefined;
+  if (!shouldContinue) {
+    if (!phone) {
+      gatekeepError = ['Gatekeep failed: No phone number found'];
+    } else if (result.lineType?.toLowerCase() === 'voip') {
+      gatekeepError = ['Gatekeep failed: VoIP number (skipping age enrichment)'];
+    } else if (result.lineType?.toLowerCase() === 'fixed line' || result.lineType?.toLowerCase() === 'landline' || result.lineType?.toLowerCase() === 'fixed-line') {
+      gatekeepError = ['Gatekeep failed: Fixed/landline number (skipping age enrichment - mobile only)'];
+    } else if (result.carrierName) {
+      gatekeepError = ['Gatekeep failed: Junk carrier detected (skipping age enrichment)'];
+    } else {
+      gatekeepError = ['Gatekeep failed: Skipping age enrichment'];
+    }
+  }
   onProgress?.('gatekeep', {
     phone: phone || undefined,
     lineType: result.lineType,
     carrier: result.carrierName,
-  }, shouldContinue ? undefined : ['Gatekeep failed: Skipping age enrichment']);
+  }, gatekeepError);
   
-  // STEP 5.5: DNC CHECK (FREE - saves money by avoiding age enrichment on DNC numbers)
-  // Only check DNC if gatekeep passed (valid mobile number)
+  // STEP 5.5: DNC CHECK (DISABLED - DNC scrubbing temporarily disabled)
+  // DNC checking is disabled to avoid token exchange errors
+  // All leads will proceed to age enrichment regardless of DNC status
   if (shouldContinue && phone) {
-    console.log(`[ENRICH_ROW] STEP 5.5: Checking DNC status for phone: ${phone.substring(0, 5)}...`);
-    
-    try {
-      const dncResult = await checkDNCStatus(phone);
-      
-      // Store DNC status in result
-      result.dncStatus = dncResult.isDNC ? 'YES' : 'NO';
-      result.canContact = dncResult.canContact;
-      result.dncReason = dncResult.reason;
-      result.dncLastChecked = new Date().toISOString();
-      
-      console.log(`[ENRICH_ROW] STEP 5.5: DNC Status: ${dncResult.isDNC ? '🔴 YES (DNC)' : '🟢 NO (OK to call)'}`);
-      
-      // Early exit: Skip age enrichment if DNC (cost savings)
-      if (dncResult.isDNC) {
-        shouldContinue = false;
-        console.log(`[ENRICH_ROW] ⛔ STEP 5.5: DNC detected - skipping age enrichment (cost savings)`);
-        onProgress?.('gatekeep', {
-          phone: phone || undefined,
-          lineType: result.lineType,
-          carrier: result.carrierName,
-        }, ['DNC detected - skipping age enrichment']);
-      } else {
-        console.log(`[ENRICH_ROW] ✅ STEP 5.5: Not DNC - proceeding to age enrichment`);
-      }
-    } catch (error) {
-      console.error(`[ENRICH_ROW] ❌ STEP 5.5: DNC check failed:`, error);
-      // On error, assume not DNC and continue (don't block enrichment)
-      result.dncStatus = 'UNKNOWN';
-      result.canContact = true;
-      result.dncLastChecked = new Date().toISOString();
-    }
+    console.log(`[ENRICH_ROW] STEP 5.5: DNC check disabled - proceeding to age enrichment`);
+    // Set DNC status to UNKNOWN since we're not checking
+    result.dncStatus = 'UNKNOWN';
+    result.canContact = true;
+    // Don't set dncLastChecked since we didn't actually check
   } else if (phone) {
-    console.log(`[ENRICH_ROW] STEP 5.5: DNC check skipped - gatekeep failed (${result.lineType === 'voip' ? 'VoIP' : 'junk carrier'})`);
+    const lineTypeLower = result.lineType?.toLowerCase();
+    let reason = 'unknown reason';
+    if (lineTypeLower === 'voip') {
+      reason = 'VoIP';
+    } else if (lineTypeLower === 'fixed line' || lineTypeLower === 'landline' || lineTypeLower === 'fixed-line') {
+      reason = 'fixed/landline';
+    } else if (result.carrierName) {
+      reason = 'junk carrier';
+    }
+    console.log(`[ENRICH_ROW] STEP 5.5: DNC check skipped - gatekeep failed (${reason})`);
+    // Set DNC status to UNKNOWN for consistency
+    result.dncStatus = 'UNKNOWN';
+    result.canContact = true;
   }
   
-  // STEP 6: Age (CONDITIONAL - Only if Telnyx confirms valid number AND not DNC)
+  // STEP 6: Age (CONDITIONAL - Only if Telnyx confirms valid number)
   // Age enrichment ONLY runs on high-quality leads (not VoIP/junk)
   // CRITICAL OPTIMIZATION: Reuse STEP 3 search results to avoid duplicate API calls
   if (shouldContinue && !hasDOBOrAge(row, headers) && firstName && lastName && phone) {

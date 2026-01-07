@@ -242,7 +242,10 @@ export default function EnrichedLeadsPage() {
     };
   }, []); // Empty dependency array - only run on mount
 
-  // Auto-scrub DNC status in background after leads are loaded
+  // DISABLED: Auto-scrub DNC status in background after leads are loaded
+  // DNC scrubbing is temporarily disabled to avoid token exchange errors
+  // All DNC-related functionality is disabled but can be re-enabled when token exchange is fixed
+  /*
   useEffect(() => {
     if (leads.length === 0 || isScrubbingDNC) return;
     
@@ -435,6 +438,7 @@ export default function EnrichedLeadsPage() {
     
     return () => clearTimeout(dncTimeout);
   }, [leads.length, isScrubbingDNC]); // Run when leads change or scrubbing completes
+  */
 
   // DISABLED: Auto re-enrichment - removed to prevent automatic API calls
   // Enrichment should only happen when user explicitly clicks "Enrich" or "Re-enrich Existing Leads"

@@ -641,40 +641,42 @@ export default function LinkedInLeadGenerator() {
         console.error('✨ [ENRICH_LIST] Failed to save enriched leads to localStorage:', error);
       }
 
-      // Aggregate and save enriched leads to server (enriched-all-leads.json)
-      try {
-        console.log('✨ [ENRICH_LIST] Aggregating enriched leads to server...');
-        const aggregateResponse = await fetch('/api/aggregate-enriched-leads', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ newLeads: summaries }),
-        });
-        
-        if (aggregateResponse.ok) {
-          const aggregateData = await aggregateResponse.json();
-          const totalLeads = aggregateData.totalLeads || summaries.length;
-          const newLeadsAdded = aggregateData.newLeadsAdded || summaries.length;
-          console.log('✨ [ENRICH_LIST] ✅ Aggregated and saved leads to server:', {
-            totalLeads,
-            newLeadsAdded,
-            message: aggregateData.message
-          });
-
-          // Show toast notification
-          showToast(`${newLeadsAdded} enriched lead${newLeadsAdded === 1 ? '' : 's'} added to brainscraper database`, 'success');
-          
-          // Redirect to enriched leads page
-          router.push('/enriched');
-        } else {
-          const errorText = await aggregateResponse.text();
-          console.error('✨ [ENRICH_LIST] ❌ Failed to aggregate leads on server:', errorText);
-          showToast('Failed to save enriched leads to database', 'error');
+      // CRITICAL: Aggregate and save enriched leads to server (enriched-all-leads.json)
+      // MANDATORY STEP: If aggregation fails, enrichment fails (fail-fast)
+      console.log('✨ [ENRICH_LIST] Aggregating enriched leads to server...');
+      const aggregateResponse = await fetch('/api/aggregate-enriched-leads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ newLeads: summaries }),
+      });
+      
+      if (!aggregateResponse.ok) {
+        const errorText = await aggregateResponse.text();
+        let errorMessage = 'Failed to save enriched leads to database';
+        try {
+          const errorData = JSON.parse(errorText);
+          errorMessage = errorData.error || errorMessage;
+        } catch {
+          errorMessage = errorText || errorMessage;
         }
-      } catch (aggregateError) {
-        console.error('✨ [ENRICH_LIST] ❌ Error aggregating leads:', aggregateError);
-        showToast('Error saving enriched leads to database', 'error');
-        // Don't fail the enrichment if aggregation fails, but log it
+        console.error('✨ [ENRICH_LIST] ❌ Aggregation failed:', errorMessage);
+        throw new Error(`Enrichment failed: ${errorMessage}. Leads were enriched but could not be saved to database.`);
       }
+
+      const aggregateData = await aggregateResponse.json();
+      const totalLeads = aggregateData.totalLeads || summaries.length;
+      const newLeadsAdded = aggregateData.newLeadsAdded || summaries.length;
+      console.log('✨ [ENRICH_LIST] ✅ Aggregated and saved leads to server:', {
+        totalLeads,
+        newLeadsAdded,
+        message: aggregateData.message
+      });
+
+      // Show toast notification
+      showToast(`${newLeadsAdded} enriched lead${newLeadsAdded === 1 ? '' : 's'} added to brainscraper database`, 'success');
+      
+      // Redirect to enriched leads page
+      router.push('/enriched');
 
       // Update leadList to mark leads as enriched
       setLeadList(prev => prev.map(lead => ({ ...lead, enriched: true })));
@@ -1905,40 +1907,42 @@ export default function LinkedInLeadGenerator() {
 
       // CRITICAL: Aggregate and save enriched leads to server (enriched-all-leads.json)
       // This ensures leads appear on the /enriched page
-      try {
-        console.log('✨ [ENRICH] Aggregating enriched leads to server...');
-        const aggregateResponse = await fetch('/api/aggregate-enriched-leads', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ newLeads: summaries }),
-        });
+      // MANDATORY STEP: If aggregation fails, enrichment fails (fail-fast)
+      console.log('✨ [ENRICH] Aggregating enriched leads to server...');
+      const aggregateResponse = await fetch('/api/aggregate-enriched-leads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ newLeads: summaries }),
+      });
 
-        if (aggregateResponse.ok) {
-          const aggregateData = await aggregateResponse.json();
-          const totalLeads = aggregateData.totalLeads || summaries.length;
-          const newLeadsAdded = aggregateData.newLeadsAdded || summaries.length;
-
-          console.log('✨ [ENRICH] ✅ Aggregated and saved leads to server:', {
-            totalLeads,
-            newLeadsAdded,
-            message: aggregateData.message
-          });
-
-          // Show toast notification
-          showToast(`${newLeadsAdded} enriched lead${newLeadsAdded === 1 ? '' : 's'} added to brainscraper database`, 'success');
-          
-          // Redirect to enriched leads page
-          router.push('/enriched');
-        } else {
-          const errorText = await aggregateResponse.text();
-          console.error('✨ [ENRICH] ❌ Failed to aggregate leads on server:', errorText);
-          showToast('Failed to save enriched leads to database', 'error');
+      if (!aggregateResponse.ok) {
+        const errorText = await aggregateResponse.text();
+        let errorMessage = 'Failed to save enriched leads to database';
+        try {
+          const errorData = JSON.parse(errorText);
+          errorMessage = errorData.error || errorMessage;
+        } catch {
+          errorMessage = errorText || errorMessage;
         }
-      } catch (aggregateError) {
-        console.error('✨ [ENRICH] ❌ Error aggregating leads:', aggregateError);
-        showToast('Error saving enriched leads to database', 'error');
-        // Don't fail the enrichment if aggregation fails, but log it
+        console.error('✨ [ENRICH] ❌ Aggregation failed:', errorMessage);
+        throw new Error(`Enrichment failed: ${errorMessage}. Leads were enriched but could not be saved to database.`);
       }
+
+      const aggregateData = await aggregateResponse.json();
+      const totalLeads = aggregateData.totalLeads || summaries.length;
+      const newLeadsAdded = aggregateData.newLeadsAdded || summaries.length;
+
+      console.log('✨ [ENRICH] ✅ Aggregated and saved leads to server:', {
+        totalLeads,
+        newLeadsAdded,
+        message: aggregateData.message
+      });
+
+      // Show toast notification
+      showToast(`${newLeadsAdded} enriched lead${newLeadsAdded === 1 ? '' : 's'} added to brainscraper database`, 'success');
+      
+      // Redirect to enriched leads page
+      router.push('/enriched');
       
       console.log('✨ [ENRICH] ✅ Successfully completed enrichment and redirected');
     } catch (err) {
