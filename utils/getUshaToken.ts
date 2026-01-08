@@ -3,14 +3,22 @@
  * 
  * Supports multiple authentication methods in priority order:
  * 1. Provided token (request parameter)
- * 2. Cached token (if valid)
- * 3. Environment variable (USHA_JWT_TOKEN or COGNITO_ID_TOKEN)
- * 4. Cognito authentication (automatic refresh via COGNITO_REFRESH_TOKEN)
- * 5. Direct OAuth authentication (USHA_USERNAME/USHA_PASSWORD or USHA_CLIENT_ID/USHA_CLIENT_SECRET)
+ * 2. Cached token (if valid, in-memory)
+ * 3. Environment variable (USHA_JWT_TOKEN - user explicitly set, takes precedence over file)
+ * 4. Persistent file storage (survives restarts, auto-refreshes when expired)
+ * 5. Cognito authentication (automatic refresh via COGNITO_REFRESH_TOKEN)
+ * 6. Direct OAuth authentication (USHA_USERNAME/USHA_PASSWORD or USHA_CLIENT_ID/USHA_CLIENT_SECRET)
  * 
- * Configure COGNITO_REFRESH_TOKEN for seamless automatic token refresh.
- * System automatically handles token expiration and refresh without manual intervention.
+ * Tokens are automatically refreshed and persisted to disk, ensuring continuous operation
+ * without manual intervention. Refreshed tokens survive server restarts.
+ * 
+ * IMPORTANT: When USHA_JWT_TOKEN is set in environment variables, it takes precedence
+ * over any token stored in the persistent file. This ensures that explicitly configured
+ * tokens are always used, even if a stale token exists in the file.
  */
+
+import { getDataFilePath, safeReadFile, safeWriteFile, ensureDataDirectory } from './dataDirectory';
+import { withLock } from './fileLock';
 
 interface CachedToken {
   token: string;
@@ -18,8 +26,17 @@ interface CachedToken {
   fetchedAt: number;
 }
 
+interface StoredToken {
+  token: string;
+  expiresAt: number; // Unix timestamp in milliseconds
+  storedAt: number;
+}
+
 // In-memory cache (server-side only)
 let tokenCache: CachedToken | null = null;
+
+// Token file path in persistent storage
+const TOKEN_FILE = 'usha-jwt-token.json';
 
 /**
  * Basic JWT format validation (not expiration check - backend handles that)
@@ -39,7 +56,59 @@ function isValidJWTFormat(token: string): boolean {
 }
 
 /**
+ * Load token from persistent storage file
+ */
+function loadTokenFromFile(): StoredToken | null {
+  try {
+    const filePath = getDataFilePath(TOKEN_FILE);
+    const content = safeReadFile(filePath);
+    if (!content) {
+      return null;
+    }
+    
+    const stored: StoredToken = JSON.parse(content);
+    
+    // Validate token format
+    if (!stored.token || !isValidJWTFormat(stored.token)) {
+      console.warn('⚠️ [USHA_TOKEN] Stored token has invalid format, ignoring');
+      return null;
+    }
+    
+    return stored;
+  } catch (error) {
+    console.warn('⚠️ [USHA_TOKEN] Failed to load token from file:', error instanceof Error ? error.message : 'Unknown error');
+    return null;
+  }
+}
+
+/**
+ * Save token to persistent storage file (with file locking to prevent concurrent writes)
+ */
+async function saveTokenToFile(token: string, expiresAt: number): Promise<void> {
+  try {
+    ensureDataDirectory();
+    const filePath = getDataFilePath(TOKEN_FILE);
+    
+    // Use file locking to prevent concurrent writes
+    await withLock(filePath, async () => {
+      const stored: StoredToken = {
+        token,
+        expiresAt,
+        storedAt: Date.now()
+      };
+      
+      safeWriteFile(filePath, JSON.stringify(stored, null, 2));
+      console.log('💾 [USHA_TOKEN] Token saved to persistent storage');
+    });
+  } catch (error) {
+    console.error('❌ [USHA_TOKEN] Failed to save token to file:', error instanceof Error ? error.message : 'Unknown error');
+    // Don't throw - file save failure shouldn't break token usage
+  }
+}
+
+/**
  * Refresh USHA JWT token using the refresh endpoint
+ * Automatically saves refreshed token to persistent storage
  * 
  * @param existingToken - Current token to refresh
  * @returns New token or null if refresh failed
@@ -69,34 +138,31 @@ async function refreshUshaToken(existingToken: string): Promise<string | null> {
     if (newToken && isValidJWTFormat(newToken)) {
       console.log('✅ [USHA_TOKEN] Token refreshed successfully');
       
-      // Cache the new token with expiration
+      // Calculate expiration
+      let expiresAt = Date.now() + (3600 * 1000); // Default to 1 hour
       try {
         const parts = newToken.split('.');
         if (parts.length === 3) {
           const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString());
           if (payload.exp) {
-            tokenCache = {
-              token: newToken,
-              expiresAt: payload.exp * 1000,
-              fetchedAt: Date.now()
-            };
+            expiresAt = payload.exp * 1000;
           } else if (data.tokenResult.expires_in) {
-            // Use expires_in from response if token doesn't have exp
-            tokenCache = {
-              token: newToken,
-              expiresAt: Date.now() + (data.tokenResult.expires_in * 1000),
-              fetchedAt: Date.now()
-            };
+            expiresAt = Date.now() + (data.tokenResult.expires_in * 1000);
           }
         }
       } catch (e) {
-        // Couldn't decode expiration, but token is valid - cache it anyway
-        tokenCache = {
-          token: newToken,
-          expiresAt: Date.now() + (3600 * 1000), // Default to 1 hour
-          fetchedAt: Date.now()
-        };
+        // Use default expiration
       }
+      
+      // Cache in memory
+      tokenCache = {
+        token: newToken,
+        expiresAt,
+        fetchedAt: Date.now()
+      };
+      
+      // Save to persistent file (survives restarts)
+      await saveTokenToFile(newToken, expiresAt);
       
       return newToken;
     }
@@ -114,13 +180,15 @@ async function refreshUshaToken(existingToken: string): Promise<string | null> {
  * 
  * Priority order:
  * 1. Provided token (request parameter)
- * 2. Cached token (if still valid, auto-refreshes when expired)
- * 3. Cognito authentication (uses COGNITO_REFRESH_TOKEN or COGNITO_USERNAME/PASSWORD) - RECOMMENDED
- * 4. Direct OAuth authentication (USHA_USERNAME/USHA_PASSWORD or USHA_CLIENT_ID/USHA_CLIENT_SECRET)
- * 5. Environment variable (USHA_JWT_TOKEN - temporary/optional, auto-refreshes when expired)
+ * 2. Cached token (in-memory, if still valid, auto-refreshes when expired)
+ * 3. Environment variable (USHA_JWT_TOKEN - user explicitly set, takes precedence over file)
+ * 4. Persistent file storage (survives restarts, auto-refreshes when expired)
+ * 5. Cognito authentication (uses COGNITO_REFRESH_TOKEN or COGNITO_USERNAME/PASSWORD) - RECOMMENDED
+ * 6. Direct OAuth authentication (USHA_USERNAME/USHA_PASSWORD or USHA_CLIENT_ID/USHA_CLIENT_SECRET)
  * 
- * Once a token is obtained, it will automatically refresh via the refresh endpoint when expired.
- * Configure COGNITO_REFRESH_TOKEN for fully automated authentication with no manual tokens needed.
+ * Once a token is obtained, it will automatically refresh via the refresh endpoint and persist to disk.
+ * Refreshed tokens survive server restarts. When USHA_JWT_TOKEN is set in environment variables,
+ * it takes precedence over the persistent file to ensure explicitly configured tokens are always used.
  * 
  * @param providedToken - Optional token provided in request (highest priority)
  * @param forceRefresh - Force token refresh even if cached token exists
@@ -177,24 +245,8 @@ export async function getUshaToken(providedToken?: string | null, forceRefresh: 
     }
   }
 
-  // Priority 3: Try Cognito authentication FIRST (before env token) - more reliable
-  // (Moved up from Priority 4 to prioritize automated methods)
-  
-  // Priority 4: Try direct OAuth authentication (no middleman)
-  try {
-    const { getUshaTokenDirect } = await import('./ushaDirectAuth');
-    console.log('🔑 [USHA_TOKEN] Attempting direct OAuth authentication...');
-    const directToken = await getUshaTokenDirect(null, forceRefresh);
-    if (directToken) {
-      return directToken;
-    }
-  } catch (e) {
-    // Direct auth not configured or failed
-    console.log('⚠️ [USHA_TOKEN] Direct OAuth authentication not available');
-  }
-
-  // Priority 5: Check environment variable (with expiration validation and auto-refresh)
-  // NOTE: This is optional - only needed if Cognito/OAuth are not configured
+  // Priority 3: Check environment variable FIRST (user explicitly set it, takes precedence over file)
+  // This ensures that when USHA_JWT_TOKEN is configured, it's always used even if a stale token exists in the file
   const envToken = process.env.USHA_JWT_TOKEN;
   if (envToken && envToken.trim()) {
     const token = envToken.trim();
@@ -211,19 +263,20 @@ export async function getUshaToken(providedToken?: string | null, forceRefresh: 
             
             if (expiration > now) {
               const timeUntilExpiry = expiration - now;
-              const PROACTIVE_REFRESH_THRESHOLD = 30 * 60 * 1000; // 30 minutes in milliseconds
+              const PROACTIVE_REFRESH_THRESHOLD = 30 * 60 * 1000; // 30 minutes
               
-              // Proactively refresh if less than 30 minutes remaining (refresh requires valid token)
+              // Save to persistent storage immediately (so it survives restarts)
+              await saveTokenToFile(token, expiration);
+              
               if (timeUntilExpiry < PROACTIVE_REFRESH_THRESHOLD) {
                 console.log(`⚠️ [USHA_TOKEN] Environment token expires in ${expiresIn}min, refreshing proactively...`);
                 const refreshedToken = await refreshUshaToken(token);
                 if (refreshedToken) {
                   return refreshedToken;
                 }
-                // Refresh failed, but token is still valid - use it anyway
                 console.log(`⚠️ [USHA_TOKEN] Proactive refresh failed, using environment token (expires in ${expiresIn}min)`);
               } else {
-                console.log(`🔑 [USHA_TOKEN] Using token from environment variable (expires in ${expiresIn}min)`);
+                console.log(`🔑 [USHA_TOKEN] Using token from environment variable (expires in ${expiresIn}min) - saved to persistent storage`);
               }
               
               // Cache it for future use
@@ -244,38 +297,77 @@ export async function getUshaToken(providedToken?: string | null, forceRefresh: 
               console.error(`❌ [USHA_TOKEN] Cannot refresh expired token. The refresh endpoint requires a valid (non-expired) USHA JWT token.`);
               console.error(`❌ [USHA_TOKEN] Please update USHA_JWT_TOKEN in your environment variables with a fresh token.`);
               console.error(`❌ [USHA_TOKEN] You can obtain a fresh token by logging into the USHA agent portal and extracting it from browser storage or network requests.`);
-              // Continue to other methods (though they likely won't work either)
             }
           } else {
-            // No expiration in token, assume valid but try to refresh if we have a cached expired token
-            console.log('🔑 [USHA_TOKEN] Using token from environment variable (no expiration in token)');
-            // Cache it with default expiration
+            // No expiration in token, assume valid
+            const expiration = Date.now() + (3600 * 1000); // Default to 1 hour
+            await saveTokenToFile(token, expiration);
+            console.log('🔑 [USHA_TOKEN] Using token from environment variable (no expiration in token) - saved to persistent storage');
             tokenCache = {
               token,
-              expiresAt: Date.now() + (3600 * 1000), // Default to 1 hour
+              expiresAt: expiration,
               fetchedAt: Date.now()
             };
             return token;
           }
         }
       } catch (e) {
-        // Couldn't decode, but format is valid, use it
-        console.log('🔑 [USHA_TOKEN] Using token from environment variable');
-        // Cache it with default expiration
+        // Couldn't decode, but format is valid
+        const expiration = Date.now() + (3600 * 1000); // Default to 1 hour
+        await saveTokenToFile(token, expiration);
+        console.log('🔑 [USHA_TOKEN] Using token from environment variable - saved to persistent storage');
         tokenCache = {
           token,
-          expiresAt: Date.now() + (3600 * 1000), // Default to 1 hour
+          expiresAt: expiration,
           fetchedAt: Date.now()
         };
         return token;
       }
     } else {
-      console.warn('⚠️ [USHA_TOKEN] Environment token has invalid format, fetching fresh token');
-      // Fall through to fetch fresh token
+      console.warn('⚠️ [USHA_TOKEN] Environment token has invalid format, checking other sources...');
     }
   }
 
-  // Priority 3: Try Cognito authentication (uses refresh token or username/password)
+  // Priority 4: Load from persistent file (survives restarts)
+  const storedToken = loadTokenFromFile();
+  if (storedToken) {
+    const now = Date.now();
+    const timeUntilExpiry = storedToken.expiresAt - now;
+    const remainingMinutes = Math.floor(timeUntilExpiry / 60000);
+    
+    if (timeUntilExpiry > 0) {
+      // Restore to cache
+      tokenCache = {
+        token: storedToken.token,
+        expiresAt: storedToken.expiresAt,
+        fetchedAt: storedToken.storedAt
+      };
+      
+      const PROACTIVE_REFRESH_THRESHOLD = 30 * 60 * 1000; // 30 minutes
+      
+      if (timeUntilExpiry < PROACTIVE_REFRESH_THRESHOLD) {
+        console.log(`⚠️ [USHA_TOKEN] Stored token expires in ${remainingMinutes}min, refreshing proactively...`);
+        const refreshedToken = await refreshUshaToken(storedToken.token);
+        if (refreshedToken) {
+          return refreshedToken;
+        }
+        console.log(`⚠️ [USHA_TOKEN] Proactive refresh failed, using stored token (expires in ${remainingMinutes}min)`);
+        return storedToken.token;
+      } else {
+        console.log(`🔑 [USHA_TOKEN] Using token from persistent storage (expires in ${remainingMinutes}min)`);
+        return storedToken.token;
+      }
+    } else {
+      console.warn(`⚠️ [USHA_TOKEN] Stored token expired ${Math.abs(remainingMinutes)} minutes ago`);
+      // Try to refresh it anyway (may fail since refresh requires valid token)
+      const refreshedToken = await refreshUshaToken(storedToken.token);
+      if (refreshedToken) {
+        return refreshedToken;
+      }
+    }
+  }
+
+  // Priority 5: Try Cognito authentication (uses refresh token or username/password)
   try {
     const { getCognitoIdToken } = await import('./cognitoAuth');
     console.log('🔑 [USHA_TOKEN] Attempting Cognito authentication...');
@@ -328,6 +420,19 @@ export async function getUshaToken(providedToken?: string | null, forceRefresh: 
   } catch (e) {
     // Cognito auth not configured or failed, continue to fallback
     console.log('⚠️ [USHA_TOKEN] Cognito authentication not available, trying other methods...');
+  }
+
+  // Priority 6: Try direct OAuth authentication (no middleman)
+  try {
+    const { getUshaTokenDirect } = await import('./ushaDirectAuth');
+    console.log('🔑 [USHA_TOKEN] Attempting direct OAuth authentication...');
+    const directToken = await getUshaTokenDirect(null, forceRefresh);
+    if (directToken) {
+      return directToken;
+    }
+  } catch (e) {
+    // Direct auth not configured or failed
+    console.log('⚠️ [USHA_TOKEN] Direct OAuth authentication not available');
   }
 
   // All token sources failed - this is a critical error
