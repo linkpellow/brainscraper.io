@@ -565,13 +565,13 @@ export function extractLeadSummary(
 
 /**
  * Converts lead summaries to CSV format
- * Columns: Firstname, Lastname, State, City, Age, Zipcode, Linetype, Carrier, Platform, Source Details, Search Filter
+ * Columns: Firstname, Lastname, Phone, Email, State, City, Age, Zipcode, Linetype, Carrier, Platform, Source Details, Search Filter
  */
 export function leadSummariesToCSV(summaries: LeadSummary[]): string {
   if (summaries.length === 0) return '';
   
-  // Order: Firstname, Lastname, State, City, Age, Zipcode, Linetype, Carrier, Platform, Source Details, Search Filter
-  const headers = ['Firstname', 'Lastname', 'State', 'City', 'Age', 'Zipcode', 'Linetype', 'Carrier', 'Platform', 'Source Details', 'Search Filter'];
+  // Order: Firstname, Lastname, Phone, Email, State, City, Age, Zipcode, Linetype, Carrier, Platform, Source Details, Search Filter
+  const headers = ['Firstname', 'Lastname', 'Phone', 'Email', 'State', 'City', 'Age', 'Zipcode', 'Linetype', 'Carrier', 'Platform', 'Source Details', 'Search Filter'];
   const rows = summaries.map(summary => {
     // Split name into first and last
     const nameParts = (summary.name || '').trim().split(/\s+/);
@@ -623,6 +623,8 @@ export function leadSummariesToCSV(summaries: LeadSummary[]): string {
     return [
       firstname,
       lastname,
+      summary.phone || '',  // CRITICAL: Phone number column
+      summary.email || '',  // CRITICAL: Email address column
       summary.state || '',
       summary.city || '',
       age,
