@@ -1,12 +1,27 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { Users, Sparkles, ListTodo, Settings } from 'lucide-react';
+import { usePathname, useRouter } from 'next/navigation';
+import { Users, Sparkles, ListTodo, Settings, LogOut } from 'lucide-react';
 import BackgroundJobs from './BackgroundJobs';
+import { useState } from 'react';
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  const handleLogout = async () => {
+    setLoggingOut(true);
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      router.push('/login');
+      router.refresh();
+    } catch (error) {
+      console.error('Logout error:', error);
+      setLoggingOut(false);
+    }
+  };
 
   const navItems = [
     {
@@ -78,6 +93,20 @@ export default function Sidebar() {
       {/* Background Jobs Widget */}
       <div className="p-4 border-t border-[#8055a6]/30">
         <BackgroundJobs />
+      </div>
+
+      {/* Logout Button */}
+      <div className="p-4 border-t border-[#8055a6]/30">
+        <button
+          onClick={handleLogout}
+          disabled={loggingOut}
+          className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-slate-300 hover:text-red-400 hover:bg-red-500/10 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <LogOut className="w-4 h-4" />
+          <span className="font-medium text-sm">
+            {loggingOut ? 'Logging out...' : 'Logout'}
+          </span>
+        </button>
       </div>
     </aside>
   );

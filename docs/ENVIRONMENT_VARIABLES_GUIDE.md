@@ -2,6 +2,23 @@
 
 ## Quick Reference
 
+### 0. **SITE_PASSWORD** (Site Access Protection)
+
+**What it is:** Password required to access the site. All routes are protected except the login page and API routes.
+
+**Default value:** `scrapegoat2026` (if not set in environment variables)
+
+**Where to set it:**
+- **Local development:** Add to `.env.local`:
+  ```bash
+  SITE_PASSWORD=scrapegoat2026
+  ```
+- **Production (Railway/Vercel):** Add as an environment variable in your deployment platform
+
+**Note:** If you don't set this variable, the default password `scrapegoat2026` will be used. For production, it's recommended to set a custom password via environment variables.
+
+---
+
 ### 1. **INNGEST_EVENT_KEY** and **INNGEST_SIGNING_KEY**
 
 **Where to get them:**
