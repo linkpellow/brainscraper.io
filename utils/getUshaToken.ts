@@ -141,12 +141,32 @@ export async function getUshaToken(providedToken?: string | null, forceRefresh: 
 
   // Priority 2: Check cache if still valid (and not forcing refresh)
   if (!forceRefresh && tokenCache) {
-    if (tokenCache.expiresAt > Date.now()) {
-      const remainingMinutes = Math.floor((tokenCache.expiresAt - Date.now()) / 60000);
-      console.log(`🔑 [USHA_TOKEN] Using cached token (expires in ${remainingMinutes}min)`);
-      return tokenCache.token;
+    const now = Date.now();
+    const timeUntilExpiry = tokenCache.expiresAt - now;
+    const remainingMinutes = Math.floor(timeUntilExpiry / 60000);
+    
+    if (timeUntilExpiry > 0) {
+      // Token is still valid
+      // Proactively refresh if less than 30 minutes remaining (refresh requires valid token)
+      const PROACTIVE_REFRESH_THRESHOLD = 30 * 60 * 1000; // 30 minutes in milliseconds
+      
+      if (timeUntilExpiry < PROACTIVE_REFRESH_THRESHOLD) {
+        // Token expires soon, refresh proactively while it's still valid
+        console.log(`⚠️ [USHA_TOKEN] Cached token expires in ${remainingMinutes}min, refreshing proactively...`);
+        const refreshedToken = await refreshUshaToken(tokenCache.token);
+        if (refreshedToken) {
+          return refreshedToken;
+        }
+        // Refresh failed, but token is still valid - use it anyway
+        console.log(`⚠️ [USHA_TOKEN] Proactive refresh failed, using existing token (expires in ${remainingMinutes}min)`);
+        return tokenCache.token;
+      } else {
+        // Token has plenty of time left, use it
+        console.log(`🔑 [USHA_TOKEN] Using cached token (expires in ${remainingMinutes}min)`);
+        return tokenCache.token;
+      }
     } else {
-      // Token expired, try to refresh it
+      // Token expired, try to refresh it (may fail since refresh requires valid token)
       console.log('⚠️ [USHA_TOKEN] Cached token expired, attempting refresh...');
       const refreshedToken = await refreshUshaToken(tokenCache.token);
       if (refreshedToken) {
@@ -190,7 +210,22 @@ export async function getUshaToken(providedToken?: string | null, forceRefresh: 
             const expiresIn = Math.floor((expiration - now) / 1000 / 60);
             
             if (expiration > now) {
-              console.log(`🔑 [USHA_TOKEN] Using token from environment variable (expires in ${expiresIn}min)`);
+              const timeUntilExpiry = expiration - now;
+              const PROACTIVE_REFRESH_THRESHOLD = 30 * 60 * 1000; // 30 minutes in milliseconds
+              
+              // Proactively refresh if less than 30 minutes remaining (refresh requires valid token)
+              if (timeUntilExpiry < PROACTIVE_REFRESH_THRESHOLD) {
+                console.log(`⚠️ [USHA_TOKEN] Environment token expires in ${expiresIn}min, refreshing proactively...`);
+                const refreshedToken = await refreshUshaToken(token);
+                if (refreshedToken) {
+                  return refreshedToken;
+                }
+                // Refresh failed, but token is still valid - use it anyway
+                console.log(`⚠️ [USHA_TOKEN] Proactive refresh failed, using environment token (expires in ${expiresIn}min)`);
+              } else {
+                console.log(`🔑 [USHA_TOKEN] Using token from environment variable (expires in ${expiresIn}min)`);
+              }
+              
               // Cache it for future use
               tokenCache = {
                 token,
@@ -200,7 +235,7 @@ export async function getUshaToken(providedToken?: string | null, forceRefresh: 
               return token;
             } else {
               console.warn(`⚠️ [USHA_TOKEN] Environment token expired ${Math.abs(expiresIn)} minutes ago, attempting refresh...`);
-              // Token expired, try to refresh it
+              // Token expired, try to refresh it (may fail since refresh requires valid token)
               const refreshedToken = await refreshUshaToken(token);
               if (refreshedToken) {
                 return refreshedToken;
