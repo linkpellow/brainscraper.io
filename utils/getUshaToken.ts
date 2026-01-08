@@ -205,7 +205,11 @@ export async function getUshaToken(providedToken?: string | null, forceRefresh: 
               if (refreshedToken) {
                 return refreshedToken;
               }
-              // Refresh failed, continue to other methods
+              // Refresh failed - expired tokens cannot be refreshed
+              console.error(`❌ [USHA_TOKEN] Cannot refresh expired token. The refresh endpoint requires a valid (non-expired) USHA JWT token.`);
+              console.error(`❌ [USHA_TOKEN] Please update USHA_JWT_TOKEN in your environment variables with a fresh token.`);
+              console.error(`❌ [USHA_TOKEN] You can obtain a fresh token by logging into the USHA agent portal and extracting it from browser storage or network requests.`);
+              // Continue to other methods (though they likely won't work either)
             }
           } else {
             // No expiration in token, assume valid but try to refresh if we have a cached expired token

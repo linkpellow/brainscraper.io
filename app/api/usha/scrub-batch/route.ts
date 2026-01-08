@@ -21,6 +21,7 @@ export async function POST(request: NextRequest) {
     console.log(`📞 [DNC SCRUB] Received ${phoneNumbers?.length || 0} phone numbers to scrub`);
     
     // Get USHA JWT token (required for USHA DNC API)
+    // NOTE: The USHA DNC API requires a valid USHA JWT token, NOT a Cognito token
     let token: string;
     try {
       token = await getUshaToken();
@@ -28,10 +29,13 @@ export async function POST(request: NextRequest) {
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Token fetch failed';
       console.error(`❌ [DNC SCRUB] USHA token fetch failed: ${errorMsg}`);
+      console.error(`❌ [DNC SCRUB] CRITICAL: The USHA DNC API requires a valid USHA JWT token.`);
+      console.error(`❌ [DNC SCRUB] Cognito tokens will NOT work for DNC scrubbing.`);
+      console.error(`❌ [DNC SCRUB] Please ensure USHA_JWT_TOKEN is set in environment variables with a fresh, valid token.`);
       return NextResponse.json(
         { 
           success: false,
-          error: `Failed to obtain valid USHA JWT token. ${errorMsg}` 
+          error: `Failed to obtain valid USHA JWT token. ${errorMsg}. Note: The USHA DNC API requires a valid USHA JWT token (not Cognito). Please update USHA_JWT_TOKEN in your environment variables.` 
         },
         { status: 500 }
       );
@@ -39,10 +43,12 @@ export async function POST(request: NextRequest) {
     
     if (!token) {
       console.error('❌ [DNC SCRUB] Token is null/undefined');
+      console.error(`❌ [DNC SCRUB] CRITICAL: The USHA DNC API requires a valid USHA JWT token.`);
+      console.error(`❌ [DNC SCRUB] Please ensure USHA_JWT_TOKEN is set in environment variables with a fresh, valid token.`);
       return NextResponse.json(
         { 
           success: false,
-          error: 'Token is required. Token fetch returned null.' 
+          error: 'Token is required. Token fetch returned null. The USHA DNC API requires a valid USHA JWT token. Please update USHA_JWT_TOKEN in your environment variables.' 
         },
         { status: 401 }
       );
