@@ -13,14 +13,29 @@ const USHA_API_URL = 'https://api-business-agent.ushadvisors.com/Leads/api/leads
 const DEFAULT_AGENT_NUMBER = '00044447';
 
 async function testDNC(phone: string, token?: string) {
-  const jwtToken = token || process.env.USHA_JWT_TOKEN;
+  let jwtToken: string;
   
-  if (!jwtToken) {
-    console.error('❌ ERROR: USHA_JWT_TOKEN not found');
-    console.error('Options:');
-    console.error('  1. Add USHA_JWT_TOKEN=your-token to .env.local');
-    console.error('  2. Pass token as second argument: npx tsx scripts/test-usha-dnc.ts [phone] [token]');
-    process.exit(1);
+  // If token provided, use it; otherwise use getUshaToken() which handles all auth methods
+  if (token) {
+    jwtToken = token;
+    console.log('🔑 Using provided token');
+  } else {
+    try {
+      // Import getUshaToken which handles Cognito, OAuth, env vars, and auto-refresh
+      const { getUshaToken } = await import('../utils/getUshaToken');
+      console.log('🔑 Attempting to get USHA token (will try refresh, Cognito, OAuth, or env vars)...');
+      jwtToken = await getUshaToken();
+      console.log('✅ Token obtained successfully');
+    } catch (error) {
+      console.error('❌ ERROR: Failed to obtain USHA token');
+      console.error('Error:', error instanceof Error ? error.message : 'Unknown error');
+      console.error('\nOptions:');
+      console.error('  1. Configure USHA_JWT_TOKEN in .env.local (will auto-refresh when expired)');
+      console.error('  2. Configure Cognito: COGNITO_REFRESH_TOKEN or COGNITO_USERNAME/COGNITO_PASSWORD');
+      console.error('  3. Configure OAuth: USHA_USERNAME/USHA_PASSWORD or USHA_CLIENT_ID/USHA_CLIENT_SECRET');
+      console.error('  4. Pass token as second argument: npx tsx scripts/test-usha-dnc.ts [phone] [token]');
+      process.exit(1);
+    }
   }
 
   // Clean phone number - remove all non-digits

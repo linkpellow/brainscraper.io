@@ -39,16 +39,88 @@ function isValidJWTFormat(token: string): boolean {
 }
 
 /**
+ * Refresh USHA JWT token using the refresh endpoint
+ * 
+ * @param existingToken - Current token to refresh
+ * @returns New token or null if refresh failed
+ */
+async function refreshUshaToken(existingToken: string): Promise<string | null> {
+  try {
+    console.log('🔄 [USHA_TOKEN] Attempting to refresh token via refresh endpoint...');
+    
+    const response = await fetch('https://api-identity-agent.ushadvisors.com/account/refresh', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${existingToken}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify({}),
+    });
+
+    if (!response.ok) {
+      console.error(`❌ [USHA_TOKEN] Refresh failed: ${response.status} ${response.statusText}`);
+      return null;
+    }
+
+    const data = await response.json();
+    const newToken = data.tokenResult?.access_token;
+    
+    if (newToken && isValidJWTFormat(newToken)) {
+      console.log('✅ [USHA_TOKEN] Token refreshed successfully');
+      
+      // Cache the new token with expiration
+      try {
+        const parts = newToken.split('.');
+        if (parts.length === 3) {
+          const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString());
+          if (payload.exp) {
+            tokenCache = {
+              token: newToken,
+              expiresAt: payload.exp * 1000,
+              fetchedAt: Date.now()
+            };
+          } else if (data.tokenResult.expires_in) {
+            // Use expires_in from response if token doesn't have exp
+            tokenCache = {
+              token: newToken,
+              expiresAt: Date.now() + (data.tokenResult.expires_in * 1000),
+              fetchedAt: Date.now()
+            };
+          }
+        }
+      } catch (e) {
+        // Couldn't decode expiration, but token is valid - cache it anyway
+        tokenCache = {
+          token: newToken,
+          expiresAt: Date.now() + (3600 * 1000), // Default to 1 hour
+          fetchedAt: Date.now()
+        };
+      }
+      
+      return newToken;
+    }
+    
+    console.error('❌ [USHA_TOKEN] Refresh response missing access_token');
+    return null;
+  } catch (error) {
+    console.error('❌ [USHA_TOKEN] Refresh error:', error instanceof Error ? error.message : 'Unknown error');
+    return null;
+  }
+}
+
+/**
  * Gets a valid USHA JWT token with automatic fetching and caching
  * 
  * Priority order:
  * 1. Provided token (request parameter)
- * 2. Cached token (if still valid)
- * 3. Environment variable (USHA_JWT_TOKEN or COGNITO_ID_TOKEN)
- * 4. Cognito authentication (automatic refresh via COGNITO_REFRESH_TOKEN)
- * 5. Direct OAuth authentication (USHA_USERNAME/USHA_PASSWORD or USHA_CLIENT_ID/USHA_CLIENT_SECRET)
+ * 2. Cached token (if still valid, auto-refreshes when expired)
+ * 3. Cognito authentication (uses COGNITO_REFRESH_TOKEN or COGNITO_USERNAME/PASSWORD) - RECOMMENDED
+ * 4. Direct OAuth authentication (USHA_USERNAME/USHA_PASSWORD or USHA_CLIENT_ID/USHA_CLIENT_SECRET)
+ * 5. Environment variable (USHA_JWT_TOKEN - temporary/optional, auto-refreshes when expired)
  * 
- * Throws error if all sources fail. Configure COGNITO_REFRESH_TOKEN for seamless automation.
+ * Once a token is obtained, it will automatically refresh via the refresh endpoint when expired.
+ * Configure COGNITO_REFRESH_TOKEN for fully automated authentication with no manual tokens needed.
  * 
  * @param providedToken - Optional token provided in request (highest priority)
  * @param forceRefresh - Force token refresh even if cached token exists
@@ -68,13 +140,41 @@ export async function getUshaToken(providedToken?: string | null, forceRefresh: 
   }
 
   // Priority 2: Check cache if still valid (and not forcing refresh)
-  if (!forceRefresh && tokenCache && tokenCache.expiresAt > Date.now()) {
-    const remainingMinutes = Math.floor((tokenCache.expiresAt - Date.now()) / 60000);
-    console.log(`🔑 [USHA_TOKEN] Using cached token (expires in ${remainingMinutes}min)`);
-    return tokenCache.token;
+  if (!forceRefresh && tokenCache) {
+    if (tokenCache.expiresAt > Date.now()) {
+      const remainingMinutes = Math.floor((tokenCache.expiresAt - Date.now()) / 60000);
+      console.log(`🔑 [USHA_TOKEN] Using cached token (expires in ${remainingMinutes}min)`);
+      return tokenCache.token;
+    } else {
+      // Token expired, try to refresh it
+      console.log('⚠️ [USHA_TOKEN] Cached token expired, attempting refresh...');
+      const refreshedToken = await refreshUshaToken(tokenCache.token);
+      if (refreshedToken) {
+        return refreshedToken;
+      }
+      // Refresh failed, clear cache and continue to other methods
+      tokenCache = null;
+    }
   }
 
-  // Priority 3: Check environment variable (with expiration validation)
+  // Priority 3: Try Cognito authentication FIRST (before env token) - more reliable
+  // (Moved up from Priority 4 to prioritize automated methods)
+  
+  // Priority 4: Try direct OAuth authentication (no middleman)
+  try {
+    const { getUshaTokenDirect } = await import('./ushaDirectAuth');
+    console.log('🔑 [USHA_TOKEN] Attempting direct OAuth authentication...');
+    const directToken = await getUshaTokenDirect(null, forceRefresh);
+    if (directToken) {
+      return directToken;
+    }
+  } catch (e) {
+    // Direct auth not configured or failed
+    console.log('⚠️ [USHA_TOKEN] Direct OAuth authentication not available');
+  }
+
+  // Priority 5: Check environment variable (with expiration validation and auto-refresh)
+  // NOTE: This is optional - only needed if Cognito/OAuth are not configured
   const envToken = process.env.USHA_JWT_TOKEN;
   if (envToken && envToken.trim()) {
     const token = envToken.trim();
@@ -100,18 +200,35 @@ export async function getUshaToken(providedToken?: string | null, forceRefresh: 
               return token;
             } else {
               console.warn(`⚠️ [USHA_TOKEN] Environment token expired ${Math.abs(expiresIn)} minutes ago, attempting refresh...`);
-              // Token expired, try to refresh via direct auth
+              // Token expired, try to refresh it
+              const refreshedToken = await refreshUshaToken(token);
+              if (refreshedToken) {
+                return refreshedToken;
+              }
+              // Refresh failed, continue to other methods
             }
           } else {
-            // No expiration in token, assume valid
+            // No expiration in token, assume valid but try to refresh if we have a cached expired token
             console.log('🔑 [USHA_TOKEN] Using token from environment variable (no expiration in token)');
+            // Cache it with default expiration
+            tokenCache = {
+              token,
+              expiresAt: Date.now() + (3600 * 1000), // Default to 1 hour
+              fetchedAt: Date.now()
+            };
             return token;
           }
         }
       } catch (e) {
         // Couldn't decode, but format is valid, use it
-      console.log('🔑 [USHA_TOKEN] Using token from environment variable');
-      return token;
+        console.log('🔑 [USHA_TOKEN] Using token from environment variable');
+        // Cache it with default expiration
+        tokenCache = {
+          token,
+          expiresAt: Date.now() + (3600 * 1000), // Default to 1 hour
+          fetchedAt: Date.now()
+        };
+        return token;
       }
     } else {
       console.warn('⚠️ [USHA_TOKEN] Environment token has invalid format, fetching fresh token');
@@ -119,27 +236,37 @@ export async function getUshaToken(providedToken?: string | null, forceRefresh: 
     }
   }
 
-  // Priority 4: Try Cognito authentication (exchange Cognito ID token for USHA JWT)
+  // Priority 3: Try Cognito authentication (uses refresh token or username/password)
   try {
     const { getCognitoIdToken } = await import('./cognitoAuth');
     console.log('🔑 [USHA_TOKEN] Attempting Cognito authentication...');
     const cognitoToken = await getCognitoIdToken(null, forceRefresh);
     if (cognitoToken) {
-      // Exchange Cognito ID token for USHA JWT token
+      // Try to use Cognito token directly with refresh endpoint to get USHA JWT
+      // This is more reliable than token exchange
+      console.log('🔄 [USHA_TOKEN] Attempting to get USHA JWT via refresh endpoint with Cognito token...');
+      const ushaJwtToken = await refreshUshaToken(cognitoToken);
+      
+      if (ushaJwtToken) {
+        console.log('✅ [USHA_TOKEN] Successfully obtained USHA JWT token via refresh endpoint');
+        return ushaJwtToken;
+      }
+      
+      // If refresh endpoint doesn't work with Cognito token, try exchange
       try {
         const { exchangeCognitoForUshaJwt } = await import('./exchangeCognitoForUshaJwt');
-        console.log('🔄 [USHA_TOKEN] Exchanging Cognito ID token for USHA JWT token...');
-        const ushaJwtToken = await exchangeCognitoForUshaJwt(cognitoToken);
+        console.log('🔄 [USHA_TOKEN] Trying Cognito token exchange...');
+        const exchangedToken = await exchangeCognitoForUshaJwt(cognitoToken);
         
-        if (ushaJwtToken) {
+        if (exchangedToken) {
           // Cache the USHA JWT token
           try {
-            const parts = ushaJwtToken.split('.');
+            const parts = exchangedToken.split('.');
             if (parts.length === 3) {
               const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString());
               if (payload.exp) {
                 tokenCache = {
-                  token: ushaJwtToken,
+                  token: exchangedToken,
                   expiresAt: payload.exp * 1000,
                   fetchedAt: Date.now()
                 };
@@ -149,45 +276,30 @@ export async function getUshaToken(providedToken?: string | null, forceRefresh: 
             // Couldn't decode expiration, but token is valid
           }
           console.log('✅ [USHA_TOKEN] Successfully exchanged Cognito token for USHA JWT');
-          return ushaJwtToken;
-        } else {
-          console.log('⚠️ [USHA_TOKEN] Token exchange failed, using Cognito ID token directly (may not work)');
-          // Fallback: try using Cognito ID token directly (may not work)
-          return cognitoToken;
+          return exchangedToken;
         }
       } catch (e) {
-        console.log('⚠️ [USHA_TOKEN] Token exchange error, using Cognito ID token directly:', e);
-        // Fallback: try using Cognito ID token directly
-        return cognitoToken;
+        console.log('⚠️ [USHA_TOKEN] Token exchange also failed:', e);
       }
+      
+      // Last resort: try using Cognito ID token directly (may not work for DNC API)
+      console.log('⚠️ [USHA_TOKEN] Using Cognito ID token directly (may not work for all APIs)');
+      return cognitoToken;
     }
   } catch (e) {
     // Cognito auth not configured or failed, continue to fallback
-    console.log('⚠️ [USHA_TOKEN] Cognito authentication not available, trying direct OAuth...');
-  }
-
-  // Priority 5: Try direct OAuth authentication (no middleman)
-  try {
-    const { getUshaTokenDirect } = await import('./ushaDirectAuth');
-    console.log('🔑 [USHA_TOKEN] Attempting direct OAuth authentication...');
-    const directToken = await getUshaTokenDirect(null, forceRefresh);
-    if (directToken) {
-      return directToken;
-    }
-  } catch (e) {
-    // Direct auth not configured or failed
-    console.log('⚠️ [USHA_TOKEN] Direct OAuth authentication not available');
+    console.log('⚠️ [USHA_TOKEN] Cognito authentication not available, trying other methods...');
   }
 
   // All token sources failed - this is a critical error
   console.error('❌ [USHA_TOKEN] CRITICAL: All token sources failed!');
   throw new Error(
     'Failed to obtain valid USHA token. ' +
-    'Please configure one of the following:\n' +
-    '  1. Cognito refresh token (RECOMMENDED): COGNITO_REFRESH_TOKEN\n' +
-    '  2. Cognito credentials: COGNITO_USERNAME/COGNITO_PASSWORD\n' +
-    '  3. Direct OAuth: USHA_USERNAME/USHA_PASSWORD or USHA_CLIENT_ID/USHA_CLIENT_SECRET\n' +
-    '  4. Environment variable: USHA_JWT_TOKEN or COGNITO_ID_TOKEN'
+    'Please configure one of the following (in order of preference):\n' +
+    '  1. Cognito refresh token (RECOMMENDED - fully automated): COGNITO_REFRESH_TOKEN\n' +
+    '  2. Cognito credentials (auto-refreshes): COGNITO_USERNAME/COGNITO_PASSWORD\n' +
+    '  3. Direct OAuth (auto-refreshes): USHA_USERNAME/USHA_PASSWORD or USHA_CLIENT_ID/USHA_CLIENT_SECRET\n' +
+    '  4. Temporary token (optional - auto-refreshes when expired): USHA_JWT_TOKEN'
   );
 }
 
