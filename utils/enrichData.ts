@@ -1851,8 +1851,56 @@ export async function enrichRow(
     }
   }
   
+  // AGE FILTER CHECK (COST SAVER - Filter age > 59 immediately after STEP 3)
+  // Check if age is available from STEP 3 results and filter before expensive API calls
+  let ageOver59 = false;
+  const skipTracingDataForAge = result.skipTracingData as any;
+  
+  // Check for age in STEP 3 search results (PeopleDetails)
+  if (skipTracingDataForAge?.PeopleDetails && Array.isArray(skipTracingDataForAge.PeopleDetails) && skipTracingDataForAge.PeopleDetails.length > 0) {
+    const step3Age = skipTracingDataForAge.PeopleDetails[0]?.Age;
+    if (step3Age) {
+      const ageNum = parseInt(String(step3Age), 10);
+      if (!isNaN(ageNum) && ageNum > 59) {
+        ageOver59 = true;
+        result.age = String(step3Age); // Store age for reference
+        console.log(`[ENRICH_ROW] 🚫 AGE FILTER: Age ${ageNum} > 59 detected in STEP 3 - skipping Telnyx and age enrichment (cost savings)`);
+        onProgress?.('gatekeep', {
+          phone: phone || undefined,
+        }, [`Age ${ageNum} > 59 - filtered out (cost savings)`]);
+      }
+    }
+  }
+  
+  // Check for age in ageFromPersonDetails (stored during person details call)
+  if (!ageOver59 && skipTracingDataForAge?.ageFromPersonDetails) {
+    const ageNum = parseInt(String(skipTracingDataForAge.ageFromPersonDetails), 10);
+    if (!isNaN(ageNum) && ageNum > 59) {
+      ageOver59 = true;
+      result.age = String(skipTracingDataForAge.ageFromPersonDetails);
+      console.log(`[ENRICH_ROW] 🚫 AGE FILTER: Age ${ageNum} > 59 detected from person details - skipping Telnyx and age enrichment (cost savings)`);
+      onProgress?.('gatekeep', {
+        phone: phone || undefined,
+      }, [`Age ${ageNum} > 59 - filtered out (cost savings)`]);
+    }
+  }
+  
+  // Check for age in direct skipTracingData.Age field
+  if (!ageOver59 && skipTracingDataForAge?.Age) {
+    const ageNum = parseInt(String(skipTracingDataForAge.Age), 10);
+    if (!isNaN(ageNum) && ageNum > 59) {
+      ageOver59 = true;
+      result.age = String(skipTracingDataForAge.Age);
+      console.log(`[ENRICH_ROW] 🚫 AGE FILTER: Age ${ageNum} > 59 detected in skip-tracing data - skipping Telnyx and age enrichment (cost savings)`);
+      onProgress?.('gatekeep', {
+        phone: phone || undefined,
+      }, [`Age ${ageNum} > 59 - filtered out (cost savings)`]);
+    }
+  }
+  
   // STEP 4: Telnyx Phone Intelligence (CRITICAL)
-  if (phone) {
+  // SKIP if age > 59 (cost savings - no need to check line type for leads we're filtering out)
+  if (phone && !ageOver59) {
     console.log(`[ENRICH_ROW] Calling Telnyx for phone: ${phone.substring(0, 5)}...`);
     const { data, error } = await callAPIWithConfig(
       `/api/telnyx/lookup?phone=${encodeURIComponent(phone)}`,
@@ -1930,15 +1978,35 @@ export async function enrichRow(
     carrier: result.carrierName,
   }, gatekeepError);
   
-  // STEP 5.5: DNC CHECK (DISABLED - DNC scrubbing temporarily disabled)
-  // DNC checking is disabled to avoid token exchange errors
-  // All leads will proceed to age enrichment regardless of DNC status
+  // STEP 5.5: DNC CHECK (FREE - saves money by avoiding age enrichment on DNC numbers)
+  // Only check DNC on valid mobile numbers (after gatekeep passes)
   if (shouldContinue && phone) {
-    console.log(`[ENRICH_ROW] STEP 5.5: DNC check disabled - proceeding to age enrichment`);
-    // Set DNC status to UNKNOWN since we're not checking
-    result.dncStatus = 'UNKNOWN';
-    result.canContact = true;
-    // Don't set dncLastChecked since we didn't actually check
+    console.log(`[ENRICH_ROW] STEP 5.5: Checking DNC status for ${phone}...`);
+    try {
+      const dncResult = await checkDNCStatus(phone);
+      result.dncStatus = dncResult.isDNC ? 'YES' : 'NO';
+      result.canContact = dncResult.canContact;
+      result.dncReason = dncResult.reason;
+      result.dncLastChecked = new Date().toISOString();
+      
+      if (dncResult.isDNC) {
+        console.log(`[ENRICH_ROW] STEP 5.5: ⚠️  DNC detected - ${dncResult.reason || 'Do Not Call'}`);
+        console.log(`[ENRICH_ROW] STEP 5.5: Skipping age enrichment (cost savings)`);
+        // Skip age enrichment for DNC numbers
+        shouldContinue = false;
+        onProgress?.('gatekeep', {
+          phone: phone || undefined,
+        }, [`DNC: ${dncResult.reason || 'Do Not Call'} - skipping age enrichment`]);
+      } else {
+        console.log(`[ENRICH_ROW] STEP 5.5: ✅ Not DNC - proceeding to age enrichment`);
+      }
+    } catch (error) {
+      console.error(`[ENRICH_ROW] STEP 5.5: ❌ DNC check error:`, error);
+      // On error, assume not DNC to avoid blocking enrichment
+      result.dncStatus = 'UNKNOWN';
+      result.canContact = true;
+      // Continue with enrichment
+    }
   } else if (phone) {
     const lineTypeLower = result.lineType?.toLowerCase();
     let reason = 'unknown reason';
@@ -1955,10 +2023,11 @@ export async function enrichRow(
     result.canContact = true;
   }
   
-  // STEP 6: Age (CONDITIONAL - Only if Telnyx confirms valid number)
-  // Age enrichment ONLY runs on high-quality leads (not VoIP/junk)
+  // STEP 6: Age (CONDITIONAL - Only if Telnyx confirms valid number AND age not > 59)
+  // Age enrichment ONLY runs on high-quality leads (not VoIP/junk) AND age <= 59
   // CRITICAL OPTIMIZATION: Reuse STEP 3 search results to avoid duplicate API calls
-  if (shouldContinue && !hasDOBOrAge(row, headers) && firstName && lastName && phone) {
+  // SKIP if age > 59 (already filtered above, but double-check here)
+  if (shouldContinue && !ageOver59 && !hasDOBOrAge(row, headers) && firstName && lastName && phone) {
     // First, check if we already have age data from STEP 3 search results
     const skipTracingData = result.skipTracingData as any;
     let ageFromStep3: string | null = null;
@@ -2270,15 +2339,53 @@ export async function enrichData(
     }
 
     // CRITICAL: Save immediately after enrichment to ensure data persistence
-    // Filter: Only save leads with valid phone numbers (exclude email-only leads)
+    // Filter: Only save leads with valid phone numbers AND age <= 59 (exclude email-only leads and age > 59)
     try {
       const leadSummary = extractLeadSummary(enrichedRow, enrichment);
       const phone = (leadSummary.phone || '').trim().replace(/\D/g, '');
-      if (phone.length >= 10) {
+      
+      // Check age filter (age > 59 should be filtered out)
+      const ageStr = leadSummary.dobOrAge || '';
+      let ageNum: number | null = null;
+      
+      // Try to parse age from dobOrAge
+      if (ageStr) {
+        // If it's a number, use it directly
+        const parsed = parseInt(String(ageStr).trim(), 10);
+        if (!isNaN(parsed) && parsed > 0 && parsed < 150) {
+          ageNum = parsed;
+        } else {
+          // Try to calculate from DOB
+          try {
+            const dob = new Date(ageStr);
+            if (!isNaN(dob.getTime())) {
+              const today = new Date();
+              let calculatedAge = today.getFullYear() - dob.getFullYear();
+              const monthDiff = today.getMonth() - dob.getMonth();
+              if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
+                calculatedAge--;
+              }
+              if (calculatedAge > 0 && calculatedAge < 150) {
+                ageNum = calculatedAge;
+              }
+            }
+          } catch {
+            // Couldn't parse as date, skip age check
+          }
+        }
+      }
+      
+      // Filter: require phone number AND age <= 59 (if age is known)
+      const hasValidPhone = phone.length >= 10;
+      const ageFilterPassed = ageNum === null || ageNum <= 59; // Allow if age unknown, filter if age > 59
+      
+      if (hasValidPhone && ageFilterPassed) {
         saveEnrichedLeadImmediate(enrichedRow, leadSummary);
         console.log(`💾 [ENRICH_DATA] Saved lead immediately: ${leadName}`);
-      } else {
+      } else if (!hasValidPhone) {
         console.log(`🚫 [ENRICH_DATA] Skipping lead "${leadName}" - no valid phone number (email-only leads excluded)`);
+      } else if (ageNum !== null && ageNum > 59) {
+        console.log(`🚫 [ENRICH_DATA] Skipping lead "${leadName}" - age ${ageNum} > 59 (filtered out for cost savings)`);
       }
     } catch (saveError) {
       console.error(`❌ [ENRICH_DATA] Failed to save lead ${leadName}:`, saveError);

@@ -1,0 +1,62 @@
+---
+alwaysApply: true
+---
+# CRITICAL: Data Protection Rules for Lead Developer
+
+## ⚠️ ABSOLUTE PRIORITY: NEVER OVERWRITE OR LOSE ENRICHED DATA
+
+### Core Principle
+**Enriched lead data represents significant financial investment (API costs). Every lead in `enriched-all-leads.json` is valuable and must be preserved at all costs.**
+
+### Mandatory Rules
+
+1. **NEVER Overwrite Existing Leads**
+   - The aggregation endpoint (`/api/aggregate-enriched-leads`) MUST merge leads, never replace
+   - Always load existing leads FIRST before adding new ones
+   - Use deduplication keys (LinkedIn URL or name+email+phone) to merge, not replace
+   - Preserve existing data when merging (prefer existing if new is empty)
+
+2. **NEVER Delete Data Files**
+   - `enriched-all-leads.json` is the single source of truth
+   - Never truncate, clear, or reset this file
+   - Never delete individual lead files in `data/enriched-leads/`
+
+3. **Always Verify Before Writing**
+   - Check that existing leads are loaded before aggregation
+   - Verify file locking is in place for concurrent writes
+   - Use atomic writes (temp file + rename) for safety
+
+4. **Filtering Must Be Additive, Not Destructive**
+   - When filtering leads (e.g., age > 59), filter BEFORE saving, not after
+   - Filtering should prevent new leads from being added, not remove existing ones
+   - Existing leads in `enriched-all-leads.json` should remain untouched by filters
+
+5. **Code Changes Must Be Read-Only for Data**
+   - Formatting functions (CSV export) must never touch data files
+   - UI changes must never modify server-side data
+   - API route changes must preserve existing data structure
+
+6. **Deployment Safety**
+   - Railway persistent volumes are separate from code deployments
+   - Code changes cannot affect `/data` volume
+   - Always verify data persistence across deployments
+
+### When in Doubt
+- **ASK**: If unsure about data safety, ask before implementing
+- **BACKUP**: Suggest backup before any data-modifying changes
+- **VERIFY**: Always verify that existing leads are preserved after changes
+- **TEST**: Test with small datasets before applying to production
+
+### Red Flags (STOP and Verify)
+- Any code that writes to `enriched-all-leads.json` without loading existing data first
+- Any code that clears, truncates, or resets data files
+- Any code that filters existing leads from the database (should only filter new leads)
+- Any code that modifies data structure without backward compatibility
+
+### Success Criteria
+✅ Existing leads remain intact after any change
+✅ New leads are merged, not replaced
+✅ Filters prevent new bad leads, don't remove existing leads
+✅ Data files are never deleted or truncated
+✅ All changes are additive or read-only
+

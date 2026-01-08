@@ -23,6 +23,15 @@ const stateToAbbreviation: Record<string, string> = {
   'wisconsin': 'WI', 'wyoming': 'WY', 'district of columbia': 'DC'
 };
 
+// All 50 US state abbreviations (alphabetically sorted)
+const allStateAbbreviations = [
+  'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA',
+  'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD',
+  'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ',
+  'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC',
+  'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY', 'DC'
+];
+
 function getStateAbbreviation(state: string | undefined | null): string {
   if (!state || state === 'N/A') return 'N/A';
   
@@ -58,6 +67,7 @@ export default function EnrichedLeadsPage() {
   const [ageMax, setAgeMax] = useState<number | ''>(64);
   const [mobileOnly, setMobileOnly] = useState<boolean>(false);
   const [filterDNC, setFilterDNC] = useState<boolean>(false);
+  const [selectedState, setSelectedState] = useState<string>(''); // State filter: empty = all states
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -242,10 +252,8 @@ export default function EnrichedLeadsPage() {
     };
   }, []); // Empty dependency array - only run on mount
 
-  // DISABLED: Auto-scrub DNC status in background after leads are loaded
-  // DNC scrubbing is temporarily disabled to avoid token exchange errors
-  // All DNC-related functionality is disabled but can be re-enabled when token exchange is fixed
-  /*
+  // Auto-scrub DNC status in background after leads are loaded
+  // Checks DNC status for existing leads that haven't been checked today
   useEffect(() => {
     if (leads.length === 0 || isScrubbingDNC) return;
     
@@ -438,7 +446,6 @@ export default function EnrichedLeadsPage() {
     
     return () => clearTimeout(dncTimeout);
   }, [leads.length, isScrubbingDNC]); // Run when leads change or scrubbing completes
-  */
 
   // DISABLED: Auto re-enrichment - removed to prevent automatic API calls
   // Enrichment should only happen when user explicitly clicks "Enrich" or "Re-enrich Existing Leads"
@@ -494,6 +501,16 @@ export default function EnrichedLeadsPage() {
       filteredLeads = filteredLeads.filter((lead) => {
         // Filter out leads where dncStatus is "YES" (Do Not Call)
         return lead.dncStatus !== 'YES';
+      });
+    }
+    
+    // State filter (filter by selected state abbreviation)
+    if (selectedState) {
+      filteredLeads = filteredLeads.filter((lead) => {
+        if (!lead.state) return false;
+        // Normalize state to abbreviation for comparison
+        const leadStateAbbr = getStateAbbreviation(lead.state);
+        return leadStateAbbr === selectedState;
       });
     }
 
@@ -1101,7 +1118,7 @@ export default function EnrichedLeadsPage() {
   // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, ageMin, ageMax, mobileOnly, filterDNC, sortField, sortDirection]);
+  }, [searchQuery, ageMin, ageMax, mobileOnly, filterDNC, selectedState, sortField, sortDirection]);
   
   // Debug logging
   useEffect(() => {
@@ -1113,12 +1130,13 @@ export default function EnrichedLeadsPage() {
       ageMax,
       mobileOnly,
       filterDNC,
+      selectedState,
       sortField
     });
     if (leads.length > 0 && sortedLeads.length === 0) {
       console.warn('⚠️ [ENRICHED_PAGE] Leads exist but sortedLeads is empty - filters may be too restrictive');
     }
-  }, [leads.length, sortedLeads.length, searchQuery, ageMin, ageMax, mobileOnly, filterDNC, sortField]);
+  }, [leads.length, sortedLeads.length, searchQuery, ageMin, ageMax, mobileOnly, filterDNC, selectedState, sortField]);
 
   return (
     <AppLayout>
@@ -1130,12 +1148,13 @@ export default function EnrichedLeadsPage() {
               Enriched Leads
             </h1>
             <p className="text-xs sm:text-sm text-slate-400 mt-1 sm:mt-2 font-medium font-data">
-              {searchQuery || ageMin !== '' || ageMax !== '' || mobileOnly || filterDNC ? (
+              {searchQuery || ageMin !== '' || ageMax !== '' || mobileOnly || filterDNC || selectedState ? (
                 <>
                   {sortedLeads.length} of {leads.length} leads
                   {totalPages > 1 && ` (Page ${currentPage}/${totalPages})`}
                   {searchQuery && ` (search: "${searchQuery}")`}
                   {(ageMin !== '' || ageMax !== '') && ` (age: ${ageMin !== '' ? ageMin : '0'}-${ageMax !== '' ? ageMax : '99+'})`}
+                  {selectedState && ` (state: ${selectedState})`}
                   {mobileOnly && ' (mobile only)'}
                   {filterDNC && ' (DNC filtered)'}
                 </>
@@ -1256,6 +1275,41 @@ export default function EnrichedLeadsPage() {
                   }}
                   className="ml-1 text-slate-400 hover:text-red-400 transition-colors"
                   title="Clear age filter"
+                >
+                  <X className="w-3 h-3 sm:w-4 sm:h-4" />
+                </button>
+              )}
+            </div>
+            {/* State Filter Dropdown */}
+            <div className="relative">
+              <select
+                value={selectedState}
+                onChange={(e) => setSelectedState(e.target.value)}
+                className={`px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold border transition-all font-data appearance-none cursor-pointer ${
+                  selectedState
+                    ? 'border-blue-500/80 bg-blue-500/20 text-blue-300 shadow-lg shadow-blue-500/50 ring-2 ring-blue-500/50'
+                    : 'btn-inactive text-slate-200 border-slate-600'
+                }`}
+                style={{
+                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23cbd5e1' d='M6 9L1 4h10z'/%3E%3C/svg%3E")`,
+                  backgroundRepeat: 'no-repeat',
+                  backgroundPosition: 'right 0.5rem center',
+                  paddingRight: '2rem',
+                  minWidth: '80px'
+                }}
+              >
+                <option value="">All States</option>
+                {allStateAbbreviations.map((abbr) => (
+                  <option key={abbr} value={abbr} className="bg-slate-800 text-slate-200">
+                    {abbr}
+                  </option>
+                ))}
+              </select>
+              {selectedState && (
+                <button
+                  onClick={() => setSelectedState('')}
+                  className="absolute right-6 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-red-400 transition-colors"
+                  title="Clear state filter"
                 >
                   <X className="w-3 h-3 sm:w-4 sm:h-4" />
                 </button>

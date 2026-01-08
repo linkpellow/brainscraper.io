@@ -49,16 +49,68 @@ export async function POST(request: NextRequest) {
         }
       }
     
-      // Validation function: lead must have name AND phone (email-only leads are excluded)
-      const isValidLead = (lead: LeadSummary): boolean => {
+      // Validation function for NEW leads: must have name AND phone AND age <= 59
+      // NOTE: This filter ONLY applies to NEW leads, NOT existing leads (existing leads are preserved)
+      const isValidNewLead = (lead: LeadSummary): boolean => {
         const name = (lead.name || '').trim();
         const phone = (lead.phone || '').trim().replace(/\D/g, ''); // Remove non-digits for validation
+        
         // Require phone number (10+ digits) - leads with only email are excluded
+        if (name.length === 0 || phone.length < 10) {
+          return false;
+        }
+        
+        // Age filter: exclude NEW leads with age > 59 (if age is known)
+        // CRITICAL: This filter does NOT apply to existing leads - they are preserved
+        const dobOrAge = lead.dobOrAge || '';
+        if (dobOrAge) {
+          let ageNum: number | null = null;
+          
+          // Try to parse age from dobOrAge
+          const parsed = parseInt(String(dobOrAge).trim(), 10);
+          if (!isNaN(parsed) && parsed > 0 && parsed < 150) {
+            ageNum = parsed;
+          } else {
+            // Try to calculate from DOB
+            try {
+              const dob = new Date(dobOrAge);
+              if (!isNaN(dob.getTime())) {
+                const today = new Date();
+                let calculatedAge = today.getFullYear() - dob.getFullYear();
+                const monthDiff = today.getMonth() - dob.getMonth();
+                if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
+                  calculatedAge--;
+                }
+                if (calculatedAge > 0 && calculatedAge < 150) {
+                  ageNum = calculatedAge;
+                }
+              }
+            } catch {
+              // Couldn't parse as date, allow lead (age unknown)
+            }
+          }
+          
+          // Filter out NEW leads if age > 59 (allow if age unknown)
+          if (ageNum !== null && ageNum > 59) {
+            return false;
+          }
+        }
+        
+        return true;
+      };
+      
+      // Validation function for EXISTING leads: only require name and phone (NO age filter)
+      // CRITICAL: Existing leads are preserved regardless of age - we don't want to lose data
+      const isValidExistingLead = (lead: LeadSummary): boolean => {
+        const name = (lead.name || '').trim();
+        const phone = (lead.phone || '').trim().replace(/\D/g, '');
+        // Require phone number (10+ digits) - leads with only email are excluded
+        // NO age filter for existing leads - preserve all existing data
         return name.length > 0 && phone.length >= 10;
       };
       
-      // Filter existing leads to only valid ones
-      existingLeads = existingLeads.filter(isValidLead);
+      // Filter existing leads to only valid ones (NO age filter - preserve existing data)
+      existingLeads = existingLeads.filter(isValidExistingLead);
       
       // Create a deduplication map using LinkedIn URL or name+email+phone as key
       const seenKeys = new Set<string>();
@@ -87,8 +139,8 @@ export async function POST(request: NextRequest) {
         }
       }
       
-      // Filter new leads before processing
-      validNewLeads = newLeads.filter(isValidLead);
+      // Filter new leads before processing (WITH age filter - only new leads are filtered)
+      validNewLeads = newLeads.filter(isValidNewLead);
       
       // Helper function to merge leads intelligently, preserving DNC status
       const mergeLeads = (existing: LeadSummary, incoming: LeadSummary): LeadSummary => {
