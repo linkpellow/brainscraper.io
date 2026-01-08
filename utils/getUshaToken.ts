@@ -210,9 +210,20 @@ export async function getUshaToken(providedToken?: string | null, forceRefresh: 
   // Priority 2: Check environment variable FIRST (user explicitly set it, takes precedence over cache and file)
   // This ensures that when USHA_JWT_TOKEN is configured, it's always used even if stale tokens exist in cache or file
   const envToken = process.env.USHA_JWT_TOKEN;
+  
+  // Diagnostic logging to troubleshoot environment variable access
+  if (envToken) {
+    console.log(`🔍 [USHA_TOKEN] Environment variable USHA_JWT_TOKEN is set (length: ${envToken.length}, first 20 chars: ${envToken.substring(0, 20)}...)`);
+  } else {
+    console.warn(`⚠️ [USHA_TOKEN] Environment variable USHA_JWT_TOKEN is NOT set or is empty`);
+    console.warn(`⚠️ [USHA_TOKEN] Available env vars with 'USHA': ${Object.keys(process.env).filter(k => k.includes('USHA')).join(', ') || 'none'}`);
+  }
+  
   if (envToken && envToken.trim()) {
     const token = envToken.trim();
+    console.log(`🔍 [USHA_TOKEN] Validating environment token format...`);
     if (isValidJWTFormat(token)) {
+      console.log(`✅ [USHA_TOKEN] Environment token has valid JWT format`);
       // Check token expiration
       try {
         const parts = token.split('.');
@@ -287,8 +298,10 @@ export async function getUshaToken(providedToken?: string | null, forceRefresh: 
         return token;
       }
     } else {
-      console.warn('⚠️ [USHA_TOKEN] Environment token has invalid format, checking other sources...');
+      console.warn(`⚠️ [USHA_TOKEN] Environment token has invalid format (length: ${envToken.trim().length}, parts: ${envToken.trim().split('.').length}), checking other sources...`);
     }
+  } else if (envToken) {
+    console.warn(`⚠️ [USHA_TOKEN] Environment token exists but is empty after trim, checking other sources...`);
   }
 
   // Priority 3: Check cache if still valid (and not forcing refresh)

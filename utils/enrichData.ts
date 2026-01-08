@@ -1260,23 +1260,34 @@ async function checkDNCStatus(
     // Get USHA JWT token (required for USHA DNC API)
     let token: string | null = null;
     try {
+      console.log(`[DNC_CHECK] 🔑 Attempting to get USHA token...`);
       token = await getUshaToken();
+      if (token) {
+        console.log(`[DNC_CHECK] ✅ Got USHA token (length: ${token.length}, first 20 chars: ${token.substring(0, 20)}...)`);
+      } else {
+        console.error(`[DNC_CHECK] ❌ getUshaToken() returned null/undefined`);
+      }
     } catch (e) {
-      console.log(`[DNC_CHECK] ⚠️  Failed to get USHA token - skipping DNC check:`, e);
-      return { isDNC: false, canContact: true, reason: 'Token fetch failed' };
+      const errorMsg = e instanceof Error ? e.message : String(e);
+      console.error(`[DNC_CHECK] ❌ Failed to get USHA token - skipping DNC check:`, errorMsg);
+      console.error(`[DNC_CHECK] ❌ Error details:`, e);
+      return { isDNC: false, canContact: true, reason: `Token fetch failed: ${errorMsg}` };
     }
     
     if (!token) {
-      console.log(`[DNC_CHECK] ⚠️  No token available - skipping DNC check`);
-      return { isDNC: false, canContact: true, reason: 'Token fetch failed' };
+      console.error(`[DNC_CHECK] ❌ No token available after getUshaToken() - skipping DNC check`);
+      return { isDNC: false, canContact: true, reason: 'Token fetch failed: returned null' };
     }
     
     // Call USHA DNC API with automatic token refresh
+    console.log(`[DNC_CHECK] 📞 Calling DNC API for phone: ${cleanedPhone}`);
     const response = await callDNCAPI(cleanedPhone, token);
     
     if (!response.ok) {
-      console.log(`[DNC_CHECK] ⚠️  API error ${response.status} - assuming not DNC`);
-      return { isDNC: false, canContact: true, reason: `API error: ${response.statusText}` };
+      const errorText = await response.text().catch(() => 'Could not read error response');
+      console.error(`[DNC_CHECK] ❌ API error ${response.status} ${response.statusText}: ${errorText.substring(0, 200)}`);
+      console.error(`[DNC_CHECK] ❌ This might indicate an invalid or expired token`);
+      return { isDNC: false, canContact: true, reason: `API error: ${response.status} ${response.statusText}` };
     }
     
     const result = await response.json();
