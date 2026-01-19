@@ -61,6 +61,7 @@ export async function processHarFile(
 
 export * from './types';
 export * from './har';
+export * from './phase';
 export * from './normalize';
 export * from './dedupe';
 export * from './score';
