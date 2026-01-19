@@ -1,19 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { chromium } from 'playwright';
-
-let browserInstance: Awaited<ReturnType<typeof chromium.launch>> | null = null;
-let pageInstance: Awaited<ReturnType<typeof browserInstance.page>> | null = null;
 
 /**
  * Embedded Browser for Neuromap
  * 
- * This route serves an HTML page that embeds a Playwright Chromium instance
- * and streams network events via WebSocket.
+ * This route serves an HTML page with instructions for mitmproxy proxy setup.
+ * 
+ * Note: Full Playwright browser embedding requires CDP integration.
+ * Future enhancement: Launch Playwright browser and expose via CDP WebSocket.
  */
 export async function GET(request: NextRequest) {
-  // Note: Full Playwright browser embedding requires CDP integration
-  // For now, this route serves instructions for mitmproxy proxy setup
-  // Future enhancement: Launch Playwright browser and expose via CDP WebSocket
 
   // Return HTML page with embedded browser controls
   const html = `
