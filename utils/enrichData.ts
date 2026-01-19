@@ -26,7 +26,7 @@ export interface EnrichmentProgress {
   current: number;
   total: number;
   leadName?: string;
-  step?: 'linkedin' | 'zip' | 'gender' | 'phone-discovery' | 'telnyx' | 'gatekeep' | 'age' | 'complete';
+  step?: 'linkedin' | 'zip' | 'income-pre-qual' | 'gender' | 'phone-discovery' | 'telnyx' | 'gatekeep' | 'age' | 'complete';
   stepDetails?: {
     firstName?: string;
     lastName?: string;
@@ -1437,7 +1437,124 @@ export async function enrichRow(
     });
   }
 
-  // STEP 2.5: Gender detection from name (FREE, LOCAL - No API calls)
+  // STEP 2.5: INCOME PRE-QUALIFICATION (COST CONTROL GATE - BEFORE PHONE DISCOVERY)
+  // Runs after ZIP lookup, before phone discovery
+  // Purpose: Prevent unnecessary API spend on clearly low-income leads (< $60k)
+  // This is the FIRST cost control gate - filters before any paid API calls
+  let incomePreQualShouldContinue = true; // Default to continue if income pre-qual is disabled
+  let incomePreQualResult: any = undefined; // Will be typed as IncomePreQualResult after import
+  let incomeData: any = undefined;
+  
+  if (stations.has('income-pre-qual')) {
+    try {
+      const { preQualifyIncome } = await import('./enrichment/incomePreQualifier');
+      
+      // Extract job title and company from row (LinkedIn data)
+      const jobTitle = (() => {
+        for (const header of headers) {
+          const lower = header.toLowerCase();
+          if (lower === 'title' || lower === 'job title' || lower === 'job_title' || lower === 'headline') {
+            const value = String(row[header] || '').trim();
+            if (value) return value;
+          }
+        }
+        return null;
+      })();
+      
+      const company = (() => {
+        for (const header of headers) {
+          const lower = header.toLowerCase();
+          if (lower === 'company' || lower === 'company name' || lower === 'company_name') {
+            const value = String(row[header] || '').trim();
+            if (value) return value;
+          }
+        }
+        return null;
+      })();
+      
+      // Fetch ZIP median income if ZIP available (one FREE API call)
+      let zipMedianIncome: number | undefined = undefined;
+      if (zipCode) {
+        try {
+          const zip5 = String(zipCode).match(/\d{5}/)?.[0];
+          if (zip5) {
+            const incomeResponse = await callAPIWithConfig(
+              `/api/income-by-zip?zip=${zip5}`,
+              {},
+              'Income by ZIP',
+              callAPIImpl
+            );
+            
+            if (incomeResponse.data && !incomeResponse.error) {
+              const incomeDataResponse = incomeResponse.data.data || incomeResponse.data;
+              const median = incomeDataResponse.medianIncome || incomeDataResponse.median_income || incomeDataResponse.householdIncome;
+              if (median) {
+                incomeData = incomeDataResponse; // Store for later use
+                zipMedianIncome = median;
+              }
+            }
+          }
+        } catch (incomeError) {
+          // Non-fatal: continue without ZIP income data
+          console.log(`[ENRICH_ROW] STEP 2.5: Could not fetch ZIP income (non-fatal):`, incomeError);
+        }
+      }
+      
+      // Run pre-qualification (without age/carrier - those come later)
+      const preQualResult = preQualifyIncome({
+        jobTitle: jobTitle || undefined,
+        company: company || undefined,
+        city: city || undefined,
+        state: state || undefined,
+        zipCode: zipCode || undefined,
+        // Note: age, carrierName, lineType not available yet - will improve confidence later
+        zipMedianIncome: zipMedianIncome,
+      });
+      
+      // Store result for later attachment to result object
+      const { cohortKey, ...incomePreQualResultClean } = preQualResult;
+      incomePreQualResult = incomePreQualResultClean;
+      
+      // Store decision for later use
+      incomePreQualShouldContinue = preQualResult.decision.shouldContinueEnrichment;
+      
+      console.log(`[ENRICH_ROW] STEP 2.5: Income pre-qualification (two-pass):`, {
+        tier: incomePreQualResult.decision.tier,
+        conservative: {
+          p50: `$${Math.round(incomePreQualResult.conservative.p50 / 1000)}k`,
+          range: `$${Math.round(incomePreQualResult.conservative.min / 1000)}k-$${Math.round(incomePreQualResult.conservative.max / 1000)}k`,
+        },
+        upside: {
+          p50: `$${Math.round(incomePreQualResult.upside.p50 / 1000)}k`,
+          range: `$${Math.round(incomePreQualResult.upside.min / 1000)}k-$${Math.round(incomePreQualResult.upside.max / 1000)}k`,
+        },
+        combined: {
+          p50: `$${Math.round(incomePreQualResult.estimate.p50 / 1000)}k`,
+          range: `$${Math.round(incomePreQualResult.estimate.range.min / 1000)}k-$${Math.round(incomePreQualResult.estimate.range.max / 1000)}k`,
+        },
+        confidence: `${Math.round(incomePreQualResult.estimate.confidence * 100)}%`,
+        shouldContinue: incomePreQualResult.decision.shouldContinueEnrichment,
+        reason: incomePreQualResult.decision.reason,
+        drivers: incomePreQualResult.estimate.primaryDrivers,
+        riskFlags: incomePreQualResult.estimate.riskFlags,
+      });
+      
+      // Log if enrichment should be skipped
+      if (!incomePreQualResult.decision.shouldContinueEnrichment) {
+        console.log(`[ENRICH_ROW] STEP 2.5: 🚫 Income pre-qualification REJECTS lead - skipping all paid enrichment`);
+        console.log(`[ENRICH_ROW] STEP 2.5: Reason: ${incomePreQualResult.decision.reason}`);
+        onProgress?.('income-pre-qual', undefined, [`Income < $60k: ${incomePreQualResult.decision.reason}`]);
+      } else {
+        onProgress?.('income-pre-qual');
+      }
+    } catch (preQualError) {
+      // Non-fatal: log and continue
+      console.error(`[ENRICH_ROW] STEP 2.5: Income pre-qualification error (non-fatal):`, preQualError);
+      // Don't block pipeline - continue with enrichment if error
+    }
+  }
+
+  // STEP 2.6: Gender detection from name (FREE, LOCAL - No API calls)
   let gender: string | undefined = undefined;
   let genderConfidence: number | undefined = undefined;
   if (firstName && stations.has('gender')) {
@@ -1449,14 +1566,14 @@ export async function enrichRow(
       if (genderResult.confidence >= 85 && genderResult.gender !== 'unknown') {
         gender = genderResult.gender;
         genderConfidence = genderResult.confidence;
-        console.log(`[ENRICH_ROW] STEP 2.5: Gender detected:`, {
+        console.log(`[ENRICH_ROW] STEP 2.6: Gender detected:`, {
           firstName,
           gender,
           confidence: genderResult.confidence,
           method: genderResult.method,
         });
       } else {
-        console.log(`[ENRICH_ROW] STEP 2.5: Gender detection low confidence:`, {
+        console.log(`[ENRICH_ROW] STEP 2.6: Gender detection low confidence:`, {
           firstName,
           gender: genderResult.gender,
           confidence: genderResult.confidence,
@@ -1528,8 +1645,8 @@ export async function enrichRow(
   });
 
   // STEP 3: Phone Discovery (Skip-tracing - PHONE ONLY, not age yet)
-  // CRITICAL FIX: Run skip-tracing if we have name OR email, even if we don't have both
-  // This is the PRIMARY way to get phone/email when LinkedIn summary doesn't have it
+  // CRITICAL: Only run if income pre-qual passed (income >= $60k)
+  // This prevents spending money on skip-tracing for unqualified leads
   const hasName = firstName && lastName;
   const hasEmail = !!email;
   
@@ -1537,10 +1654,15 @@ export async function enrichRow(
     hasPhone: !!phone,
     hasEmail,
     hasName,
-    willRunSkipTracing: !phone && (hasEmail || hasName),
+    incomePreQualPassed: incomePreQualShouldContinue,
+    willRunSkipTracing: !phone && (hasEmail || hasName) && incomePreQualShouldContinue,
   });
   
-  if (!phone && hasName) {
+  // Skip phone discovery if income pre-qual rejected the lead
+  if (!incomePreQualShouldContinue) {
+    console.log(`[ENRICH_ROW] STEP 3: 🚫 Skipping phone discovery - income pre-qualification rejected lead (income < $60k)`);
+    onProgress?.('phone-discovery', undefined, ['Skipped: Income < $60k']);
+  } else if (!phone && hasName) {
     // Use GET with name parameter (working API format)
     // Clean the name to remove emojis and special characters before API call
     const cleanedFirstName = cleanNameForAPI(firstName);
@@ -2011,127 +2133,11 @@ export async function enrichRow(
     }
   }
   
-  // STEP 4.5: INCOME PRE-QUALIFICATION (COST CONTROL GATE)
-  // Runs after Telnyx, before paid enrichment decisions
-  // Purpose: Prevent unnecessary API spend on clearly low-income leads
-  if (stations.has('income-pre-qual')) {
-    try {
-    const { preQualifyIncome } = await import('./enrichment/incomePreQualifier');
-    
-    // Extract job title and company from row (LinkedIn data)
-    const jobTitle = (() => {
-      for (const header of headers) {
-        const lower = header.toLowerCase();
-        if (lower === 'title' || lower === 'job title' || lower === 'job_title' || lower === 'headline') {
-          const value = String(row[header] || '').trim();
-          if (value) return value;
-        }
-      }
-      return null;
-    })();
-    
-    const company = (() => {
-      for (const header of headers) {
-        const lower = header.toLowerCase();
-        if (lower === 'company' || lower === 'company name' || lower === 'company_name') {
-          const value = String(row[header] || '').trim();
-          if (value) return value;
-        }
-      }
-      return null;
-    })();
-    
-    // Calculate age if available
-    let ageNum: number | undefined = undefined;
-    if (result.age) {
-      const parsedAge = parseInt(String(result.age), 10);
-      if (!isNaN(parsedAge) && parsedAge > 0 && parsedAge < 120) {
-        ageNum = parsedAge;
-      }
-    }
-    
-    // Optional: Fetch ZIP median income if ZIP available (one API call)
-    // OPTIMIZATION: Start ZIP income fetch early, can run in parallel with other operations
-    let zipMedianIncome: number | undefined = undefined;
-    const zipIncomePromise = result.zipCode ? (async () => {
-      try {
-        const zip5 = String(result.zipCode).match(/\d{5}/)?.[0];
-        if (zip5) {
-          const incomeResponse = await callAPIWithConfig(
-            `/api/income-by-zip?zip=${zip5}`,
-            {},
-            'Income by ZIP',
-            callAPIImpl
-          );
-          
-          if (incomeResponse.data && !incomeResponse.error) {
-            const incomeData = incomeResponse.data.data || incomeResponse.data;
-            const median = incomeData.medianIncome || incomeData.median_income || incomeData.householdIncome;
-            if (median) {
-              result.incomeData = incomeData; // Store for later use
-              return median;
-            }
-          }
-        }
-      } catch (incomeError) {
-        // Non-fatal: continue without ZIP income data
-        console.log(`[ENRICH_ROW] STEP 4.5: Could not fetch ZIP income (non-fatal):`, incomeError);
-      }
-      return undefined;
-    })() : Promise.resolve(undefined);
-    
-    // Run pre-qualification (will await ZIP income if needed)
-    zipMedianIncome = await zipIncomePromise;
-    const preQualResult = preQualifyIncome({
-      jobTitle: jobTitle || undefined,
-      company: company || undefined,
-      city: city || undefined,
-      state: state || undefined,
-      zipCode: result.zipCode || undefined,
-      age: ageNum,
-      dob: result.dob || undefined,
-      carrierName: result.carrierName || undefined,
-      lineType: result.lineType || undefined,
-      normalizedCarrier: result.normalizedCarrier || undefined,
-      zipMedianIncome: zipMedianIncome,
-    });
-    
-    // Attach result to enrichment (extract just IncomePreQualResult, exclude cohortKey)
-    const { cohortKey, ...incomePreQualResult } = preQualResult;
-    result.incomePreQual = incomePreQualResult;
-    
-    console.log(`[ENRICH_ROW] STEP 4.5: Income pre-qualification (two-pass):`, {
-      tier: preQualResult.decision.tier,
-      conservative: {
-        p50: `$${Math.round(preQualResult.conservative.p50 / 1000)}k`,
-        range: `$${Math.round(preQualResult.conservative.min / 1000)}k-$${Math.round(preQualResult.conservative.max / 1000)}k`,
-      },
-      upside: {
-        p50: `$${Math.round(preQualResult.upside.p50 / 1000)}k`,
-        range: `$${Math.round(preQualResult.upside.min / 1000)}k-$${Math.round(preQualResult.upside.max / 1000)}k`,
-      },
-      combined: {
-        p50: `$${Math.round(preQualResult.estimate.p50 / 1000)}k`,
-        range: `$${Math.round(preQualResult.estimate.range.min / 1000)}k-$${Math.round(preQualResult.estimate.range.max / 1000)}k`,
-      },
-      confidence: `${Math.round(preQualResult.estimate.confidence * 100)}%`,
-      shouldContinue: preQualResult.decision.shouldContinueEnrichment,
-      reason: preQualResult.decision.reason,
-      drivers: preQualResult.estimate.primaryDrivers,
-      riskFlags: preQualResult.estimate.riskFlags,
-    });
-    
-    // Log if enrichment should be skipped
-    if (!preQualResult.decision.shouldContinueEnrichment) {
-      console.log(`[ENRICH_ROW] STEP 4.5: ⚠️  Income pre-qualification recommends SKIPPING further paid enrichment`);
-      console.log(`[ENRICH_ROW] STEP 4.5: Reason: ${preQualResult.decision.reason}`);
-    }
-    } catch (preQualError) {
-      // Non-fatal: log and continue
-      console.error(`[ENRICH_ROW] STEP 4.5: Income pre-qualification error (non-fatal):`, preQualError);
-      // Don't block pipeline - continue with enrichment
-    }
-  }
+  // STEP 4.5: Income pre-qualification already ran at STEP 2.5
+  // If it ran, the decision is already stored in result.incomePreQual
+  // We can optionally refine the estimate here with age/carrier data if available,
+  // but the critical decision (continue/skip) was already made at STEP 2.5
+  // This prevents spending money on phone discovery for unqualified leads
   
   // STEP 5: DECISION ENGINE (Enhanced Gatekeep with Confidence Scoring)
   // Build final signals object with all enrichment data
@@ -2246,11 +2252,11 @@ export async function enrichRow(
     // Continue but with limited enrichment
   }
   
-  // Apply income pre-qualification decision if available (backward compatibility)
-  // If income pre-qual says "don't continue" AND gatekeep passed, respect income decision
+  // Income pre-qualification decision was already applied at STEP 2.5
+  // If it rejected the lead, phone discovery was skipped, so we shouldn't reach here
+  // But double-check for safety
   if (shouldContinue && result.incomePreQual && !result.incomePreQual.decision.shouldContinueEnrichment) {
-    console.log(`[ENRICH_ROW] STEP 5: Income pre-qualification overrides gatekeep - skipping further paid enrichment`);
-    console.log(`[ENRICH_ROW] STEP 5: Income tier: ${result.incomePreQual.decision.tier}, Reason: ${result.incomePreQual.decision.reason}`);
+    console.log(`[ENRICH_ROW] STEP 5: Income pre-qualification already rejected lead at STEP 2.5 - should not reach here`);
     shouldContinue = false;
   }
   

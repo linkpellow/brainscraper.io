@@ -10,10 +10,10 @@
 export type EnrichmentStation = 
   | 'linkedin'      // STEP 1: Extract name, city, state (foundation, no API cost)
   | 'zip'           // STEP 2: ZIP lookup (free local DB)
-  | 'gender'        // STEP 2.5: Gender detection from name (free, local)
-  | 'phone-discovery' // STEP 3: Skip-tracing phone discovery (paid)
+  | 'income-pre-qual' // STEP 2.5: Income check (free census API) - BEFORE phone discovery
+  | 'gender'        // STEP 2.6: Gender detection from name (free, local)
+  | 'phone-discovery' // STEP 3: Skip-tracing phone discovery (paid) - only if income >= $60k
   | 'telnyx'        // STEP 4: Phone validation/carrier (paid)
-  | 'income-pre-qual' // STEP 4.5: Income check (free census API)
   | 'gatekeep'      // STEP 5: Filter VoIP/junk (logic, no API)
   | 'dnc-check'     // STEP 5.5: DNC scrubbing (free)
   | 'age';          // STEP 6: Age enrichment (paid, conditional)

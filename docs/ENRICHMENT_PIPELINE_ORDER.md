@@ -50,10 +50,41 @@ The enrichment pipeline processes leads in a specific order designed to:
 
 ---
 
-### **STEP 2.5: Gender Detection** (FREE, LOCAL)
+### **STEP 2.5: Income Pre-Qualification** (FREE - Census API)
+**Station:** `income-pre-qual`  
+**API Calls:** 1 (conditional - only if ZIP available)
+- **Call:** `/api/income-by-zip?zip=...` (FREE census API)
+
+**Reason:** Estimate income from job title, company, location. **CRITICAL cost control gate** - filters out leads earning < $60k BEFORE any paid API calls.
+
+**Provides:**
+- `incomePreQual` (conservative/upside estimates, decision)
+
+**Dependencies:**
+- Requires `jobTitle`, `company` from STEP 1
+- Requires `city`, `state` from STEP 1
+- Optional: `zipCode` from STEP 2 (improves accuracy)
+
+**Why Here (Before Phone Discovery):**
+- **CRITICAL:** Prevents spending money on skip-tracing for unqualified leads
+- Only needs LinkedIn data (jobTitle, company, city, state) + ZIP
+- Can make decision without phone/carrier/age data
+- **Decision:** If `upside.p50 < $60k` → **SKIP all further enrichment** (saves 2-4 paid API calls)
+
+**Decision Logic:**
+- If `upside.p50 < $60k` → **SKIP all further enrichment** (strict threshold)
+- If `upside.p50 >= $60k` → Continue with phone discovery
+
+**Cost Savings:**
+- Filters out low-income leads BEFORE expensive skip-tracing calls
+- Saves 1-2 paid API calls per rejected lead (skip-tracing search + person details)
+
+---
+
+### **STEP 2.6: Gender Detection** (FREE, LOCAL)
 **Station:** `gender`  
 **API Calls:** 0  
-**Reason:** Infer gender from first name using comprehensive name database. Runs in parallel with ZIP lookup since both are free and independent.
+**Reason:** Infer gender from first name using comprehensive name database. Runs in parallel with other free operations.
 
 **Provides:**
 - `gender`
@@ -65,12 +96,40 @@ The enrichment pipeline processes leads in a specific order designed to:
 **Why Here:**
 - Free operation (local name database)
 - Independent of other operations
-- Can run in parallel with STEP 2
 - Provides additional lead qualification data
 
 ---
 
 ### **STEP 3: Phone Discovery** (PAID - Skip-tracing API)
+**Station:** `phone-discovery`  
+**API Calls:** 0-2 (highly conditional)
+- **Call 1:** Skip-tracing search (`/api/skip-tracing?name=...&citystatezip=...`)
+- **Call 2:** Person details (`/api/skip-tracing?peo_id=...`) - **ONLY if phone not in search results**
+
+**Reason:** Find phone numbers when not present in LinkedIn data. This is the PRIMARY way to get contact information.
+
+**Provides:**
+- `phone` (primary goal)
+- `email` (bonus if available)
+- `address` (bonus if available)
+- `age` (stored for STEP 6, but not used yet)
+
+**Dependencies:**
+- Requires `firstName` and `lastName` from STEP 1
+- **CRITICAL:** Requires income pre-qual to pass (STEP 2.5) - **SKIPS if income < $60k**
+- Optional: `city`, `state`, `zipCode` for better accuracy
+
+**Why Third:**
+- Phone is required for all subsequent paid operations
+- **CRITICAL:** Only runs if income >= $60k (prevents wasting money on unqualified leads)
+- Early phone discovery enables cost savings (can skip if no phone found)
+- **Optimization:** Only makes person details call if search doesn't return phone (saves 50% of API calls)
+
+**Cost Optimization:**
+- **SKIPS ENTIRELY** if income < $60k (saves 1-2 API calls)
+- If phone found in search results → **1 API call total**
+- If phone not in search → **2 API calls** (search + person details)
+- Reuses person details data for age in STEP 6 (no duplicate call)
 **Station:** `phone-discovery`  
 **API Calls:** 1-2 (conditional)
 - **Call 1:** Skip-tracing search (`/api/skip-tracing?name=...&citystatezip=...`)
@@ -124,34 +183,6 @@ The enrichment pipeline processes leads in a specific order designed to:
 **Cost Optimization:**
 - Only runs if phone exists
 - Skips if age > 59 detected in STEP 3 (early filter)
-
----
-
-### **STEP 4.5: Income Pre-Qualification** (FREE - Census API)
-**Station:** `income-pre-qual`  
-**API Calls:** 1 (conditional - only if ZIP available)
-- **Call:** `/api/income-by-zip?zip=...` (FREE census API)
-
-**Reason:** Estimate income from job title, company, location. **Critical cost control gate** - filters out leads earning < $60k before expensive operations.
-
-**Provides:**
-- `incomePreQual` (conservative/upside estimates, decision)
-
-**Dependencies:**
-- Requires `jobTitle`, `company` from STEP 1
-- Requires `city`, `state` from STEP 1
-- Optional: `zipCode` from STEP 2 (improves accuracy)
-- Optional: `age` from STEP 3 (improves accuracy)
-- Optional: `carrierName`, `lineType` from STEP 4 (improves accuracy)
-
-**Why Here (After Telnyx):**
-- Needs carrier data for income estimation (premium carriers = higher income signal)
-- Runs after phone validation but before expensive age enrichment
-- **Critical:** Can abort entire pipeline if income < $60k (saves all subsequent API calls)
-
-**Decision Logic:**
-- If `upside.p50 < $60k` → **SKIP all further enrichment** (strict threshold)
-- If `upside.p50 >= $60k` → Continue with enrichment
 
 ---
 
@@ -249,20 +280,20 @@ The enrichment pipeline processes leads in a specific order designed to:
 ```
 STEP 1: LinkedIn (FREE)
   ↓
-STEP 2: ZIP Lookup (FREE) ──┐
-  ↓                           │
-STEP 2.5: Gender (FREE) ──────┤ (Parallel)
-  ↓                           │
-STEP 3: Phone Discovery (PAID)│
-  ├─ Search API (1 call)
+STEP 2: ZIP Lookup (FREE)
+  ↓
+STEP 2.5: Income Pre-Qual (FREE)
+  ├─ ZIP Income API (1 call, conditional)
+  └─ Decision: Continue or SKIP? (income >= $60k?)
+  ↓
+STEP 2.6: Gender (FREE) ──┐
+  ↓                        │ (Parallel)
+STEP 3: Phone Discovery (PAID) - ONLY if income >= $60k
+  ├─ Search API (1 call, conditional)
   └─ Person Details API (0-1 call, conditional)
   ↓
 STEP 4: Telnyx Validation (PAID)
   └─ Phone Lookup API (1 call, conditional)
-  ↓
-STEP 4.5: Income Pre-Qual (FREE)
-  ├─ ZIP Income API (1 call, conditional)
-  └─ Decision: Continue or SKIP?
   ↓
 STEP 5: Gatekeep Filter (FREE - Logic)
   └─ Decision: Continue or SKIP?
@@ -280,26 +311,26 @@ STEP 6: Age Enrichment (PAID)
 ## Cost Optimization Summary
 
 ### Minimum API Calls (Best Case):
-1. **STEP 3:** 1 call (phone in search results)
-2. **STEP 4:** 1 call (Telnyx validation)
-3. **STEP 4.5:** 1 call (ZIP income - FREE)
+1. **STEP 2.5:** 1 call (ZIP income - FREE)
+2. **STEP 3:** 1 call (phone in search results) - **ONLY if income >= $60k**
+3. **STEP 4:** 1 call (Telnyx validation)
 4. **STEP 5.5:** 1 call (DNC check - FREE)
 5. **STEP 6:** 0 calls (age in STEP 3 results)
 
 **Total: 2 paid calls + 2 free calls = 2 paid calls**
 
 ### Maximum API Calls (Worst Case):
-1. **STEP 3:** 2 calls (search + person details)
-2. **STEP 4:** 1 call (Telnyx validation)
-3. **STEP 4.5:** 1 call (ZIP income - FREE)
+1. **STEP 2.5:** 1 call (ZIP income - FREE)
+2. **STEP 3:** 2 calls (search + person details) - **ONLY if income >= $60k**
+3. **STEP 4:** 1 call (Telnyx validation)
 4. **STEP 5.5:** 1 call (DNC check - FREE)
 5. **STEP 6:** 1 call (person details for age)
 
 **Total: 4 paid calls + 2 free calls = 4 paid calls**
 
 ### Early Exit Scenarios (Cost Savings):
+- **Income < $60k in STEP 2.5:** Saves 2-4 calls (entire phone discovery + Telnyx + DNC + age) ⭐ **BIGGEST SAVINGS**
 - **Age > 59 in STEP 3:** Saves 1-2 calls (Telnyx + age)
-- **Income < $60k in STEP 4.5:** Saves 2-3 calls (DNC + age)
 - **VoIP/junk in STEP 5:** Saves 2 calls (DNC + age)
 - **DNC in STEP 5.5:** Saves 1 call (age)
 
@@ -321,10 +352,10 @@ STEP 6: Age Enrichment (PAID)
 ```
 linkedin (required)
   ├─ zip (depends on: linkedin)
+  ├─ income-pre-qual (depends on: linkedin, zip) ⭐ MOVED BEFORE phone-discovery
   ├─ gender (depends on: linkedin)
-  └─ phone-discovery (depends on: linkedin)
+  └─ phone-discovery (depends on: linkedin, income-pre-qual) ⭐ NOW DEPENDS ON INCOME
       └─ telnyx (depends on: phone-discovery)
-          ├─ income-pre-qual (depends on: linkedin, zip)
           └─ gatekeep (depends on: telnyx)
               └─ dnc-check (depends on: phone-discovery, gatekeep)
                   └─ age (depends on: phone-discovery, gatekeep, dnc-check)
@@ -335,10 +366,10 @@ linkedin (required)
 ## Why This Order Maximizes Efficiency
 
 1. **Foundation First:** LinkedIn data is extracted first (no cost, required for everything)
-2. **Free Operations Early:** ZIP, gender, income pre-qual run early (no cost, improve data quality)
-3. **Phone Discovery Early:** Phone is required for all subsequent operations, so we find it ASAP
-4. **Validation Before Enrichment:** Telnyx validates phone before spending money on age
-5. **Income Gate Before Age:** Income pre-qual filters out low-income leads before expensive age enrichment
+2. **Free Operations Early:** ZIP, income pre-qual, gender run early (no cost, improve data quality)
+3. **Income Gate Before Phone Discovery:** **CRITICAL** - Income pre-qual filters out low-income leads BEFORE any paid API calls (saves 2-4 calls per rejected lead)
+4. **Phone Discovery Early:** Phone is required for all subsequent operations, so we find it ASAP (but only if income >= $60k)
+5. **Validation Before Enrichment:** Telnyx validates phone before spending money on age
 6. **Quality Gates:** Gatekeep and DNC check prevent wasting money on unqualified leads
 7. **Age Last:** Age is the most expensive and least critical, so it runs last and only on highest-quality leads
 
