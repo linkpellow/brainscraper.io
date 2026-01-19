@@ -2160,7 +2160,30 @@ export async function enrichRow(
     normalizedCarrier: result.normalizedCarrier,
     dncStatus: result.dncStatus,
     canContact: result.canContact,
-    age: ageNum,
+    age: (() => {
+      // Calculate age from result.age or result.dob
+      if (result.age) {
+        const parsed = parseInt(String(result.age), 10);
+        if (!isNaN(parsed) && parsed > 0 && parsed < 150) return parsed;
+      }
+      if (result.dob) {
+        try {
+          const dob = new Date(result.dob);
+          if (!isNaN(dob.getTime())) {
+            const today = new Date();
+            let calculatedAge = today.getFullYear() - dob.getFullYear();
+            const monthDiff = today.getMonth() - dob.getMonth();
+            if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
+              calculatedAge--;
+            }
+            if (calculatedAge > 0 && calculatedAge < 150) return calculatedAge;
+          }
+        } catch {
+          // Ignore date parsing errors
+        }
+      }
+      return undefined;
+    })(),
     dob: result.dob,
     estimatedIncome: result.incomePreQual ? {
       min: result.incomePreQual.conservative.min,
