@@ -18,13 +18,15 @@ export interface EnrichmentProgress {
   current: number;
   total: number;
   leadName?: string;
-  step?: 'linkedin' | 'zip' | 'phone-discovery' | 'telnyx' | 'gatekeep' | 'age' | 'complete';
+  step?: 'linkedin' | 'zip' | 'gender' | 'phone-discovery' | 'telnyx' | 'gatekeep' | 'age' | 'complete';
   stepDetails?: {
     firstName?: string;
     lastName?: string;
     city?: string;
     state?: string;
     zipCode?: string;
+    gender?: string;
+    genderConfidence?: number;
     phone?: string;
     email?: string;
     lineType?: string;
@@ -64,6 +66,8 @@ export interface EnrichmentResult {
   normalizedCarrier?: string; // From Telnyx carrier.normalized_carrier
   age?: string; // From skip-tracing
   dob?: string; // From skip-tracing
+  gender?: string; // 'male' | 'female' | 'neutral' | 'unknown' - From name-based detection
+  genderConfidence?: number; // 0-100 confidence score
   dncStatus?: string; // 'YES' | 'NO' | 'UNKNOWN' - DNC status from USHA API
   canContact?: boolean; // Whether lead can be contacted (not DNC)
   dncReason?: string; // Reason for DNC status
@@ -148,58 +152,20 @@ interface NormalizedName {
   suffixRaw?: string;
 }
 
+// Import the robust name normalization service
+import { normalizeName as robustNormalizeName } from './nameNormalization';
+
 function normalizeName(fullName: string): NormalizedName {
   if (!fullName) return { firstName: '', lastName: '' };
   
-  // Step 1: Remove emojis and special unicode characters
-  let cleaned = fullName
-    .replace(/[\u{1F300}-\u{1F9FF}]/gu, '') // Remove emojis
-    .replace(/[\u{2600}-\u{26FF}]/gu, '') // Remove miscellaneous symbols
-    .replace(/[\u{2700}-\u{27BF}]/gu, '') // Remove dingbats
-    .replace(/\s+/g, ' ') // Normalize multiple spaces to single space
-    .trim();
+  // Use the robust name normalization service
+  const normalized = robustNormalizeName(fullName);
   
-  // Step 2: Strip credentials and noise using deny-list regex
-  // Pattern matches: MD, M.D., DO, PharmD, Pharm.D., CPA, JD, MPH, MBA, PsyD, RN, NP, PA, DDS, DMD, LCSW, LMFT, SHRM-*, SAFe *, AKA *, DBA *, The *, etc.
-  // Also handles compound credentials like MD/MPH
-  const baseCredentialPattern = '(MD|M\\.D\\.|DO|PharmD|Pharm\\.D\\.|CPA|JD|MPH|MBA|PsyD|RN|NP|PA|DDS|DMD|LCSW|LMFT|SHRM[-]?[A-Z]*)';
-  
-  // Handle compound credentials like "MD/MPH" first (before individual ones)
-  const compoundCredentialPattern = new RegExp(`\\b${baseCredentialPattern}\\s*\\/\\s*${baseCredentialPattern}\\b`, 'gi');
-  
-  // Handle individual credentials and phrases
-  const credentialPattern = new RegExp(`\\b(${baseCredentialPattern}|SAFe\\s+[A-Z/]*|AKA\\s+.*?|DBA\\s+.*?|The\\s+.*?|Psychotherapist|Guru|Loan\\s+Officer|People's\\s+.*?|Mortgage\\s+Guru)\\b`, 'gi');
-  
-  // Extract suffix before removing it (check compound first, then individual)
-  const suffixMatchCompound = cleaned.match(compoundCredentialPattern);
-  const suffixMatchIndividual = cleaned.match(credentialPattern);
-  const allSuffixes = [...(suffixMatchCompound || []), ...(suffixMatchIndividual || [])];
-  const suffixRaw = allSuffixes.length > 0 ? allSuffixes.join(' ').trim() : undefined;
-  
-  // Remove credentials (compound first, then individual)
-  cleaned = cleaned.replace(compoundCredentialPattern, '').trim();
-  cleaned = cleaned.replace(credentialPattern, '').trim();
-  
-  // Step 3: Remove any remaining non-name characters (preserve apostrophes and hyphens)
-  cleaned = cleaned
-    .replace(/[^\w\s\-']/g, '') // Keep only word chars, spaces, hyphens, apostrophes
-    .replace(/\s+/g, ' ') // Normalize spaces again
-    .trim();
-  
-  // Step 4: Split and extract first/last name
-  const tokens = cleaned.split(/\s+/).filter(t => t.length > 0);
-  
-  if (tokens.length === 0) {
-    return { firstName: '', lastName: '', suffixRaw };
-  }
-  
-  // First token = first_name
-  const firstName = tokens[0];
-  
-  // Last valid token = last_name (if more than one token)
-  const lastName = tokens.length > 1 ? tokens[tokens.length - 1] : '';
-  
-  return { firstName, lastName, suffixRaw };
+  return {
+    firstName: normalized.firstName,
+    lastName: normalized.lastName,
+    suffixRaw: normalized.suffixes.length > 0 ? normalized.suffixes.join(', ') : undefined,
+  };
 }
 
 /**
@@ -1453,6 +1419,46 @@ export async function enrichRow(
       state: state || undefined,
     });
   }
+
+  // STEP 2.5: Gender detection from name (FREE, LOCAL - No API calls)
+  let gender: string | undefined = undefined;
+  let genderConfidence: number | undefined = undefined;
+  if (firstName && stations.has('gender')) {
+    try {
+      const { detectGenderFromName } = await import('./genderDetection');
+      const genderResult = detectGenderFromName(firstName);
+      
+      // Only set gender if confidence is high enough (>= 85% for 99% accuracy)
+      if (genderResult.confidence >= 85 && genderResult.gender !== 'unknown') {
+        gender = genderResult.gender;
+        genderConfidence = genderResult.confidence;
+        console.log(`[ENRICH_ROW] STEP 2.5: Gender detected:`, {
+          firstName,
+          gender,
+          confidence: genderResult.confidence,
+          method: genderResult.method,
+        });
+      } else {
+        console.log(`[ENRICH_ROW] STEP 2.5: Gender detection low confidence:`, {
+          firstName,
+          gender: genderResult.gender,
+          confidence: genderResult.confidence,
+          method: genderResult.method,
+        });
+      }
+      
+      // Report gender step progress
+      if (gender) {
+        onProgress?.('gender', {
+          gender,
+          genderConfidence,
+          firstName: firstName || undefined,
+        });
+      }
+    } catch (error) {
+      console.warn('[ENRICH_ROW] Gender detection failed:', error);
+    }
+  }
   
   // Extract other initial data
   let email = extractEmail(row, headers);
@@ -1473,6 +1479,8 @@ export async function enrichRow(
     firstName: firstName || undefined,
     lastName: lastName || undefined,
     zipCode: zipCode || undefined,
+    gender: gender || undefined,
+    genderConfidence: genderConfidence || undefined,
     phone: phone || undefined,
     email: email || undefined,
     addressLine1: address.addressLine1,
@@ -2444,6 +2452,14 @@ export async function enrichData(
     }
     if (enrichment.dob) {
       enrichedRow['DOB'] = enrichment.dob;
+    }
+    
+    // Add gender to row if available (from name-based detection)
+    if (enrichment.gender) {
+      enrichedRow['Gender'] = enrichment.gender;
+    }
+    if (enrichment.genderConfidence) {
+      enrichedRow['Gender Confidence'] = enrichment.genderConfidence;
     }
     
     // Add zipCode to row if available
