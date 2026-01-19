@@ -441,16 +441,44 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
         {/* Right: API List (40%) */}
         <div className="w-[40%] bg-slate-900 flex flex-col">
           {/* Filter */}
-          <div className="p-3 border-b border-slate-800">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={showSelectedOnly}
-                onChange={(e) => setShowSelectedOnly(e.target.checked)}
-                className="rounded"
-              />
-              <span className="text-sm text-slate-300">Show Selected Only</span>
-            </label>
+          <div className="p-3 border-b border-slate-800 space-y-2">
+            <div className="flex items-center gap-4">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={showSelectedOnly}
+                  onChange={(e) => setShowSelectedOnly(e.target.checked)}
+                  className="rounded"
+                />
+                <span className="text-sm text-slate-300">Show Selected Only</span>
+              </label>
+              {timeWindow && (
+                <button
+                  onClick={() => setTimeWindow(null)}
+                  className="px-2 py-1 text-xs bg-slate-700 hover:bg-slate-600 rounded text-slate-300"
+                >
+                  Clear Time Filter
+                </button>
+              )}
+            </div>
+            {/* Category Tag Filter */}
+            <div className="flex flex-wrap gap-1">
+              {(['identity', 'endpoint', 'headers', 'flow-control', 'timing', 'error', 'protection'] as CategoryTag[]).map(tag => (
+                <button
+                  key={tag}
+                  onClick={() => setSelectedCategoryTag(selectedCategoryTag === tag ? null : tag)}
+                  className={`px-2 py-1 text-xs rounded transition-colors ${
+                    selectedCategoryTag === tag
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                  }`}
+                  title={getCategoryDescription(tag)}
+                >
+                  <Tag className="w-3 h-3 inline mr-1" />
+                  {tag}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* API Table */}
