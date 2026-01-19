@@ -2126,8 +2126,8 @@ export async function enrichRow(
   // STEP 5: DECISION ENGINE (Enhanced Gatekeep with Confidence Scoring)
   // Build final signals object with all enrichment data
   // Note: phone and email are extracted earlier in the function (can be null)
-  const currentPhone = result.phone || (phone ? String(phone) : undefined) || undefined;
-  const currentEmail = result.email || (email ? String(email) : undefined) || undefined;
+  const currentPhone: string | undefined = result.phone || (phone !== null && phone !== undefined ? String(phone) : undefined);
+  const currentEmail: string | undefined = result.email || (email !== null && email !== undefined ? String(email) : undefined);
   
   // Extract job title and company from row if available
   let jobTitle: string | undefined = undefined;
