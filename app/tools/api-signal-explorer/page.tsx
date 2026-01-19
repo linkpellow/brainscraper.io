@@ -31,6 +31,7 @@ type MitmExport = {
 
 type NoisePreset = 'default' | 'everything' | 'critical-path';
 type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'error';
+type ExplorerTab = 'all' | 'critical' | 'auth' | 'polling';
 
 type EndpointData = {
   method: string;
