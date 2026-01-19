@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
-import { Upload, Download, Filter, X, FileJson, Activity, Server, Clock, Wifi, WifiOff, Play, Square, Tag } from 'lucide-react';
+import { Upload, Download, Filter, X, FileJson, Activity, Server, Clock, Wifi, WifiOff, Play, Square, Tag, AlertTriangle, Zap } from 'lucide-react';
+import { buildDependencyGraph, simulateFailure, type CriticalNode, type GraphEdge } from '@/src/tools/api-signal-explorer/criticalPath';
 
 type MitmFlowEvent = {
   ts: number;
@@ -59,6 +60,8 @@ export default function APISignalExplorerPage() {
   const [isMarkingInteraction, setIsMarkingInteraction] = useState(false);
   const [interactionWindow, setInteractionWindow] = useState<{ start: number; end?: number } | null>(null);
   const [hostFilter, setHostFilter] = useState<Set<string>>(new Set());
+  const [activeTab, setActiveTab] = useState<ExplorerTab>('all');
+  const [disabledEndpoints, setDisabledEndpoints] = useState<Set<string>>(new Set());
   const wsRef = useRef<WebSocket | null>(null);
   const endpointMapRef = useRef<Map<string, EndpointData>>(new Map());
   const sessionStartRef = useRef<number | null>(null);
@@ -195,35 +198,93 @@ export default function APISignalExplorerPage() {
     }
   }, [networkEvents, isLive]);
 
+  // Get critical path endpoints
+  const criticalPathEndpoints = useMemo(() => {
+    const criticalNodesArray = Array.from(criticalNodes.values())
+      .filter(node => node.score > 0)
+      .sort((a, b) => b.score - a.score);
+
+    return criticalNodesArray.map(node => {
+      const ep = endpoints.find(e => `${e.method} ${e.host}${e.path}` === node.key);
+      if (!ep) return null;
+      return { ...ep, criticalNode: node };
+    }).filter((e): e is NonNullable<typeof e> => e !== null);
+  }, [criticalNodes, endpoints]);
+
+  // Get auth endpoints
+  const authEndpoints = useMemo(() => {
+    return Array.from(criticalNodes.values())
+      .filter(node => node.tags.includes('auth_refresh') || node.tags.includes('token_rotation') || node.tags.includes('cookie_rotation'))
+      .sort((a, b) => b.score - a.score)
+      .map(node => {
+        const ep = endpoints.find(e => `${e.method} ${e.host}${e.path}` === node.key);
+        if (!ep) return null;
+        return { ...ep, criticalNode: node };
+      })
+      .filter((e): e is NonNullable<typeof e> => e !== null);
+  }, [criticalNodes, endpoints]);
+
+  // Get polling endpoints
+  const pollingEndpoints = useMemo(() => {
+    return endpoints.filter(ep => {
+      const key = `${ep.method} ${ep.host}${ep.path}`;
+      const node = criticalNodes.get(key);
+      return node?.tags.includes('polling') || (ep.count > 10 && ep.resSizeAvg && ep.resSizeAvg < 300);
+    }).sort((a, b) => b.count - a.count);
+  }, [endpoints, criticalNodes]);
+
   // Apply noise suppression preset and host filter
   const filteredEndpoints = useMemo(() => {
-    let filtered = [...endpoints];
+    let filtered: Array<EndpointData & { criticalNode?: CriticalNode }> = [];
+
+    // Select endpoints based on active tab
+    if (activeTab === 'critical') {
+      filtered = criticalPathEndpoints;
+    } else if (activeTab === 'auth') {
+      filtered = authEndpoints;
+    } else if (activeTab === 'polling') {
+      filtered = pollingEndpoints.map(ep => ({ ...ep }));
+    } else {
+      filtered = endpoints.map(ep => ({ ...ep }));
+    }
 
     // Apply host filter
     if (hostFilter.size > 0) {
       filtered = filtered.filter((ep) => hostFilter.has(ep.host));
     }
 
-    if (preset === 'default') {
-      // Hide unauthenticated, background-only, tiny responses, polling loops
-      filtered = filtered.filter((ep) => {
-        if (!ep.hasAuth && ep.count < 3) return false; // Unauthenticated, infrequent
-        if (ep.resSizeAvg && ep.resSizeAvg < 300 && ep.count > 10) return false; // Tiny, frequent (polling)
-        return true;
-      });
-    } else if (preset === 'critical-path') {
-      // Auth + mutations + large JSON only
-      filtered = filtered.filter((ep) => {
-        if (ep.hasAuth) return true;
-        if (ep.isMutation) return true;
-        if (ep.resMime?.includes('json') && ep.resSizeAvg && ep.resSizeAvg > 1000) return true;
-        return false;
-      });
+    // Apply preset filter (only for 'all' tab)
+    if (activeTab === 'all') {
+      if (preset === 'default') {
+        // Hide unauthenticated, background-only, tiny responses, polling loops
+        filtered = filtered.filter((ep) => {
+          if (!ep.hasAuth && ep.count < 3) return false; // Unauthenticated, infrequent
+          if (ep.resSizeAvg && ep.resSizeAvg < 300 && ep.count > 10) return false; // Tiny, frequent (polling)
+          return true;
+        });
+      } else if (preset === 'critical-path') {
+        // Auth + mutations + large JSON only
+        filtered = filtered.filter((ep) => {
+          if (ep.hasAuth) return true;
+          if (ep.isMutation) return true;
+          if (ep.resMime?.includes('json') && ep.resSizeAvg && ep.resSizeAvg > 1000) return true;
+          return false;
+        });
+      }
     }
-    // 'everything' preset shows all
 
+    // Filter out disabled endpoints
+    filtered = filtered.filter(ep => {
+      const key = `${ep.method} ${ep.host}${ep.path}`;
+      return !disabledEndpoints.has(key);
+    });
+
+    // Sort by score for critical tab, by count otherwise
+    if (activeTab === 'critical') {
+      return filtered.sort((a, b) => (b.criticalNode?.score || 0) - (a.criticalNode?.score || 0));
+    }
     return filtered.sort((a, b) => b.count - a.count);
-  }, [endpoints, preset, hostFilter]);
+  }, [endpoints, preset, hostFilter, activeTab, criticalPathEndpoints, authEndpoints, pollingEndpoints, disabledEndpoints]);
 
   // Session statistics
   const stats = useMemo(() => {
@@ -758,6 +819,42 @@ export default function APISignalExplorerPage() {
               </button>
             )}
 
+            {activeTab === 'critical' && criticalPathEndpoints.length > 0 && (
+              <button
+                onClick={() => {
+                  const criticalSet = criticalPathEndpoints.map(ep => ({
+                    method: ep.method,
+                    host: ep.host,
+                    path: ep.path,
+                    requiresAuth: ep.hasAuth,
+                    intent: ep.isMutation ? 'mutation' : 'query',
+                    score: ep.criticalNode?.score || 0,
+                    confidence: ep.criticalNode?.confidence || 0,
+                    reasons: ep.criticalNode?.reasons || [],
+                    tags: ep.criticalNode?.tags || [],
+                  }));
+
+                  const exportData = {
+                    exported: new Date().toISOString(),
+                    type: 'critical_path_seed',
+                    endpoints: criticalSet,
+                  };
+
+                  const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `critical_path_seed_${Date.now()}.json`;
+                  a.click();
+                  URL.revokeObjectURL(url);
+                }}
+                className="flex items-center gap-2 px-4 py-1.5 bg-green-600 hover:bg-green-700 border border-green-700 rounded text-sm text-white transition-colors"
+              >
+                <Zap className="w-4 h-4" />
+                Export Critical Path Set
+              </button>
+            )}
+
             <button
               onClick={() => {
                 setFlows([]);
@@ -801,19 +898,54 @@ export default function APISignalExplorerPage() {
                   {filteredEndpoints.map((ep) => {
                     const key = `${ep.method} ${ep.host}${ep.path}`;
                     const isSelected = selectedEndpoints.has(key);
+                    const isDisabled = disabledEndpoints.has(key);
+                    const criticalNode = ep.criticalNode;
+                    
+                    // Simulate failure impact if disabled
+                    const failureImpact = isDisabled && criticalNode
+                      ? simulateFailure(criticalNodes, criticalEdges, key)
+                      : null;
+
                     return (
                       <tr
                         key={key}
-                        className={`hover:bg-slate-800/30 transition-colors ${isSelected ? 'bg-slate-800/50' : ''}`}
+                        className={`hover:bg-slate-800/30 transition-colors ${
+                          isSelected ? 'bg-slate-800/50' : ''
+                        } ${isDisabled ? 'opacity-50' : ''}`}
                       >
-                        <td className="px-4 py-3">
-                          <input
-                            type="checkbox"
-                            checked={isSelected}
-                            onChange={() => toggleEndpointSelection(key)}
-                            className="rounded"
-                          />
-                        </td>
+                        {activeTab !== 'critical' && (
+                          <td className="px-4 py-3">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => toggleEndpointSelection(key)}
+                              className="rounded"
+                            />
+                          </td>
+                        )}
+                        {activeTab === 'critical' && (
+                          <td className="px-4 py-3">
+                            <button
+                              onClick={() => {
+                                const newDisabled = new Set(disabledEndpoints);
+                                if (newDisabled.has(key)) {
+                                  newDisabled.delete(key);
+                                } else {
+                                  newDisabled.add(key);
+                                }
+                                setDisabledEndpoints(newDisabled);
+                              }}
+                              className={`p-1 rounded transition-colors ${
+                                isDisabled
+                                  ? 'bg-red-600 hover:bg-red-700 text-white'
+                                  : 'bg-slate-700 hover:bg-slate-600 text-slate-300'
+                              }`}
+                              title={isDisabled ? 'Enable endpoint' : 'Simulate failure'}
+                            >
+                              <AlertTriangle className="w-4 h-4" />
+                            </button>
+                          </td>
+                        )}
                         <td className="px-4 py-3">
                           <span className={`px-2 py-1 rounded text-xs font-mono ${
                             ep.method === 'GET' ? 'bg-blue-900/30 text-blue-300' :
@@ -827,6 +959,36 @@ export default function APISignalExplorerPage() {
                         </td>
                         <td className="px-4 py-3 text-sm text-slate-300 font-mono">{ep.host}</td>
                         <td className="px-4 py-3 text-sm text-slate-300 font-mono">{ep.path}</td>
+                        {activeTab === 'critical' && criticalNode && (
+                          <>
+                            <td className="px-4 py-3">
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm font-semibold text-white">{criticalNode.score}</span>
+                                <div className="w-16 h-2 bg-slate-700 rounded-full overflow-hidden">
+                                  <div
+                                    className="h-full bg-green-500 transition-all"
+                                    style={{ width: `${criticalNode.score}%` }}
+                                  />
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3">
+                              <span className="text-xs text-slate-400">{criticalNode.confidence}%</span>
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="max-w-xs">
+                                <div className="text-xs text-slate-300 space-y-1">
+                                  {criticalNode.reasons.slice(0, 3).map((reason, idx) => (
+                                    <div key={idx} className="flex items-start gap-1">
+                                      <span className="text-green-400">•</span>
+                                      <span>{reason}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            </td>
+                          </>
+                        )}
                         <td className="px-4 py-3 text-sm text-slate-400">{ep.count}</td>
                         <td className="px-4 py-3 text-sm text-slate-400">
                           {Object.entries(ep.statuses)
@@ -858,6 +1020,19 @@ export default function APISignalExplorerPage() {
                             </span>
                           )}
                         </td>
+                        {failureImpact && failureImpact.impact.length > 0 && (
+                          <td colSpan={activeTab === 'critical' ? 8 : 7} className="px-4 py-2 bg-red-900/20 border-t border-red-800">
+                            <div className="text-xs text-red-300">
+                              <span className="font-semibold">Impact:</span>{' '}
+                              {failureImpact.impact.join('; ')}
+                              {failureImpact.unreachable.size > 0 && (
+                                <span className="ml-2">
+                                  ({failureImpact.unreachable.size} endpoints unreachable)
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                        )}
                       </tr>
                     );
                   })}
