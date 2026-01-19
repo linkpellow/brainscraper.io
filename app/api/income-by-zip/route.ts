@@ -1,12 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { fetchIncomeByZipWithFallback } from '@/utils/censusAPI';
 
 /**
  * Household Income by Zip Code API endpoint
- * Uses RapidAPI household-income-by-zip-code
  * 
- * For RapidAPI setup:
- * - target: "server"
- * - client: "fetch"
+ * Primary: US Census API (direct, free)
+ * Fallback: RapidAPI household-income-by-zip-code
+ * 
+ * Environment variables:
+ * - US_CENSUS_API_KEY: US Census Bureau API key (required)
+ * - RAPIDAPI_KEY: RapidAPI key (optional, for fallback)
  */
 
 export async function GET(request: NextRequest) {
@@ -21,46 +24,51 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get API key from environment variables
+    // Get API keys from environment variables
+    const US_CENSUS_API_KEY = process.env.US_CENSUS_API_KEY;
     const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY;
     
-    if (!RAPIDAPI_KEY) {
+    if (!US_CENSUS_API_KEY) {
       return NextResponse.json(
-        { error: 'RAPIDAPI_KEY not configured. Please add it to your .env.local file' },
+        { error: 'US_CENSUS_API_KEY not configured. Please add it to your .env.local file' },
         { status: 500 }
       );
     }
 
-    // Build URL with zip code
-    const url = `https://household-income-by-zip-code.p.rapidapi.com/v1/Census/HouseholdIncomeByZip/${zipCode}`;
+    // Fetch income data (Census API primary, RapidAPI fallback)
+    const incomeData = await fetchIncomeByZipWithFallback(
+      zipCode,
+      US_CENSUS_API_KEY,
+      RAPIDAPI_KEY
+    );
 
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'x-rapidapi-key': RAPIDAPI_KEY,
-        'x-rapidapi-host': 'household-income-by-zip-code.p.rapidapi.com',
-      },
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
+    if (!incomeData || !incomeData.medianIncome) {
       return NextResponse.json(
-        { error: `RapidAPI error: ${response.statusText}`, details: errorText },
-        { status: response.status }
+        { 
+          error: 'Income data not available for this ZIP code',
+          zipCode,
+        },
+        { status: 404 }
       );
     }
 
-    const result = await response.text();
-    
-    // Try to parse as JSON, fallback to text
-    let data;
-    try {
-      data = JSON.parse(result);
-    } catch {
-      data = { raw: result };
-    }
-
-    return NextResponse.json(data);
+    // Return standardized format
+    return NextResponse.json({
+      zipCode: incomeData.zipCode,
+      medianIncome: incomeData.medianIncome,
+      median_income: incomeData.medianIncome, // Alias for compatibility
+      householdIncome: incomeData.medianIncome, // Alias for compatibility
+      year: incomeData.year,
+      source: incomeData.source,
+      data: {
+        medianIncome: incomeData.medianIncome,
+        median_income: incomeData.medianIncome,
+        householdIncome: incomeData.medianIncome,
+        zipCode: incomeData.zipCode,
+        year: incomeData.year,
+        source: incomeData.source,
+      },
+    });
   } catch (error) {
     console.error('Income by zip API error:', error);
     return NextResponse.json(
@@ -82,46 +90,51 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get API key from environment variables
+    // Get API keys from environment variables
+    const US_CENSUS_API_KEY = process.env.US_CENSUS_API_KEY;
     const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY;
     
-    if (!RAPIDAPI_KEY) {
+    if (!US_CENSUS_API_KEY) {
       return NextResponse.json(
-        { error: 'RAPIDAPI_KEY not configured. Please add it to your .env.local file' },
+        { error: 'US_CENSUS_API_KEY not configured. Please add it to your .env.local file' },
         { status: 500 }
       );
     }
 
-    // Build URL with zip code
-    const url = `https://household-income-by-zip-code.p.rapidapi.com/v1/Census/HouseholdIncomeByZip/${zip}`;
+    // Fetch income data (Census API primary, RapidAPI fallback)
+    const incomeData = await fetchIncomeByZipWithFallback(
+      zip,
+      US_CENSUS_API_KEY,
+      RAPIDAPI_KEY
+    );
 
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'x-rapidapi-key': RAPIDAPI_KEY,
-        'x-rapidapi-host': 'household-income-by-zip-code.p.rapidapi.com',
-      },
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
+    if (!incomeData || !incomeData.medianIncome) {
       return NextResponse.json(
-        { error: `RapidAPI error: ${response.statusText}`, details: errorText },
-        { status: response.status }
+        { 
+          error: 'Income data not available for this ZIP code',
+          zipCode: zip,
+        },
+        { status: 404 }
       );
     }
 
-    const result = await response.text();
-    
-    // Try to parse as JSON, fallback to text
-    let data;
-    try {
-      data = JSON.parse(result);
-    } catch {
-      data = { raw: result };
-    }
-
-    return NextResponse.json(data);
+    // Return standardized format
+    return NextResponse.json({
+      zipCode: incomeData.zipCode,
+      medianIncome: incomeData.medianIncome,
+      median_income: incomeData.medianIncome, // Alias for compatibility
+      householdIncome: incomeData.medianIncome, // Alias for compatibility
+      year: incomeData.year,
+      source: incomeData.source,
+      data: {
+        medianIncome: incomeData.medianIncome,
+        median_income: incomeData.medianIncome,
+        householdIncome: incomeData.medianIncome,
+        zipCode: incomeData.zipCode,
+        year: incomeData.year,
+        source: incomeData.source,
+      },
+    });
   } catch (error) {
     console.error('Income by zip API error:', error);
     return NextResponse.json(

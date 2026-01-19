@@ -120,32 +120,18 @@ async function callEmailFinderAPI(
 }
 
 /**
- * Call Skip-tracing API as fallback
+ * Call Skip-tracing API with RapidAPI
  */
 async function callSkipTracingAPI(
   firstName: string,
   lastName: string,
   city?: string,
   state?: string
-): Promise<{ phone?: string; email?: string; error?: string }> {
-  const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY;
-  
-  if (!RAPIDAPI_KEY) {
-    const isDevelopment = process.env.NODE_ENV === 'development';
-    const errorMessage = isDevelopment
-      ? 'RAPIDAPI_KEY not configured. Please add RAPIDAPI_KEY=your-api-key to your .env.local file and restart the development server.'
-      : 'RAPIDAPI_KEY not configured. Please set the RAPIDAPI_KEY environment variable in your deployment platform.';
-    
-    console.error('[ENRICH_SINGLE_FIELD] Missing RAPIDAPI_KEY environment variable for Skip-tracing API');
-    console.error(`[ENRICH_SINGLE_FIELD] NODE_ENV: ${process.env.NODE_ENV}`);
-    console.error(`[ENRICH_SINGLE_FIELD] Available env vars starting with RAPID: ${Object.keys(process.env).filter(k => k.startsWith('RAPID')).join(', ') || 'none'}`);
-    console.error(`[ENRICH_SINGLE_FIELD] RAPIDAPI_KEY value (first 10 chars): ${process.env.RAPIDAPI_KEY ? process.env.RAPIDAPI_KEY.substring(0, 10) + '...' : 'undefined'}`);
-    console.error(`[ENRICH_SINGLE_FIELD] ${errorMessage}`);
-    
-    return { error: errorMessage };
-  }
-
+): Promise<{ phone?: string; email?: string; error?: string; source?: string }> {
+  // Try RapidAPI skip-tracing first (faster, structured data)
   try {
+    const { fetchWithRapidAPIFallback } = await import('@/utils/rapidapiKeyManager');
+    
     const fullName = `${firstName} ${lastName}`.trim();
     let url = '';
     
@@ -156,63 +142,65 @@ async function callSkipTracingAPI(
       url = `https://skip-tracing-working-api.p.rapidapi.com/search/byname?name=${encodeURIComponent(fullName)}&page=1`;
     }
 
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'x-rapidapi-key': RAPIDAPI_KEY,
-        'x-rapidapi-host': 'skip-tracing-working-api.p.rapidapi.com',
-      },
-    });
+    // Use fallback mechanism for RapidAPI calls
+    const result = await fetchWithRapidAPIFallback(
+      url,
+      'skip-tracing-working-api.p.rapidapi.com',
+      { method: 'GET' },
+      [429, 401, 403, 500, 502, 503, 504] // Retry on these status codes
+    );
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      return { error: `Skip-tracing API error: ${response.statusText}` };
-    }
+    if (!result.error) {
+      // Parse the result data
+      const apiResult = result.data;
+      
+      if (!(apiResult.error || apiResult.success === false)) {
+        const data = apiResult.data || apiResult;
+        
+        // Handle new API response format: { PeopleDetails: [...], Status: 200, ... }
+        let responseData: any = null;
+        if (data.PeopleDetails && Array.isArray(data.PeopleDetails) && data.PeopleDetails.length > 0) {
+          responseData = data.PeopleDetails[0];
+        } else if (Array.isArray(data) && data.length > 0) {
+          responseData = data[0];
+        } else if (data && typeof data === 'object' && !data.error) {
+          responseData = data;
+        }
 
-    const result = await response.json();
-    
-    if (result.error || result.success === false) {
-      return { error: result.error || 'Skip-tracing API returned error' };
-    }
+        if (responseData) {
+          // Extract phone
+          let phone: string | undefined;
+          const phoneValue = responseData.Telephone || responseData.phone || responseData.phone_number || 
+                            responseData['Phone Number'] || responseData['Phone'];
+          if (phoneValue) {
+            phone = String(phoneValue).replace(/[^\d+]/g, '');
+            if (phone.startsWith('+1')) {
+              phone = phone.substring(2);
+            } else if (phone.startsWith('+')) {
+              phone = phone.substring(1);
+            }
+            if (phone.length < 10) {
+              phone = undefined;
+            }
+          }
 
-    const data = result.data || result;
-    
-    // Handle new API response format: { PeopleDetails: [...], Status: 200, ... }
-    let responseData: any = null;
-    if (data.PeopleDetails && Array.isArray(data.PeopleDetails) && data.PeopleDetails.length > 0) {
-      responseData = data.PeopleDetails[0];
-    } else if (Array.isArray(data) && data.length > 0) {
-      responseData = data[0];
-    } else if (data && typeof data === 'object' && !data.error) {
-      responseData = data;
-    }
+          // Extract email
+          const email = responseData.email || responseData.emailAddress || responseData.email_address;
 
-    if (!responseData) {
-      return { error: 'No results from skip-tracing API' };
-    }
-
-    // Extract phone
-    let phone: string | undefined;
-    const phoneValue = responseData.Telephone || responseData.phone || responseData.phone_number || 
-                      responseData['Phone Number'] || responseData['Phone'];
-    if (phoneValue) {
-      phone = String(phoneValue).replace(/[^\d+]/g, '');
-      if (phone.startsWith('+1')) {
-        phone = phone.substring(2);
-      } else if (phone.startsWith('+')) {
-        phone = phone.substring(1);
+          // If we got at least one result, return it
+          if (phone || email) {
+            console.log(`[ENRICH_SINGLE_FIELD] RapidAPI skip-tracing succeeded`);
+            return { phone, email, source: 'rapidapi' };
+          }
+        }
       }
-      if (phone.length < 10) {
-        phone = undefined;
-      }
     }
-
-    // Extract email
-    const email = responseData.email || responseData.emailAddress || responseData.email_address;
-
-    return { phone, email };
+    
+    // RapidAPI failed or returned no results
+    console.log(`[ENRICH_SINGLE_FIELD] RapidAPI skip-tracing failed or returned no results`);
+    return { error: 'No results from skip-tracing API' };
   } catch (error) {
-    console.error('Skip-tracing API error:', error);
+    console.error('[ENRICH_SINGLE_FIELD] RapidAPI skip-tracing error:', error);
     return { error: error instanceof Error ? error.message : 'Unknown error' };
   }
 }

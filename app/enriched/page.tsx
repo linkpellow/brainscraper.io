@@ -50,7 +50,7 @@ function getStateAbbreviation(state: string | undefined | null): string {
   return state;
 }
 
-type SortField = 'name' | 'state' | 'city' | 'zipcode' | 'age' | 'searchFilter' | 'none';
+type SortField = 'name' | 'state' | 'city' | 'zipcode' | 'age' | 'income' | 'searchFilter' | 'none';
 type SortDirection = 'asc' | 'desc';
 
 type EnrichmentLog = {
@@ -543,6 +543,10 @@ export default function EnrichedLeadsPage() {
           const bAge = parseInt(b.dobOrAge) || 0;
           aValue = aAge;
           bValue = bAge;
+          break;
+        case 'income':
+          aValue = a.income || 0;
+          bValue = b.income || 0;
           break;
         case 'searchFilter':
           aValue = (a.searchFilter || '').toLowerCase();
@@ -1388,6 +1392,16 @@ export default function EnrichedLeadsPage() {
               Age {getSortIcon('age')}
             </button>
             <button
+              onClick={() => handleSort('income')}
+              className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold state-transition border flex items-center gap-1 sm:gap-2 font-data ${
+                sortField === 'income'
+                  ? 'btn-active text-white border-transparent'
+                  : 'btn-inactive text-slate-200'
+              }`}
+            >
+              Income {getSortIcon('income')}
+            </button>
+            <button
               onClick={() => handleSort('searchFilter')}
               className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold state-transition border flex items-center gap-1 sm:gap-2 font-data ${
                 sortField === 'searchFilter'
@@ -1442,6 +1456,7 @@ export default function EnrichedLeadsPage() {
                     <th className="px-2 py-2 text-left text-blue-400 font-semibold text-[10px] uppercase tracking-wider" style={{ width: '5%' }}>State</th>
                     <th className="px-2 py-2 text-left text-blue-400 font-semibold text-[10px] uppercase tracking-wider" style={{ width: '7%' }}>Zipcode</th>
                     <th className="px-2 py-2 text-left text-blue-400 font-semibold text-[10px] uppercase tracking-wider" style={{ width: '5%' }}>Age</th>
+                    <th className="px-2 py-2 text-left text-blue-400 font-semibold text-[10px] uppercase tracking-wider" style={{ width: '8%' }}>Income</th>
                     <th className="px-2 py-2 text-left text-blue-400 font-semibold text-[10px] uppercase tracking-wider" style={{ width: '8%' }}>Line Type</th>
                     <th className="px-2 py-2 text-left text-blue-400 font-semibold text-[10px] uppercase tracking-wider" style={{ width: '9%' }}>Carrier</th>
                     <th className="px-2 py-2 text-left text-blue-400 font-semibold text-[10px] uppercase tracking-wider" style={{ width: '9%' }}>Date Scraped</th>
@@ -1564,6 +1579,12 @@ export default function EnrichedLeadsPage() {
                           <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 via-purple-500/0 to-pink-500/0 group-hover/age:from-blue-500/5 group-hover/age:via-purple-500/5 group-hover/age:to-pink-500/5 rounded-lg transition-all duration-500 -z-0" />
                         )}
                       </td>
+                      <CopyableCell 
+                        value={lead.income ? `$${Math.round(lead.income / 1000)}k` : 'N/A'} 
+                        fieldId={`income-${globalIndex}`}
+                        className="text-slate-300 relative z-10"
+                        truncate={false}
+                      />
                       <td 
                         className={`px-2 py-2 ${lineTypeColor} cursor-pointer transition-all duration-300 ease-out group/line relative z-10 hover:scale-[1.05] hover:drop-shadow-lg`}
                         onClick={() => lead.lineType && lead.lineType !== 'N/A' && copyToClipboard(lead.lineType, `lineType-${globalIndex}`)}

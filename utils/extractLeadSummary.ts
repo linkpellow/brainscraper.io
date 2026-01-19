@@ -493,7 +493,7 @@ export function extractLeadSummary(
     }
   }
   
-  // Extract income - try row first, then enriched data, convert to number
+  // Extract income - try row first, then incomePreQual (preferred), then enriched incomeData, convert to number
   let income: number | undefined;
   const rowIncome = row['Income'] || row['income'] || row['Household Income'] || row['household_income'] || '';
   if (rowIncome) {
@@ -502,9 +502,16 @@ export function extractLeadSummary(
       income = incomeNum;
     }
   }
+  
+  // Priority: Use incomePreQual estimate (most accurate)
+  if (!income && enriched?.incomePreQual?.estimate?.p50) {
+    income = enriched.incomePreQual.estimate.p50;
+  }
+  
+  // Fallback: Use incomeData from ZIP lookup
   if (!income && enriched?.incomeData) {
     const incomeData = enriched.incomeData as any;
-    const incomeValue = incomeData.income || incomeData.householdIncome || incomeData.value || incomeData;
+    const incomeValue = incomeData.medianIncome || incomeData.median_income || incomeData.householdIncome || incomeData.income || incomeData.value || incomeData;
     if (incomeValue) {
       const incomeNum = typeof incomeValue === 'number' ? incomeValue : parseFloat(String(incomeValue).replace(/[^0-9.]/g, ''));
       if (!isNaN(incomeNum) && incomeNum > 0) {
@@ -570,8 +577,8 @@ export function extractLeadSummary(
 export function leadSummariesToCSV(summaries: LeadSummary[]): string {
   if (summaries.length === 0) return '';
   
-  // Order: Firstname, Lastname, Phone, Email, State, City, Age, Zipcode, Linetype, Carrier, Platform, Source Details, Search Filter
-  const headers = ['Firstname', 'Lastname', 'Phone', 'Email', 'State', 'City', 'Age', 'Zipcode', 'Linetype', 'Carrier', 'Platform', 'Source Details', 'Search Filter'];
+  // Order: Firstname, Lastname, Phone, Email, State, City, Age, Income, Zipcode, Linetype, Carrier, Platform, Source Details, Search Filter
+  const headers = ['Firstname', 'Lastname', 'Phone', 'Email', 'State', 'City', 'Age', 'Income', 'Zipcode', 'Linetype', 'Carrier', 'Platform', 'Source Details', 'Search Filter'];
   const rows = summaries.map(summary => {
     // Split name into first and last
     const nameParts = (summary.name || '').trim().split(/\s+/);
@@ -628,6 +635,7 @@ export function leadSummariesToCSV(summaries: LeadSummary[]): string {
       summary.state || '',
       summary.city || '',
       age,
+      summary.income ? Math.round(summary.income).toString() : '',  // Income column
       summary.zipcode || '',
       summary.lineType || '',
       summary.carrier || '',

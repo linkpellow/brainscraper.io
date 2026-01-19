@@ -13,7 +13,8 @@
     "test:ui": "vitest --ui",
     "verify:api": "tsx scripts/comprehensive-api-verification.ts",
     "dnc-scrub": "tsx scripts/dnc-scrub-leads-one-by-one.ts",
-    "test:single-lead": "tsx scripts/test-single-lead-production.ts"
+    "test:single-lead": "tsx scripts/test-single-lead-production.ts",
+    "test:scraperapi": "tsx scripts/test-scraperapi-skip-tracing.ts"
   },
   "keywords": [
     "spreadsheet",
@@ -25,10 +26,12 @@
   "license": "ISC",
   "dependencies": {
     "@tailwindcss/postcss": "^4.1.17",
+    "@types/cheerio": "^0.22.35",
     "@types/node": "^24.10.1",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
     "autoprefixer": "^10.4.22",
+    "cheerio": "^1.1.2",
     "eslint": "^9.39.1",
     "eslint-config-next": "^16.0.10",
     "inngest": "^3.48.0",

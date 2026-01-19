@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { fetchWithRapidAPIFallback } from '@/utils/rapidapiKeyManager';
 
 /**
  * Skip Tracing API endpoint
@@ -16,6 +17,8 @@ import { NextRequest, NextResponse } from 'next/server';
  * For RapidAPI setup:
  * - target: "server"
  * - client: "fetch"
+ * 
+ * Now includes automatic fallback to multiple RapidAPI keys
  */
 
 // CORS headers helper
@@ -51,17 +54,6 @@ export async function GET(request: NextRequest) {
     const citystatezip = searchParams.get('citystatezip');
     const page = searchParams.get('page') || '1';
     const personId = searchParams.get('person_id') || searchParams.get('peo_id'); // For detailed person lookup
-
-    // Get API key from environment variables
-    const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY;
-    
-    if (!RAPIDAPI_KEY) {
-      const origin = request.headers.get('origin');
-      return NextResponse.json(
-        { error: 'RAPIDAPI_KEY not configured. Please add it to your .env.local file' },
-        { status: 500, headers: getCorsHeaders(origin) }
-      );
-    }
 
     let url: string;
     
@@ -101,33 +93,41 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'x-rapidapi-key': RAPIDAPI_KEY,
-        'x-rapidapi-host': 'skip-tracing-working-api.p.rapidapi.com',
-      },
-    });
+    // Use fallback mechanism for RapidAPI calls
+    const result = await fetchWithRapidAPIFallback(
+      url,
+      'skip-tracing-working-api.p.rapidapi.com',
+      { method: 'GET' },
+      [429, 401, 403, 500, 502, 503, 504] // Retry on these status codes
+    );
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`[SKIP-TRACING] API error ${response.status}:`, errorText.substring(0, 500));
+    // If RapidAPI succeeded, return the result
+    if (!result.error && result.data) {
+      const data = result.data;
+      console.log(`[SKIP-TRACING] RapidAPI response keys:`, Object.keys(data));
+      console.log(`[SKIP-TRACING] Response preview:`, JSON.stringify(data).substring(0, 500));
+      if (result.usedKey) {
+        console.log(`[SKIP-TRACING] Used key: ${result.usedKey.substring(0, 10)}...`);
+      }
+      
       const origin = request.headers.get('origin');
       return NextResponse.json(
-        { 
-          success: false,
-          error: `RapidAPI error: ${response.statusText}`, 
-          details: errorText.substring(0, 1000),
-          status: response.status 
-        },
-        { status: response.status, headers: getCorsHeaders(origin) }
+        { success: true, data, source: 'rapidapi' },
+        { headers: getCorsHeaders(origin) }
       );
     }
 
-    // API always returns valid JSON - parse directly
-    const data = await response.json();
-    console.log(`[SKIP-TRACING] Response keys:`, Object.keys(data));
-    console.log(`[SKIP-TRACING] Response preview:`, JSON.stringify(data).substring(0, 500));
+    // RapidAPI failed
+    console.log(`[SKIP-TRACING] RapidAPI failed: ${result.error}`);
+    const origin = request.headers.get('origin');
+    return NextResponse.json(
+      { 
+        success: false,
+        error: result.error || 'No results from skip-tracing API',
+        status: 404
+      },
+      { status: 404, headers: getCorsHeaders(origin) }
+    );
 
     const origin = request.headers.get('origin');
     return NextResponse.json(
@@ -149,17 +149,6 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { email, phone, name, citystatezip, person_id, peo_id, page } = body;
     const finalPersonId = person_id || peo_id;
-
-    // Get API key from environment variables
-    const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY;
-    
-    if (!RAPIDAPI_KEY) {
-      const origin = request.headers.get('origin');
-      return NextResponse.json(
-        { error: 'RAPIDAPI_KEY not configured. Please add it to your .env.local file' },
-        { status: 500, headers: getCorsHeaders(origin) }
-      );
-    }
 
     let url: string;
     
@@ -199,38 +188,40 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const response = await fetch(url, {
-      method: 'GET', // This API uses GET even for POST requests
-      headers: {
-        'x-rapidapi-key': RAPIDAPI_KEY,
-        'x-rapidapi-host': 'skip-tracing-working-api.p.rapidapi.com',
-      },
-    });
+    // Use fallback mechanism for RapidAPI calls
+    const result = await fetchWithRapidAPIFallback(
+      url,
+      'skip-tracing-working-api.p.rapidapi.com',
+      { method: 'GET' }, // This API uses GET even for POST requests
+      [429, 401, 403, 500, 502, 503, 504] // Retry on these status codes
+    );
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`[SKIP-TRACING POST] API error ${response.status}:`, errorText.substring(0, 500));
+    // If RapidAPI succeeded, return the result
+    if (!result.error && result.data) {
+      const data = result.data;
+      console.log(`[SKIP-TRACING POST] RapidAPI response keys:`, Object.keys(data));
+      console.log(`[SKIP-TRACING POST] Response preview:`, JSON.stringify(data).substring(0, 500));
+      if (result.usedKey) {
+        console.log(`[SKIP-TRACING POST] Used key: ${result.usedKey.substring(0, 10)}...`);
+      }
+      
       const origin = request.headers.get('origin');
       return NextResponse.json(
-        { 
-          success: false,
-          error: `RapidAPI error: ${response.statusText}`, 
-          details: errorText.substring(0, 1000),
-          status: response.status 
-        },
-        { status: response.status, headers: getCorsHeaders(origin) }
+        { success: true, data, source: 'rapidapi' },
+        { headers: getCorsHeaders(origin) }
       );
     }
 
-    // API always returns valid JSON - parse directly
-    const data = await response.json();
-    console.log(`[SKIP-TRACING POST] Response keys:`, Object.keys(data));
-    console.log(`[SKIP-TRACING POST] Response preview:`, JSON.stringify(data).substring(0, 500));
-
+    // RapidAPI failed
+    console.log(`[SKIP-TRACING POST] RapidAPI failed: ${result.error}`);
     const origin = request.headers.get('origin');
     return NextResponse.json(
-      { success: true, data },
-      { headers: getCorsHeaders(origin) }
+      { 
+        success: false,
+        error: result.error || 'No results from skip-tracing API',
+        status: 404
+      },
+      { status: 404, headers: getCorsHeaders(origin) }
     );
   } catch (error) {
     console.error('Skip tracing API error:', error);
