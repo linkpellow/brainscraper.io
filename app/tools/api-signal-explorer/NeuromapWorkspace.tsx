@@ -37,6 +37,8 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
   const wsRef = useRef<WebSocket | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const timelineRef = useRef<HTMLDivElement>(null);
+  const interactionStartRef = useRef<number | null>(null);
 
   // Initialize screen share for mobile mode
   useEffect(() => {
