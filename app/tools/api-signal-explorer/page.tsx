@@ -199,6 +199,32 @@ export default function APISignalExplorerPage() {
     }
   }, [networkEvents, isLive]);
 
+  // Build dependency graph for critical path analysis
+  const criticalPathGraph = useMemo(() => {
+    if (endpoints.length === 0 || networkEvents.length === 0) {
+      return { nodes: new Map<string, CriticalNode>(), edges: [] };
+    }
+
+    const endpointGroups = endpoints.map(ep => ({
+      key: `${ep.method} ${ep.host}${ep.path}`,
+      method: ep.method,
+      host: ep.host,
+      path: ep.path,
+      events: networkEvents.filter(e => 
+        e.method === ep.method && e.host === ep.host && e.path === ep.path
+      ),
+      hasAuth: ep.hasAuth,
+      isMutation: ep.isMutation,
+      resSizeAvg: ep.resSizeAvg,
+      resMime: ep.resMime,
+    }));
+
+    return buildDependencyGraph(endpointGroups, networkEvents);
+  }, [endpoints, networkEvents]);
+
+  const criticalNodes = criticalPathGraph.nodes;
+  const criticalEdges = criticalPathGraph.edges;
+
   // Get critical path endpoints
   const criticalPathEndpoints = useMemo(() => {
     const criticalNodesArray = Array.from(criticalNodes.values())
