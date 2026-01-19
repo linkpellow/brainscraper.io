@@ -344,8 +344,6 @@ export default function APISignalExplorerPage() {
     return Array.from(hosts).sort();
   }, [endpoints]);
 
-  const [hostFilter, setHostFilter] = useState<Set<string>>(new Set());
-
   return (
     <div className="min-h-screen p-6 sm:p-8" style={{ backgroundColor: '#0a0a0a' }}>
       <div className="max-w-7xl mx-auto">
