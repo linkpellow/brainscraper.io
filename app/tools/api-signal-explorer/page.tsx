@@ -332,6 +332,7 @@ export default function APISignalExplorerPage() {
     endpointMapRef.current.clear();
     sessionStartRef.current = null;
     setInteractionWindow(null);
+    setHostFilter(new Set());
     if (wsRef.current) {
       wsRef.current.send(JSON.stringify({ type: 'clear_session' }));
     }
