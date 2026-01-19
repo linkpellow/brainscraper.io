@@ -42,7 +42,21 @@ export function generateMarkdownReport(
     .sort((a, b) => b.count - a.count)
     .slice(0, 10);
 
-  // Detect polling loops
+  // Phase-based categorization
+  const interactionDriven = sorted.filter(
+    (s) => s.phaseDistribution && s.phaseDistribution.interaction > 0 && s.score > 0
+  ).slice(0, 10);
+
+  const backgroundPolling = sorted.filter(
+    (s) => s.pollingLoop || (s.phaseDistribution && s.phaseDistribution.background >= 5 && s.count >= 5)
+  ).sort((a, b) => b.count - a.count).slice(0, 10);
+
+  const bootstrapOnly = sorted.filter(
+    (s) => s.phaseDistribution && s.phaseDistribution.page_load > 0 && 
+           (s.phaseDistribution.interaction === 0 && s.phaseDistribution.background === 0)
+  ).slice(0, 10);
+
+  // Detect polling loops (legacy function for backward compatibility)
   const pollingLoops = detectPollingLoops(summaries);
 
   const lines: string[] = [];

@@ -6,15 +6,23 @@ A production-ready module for analyzing network request logs (HAR files) to iden
 
 - **HAR File Parsing**: Extracts network events from HAR files
 - **Smart Deduplication**: Groups requests by normalized URL patterns
+- **Automatic Phase Detection**: Classifies requests by lifecycle phase:
+  - `page_load`: Requests within 4 seconds of session start
+  - `interaction`: Requests during user action windows
+  - `background`: All other requests
+- **User-Action Correlation**: Maps requests to specific user actions via action windows
 - **Importance Scoring**: Scores endpoints using non-keyword heuristics:
-  - JSON responses
-  - Authentication presence
-  - Write methods (POST/PUT/PATCH/DELETE)
-  - Response size and richness
-  - User interaction correlation
-  - Auth retry chain detection
+  - JSON responses (+25)
+  - Authentication presence (+20)
+  - Write methods (POST/PUT/PATCH/DELETE) (+15)
+  - Interaction phase requests (+15)
+  - User-action tagged requests (+5)
+  - Response size and richness (+10 each)
+  - Auth retry chain detection (+10)
+  - Background polling patterns (-20)
+  - Polling loop detection (-10)
 - **Noise Detection**: Identifies polling loops and low-value endpoints
-- **Comprehensive Reports**: Generates JSON and Markdown reports
+- **Comprehensive Reports**: Generates JSON and Markdown reports with phase analysis
 
 ## Installation
 
@@ -31,7 +39,7 @@ npm run network-inspector -- --har ./capture.har --out ./output
 ### With Options
 
 ```bash
-npm run network-inspector -- --har ./capture.har --out ./output --top 100 --phase-map ./phases.json
+npm run network-inspector -- --har ./capture.har --out ./output --top 100 --actions ./actions.json
 ```
 
 ### Options
@@ -39,27 +47,39 @@ npm run network-inspector -- --har ./capture.har --out ./output --top 100 --phas
 - `--har <path>`: Path to HAR file (required)
 - `--out <path>`: Output directory for reports (required)
 - `--top <number>`: Number of top endpoints to include in JSON report (default: 50)
-- `--phase-map <path>`: Optional JSON file mapping time ranges to phases/action tags
+- `--actions <path>`: Optional JSON file with action windows for user-action correlation
+- `--phase-map <path>`: Optional legacy phase mapping file (deprecated, use --actions instead)
 
-### Phase Map Format
+### Action Windows Format
 
-The phase map allows you to tag time ranges with phases and action tags:
+The action windows file allows you to define user actions and their time ranges:
 
 ```json
-[
-  {
-    "start": 1000,
-    "end": 5000,
-    "phase": "page_load"
-  },
-  {
-    "start": 5000,
-    "end": 10000,
-    "phase": "interaction",
-    "actionTag": "clicked_search"
-  }
-]
+{
+  "sessionStartTs": 1700000000000,
+  "actions": [
+    {
+      "label": "search_click",
+      "startTs": 1700000004500,
+      "endTs": 1700000007000
+    },
+    {
+      "label": "submit_form",
+      "startTs": 1700000008000,
+      "endTs": 1700000010000
+    }
+  ]
+}
 ```
+
+**Phase Classification Rules:**
+- If event timestamp falls within any action window → `interaction` phase
+- Else if event timestamp ≤ sessionStartTs + 4000ms → `page_load` phase
+- Else → `background` phase
+
+**Without action windows:** The system still classifies requests automatically:
+- First 4 seconds after session start → `page_load`
+- Everything else → `background`
 
 ## Generating HAR Files
 
@@ -176,11 +196,14 @@ The importance score (0-100) is calculated using:
 - **+25**: JSON response
 - **+20**: Authentication present (headers, cookies, CSRF tokens)
 - **+15**: Write method (POST/PUT/PATCH/DELETE)
+- **+15**: Interaction phase request
 - **+10**: Large successful response (≥2KB)
 - **+10**: Rich JSON response (500B - 100KB)
-- **+10**: User interaction phase
 - **+10**: Auth retry chain participation
+- **+5**: User-action tagged request
+- **-20**: Background polling pattern (background phase + ≥5 requests)
 - **-15**: Polling-like pattern (tiny responses, high frequency)
+- **-10**: Detected polling loop
 - **-20**: OPTIONS requests or 204 responses (repeated)
 
 ## Testing
@@ -193,11 +216,12 @@ npm test src/network-inspector
 
 ## Architecture
 
-- `har.ts`: HAR file parsing
+- `har.ts`: HAR file parsing with phase detection
+- `phase.ts`: Phase classification and polling loop detection
 - `normalize.ts`: URL normalization and body fingerprinting
 - `dedupe.ts`: Request deduplication and grouping
-- `score.ts`: Importance scoring logic
-- `report.ts`: Report generation
+- `score.ts`: Phase-aware importance scoring logic
+- `report.ts`: Report generation with phase analysis
 - `cli.ts`: Command-line interface
 - `index.ts`: Main entry point
 

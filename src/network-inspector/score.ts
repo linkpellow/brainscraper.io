@@ -58,11 +58,18 @@ export function scoreEndpoint(group: DedupeGroup, summary: EndpointSummary, allE
     reasons.push('Rich JSON response');
   }
 
-  // +10 if event occurs in interaction phase or has actionTag
-  const hasInteraction = events.some((e) => e.phase === 'interaction' || e.actionTag);
+  // +15 if event occurs in interaction phase
+  const hasInteraction = events.some((e) => e.phase === 'interaction');
   if (hasInteraction) {
-    score += 10;
-    reasons.push('User interaction');
+    score += 15;
+    reasons.push('+15 interaction-phase request');
+  }
+
+  // +5 if actionTag is present
+  const hasActionTag = events.some((e) => e.actionTag);
+  if (hasActionTag) {
+    score += 5;
+    reasons.push('+5 user-action tagged');
   }
 
   // +10 if participates in retry chain (401 → refresh → 200)
@@ -70,6 +77,13 @@ export function scoreEndpoint(group: DedupeGroup, summary: EndpointSummary, allE
   if (participatesInRetry) {
     score += 10;
     reasons.push('Auth retry chain');
+  }
+
+  // -20 if background phase AND endpoint repeats ≥ 5 times
+  const isBackground = summary.phaseDistribution?.background || 0;
+  if (isBackground >= 5 && summary.count >= 5) {
+    score -= 20;
+    reasons.push('-20 background polling pattern');
   }
 
   // -15 if tiny response (<300 bytes) and repeats frequently (polling-like)
@@ -81,6 +95,12 @@ export function scoreEndpoint(group: DedupeGroup, summary: EndpointSummary, allE
   ) {
     score -= 15;
     reasons.push('Polling-like pattern');
+  }
+
+  // Additional penalty if polling loop detected
+  if (summary.pollingLoop) {
+    score -= 10;
+    reasons.push('-10 detected polling loop');
   }
 
   // -20 if OPTIONS or status 204 repeated

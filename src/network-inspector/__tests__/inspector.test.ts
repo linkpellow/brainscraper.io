@@ -294,3 +294,152 @@ describe('Scoring', () => {
     expect(score).toBeLessThanOrEqual(0);
   });
 });
+
+import { classifyPhase, findActionTag, detectPollingLoop, calculatePhaseDistribution } from '../phase';
+
+describe('Phase Detection', () => {
+  it('should classify page_load phase correctly', () => {
+    const sessionStart = 1000;
+    const eventTs = sessionStart + 2000; // Within 4 seconds
+
+    const phase = classifyPhase(eventTs, sessionStart, []);
+    expect(phase).toBe('page_load');
+  });
+
+  it('should classify interaction phase when in action window', () => {
+    const sessionStart = 1000;
+    const actionWindows = [
+      { label: 'search_click', startTs: 5000, endTs: 7000 }
+    ];
+    const eventTs = 6000; // Within action window
+
+    const phase = classifyPhase(eventTs, sessionStart, actionWindows);
+    expect(phase).toBe('interaction');
+  });
+
+  it('should classify background phase for events after page load', () => {
+    const sessionStart = 1000;
+    const eventTs = sessionStart + 5000; // After 4 seconds, no action window
+
+    const phase = classifyPhase(eventTs, sessionStart, []);
+    expect(phase).toBe('background');
+  });
+
+  it('should find action tag for events in action window', () => {
+    const actionWindows = [
+      { label: 'search_click', startTs: 5000, endTs: 7000 },
+      { label: 'submit_form', startTs: 8000, endTs: 10000 }
+    ];
+
+    expect(findActionTag(6000, actionWindows)).toBe('search_click');
+    expect(findActionTag(9000, actionWindows)).toBe('submit_form');
+    expect(findActionTag(12000, actionWindows)).toBeUndefined();
+  });
+
+  it('should detect polling loops in background events', () => {
+    // Create events with consistent intervals (polling pattern)
+    const events = Array.from({ length: 10 }, (_, i) => ({
+      ts: 10000 + i * 5000, // Every 5 seconds
+      phase: 'background' as const
+    }));
+
+    expect(detectPollingLoop(events)).toBe(true);
+  });
+
+  it('should not detect polling loops with inconsistent intervals', () => {
+    // Create events with random intervals
+    const events = [
+      { ts: 10000, phase: 'background' as const },
+      { ts: 15000, phase: 'background' as const },
+      { ts: 25000, phase: 'background' as const },
+      { ts: 40000, phase: 'background' as const },
+      { ts: 60000, phase: 'background' as const },
+    ];
+
+    expect(detectPollingLoop(events)).toBe(false);
+  });
+
+  it('should calculate phase distribution correctly', () => {
+    
+    const events = [
+      { phase: 'page_load' as const },
+      { phase: 'page_load' as const },
+      { phase: 'interaction' as const },
+      { phase: 'interaction' as const },
+      { phase: 'interaction' as const },
+      { phase: 'background' as const },
+      { phase: 'background' as const },
+      { phase: 'background' as const },
+      { phase: 'background' as const },
+    ];
+
+    const distribution = calculatePhaseDistribution(events);
+    expect(distribution.page_load).toBe(2);
+    expect(distribution.interaction).toBe(3);
+    expect(distribution.background).toBe(4);
+  });
+});
+
+describe('Phase-Aware Scoring', () => {
+  it('should score interaction-phase endpoints higher', () => {
+    const events: NetworkEvent[] = [
+      {
+        ts: 5000,
+        method: 'POST',
+        url: 'https://api.example.com/search',
+        path: '/search',
+        host: 'api.example.com',
+        query: {},
+        reqHeaders: {},
+        reqCookies: {},
+        status: 200,
+        resMime: 'application/json',
+        resSize: 5000,
+        phase: 'interaction',
+        actionTag: 'search_click',
+      },
+    ];
+
+    const group: DedupeGroup = {
+      key: 'POST api.example.com/search',
+      events,
+      queryShape: '',
+    };
+
+    const summary = createEndpointSummary(group);
+    const score = scoreEndpoint(group, summary, events);
+
+    // Should have interaction bonus (+15) and actionTag bonus (+5)
+    expect(score).toBeGreaterThan(40); // At least JSON (25) + interaction (15) + actionTag (5)
+  });
+
+  it('should penalize background polling endpoints', () => {
+    const events: NetworkEvent[] = Array.from({ length: 10 }, (_, i) => ({
+      ts: 10000 + i * 5000,
+      method: 'GET',
+      url: 'https://api.example.com/poll',
+      path: '/poll',
+      host: 'api.example.com',
+      query: {},
+      reqHeaders: {},
+      reqCookies: {},
+      status: 200,
+      resMime: 'text/plain',
+      resSize: 100,
+      phase: 'background' as const,
+    }));
+
+    const group: DedupeGroup = {
+      key: 'GET api.example.com/poll',
+      events,
+      queryShape: '',
+    };
+
+    const summary = createEndpointSummary(group);
+    const score = scoreEndpoint(group, summary, events);
+
+    // Should be penalized for background polling (-20) and polling loop (-10)
+    // Score is clamped to 0-100, so 0 is the minimum
+    expect(score).toBeLessThanOrEqual(0);
+  });
+});

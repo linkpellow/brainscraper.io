@@ -7,6 +7,7 @@ import { normalizeEvent } from './normalize';
 import { groupEvents, createEndpointSummary } from './dedupe';
 import { scoreEndpoints } from './score';
 import { generateJsonReport, generateMarkdownReport } from './report';
+import { loadActionWindows, type ActionWindowsConfig } from './phase';
 import type { NetworkEvent, EndpointSummary } from './types';
 
 /**
@@ -18,12 +19,19 @@ export async function processHarFile(
   options: {
     topN?: number;
     phaseMapPath?: string;
+    actionsPath?: string;
   } = {}
 ): Promise<{ events: NetworkEvent[]; summaries: EndpointSummary[] }> {
-  // Parse HAR file
-  let events = parseHar(harPath);
+  // Load action windows if provided
+  let actionWindows: ActionWindowsConfig | undefined;
+  if (options.actionsPath) {
+    actionWindows = loadActionWindows(options.actionsPath);
+  }
 
-  // Apply phase mapping if provided
+  // Parse HAR file (phases are assigned during parsing)
+  let events = parseHar(harPath, actionWindows);
+
+  // Legacy phase mapping support (deprecated, but kept for backward compatibility)
   if (options.phaseMapPath) {
     const phaseMap = loadPhaseMap(options.phaseMapPath);
     events = applyPhaseMapping(events, phaseMap);

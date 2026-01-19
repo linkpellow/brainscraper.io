@@ -4,6 +4,7 @@
 
 import type { NetworkEvent, DedupeGroup, EndpointSummary } from './types';
 import { normalizedKey, queryShape, bodyFingerprint } from './normalize';
+import { detectPollingLoop, calculatePhaseDistribution } from './phase';
 
 /**
  * Group events by normalized key and optional body fingerprint
@@ -97,6 +98,12 @@ export function createEndpointSummary(group: DedupeGroup): EndpointSummary {
   // Extract query keys
   const queryKeys = Object.keys(firstEvent.query).sort();
 
+  // Calculate phase distribution
+  const phaseDistribution = calculatePhaseDistribution(events);
+
+  // Detect polling loops
+  const pollingLoop = detectPollingLoop(events);
+
   return {
     key: group.key,
     method: firstEvent.method,
@@ -114,6 +121,8 @@ export function createEndpointSummary(group: DedupeGroup): EndpointSummary {
     reasons: [],
     sampleUrls: Array.from(sampleUrls),
     sampleBodies: sampleBodies.length > 0 ? sampleBodies : undefined,
+    phaseDistribution,
+    pollingLoop,
   };
 }
 

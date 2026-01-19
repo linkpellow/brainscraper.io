@@ -12,6 +12,7 @@ interface CliOptions {
   out: string;
   top?: number;
   'phase-map'?: string;
+  actions?: string;
 }
 
 function parseArgs(): CliOptions {
@@ -24,7 +25,7 @@ function parseArgs(): CliOptions {
       const key = arg.substring(2).replace(/-/g, '-') as keyof CliOptions;
       const nextArg = args[i + 1];
 
-      if (key === 'har' || key === 'out' || key === 'phase-map') {
+      if (key === 'har' || key === 'out' || key === 'phase-map' || key === 'actions') {
         if (nextArg && !nextArg.startsWith('--')) {
           options[key] = nextArg;
           i++;
@@ -74,8 +75,11 @@ async function main() {
     if (options.top) {
       console.log(`📊 Top N: ${options.top}`);
     }
+    if (options.actions) {
+      console.log(`🎯 Action Windows: ${options.actions}`);
+    }
     if (options['phase-map']) {
-      console.log(`🗺️  Phase Map: ${options['phase-map']}`);
+      console.log(`🗺️  Phase Map (legacy): ${options['phase-map']}`);
     }
     console.log('');
 
@@ -83,6 +87,7 @@ async function main() {
     const { events, summaries } = await processHarFile(options.har, options.out, {
       topN: options.top,
       phaseMapPath: options['phase-map'],
+      actionsPath: options.actions,
     });
 
     console.log('');

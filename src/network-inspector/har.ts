@@ -5,11 +5,15 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import type { NetworkEvent, HarFile, HarEntry } from './types';
+import { classifyPhase, findActionTag, type ActionWindowsConfig } from './phase';
 
 /**
  * Parse a HAR file and extract network events
  */
-export function parseHar(filePath: string): NetworkEvent[] {
+export function parseHar(
+  filePath: string,
+  actionWindows?: ActionWindowsConfig
+): NetworkEvent[] {
   const content = fs.readFileSync(filePath, 'utf-8');
   const har: HarFile = JSON.parse(content);
 
@@ -17,16 +21,33 @@ export function parseHar(filePath: string): NetworkEvent[] {
     throw new Error('Invalid HAR file: missing log.entries');
   }
 
-  return har.log.entries.map((entry, index) => parseHarEntry(entry, index));
+  // Determine session start timestamp (first entry or from action windows)
+  const sessionStartTs = actionWindows?.sessionStartTs ?? 
+    (har.log.entries.length > 0 
+      ? new Date(har.log.entries[0].startedDateTime).getTime()
+      : Date.now());
+
+  return har.log.entries.map((entry, index) => 
+    parseHarEntry(entry, index, sessionStartTs, actionWindows?.actions || [])
+  );
 }
 
 /**
  * Parse a single HAR entry into a NetworkEvent
  */
-function parseHarEntry(entry: HarEntry, index: number): NetworkEvent {
+function parseHarEntry(
+  entry: HarEntry,
+  index: number,
+  sessionStartTs: number,
+  actionWindows: Array<{ label: string; startTs: number; endTs: number }> = []
+): NetworkEvent {
   const url = new URL(entry.request.url);
   const startedDateTime = new Date(entry.startedDateTime);
   const ts = startedDateTime.getTime();
+
+  // Classify phase
+  const phase = classifyPhase(ts, sessionStartTs, actionWindows);
+  const actionTag = findActionTag(ts, actionWindows);
 
   // Parse query parameters
   const query: Record<string, string | string[]> = {};
@@ -84,11 +105,14 @@ function parseHarEntry(entry: HarEntry, index: number): NetworkEvent {
     resMime,
     resSize,
     durationMs: entry.time,
+    phase,
+    actionTag,
   };
 }
 
 /**
- * Load phase mapping from JSON file (optional)
+ * Load phase mapping from JSON file (optional) - DEPRECATED
+ * Use loadActionWindows from phase.ts instead
  */
 export function loadPhaseMap(filePath?: string): Map<number, { phase: string; actionTag?: string }> {
   if (!filePath || !fs.existsSync(filePath)) {
@@ -110,7 +134,8 @@ export function loadPhaseMap(filePath?: string): Map<number, { phase: string; ac
 }
 
 /**
- * Apply phase mapping to events
+ * Apply phase mapping to events - DEPRECATED
+ * Phases are now assigned during HAR parsing
  */
 export function applyPhaseMapping(
   events: NetworkEvent[],

@@ -41,6 +41,12 @@ export type EndpointSummary = {
   reasons: string[]; // human-readable reasons from signals applied
   sampleUrls: string[]; // max 3
   sampleBodies?: string[]; // redacted, max 1-2
+  phaseDistribution?: {
+    page_load: number;
+    interaction: number;
+    background: number;
+  };
+  pollingLoop?: boolean;
 };
 
 export type DedupeGroup = {
