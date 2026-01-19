@@ -102,9 +102,18 @@ export interface EnrichmentResult {
       tier: 'low' | 'mid' | 'high' | 'unknown';
       shouldContinueEnrichment: boolean;
       reason: string;
+      band: 'low' | 'gray' | 'high';
+      requiresStrongPositives: boolean;
+      reasonCode?: string;
     };
   };
   error?: string;
+  // Decision Engine fields
+  decisionReason?: string; // Machine-readable reason code
+  decisionCodes?: string[]; // Array of decision codes
+  decisionConfidence?: number; // Overall confidence score (0-100)
+  decisionAction?: 'skip' | 'partial' | 'full'; // Final decision action
+  enrichmentLevel?: 'none' | 'free_only' | 'partial' | 'full'; // Enrichment level
 }
 
 export type EnrichedRow = Record<string, string | number> & {
