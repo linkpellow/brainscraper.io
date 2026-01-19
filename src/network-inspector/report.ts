@@ -56,6 +56,13 @@ export function generateMarkdownReport(
            (s.phaseDistribution.interaction === 0 && s.phaseDistribution.background === 0)
   ).slice(0, 10);
 
+  // Auth-based categorization
+  const authPrimary = sorted.filter((s) => s.authRole === 'auth_primary');
+  const authRefresh = sorted.filter((s) => s.authRole === 'auth_refresh');
+  const authGuard = sorted.filter((s) => s.authRole === 'auth_guard');
+  const dataProtected = sorted.filter((s) => s.authRole === 'data_protected');
+  const retryDependent = sorted.filter((s) => s.retryChains && s.retryChains > 0).sort((a, b) => (b.retryChains || 0) - (a.retryChains || 0));
+
   // Detect polling loops (legacy function for backward compatibility)
   const pollingLoops = detectPollingLoops(summaries);
 

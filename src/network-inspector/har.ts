@@ -6,6 +6,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import type { NetworkEvent, HarFile, HarEntry } from './types';
 import { classifyPhase, findActionTag, type ActionWindowsConfig } from './phase';
+import { extractAuthSignals } from './auth';
 
 /**
  * Parse a HAR file and extract network events
@@ -49,6 +50,9 @@ function parseHarEntry(
   const phase = classifyPhase(ts, sessionStartTs, actionWindows);
   const actionTag = findActionTag(ts, actionWindows);
 
+  // Extract auth signals (will be attached after parsing)
+  // We'll attach it in the return statement
+
   // Parse query parameters
   const query: Record<string, string | string[]> = {};
   url.searchParams.forEach((value, key) => {
@@ -89,7 +93,7 @@ function parseHarEntry(
   // Extract response MIME type
   const resMime = entry.response.content?.mimeType || resHeaders['content-type'] || '';
 
-  return {
+  const networkEvent: NetworkEvent = {
     ts,
     method: entry.request.method,
     url: entry.request.url,
@@ -108,6 +112,11 @@ function parseHarEntry(
     phase,
     actionTag,
   };
+
+  // Extract and attach auth signals
+  networkEvent.authSignals = extractAuthSignals(networkEvent);
+
+  return networkEvent;
 }
 
 /**

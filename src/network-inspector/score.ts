@@ -72,11 +72,32 @@ export function scoreEndpoint(group: DedupeGroup, summary: EndpointSummary, allE
     reasons.push('+5 user-action tagged');
   }
 
-  // +10 if participates in retry chain (401 → refresh → 200)
-  const participatesInRetry = detectRetryChain(events, allEvents);
-  if (participatesInRetry) {
+  // Auth role-based scoring
+  if (summary.authRole === 'auth_primary') {
+    score += 25;
+    reasons.push('+25 primary authentication endpoint');
+  } else if (summary.authRole === 'auth_refresh') {
+    score += 20;
+    reasons.push('+20 auth refresh endpoint');
+  } else if (summary.authRole === 'auth_guard') {
+    score += 15;
+    reasons.push('+15 auth guard (session validation)');
+  } else if (summary.authRole === 'data_protected') {
     score += 10;
-    reasons.push('Auth retry chain');
+    reasons.push('+10 protected data endpoint (401 → retry)');
+  }
+
+  // +20 if endpoint participates in retry chains
+  if (summary.retryChains && summary.retryChains > 0) {
+    score += 20;
+    reasons.push(`+20 participates in ${summary.retryChains} retry chain(s)`);
+  }
+
+  // Legacy retry chain detection (for backward compatibility)
+  const participatesInRetry = detectRetryChain(events, allEvents);
+  if (participatesInRetry && !summary.retryChains) {
+    score += 10;
+    reasons.push('Auth retry chain (legacy detection)');
   }
 
   // -20 if background phase AND endpoint repeats ≥ 5 times
@@ -110,6 +131,18 @@ export function scoreEndpoint(group: DedupeGroup, summary: EndpointSummary, allE
   ) {
     score -= 20;
     reasons.push('Noise endpoint (OPTIONS/204)');
+  }
+
+  // -10 if unauthenticated AND background-only
+  if (
+    summary.authRole === 'unauthenticated' &&
+    summary.phaseDistribution &&
+    summary.phaseDistribution.background === summary.count &&
+    summary.phaseDistribution.interaction === 0 &&
+    summary.phaseDistribution.page_load === 0
+  ) {
+    score -= 10;
+    reasons.push('-10 unauthenticated background-only');
   }
 
   // Clamp score to 0-100

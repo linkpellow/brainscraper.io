@@ -5,6 +5,7 @@
 import type { NetworkEvent, DedupeGroup, EndpointSummary } from './types';
 import { normalizedKey, queryShape, bodyFingerprint } from './normalize';
 import { detectPollingLoop, calculatePhaseDistribution } from './phase';
+import { assignAuthRole, type RetryChain } from './auth';
 
 /**
  * Group events by normalized key and optional body fingerprint
@@ -38,7 +39,12 @@ export function groupEvents(events: NetworkEvent[]): DedupeGroup[] {
 /**
  * Create endpoint summary from a dedupe group
  */
-export function createEndpointSummary(group: DedupeGroup): EndpointSummary {
+export function createEndpointSummary(
+  group: DedupeGroup,
+  allEvents: NetworkEvent[],
+  retryChains: RetryChain[],
+  sessionStartTs: number
+): EndpointSummary {
   const events = group.events;
   const firstEvent = events[0];
 
@@ -104,6 +110,17 @@ export function createEndpointSummary(group: DedupeGroup): EndpointSummary {
   // Detect polling loops
   const pollingLoop = detectPollingLoop(events);
 
+  // Assign auth role
+  const authRole = assignAuthRole(events, allEvents, retryChains, sessionStartTs);
+
+  // Count retry chains this endpoint participates in
+  const endpointKey = `${firstEvent.method} ${firstEvent.host}${firstEvent.path}`;
+  const retryChainCount = retryChains.filter(
+    (chain) =>
+      chain.failedKey === endpointKey ||
+      chain.recoveryEventKey === endpointKey
+  ).length;
+
   return {
     key: group.key,
     method: firstEvent.method,
@@ -123,6 +140,8 @@ export function createEndpointSummary(group: DedupeGroup): EndpointSummary {
     sampleBodies: sampleBodies.length > 0 ? sampleBodies : undefined,
     phaseDistribution,
     pollingLoop,
+    authRole,
+    retryChains: retryChainCount > 0 ? retryChainCount : undefined,
   };
 }
 

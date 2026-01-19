@@ -22,6 +22,12 @@ export type NetworkEvent = {
   phase?: "page_load" | "interaction" | "background";
   actionTag?: string; // e.g. "clicked_search"
   bodyFingerprint?: string; // hash of stable body structure
+  authSignals?: {
+    hasAuthHeader: boolean;
+    hasSessionCookie: boolean;
+    hasCsrfHeader: boolean;
+    authHeaderFingerprint?: string;
+  };
 };
 
 export type EndpointSummary = {
@@ -47,6 +53,8 @@ export type EndpointSummary = {
     background: number;
   };
   pollingLoop?: boolean;
+  authRole?: "auth_primary" | "auth_refresh" | "auth_guard" | "data_protected" | "unauthenticated";
+  retryChains?: number; // number of retry chains this endpoint participates in
 };
 
 export type DedupeGroup = {
