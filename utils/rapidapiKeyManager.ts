@@ -16,21 +16,39 @@ declare const process: {
 // Primary key (current production key)
 const PRIMARY_KEY = '23e5cf67c6msh42e5d1ffe1031d1p160ee7jsn51d55368d962';
 
-// Fallback keys pool
-const FALLBACK_KEYS = [
-  'ca25fc890cmshbde400744151111p196a39jsn3766335bdb2d',
-  '22a0943c83msh01134e539f944dep1f94b0jsn344549892142',
-  '153030ee5fmshff8f27c8dffad43p184730jsn66125ce1022f',
-  '207dab623bmshd5489bad6877fd1p1b74b1jsn5c45ff592ddc',
-  '7d1dc0f3a7mshab3d33d0c0b9e93p11e59ajsn8ee26f7b3cle',
-  '1478e15d3amshaf4ed4f262c3f62p142992jsnfd93e036e4b9',
-  '9b319b4093msh279e530fdecaa4fp159a9ajsn35fc4025c8ad',
-  '9ff0771033mshdbf07158395d628p184a24jsnfd0e143f6320',
-  '07615c41edmsh7b03d2971dc7546p1fc375jsn996094913f04',
-  'a3754c7cacmsh711a6326ef6a312p1962a6jsna820058ef872',
-  '325452db2emsh59a2cf36411dc00p14cbc8jsnc55f14187683',
-  '45257c4c8amsh7d09cf0c53c412ap1174adjsnaa7cd32f70ff',
-];
+// Fallback keys pool - dynamically loaded from environment variables
+function getFallbackKeys(): string[] {
+  const fallbackKeys: string[] = [];
+  let index = 1;
+  
+  // Read fallback keys from environment variables (FALLBACK_1, FALLBACK_2, etc.)
+  while (true) {
+    const key = process.env[`RAPIDAPI_KEY_FALLBACK_${index}`];
+    if (!key) break;
+    fallbackKeys.push(key);
+    index++;
+  }
+  
+  // If no environment variables found, use hardcoded fallbacks as backup
+  if (fallbackKeys.length === 0) {
+    return [
+      'ca25fc890cmshbde400744151111p196a39jsn3766335bdb2d',
+      '22a0943c83msh01134e539f944dep1f94b0jsn344549892142',
+      '153030ee5fmshff8f27c8dffad43p184730jsn66125ce1022f',
+      '207dab623bmshd5489bad6877fd1p1b74b1jsn5c45ff592ddc',
+      '7d1dc0f3a7mshab3d33d0c0b9e93p11e59ajsn8ee26f7b3cle',
+      '1478e15d3amshaf4ed4f262c3f62p142992jsnfd93e036e4b9',
+      '9b319b4093msh279e530fdecaa4fp159a9ajsn35fc4025c8ad',
+      '9ff0771033mshdbf07158395d628p184a24jsnfd0e143f6320',
+      '07615c41edmsh7b03d2971dc7546p1fc375jsn996094913f04',
+      'a3754c7cacmsh711a6326ef6a312p1962a6jsna820058ef872',
+      '325452db2emsh59a2cf36411dc00p14cbc8jsnc55f14187683',
+      '45257c4c8amsh7d09cf0c53c412ap1174adjsnaa7cd32f70ff',
+    ];
+  }
+  
+  return fallbackKeys;
+}
 
 // Track failed keys to avoid immediate retries
 const failedKeys = new Map<string, number>();
@@ -41,16 +59,18 @@ const FAILED_KEY_COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes cooldown
  * Keys can be overridden via environment variable RAPIDAPI_KEY
  */
 export function getAllRapidAPIKeys(): string[] {
+  const fallbackKeys = getFallbackKeys();
+  
   // Check for environment variable override
   const envKey = process.env.RAPIDAPI_KEY;
   
   if (envKey) {
     // If env key is set, use it as primary and include fallbacks
-    return [envKey, ...FALLBACK_KEYS];
+    return [envKey, ...fallbackKeys];
   }
   
   // Default: use primary key + fallbacks
-  return [PRIMARY_KEY, ...FALLBACK_KEYS];
+  return [PRIMARY_KEY, ...fallbackKeys];
 }
 
 /**
