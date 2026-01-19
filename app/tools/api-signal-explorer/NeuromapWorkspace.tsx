@@ -94,6 +94,7 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
             reqBodySize?: number;
             resBodySize?: number;
             resMime?: string;
+            durationMs?: number;
           }>;
         };
 
