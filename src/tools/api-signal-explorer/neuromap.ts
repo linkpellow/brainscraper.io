@@ -5,7 +5,6 @@
  */
 
 import type { CategoryTag } from './signals';
-import type { ActionEvent } from './actions';
 
 export type NeuromapMode = "mobile" | "browser";
 
