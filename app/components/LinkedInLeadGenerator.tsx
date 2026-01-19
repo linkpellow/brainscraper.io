@@ -2361,11 +2361,11 @@ export default function LinkedInLeadGenerator() {
                   )}
             </div>
                 {scrapingProgress.status === 'completed' ? (
-                  <CheckCircle className="w-5 h-5 text-emerald-400" />
+                  <CheckCircle className="w-5 h-5 text-white" />
                 ) : scrapingProgress.status === 'error' ? (
-                  <XCircle className="w-5 h-5 text-red-400" />
+                  <XCircle className="w-5 h-5 text-gray-300" />
                 ) : (
-                  <Loader2 className="w-5 h-5 animate-spin text-blue-400" />
+                  <Loader2 className="w-5 h-5 animate-spin text-white" />
                 )}
               </div>
 
@@ -2402,7 +2402,7 @@ export default function LinkedInLeadGenerator() {
                 {/* Leads Per Second */}
                 <div className="panel-inactive rounded-lg p-3">
                   <div className="text-xs text-slate-400 mb-1">Speed</div>
-                  <div className="text-lg font-semibold text-blue-400">
+                  <div className="text-lg font-semibold text-white">
                     {scrapingProgress.leadsPerSecond > 0 ? scrapingProgress.leadsPerSecond.toFixed(2) : '0.00'}
                 </div>
                   <div className="text-xs text-slate-500">leads/sec</div>
@@ -2411,7 +2411,7 @@ export default function LinkedInLeadGenerator() {
                 {/* Estimated Time Remaining */}
                 <div className="panel-inactive rounded-lg p-3">
                   <div className="text-xs text-slate-400 mb-1">ETA</div>
-                  <div className="text-lg font-semibold text-purple-400">
+                  <div className="text-lg font-semibold text-white">
                     {scrapingProgress.estimatedTimeRemaining > 0 ? (
                       <>
                         {Math.floor(scrapingProgress.estimatedTimeRemaining / 60)}:
@@ -2437,7 +2437,7 @@ export default function LinkedInLeadGenerator() {
                 {/* Leads This Page */}
                 <div className="panel-inactive rounded-lg p-3">
                   <div className="text-xs text-slate-400 mb-1">This Page</div>
-                  <div className="text-lg font-semibold text-emerald-400">
+                  <div className="text-lg font-semibold text-white">
                     {scrapingProgress.leadsThisPage}
                   </div>
                   <div className="text-xs text-slate-500">leads</div>
@@ -2489,13 +2489,13 @@ export default function LinkedInLeadGenerator() {
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-slate-400">Step:</span>
                     <span className={`px-2 py-1 rounded text-xs font-medium ${
-                      detailedProgress.step === 'linkedin' ? 'bg-blue-500/20 text-blue-400' :
-                      detailedProgress.step === 'zip' ? 'bg-green-500/20 text-green-400' :
-                      detailedProgress.step === 'phone-discovery' ? 'bg-purple-500/20 text-purple-400' :
-                      detailedProgress.step === 'telnyx' ? 'bg-yellow-500/20 text-yellow-400' :
-                      detailedProgress.step === 'gatekeep' ? 'bg-orange-500/20 text-orange-400' :
-                      detailedProgress.step === 'age' ? 'bg-pink-500/20 text-pink-400' :
-                      detailedProgress.step === 'complete' ? 'bg-green-500/20 text-green-400' :
+                      detailedProgress.step === 'linkedin' ? 'bg-white/20 text-white' :
+                      detailedProgress.step === 'zip' ? 'bg-white/20 text-white' :
+                      detailedProgress.step === 'phone-discovery' ? 'bg-white/20 text-white' :
+                      detailedProgress.step === 'telnyx' ? 'bg-white/20 text-white' :
+                      detailedProgress.step === 'gatekeep' ? 'bg-white/20 text-white' :
+                      detailedProgress.step === 'age' ? 'bg-white/20 text-white' :
+                      detailedProgress.step === 'complete' ? 'bg-white/20 text-white' :
                       'bg-slate-700/60 text-slate-400'
                     }`}>
                       {detailedProgress.step === 'linkedin' ? 'LinkedIn Data' :
@@ -2576,10 +2576,10 @@ export default function LinkedInLeadGenerator() {
                   
                   {/* Errors */}
                   {detailedProgress.errors && detailedProgress.errors.length > 0 && (
-                    <div className="bg-red-500/10 border border-red-500/30 rounded p-2">
-                      <div className="text-xs font-semibold text-red-400 mb-1">Errors:</div>
+                    <div className="bg-gray-700/10 border border-gray-500/30 rounded p-2">
+                      <div className="text-xs font-semibold text-gray-300 mb-1">Errors:</div>
                       {detailedProgress.errors.map((err, idx) => (
-                        <div key={idx} className="text-xs text-red-300">{err}</div>
+                        <div key={idx} className="text-xs text-gray-300">{err}</div>
                       ))}
                     </div>
                   )}
@@ -2588,19 +2588,19 @@ export default function LinkedInLeadGenerator() {
               
               {/* Error Log */}
               {enrichmentErrors.length > 0 && (
-                <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4">
+                <div className="bg-gray-700/10 border border-gray-500/30 rounded-lg p-4">
                   <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-sm font-semibold text-red-400">Enrichment Errors ({enrichmentErrors.length})</h3>
+                    <h3 className="text-sm font-semibold text-gray-300">Enrichment Errors ({enrichmentErrors.length})</h3>
                     <button
                       onClick={() => setEnrichmentErrors([])}
-                      className="text-xs text-red-300 hover:text-red-200"
+                      className="text-xs text-gray-300 hover:text-gray-200"
                     >
                       Clear
                     </button>
                   </div>
                   <div className="space-y-1 max-h-40 overflow-y-auto">
                     {enrichmentErrors.slice(-10).map((err, idx) => (
-                      <div key={idx} className="text-xs text-red-300">
+                      <div key={idx} className="text-xs text-gray-300">
                         <span className="font-medium">{err.lead}:</span> {err.error}
                       </div>
                     ))}
@@ -2628,7 +2628,7 @@ export default function LinkedInLeadGenerator() {
                       {api.dataFields.length > 2 && '...'}
                     </p>
                     {api.error && (
-                      <p className="text-xs text-red-500">{api.error}</p>
+                      <p className="text-xs text-gray-300">{api.error}</p>
                     )}
                   </div>
                 ))}
@@ -2761,7 +2761,7 @@ export default function LinkedInLeadGenerator() {
                             updateSearchParam('title_keywords', keywords.join(', '));
                           }
                         }}
-                        className="w-4 h-4 text-blue-500 rounded cursor-pointer relative z-10 pointer-events-auto"
+                        className="w-4 h-4 text-white rounded cursor-pointer relative z-10 pointer-events-auto"
                       />
                       <span className="text-xs text-slate-400 font-data pointer-events-none">Self Employed</span>
                     </label>
@@ -2770,7 +2770,7 @@ export default function LinkedInLeadGenerator() {
                         type="checkbox"
                         checked={searchParams.changed_jobs_90_days === 'true' || searchParams.changed_jobs_90_days === true}
                         onChange={(e) => updateSearchParam('changed_jobs_90_days', e.target.checked ? 'true' : undefined)}
-                        className="w-4 h-4 text-blue-500 rounded cursor-pointer relative z-10 pointer-events-auto"
+                        className="w-4 h-4 text-white rounded cursor-pointer relative z-10 pointer-events-auto"
                       />
                       <span className="text-xs text-slate-400 font-data pointer-events-none">Changed Jobs (90 days)</span>
                     </label>
@@ -2786,7 +2786,7 @@ export default function LinkedInLeadGenerator() {
                       className="group w-full px-4 py-2.5 rounded-xl field-inactive text-sm text-slate-200  focus:field-focused hover:border-slate-600/60 font-data"
                   />
                   {locationDiscoveryStatus && (
-                      <p className="text-xs text-blue-400 font-data">{locationDiscoveryStatus}</p>
+                      <p className="text-xs text-white font-data">{locationDiscoveryStatus}</p>
                     )}
                     </div>
                   <div className="space-y-1.5">
@@ -2902,7 +2902,7 @@ export default function LinkedInLeadGenerator() {
                       type="checkbox"
                       checked={fetchAllPages}
                       onChange={(e) => setFetchAllPages(e.target.checked)}
-                    className="w-4 h-4 text-blue-400 rounded border-slate-700/50 focus:ring-minimalist-accent"
+                    className="w-4 h-4 text-white rounded border-slate-700/50 focus:ring-minimalist-accent"
                     />
                   Fetch Multiple Pages
                   </label>
@@ -2953,7 +2953,7 @@ export default function LinkedInLeadGenerator() {
                   <div className="flex items-center gap-2 text-slate-300">
                     <Loader2 className="w-4 h-4 animate-spin" />
                     <span className="text-sm font-medium">
-                      Try again in <span className="text-blue-400 font-mono font-bold">{formatCountdown(countdownSeconds)}</span>
+                      Try again in <span className="text-white font-mono font-bold">{formatCountdown(countdownSeconds)}</span>
                     </span>
                   </div>
                 </div>
@@ -2962,7 +2962,7 @@ export default function LinkedInLeadGenerator() {
               <button
                 onClick={handleSearch}
                 disabled={isSearching || countdownSeconds > 0}
-                className="group relative w-full py-4 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 hover:from-blue-600 hover:via-purple-600 hover:to-pink-600 rounded-xl text-white text-base font-semibold transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 hover:scale-[1.02] active:scale-[0.98] overflow-hidden font-data"
+                className="group relative w-full py-4 bg-gradient-to-r from-gray-600 via-gray-500 to-gray-600 hover:from-gray-700 hover:via-gray-600 hover:to-gray-700 rounded-xl text-white text-base font-semibold transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center shadow-lg shadow-white/30 hover:shadow-xl hover:shadow-white/40 hover:scale-[1.02] active:scale-[0.98] overflow-hidden font-data"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
                 {isSearching ? (
@@ -3065,7 +3065,7 @@ export default function LinkedInLeadGenerator() {
                 <button
                   onClick={testEnrichmentSingleLead}
                   disabled={isEnriching || leadList.length === 0}
-                  className="group px-4 py-2.5 bg-blue-600 hover:bg-blue-700 rounded-xl text-white text-sm font-medium transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 hover:scale-105 active:scale-[0.98]"
+                  className="group px-4 py-2.5 bg-gray-600 hover:bg-gray-700 rounded-xl text-white text-sm font-medium transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-lg shadow-white/30 hover:shadow-xl hover:shadow-white/40 hover:scale-105 active:scale-[0.98]"
                   title={leadList.length === 0 ? "Add at least one lead to your list first" : "Test enrichment with just the first lead (saves API calls)"}
                 >
                   {isEnriching ? (
@@ -3201,7 +3201,7 @@ export default function LinkedInLeadGenerator() {
                       
                       return (
                         <tr key={index} className="group border-b border-slate-700/30 hover:bg-gradient-to-r hover:from-blue-500/5 hover:via-purple-500/5 hover:to-pink-500/5 transition-all duration-300 hover:border-white/30 cursor-pointer">
-                          <td className="px-6 py-4 text-slate-200 group-hover:text-blue-300 transition-colors duration-300 font-medium">{name}</td>
+                          <td className="px-6 py-4 text-slate-200 group-hover:text-white transition-colors duration-300 font-medium">{name}</td>
                           <td className="px-6 py-4 text-slate-400 group-hover:text-slate-300 transition-colors duration-300">{title}</td>
                           <td className="px-6 py-4 text-slate-400 group-hover:text-slate-300 transition-colors duration-300">{company}</td>
                           <td className="px-6 py-4 text-slate-400 group-hover:text-slate-300 transition-colors duration-300">{city}</td>
@@ -3272,8 +3272,8 @@ export default function LinkedInLeadGenerator() {
                     const platformDisplay = summary.platform ? (
                       <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${
                         summary.platform === 'linkedin' 
-                          ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' 
-                          : 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
+                          ? 'bg-white/20 text-white border border-white/30' 
+                          : 'bg-white/20 text-white border border-white/30'
                       }`}>
                         {summary.platform === 'linkedin' ? 'LinkedIn' : 'Facebook'}
                       </span>
@@ -3319,8 +3319,8 @@ export default function LinkedInLeadGenerator() {
                           {sourceDisplay}
                         </td>
                     <td className={`px-4 py-3 font-medium ${
-                      summary.dncStatus === 'YES' ? 'text-red-500' : 
-                      summary.dncStatus === 'NO' ? 'text-blue-400' : 
+                      summary.dncStatus === 'YES' ? 'text-gray-400' : 
+                      summary.dncStatus === 'NO' ? 'text-white' : 
                       'text-slate-500'
                       }`}>
                         {summary.dncStatus || 'UNKNOWN'}
@@ -3335,8 +3335,8 @@ export default function LinkedInLeadGenerator() {
         )}
 
       {error && (
-        <div className="px-6 py-4 bg-red-900/20 backdrop-blur-sm border border-red-500/50 rounded-xl shadow-xl animate-fade-in">
-          <p className="text-red-400 font-medium">Error: {error}</p>
+        <div className="px-6 py-4 bg-gray-900/20 backdrop-blur-sm border border-gray-500/50 rounded-xl shadow-xl animate-fade-in">
+          <p className="text-gray-300 font-medium">Error: {error}</p>
           </div>
         )}
 
@@ -3361,7 +3361,7 @@ export default function LinkedInLeadGenerator() {
       {/* Toast Notification */}
       {toast && (
         <div className={`fixed top-4 right-4 z-50 flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg ${
-          toast.type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+          toast.type === 'success' ? 'bg-gray-600 text-white' : 'bg-gray-600 text-white'
         } animate-in slide-in-from-top-5`}>
           <div className="flex items-center gap-2">
             {toast.type === 'success' ? (
