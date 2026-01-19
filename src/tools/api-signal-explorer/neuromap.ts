@@ -178,7 +178,7 @@ export function exportNeuromap(neuromap: Neuromap): {
         if (!endpointSignalsMap.has(endpointKey)) {
           endpointSignalsMap.set(endpointKey, new Set());
         }
-        signal.categoryTags.forEach(tag => {
+        signal.categoryTags.forEach((tag: CategoryTag) => {
           endpointSignalsMap.get(endpointKey)!.add(tag);
         });
       } catch {
