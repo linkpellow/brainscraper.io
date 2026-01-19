@@ -64,6 +64,10 @@ export default function APISignalExplorerPage() {
   const [hostFilter, setHostFilter] = useState<Set<string>>(new Set());
   const [activeTab, setActiveTab] = useState<ExplorerTab>('all');
   const [disabledEndpoints, setDisabledEndpoints] = useState<Set<string>>(new Set());
+  const [neuromaps, setNeuromaps] = useState<Neuromap[]>([]);
+  const [activeNeuromapId, setActiveNeuromapId] = useState<string | null>(null);
+  const [showNeuromapModal, setShowNeuromapModal] = useState(false);
+  const [neuromapMode, setNeuromapMode] = useState<NeuromapMode | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const endpointMapRef = useRef<Map<string, EndpointData>>(new Map());
   const sessionStartRef = useRef<number | null>(null);
