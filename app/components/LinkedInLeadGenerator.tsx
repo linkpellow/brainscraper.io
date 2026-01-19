@@ -2427,7 +2427,7 @@ export default function LinkedInLeadGenerator() {
                 {/* Elapsed Time */}
                 <div className="panel-inactive rounded-lg p-3">
                   <div className="text-xs text-slate-400 mb-1">Elapsed</div>
-                  <div className="text-lg font-semibold text-pink-400">
+                  <div className="text-lg font-semibold text-white">
                     {Math.floor(scrapingProgress.elapsedTime / 60)}:
                     {String(scrapingProgress.elapsedTime % 60).padStart(2, '0')}
                   </div>
@@ -2666,7 +2666,7 @@ export default function LinkedInLeadGenerator() {
                     }`}
                   >
                     {searchType !== 'person' && (
-                      <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 via-purple-500/0 to-pink-500/0 group-hover:from-blue-500/10 group-hover:via-purple-500/10 group-hover:to-pink-500/10 transition-all duration-500" />
+                      <div className="absolute inset-0 bg-white/0 group-hover:bg-white/10 transition-all duration-500" />
                     )}
                     <div className={`relative flex items-center justify-center gap-2 text-sm font-semibold font-data ${
                       searchType === 'person' ? 'text-white' : 'text-slate-200'
@@ -2687,7 +2687,7 @@ export default function LinkedInLeadGenerator() {
                     }`}
                   >
                     {searchType !== 'person_via_url' && (
-                      <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 via-purple-500/0 to-pink-500/0 group-hover:from-blue-500/10 group-hover:via-purple-500/10 group-hover:to-pink-500/10 transition-all duration-500" />
+                      <div className="absolute inset-0 bg-white/0 group-hover:bg-white/10 transition-all duration-500" />
                     )}
                     <div className={`relative flex items-center justify-center gap-2 text-sm font-semibold font-data ${
                       searchType === 'person_via_url' ? 'text-white' : 'text-slate-200'
@@ -3102,7 +3102,7 @@ export default function LinkedInLeadGenerator() {
                 <button
                   onClick={handleEnrichAndScrub}
                   disabled={isEnriching || isScrubbing}
-                  className="group relative px-5 py-2.5 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 hover:from-blue-600 hover:via-purple-600 hover:to-pink-600 rounded-xl text-white text-sm font-semibold transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 hover:scale-105 active:scale-[0.98] overflow-hidden"
+                  className="group relative px-5 py-2.5 bg-gradient-to-r from-gray-600 via-gray-500 to-gray-600 hover:from-gray-700 hover:via-gray-600 hover:to-gray-700 rounded-xl text-white text-sm font-semibold transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-lg shadow-white/30 hover:shadow-xl hover:shadow-white/40 hover:scale-105 active:scale-[0.98] overflow-hidden"
                 >
                   <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
                   {isEnriching ? (
@@ -3200,7 +3200,7 @@ export default function LinkedInLeadGenerator() {
                       const stateDisplay = state || 'N/A';
                       
                       return (
-                        <tr key={index} className="group border-b border-slate-700/30 hover:bg-gradient-to-r hover:from-blue-500/5 hover:via-purple-500/5 hover:to-pink-500/5 transition-all duration-300 hover:border-white/30 cursor-pointer">
+                        <tr key={index} className="group border-b border-slate-700/30 hover:bg-white/5 transition-all duration-300 hover:border-white/30 cursor-pointer">
                           <td className="px-6 py-4 text-slate-200 group-hover:text-white transition-colors duration-300 font-medium">{name}</td>
                           <td className="px-6 py-4 text-slate-400 group-hover:text-slate-300 transition-colors duration-300">{title}</td>
                           <td className="px-6 py-4 text-slate-400 group-hover:text-slate-300 transition-colors duration-300">{company}</td>
