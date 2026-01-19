@@ -123,11 +123,11 @@ function extractEmail(text: string): string | null {
 /**
  * Calculate age from birth year
  */
-function calculateAge(birthYear: number | string): number | null {
-  if (!birthYear) return null;
+function calculateAge(birthYear: number | string): number | undefined {
+  if (!birthYear) return undefined;
   
   const year = typeof birthYear === 'string' ? parseInt(birthYear, 10) : birthYear;
-  if (isNaN(year)) return null;
+  if (isNaN(year)) return undefined;
   
   const currentYear = new Date().getFullYear();
   return currentYear - year;
@@ -136,8 +136,8 @@ function calculateAge(birthYear: number | string): number | null {
 /**
  * Format address from structured data
  */
-function formatAddress(address: any): ExtractedData['address'] | null {
-  if (!address) return null;
+function formatAddress(address: any): ExtractedData['address'] | undefined {
+  if (!address) return undefined;
   
   if (typeof address === 'string') {
     return { full: address };
@@ -158,7 +158,7 @@ function formatAddress(address: any): ExtractedData['address'] | null {
     };
   }
   
-  return null;
+  return undefined;
 }
 
 /**

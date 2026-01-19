@@ -919,7 +919,7 @@ export function preQualifyIncome(input: IncomePreQualInput): IncomePreQualResult
   if (geoBias.relativeWealth === 'low' && finalUpside.p50 > 100000) {
     conflicts.push('High income estimate but low relative wealth area');
   }
-  if (!companyBias.supportsHighTitles && (decomposed.seniority === 'exec' || decomposed.seniority === 'director')) {
+  if (!companyBias.supportsHighTitles && (decomposed.seniority === 'exec' || decomposed.careerLadderRung === 'director' || decomposed.careerLadderRung === 'exec')) {
     conflicts.push('High-level title but company type may not support it');
   }
   
