@@ -14,7 +14,8 @@
     "verify:api": "tsx scripts/comprehensive-api-verification.ts",
     "dnc-scrub": "tsx scripts/dnc-scrub-leads-one-by-one.ts",
     "test:single-lead": "tsx scripts/test-single-lead-production.ts",
-    "test:scraperapi": "tsx scripts/test-scraperapi-skip-tracing.ts"
+    "test:scraperapi": "tsx scripts/test-scraperapi-skip-tracing.ts",
+    "network-inspector": "tsx src/network-inspector/cli.ts"
   },
   "keywords": [
     "spreadsheet",

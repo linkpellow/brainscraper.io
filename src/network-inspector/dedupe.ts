@@ -1,0 +1,155 @@
+/**
+ * Request deduplication logic
+ */
+
+import type { NetworkEvent, DedupeGroup, EndpointSummary } from './types';
+import { normalizedKey, queryShape, bodyFingerprint } from './normalize';
+
+/**
+ * Group events by normalized key and optional body fingerprint
+ */
+export function groupEvents(events: NetworkEvent[]): DedupeGroup[] {
+  const groups = new Map<string, DedupeGroup>();
+
+  for (const event of events) {
+    const key = normalizedKey(event);
+    const shape = queryShape(event.query);
+    const fingerprint = bodyFingerprint(event);
+
+    // Create composite key for grouping
+    const groupKey = fingerprint ? `${key}::${fingerprint}` : `${key}::${shape}`;
+
+    if (!groups.has(groupKey)) {
+      groups.set(groupKey, {
+        key,
+        events: [],
+        queryShape: shape,
+        bodyFingerprint: fingerprint,
+      });
+    }
+
+    groups.get(groupKey)!.events.push(event);
+  }
+
+  return Array.from(groups.values());
+}
+
+/**
+ * Create endpoint summary from a dedupe group
+ */
+export function createEndpointSummary(group: DedupeGroup): EndpointSummary {
+  const events = group.events;
+  const firstEvent = events[0];
+
+  // Calculate statistics
+  const statuses: Record<string, number> = {};
+  const mimeTypes: Record<string, number> = {};
+  const sizes: number[] = [];
+
+  for (const event of events) {
+    if (event.status !== undefined) {
+      const statusStr = String(event.status);
+      statuses[statusStr] = (statuses[statusStr] || 0) + 1;
+    }
+
+    if (event.resMime) {
+      mimeTypes[event.resMime] = (mimeTypes[event.resMime] || 0) + 1;
+    }
+
+    if (event.resSize !== undefined && event.resSize > 0) {
+      sizes.push(event.resSize);
+    }
+  }
+
+  // Find top status and MIME type
+  const topStatus = Object.entries(statuses).sort((a, b) => b[1] - a[1])[0]?.[0];
+  const topMime = Object.entries(mimeTypes).sort((a, b) => b[1] - a[1])[0]?.[0];
+
+  // Calculate average and median response size
+  const avgSize = sizes.length > 0 ? sizes.reduce((a, b) => a + b, 0) / sizes.length : undefined;
+  const medianSize =
+    sizes.length > 0
+      ? [...sizes].sort((a, b) => a - b)[Math.floor(sizes.length / 2)]
+      : undefined;
+
+  // Collect sample URLs (max 3, unique)
+  const sampleUrls = new Set<string>();
+  for (const event of events) {
+    if (sampleUrls.size >= 3) break;
+    sampleUrls.add(event.url);
+  }
+
+  // Collect sample bodies (max 2, redacted)
+  const sampleBodies: string[] = [];
+  for (const event of events) {
+    if (sampleBodies.length >= 2) break;
+    if (event.reqBodyText && event.reqBodyMime?.includes('json')) {
+      try {
+        const parsed = JSON.parse(event.reqBodyText);
+        const redacted = redactSensitiveFields(parsed);
+        sampleBodies.push(JSON.stringify(redacted, null, 2).substring(0, 500));
+      } catch {
+        // Skip invalid JSON
+      }
+    }
+  }
+
+  // Extract query keys
+  const queryKeys = Object.keys(firstEvent.query).sort();
+
+  return {
+    key: group.key,
+    method: firstEvent.method,
+    host: firstEvent.host,
+    path: firstEvent.path,
+    queryKeys,
+    count: events.length,
+    firstSeen: Math.min(...events.map((e) => e.ts)),
+    lastSeen: Math.max(...events.map((e) => e.ts)),
+    statuses,
+    resMimeTop: topMime,
+    resSizeAvg: avgSize,
+    resSizeMedian: medianSize,
+    score: 0, // Will be set by scoring function
+    reasons: [],
+    sampleUrls: Array.from(sampleUrls),
+    sampleBodies: sampleBodies.length > 0 ? sampleBodies : undefined,
+  };
+}
+
+/**
+ * Redact sensitive fields from JSON objects
+ */
+function redactSensitiveFields(obj: any): any {
+  const SENSITIVE_KEYS = new Set([
+    'password',
+    'token',
+    'secret',
+    'api_key',
+    'apikey',
+    'authorization',
+    'auth',
+    'cookie',
+    'session',
+    'csrf',
+  ]);
+
+  if (Array.isArray(obj)) {
+    return obj.map(redactSensitiveFields);
+  }
+
+  if (obj !== null && typeof obj === 'object') {
+    const redacted: any = {};
+    for (const [key, value] of Object.entries(obj)) {
+      const lowerKey = key.toLowerCase();
+      if (SENSITIVE_KEYS.has(lowerKey) || lowerKey.includes('password') || lowerKey.includes('token')) {
+        redacted[key] = '[REDACTED]';
+      } else {
+        redacted[key] = redactSensitiveFields(value);
+      }
+    }
+    return redacted;
+  }
+
+  return obj;
+}
