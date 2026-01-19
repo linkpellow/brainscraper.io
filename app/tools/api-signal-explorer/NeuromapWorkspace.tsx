@@ -263,7 +263,7 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
   };
 
   const handleMarkInteraction = () => {
-    if (isMarkingInteractionRef.current) {
+    if (isMarkingInteraction) {
       // Stop marking
       const end = Date.now();
       const start = interactionStartRef.current || end - 3000;
@@ -277,18 +277,17 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
       linkActionToEvents(action, updatedNeuromap.events);
       
       onUpdate(updatedNeuromap);
-      isMarkingInteractionRef.current = false;
+      setIsMarkingInteraction(false);
       interactionStartRef.current = null;
     } else {
       // Start marking
-      isMarkingInteractionRef.current = true;
+      setIsMarkingInteraction(true);
       interactionStartRef.current = Date.now();
       
       // Auto-stop after 3 seconds
       setTimeout(() => {
-        if (isMarkingInteractionRef.current) {
-          handleMarkInteraction();
-        }
+        setIsMarkingInteraction(false);
+        handleMarkInteraction();
       }, 3000);
     }
   };
