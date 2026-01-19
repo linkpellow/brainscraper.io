@@ -59,39 +59,7 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
     };
   }, [neuromap.mode, screenStream]);
 
-  // Handle action events from WebSocket
-  useEffect(() => {
-    if (!wsRef.current) return;
-
-    const originalOnMessage = wsRef.current.onmessage;
-    wsRef.current.onmessage = (event) => {
-      try {
-        const message = JSON.parse(event.data) as {
-          type: string;
-          action?: ActionEvent;
-          data?: Array<any>;
-        };
-
-        if (message.type === 'action' && message.action) {
-          // Add action to neuromap
-          const updatedNeuromap = { ...neuromap };
-          updatedNeuromap.actions.push(message.action);
-          
-          // Correlate to network events
-          linkActionToEvents(message.action, updatedNeuromap.events);
-          
-          onUpdate(updatedNeuromap);
-        }
-
-        // Call original handler for network events
-        if (originalOnMessage) {
-          originalOnMessage.call(wsRef.current, event);
-        }
-      } catch (err) {
-        console.error('Error processing action message:', err);
-      }
-    };
-  }, [neuromap, onUpdate]);
+  // Action events are handled in the main WebSocket message handler below
 
   // Connect to WebSocket for live API stream
   useEffect(() => {
@@ -121,9 +89,9 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
           }>;
         };
 
-        if (message.type === 'action' && (message as any).action) {
+        if (message.type === 'action' && message.action) {
           // Handle action event
-          const action = (message as any).action as ActionEvent;
+          const action = message.action;
           const updatedNeuromap = { ...neuromap };
           updatedNeuromap.actions.push(action);
           
