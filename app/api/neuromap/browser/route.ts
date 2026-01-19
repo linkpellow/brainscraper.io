@@ -11,25 +11,9 @@ let pageInstance: Awaited<ReturnType<typeof browserInstance.page>> | null = null
  * and streams network events via WebSocket.
  */
 export async function GET(request: NextRequest) {
-  // Launch browser if not already running
-  if (!browserInstance) {
-    browserInstance = await chromium.launch({
-      headless: false,
-      args: ['--no-sandbox', '--disable-setuid-sandbox'],
-    });
-    
-    const context = await browserInstance.newContext({
-      viewport: { width: 1280, height: 720 },
-    });
-    
-    pageInstance = await context.newPage();
-    
-    // Capture network events and send to WebSocket bridge
-    pageInstance.on('request', async (request) => {
-      // Network events are captured by mitmproxy when browser is proxied
-      // This is just for initialization
-    });
-  }
+  // Note: Full Playwright browser embedding requires CDP integration
+  // For now, this route serves instructions for mitmproxy proxy setup
+  // Future enhancement: Launch Playwright browser and expose via CDP WebSocket
 
   // Return HTML page with embedded browser controls
   const html = `
