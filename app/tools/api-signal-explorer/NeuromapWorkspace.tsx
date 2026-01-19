@@ -87,29 +87,31 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
 
         if (message.type === 'events_batch' && message.data) {
           // Convert to RawNetworkEvent
-          const newEvents: RawNetworkEvent[] = message.data.map(flow => {
-            try {
-              const url = new URL(flow.url);
-              return {
-                ts: flow.ts,
-                method: flow.method,
-                url: flow.url,
-                path: url.pathname,
-                host: url.hostname,
-                status: flow.status,
-                reqHeaders: flow.reqHeaders,
-                resHeaders: flow.resHeaders,
-                reqBodySize: flow.reqBodySize,
-                resBodySize: flow.resBodySize,
-                resMime: flow.resMime,
-                phase: undefined,
-                actionTag: undefined,
-                source: neuromap.mode,
-              };
-            } catch (e) {
-              return null;
-            }
-          }).filter((e): e is RawNetworkEvent => e !== null);
+          const newEvents: RawNetworkEvent[] = message.data
+            .map(flow => {
+              try {
+                const url = new URL(flow.url);
+                return {
+                  ts: flow.ts,
+                  method: flow.method,
+                  url: flow.url,
+                  path: url.pathname,
+                  host: url.hostname,
+                  status: flow.status,
+                  reqHeaders: flow.reqHeaders,
+                  resHeaders: flow.resHeaders,
+                  reqBodySize: flow.reqBodySize,
+                  resBodySize: flow.resBodySize,
+                  resMime: flow.resMime,
+                  phase: undefined as const,
+                  actionTag: undefined,
+                  source: neuromap.mode,
+                } as RawNetworkEvent;
+              } catch (e) {
+                return null;
+              }
+            })
+            .filter((e): e is RawNetworkEvent => e !== null);
 
           // Add to neuromap
           const updatedNeuromap = { ...neuromap };
@@ -121,29 +123,31 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
           onUpdate(updatedNeuromap);
         } else if (message.type === 'history' && message.data) {
           // Load history
-          const historyEvents: RawNetworkEvent[] = message.data.map(flow => {
-            try {
-              const url = new URL(flow.url);
-              return {
-                ts: flow.ts,
-                method: flow.method,
-                url: flow.url,
-                path: url.pathname,
-                host: url.hostname,
-                status: flow.status,
-                reqHeaders: flow.reqHeaders,
-                resHeaders: flow.resHeaders,
-                reqBodySize: flow.reqBodySize,
-                resBodySize: flow.resBodySize,
-                resMime: flow.resMime,
-                phase: undefined,
-                actionTag: undefined,
-                source: neuromap.mode,
-              };
-            } catch (e) {
-              return null;
-            }
-          }).filter((e): e is RawNetworkEvent => e !== null);
+          const historyEvents: RawNetworkEvent[] = message.data
+            .map(flow => {
+              try {
+                const url = new URL(flow.url);
+                return {
+                  ts: flow.ts,
+                  method: flow.method,
+                  url: flow.url,
+                  path: url.pathname,
+                  host: url.hostname,
+                  status: flow.status,
+                  reqHeaders: flow.reqHeaders,
+                  resHeaders: flow.resHeaders,
+                  reqBodySize: flow.reqBodySize,
+                  resBodySize: flow.resBodySize,
+                  resMime: flow.resMime,
+                  phase: undefined as const,
+                  actionTag: undefined,
+                  source: neuromap.mode,
+                } as RawNetworkEvent;
+              } catch (e) {
+                return null;
+              }
+            })
+            .filter((e): e is RawNetworkEvent => e !== null);
 
           const updatedNeuromap = { ...neuromap };
           for (const event of historyEvents) {
