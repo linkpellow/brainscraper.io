@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Users, Sparkles, ListTodo, Settings, LogOut } from 'lucide-react';
+import { Users, Sparkles, ListTodo, Settings, LogOut, FlaskConical } from 'lucide-react';
 import BackgroundJobs from './BackgroundJobs';
 import { useState } from 'react';
 
@@ -43,6 +43,11 @@ export default function Sidebar() {
       href: '/settings',
       label: 'Settings',
       icon: Settings,
+    },
+    {
+      href: '/experimental',
+      label: 'Experimental',
+      icon: FlaskConical,
     },
   ];
 

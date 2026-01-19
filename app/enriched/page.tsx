@@ -68,6 +68,7 @@ export default function EnrichedLeadsPage() {
   const [mobileOnly, setMobileOnly] = useState<boolean>(false);
   const [filterDNC, setFilterDNC] = useState<boolean>(false);
   const [selectedState, setSelectedState] = useState<string>(''); // State filter: empty = all states
+  const [selectedDate, setSelectedDate] = useState<string>(''); // Date filter: empty = all dates
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -511,6 +512,16 @@ export default function EnrichedLeadsPage() {
         // Normalize state to abbreviation for comparison
         const leadStateAbbr = getStateAbbreviation(lead.state);
         return leadStateAbbr === selectedState;
+      });
+    }
+
+    // Date filter (filter by date scraped)
+    if (selectedDate) {
+      filteredLeads = filteredLeads.filter((lead) => {
+        if (!lead.dateScraped) return false;
+        // Compare dates (YYYY-MM-DD format)
+        const leadDate = lead.dateScraped.split('T')[0]; // Get date part only
+        return leadDate === selectedDate;
       });
     }
 
@@ -1113,6 +1124,20 @@ export default function EnrichedLeadsPage() {
 
   const sortedLeads = getSortedLeads();
   
+  // Get unique dates from leads for the date filter dropdown
+  const getUniqueDates = (): string[] => {
+    const dates = new Set<string>();
+    leads.forEach((lead) => {
+      if (lead.dateScraped) {
+        const dateStr = lead.dateScraped.split('T')[0]; // Get YYYY-MM-DD format
+        dates.add(dateStr);
+      }
+    });
+    return Array.from(dates).sort().reverse(); // Most recent first
+  };
+
+  const uniqueDates = getUniqueDates();
+  
   // Pagination calculations
   const totalPages = Math.ceil(sortedLeads.length / rowsPerPage);
   const startIndex = (currentPage - 1) * rowsPerPage;
@@ -1122,7 +1147,7 @@ export default function EnrichedLeadsPage() {
   // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, ageMin, ageMax, mobileOnly, filterDNC, selectedState, sortField, sortDirection]);
+  }, [searchQuery, ageMin, ageMax, mobileOnly, filterDNC, selectedState, selectedDate, sortField, sortDirection]);
   
   // Debug logging
   useEffect(() => {
@@ -1140,7 +1165,7 @@ export default function EnrichedLeadsPage() {
     if (leads.length > 0 && sortedLeads.length === 0) {
       console.warn('⚠️ [ENRICHED_PAGE] Leads exist but sortedLeads is empty - filters may be too restrictive');
     }
-  }, [leads.length, sortedLeads.length, searchQuery, ageMin, ageMax, mobileOnly, filterDNC, selectedState, sortField]);
+  }, [leads.length, sortedLeads.length, searchQuery, ageMin, ageMax, mobileOnly, filterDNC, selectedState, selectedDate, sortField]);
 
   return (
     <AppLayout>
@@ -1152,13 +1177,14 @@ export default function EnrichedLeadsPage() {
               Enriched Leads
             </h1>
             <p className="text-xs sm:text-sm text-slate-400 mt-1 sm:mt-2 font-medium font-data">
-              {searchQuery || ageMin !== '' || ageMax !== '' || mobileOnly || filterDNC || selectedState ? (
+              {searchQuery || ageMin !== '' || ageMax !== '' || mobileOnly || filterDNC || selectedState || selectedDate ? (
                 <>
                   {sortedLeads.length} of {leads.length} leads
                   {totalPages > 1 && ` (Page ${currentPage}/${totalPages})`}
                   {searchQuery && ` (search: "${searchQuery}")`}
                   {(ageMin !== '' || ageMax !== '') && ` (age: ${ageMin !== '' ? ageMin : '0'}-${ageMax !== '' ? ageMax : '99+'})`}
                   {selectedState && ` (state: ${selectedState})`}
+                  {selectedDate && ` (date: ${new Date(selectedDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })})`}
                   {mobileOnly && ' (mobile only)'}
                   {filterDNC && ' (DNC filtered)'}
                 </>
