@@ -2,7 +2,6 @@
 
 import { useState, useMemo } from 'react';
 import { Upload, Download, Filter, X, FileJson, Activity, Server, Clock } from 'lucide-react';
-import type { EndpointSummary } from '@/src/network-inspector/types';
 
 type MitmFlowEvent = {
   ts: number;
