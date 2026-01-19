@@ -2295,22 +2295,22 @@ export default function LinkedInLeadGenerator() {
   } | null>(null);
 
   return (
-    <div className="w-full space-y-6 relative z-10">
+    <div className="w-full space-y-4 relative z-10">
       {/* Header */}
-      <div className="space-y-3 animate-fade-in">
+      <div className="space-y-2 animate-fade-in">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white tracking-tight drop-shadow-lg">Lead Generation</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-white tracking-tight drop-shadow-lg">Lead Generation</h1>
           </div>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center gap-2 border-b border-slate-700/50 -mt-4">
+      <div className="flex items-center gap-2 border-b border-slate-700/50 -mt-2">
         <button
           onClick={() => setActiveTab('linkedin')}
           className={`
-            flex items-center gap-2 px-6 py-3 font-medium text-sm transition-all duration-200
+            flex items-center gap-2 px-4 py-2 font-medium text-sm transition-all duration-200
             border-b-2 -mb-[1px]
             ${
               activeTab === 'linkedin'
@@ -2319,7 +2319,7 @@ export default function LinkedInLeadGenerator() {
             }
           `}
         >
-          <Linkedin className="w-5 h-5" />
+          <Linkedin className="w-4 h-4" />
           <span>LinkedIn</span>
         </button>
         {/* Facebook tab hidden */}
@@ -2342,14 +2342,14 @@ export default function LinkedInLeadGenerator() {
         
       {/* Active Progress Dashboard */}
       {(isSearching || isEnriching || isScrubbing) && (
-        <div className="space-y-4 animate-slide-up">
+        <div className="space-y-3 animate-slide-up">
           <div>
-            <h2 className="text-lg font-semibold text-slate-200 mb-1">Progress</h2>
+            <h2 className="text-base font-semibold text-slate-200 mb-0.5">Progress</h2>
             <p className="text-xs text-slate-400">Current operation status</p>
           </div>
 
           {isSearching && (
-            <div className="group space-y-4 panel-inactive rounded-2xl p-6 hover:border-white/30">
+            <div className="group space-y-3 panel-inactive rounded-xl p-4 hover:border-white/30">
               {/* Header */}
               <div className="flex items-center justify-between">
             <div>
@@ -2370,11 +2370,11 @@ export default function LinkedInLeadGenerator() {
               </div>
 
               {/* Large Leads Count */}
-              <div className="text-center py-2">
-                <div className="text-4xl font-bold text-transparent bg-clip-text text-white">
+              <div className="text-center py-1">
+                <div className="text-3xl font-bold text-transparent bg-clip-text text-white">
                   {scrapingProgress.leadsCollected.toLocaleString()}
                 </div>
-                <div className="text-xs text-slate-400 mt-1">
+                <div className="text-xs text-slate-400 mt-0.5">
                   {scrapingProgress.estimatedTotal > 0 && (
                     <>of {scrapingProgress.estimatedTotal.toLocaleString()} target</>
                   )}
@@ -2398,11 +2398,11 @@ export default function LinkedInLeadGenerator() {
           )}
 
               {/* Metrics Grid */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-2">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-1">
                 {/* Leads Per Second */}
-                <div className="panel-inactive rounded-lg p-3">
-                  <div className="text-xs text-slate-400 mb-1">Speed</div>
-                  <div className="text-lg font-semibold text-white">
+                <div className="panel-inactive rounded-lg p-2">
+                  <div className="text-xs text-slate-400 mb-0.5">Speed</div>
+                  <div className="text-base font-semibold text-white">
                     {scrapingProgress.leadsPerSecond > 0 ? scrapingProgress.leadsPerSecond.toFixed(2) : '0.00'}
                 </div>
                   <div className="text-xs text-slate-500">leads/sec</div>
@@ -2425,9 +2425,9 @@ export default function LinkedInLeadGenerator() {
                 </div>
 
                 {/* Elapsed Time */}
-                <div className="panel-inactive rounded-lg p-3">
-                  <div className="text-xs text-slate-400 mb-1">Elapsed</div>
-                  <div className="text-lg font-semibold text-white">
+                <div className="panel-inactive rounded-lg p-2">
+                  <div className="text-xs text-slate-400 mb-0.5">Elapsed</div>
+                  <div className="text-base font-semibold text-white">
                     {Math.floor(scrapingProgress.elapsedTime / 60)}:
                     {String(scrapingProgress.elapsedTime % 60).padStart(2, '0')}
                   </div>
@@ -2435,9 +2435,9 @@ export default function LinkedInLeadGenerator() {
                 </div>
 
                 {/* Leads This Page */}
-                <div className="panel-inactive rounded-lg p-3">
-                  <div className="text-xs text-slate-400 mb-1">This Page</div>
-                  <div className="text-lg font-semibold text-white">
+                <div className="panel-inactive rounded-lg p-2">
+                  <div className="text-xs text-slate-400 mb-0.5">This Page</div>
+                  <div className="text-base font-semibold text-white">
                     {scrapingProgress.leadsThisPage}
                   </div>
                   <div className="text-xs text-slate-500">leads</div>
@@ -2459,9 +2459,9 @@ export default function LinkedInLeadGenerator() {
           )}
 
           {isEnriching && (
-            <div className="group space-y-3 panel-inactive rounded-2xl p-6 hover:border-white/30">
+            <div className="group space-y-2 panel-inactive rounded-xl p-4 hover:border-white/30">
               <div className="flex items-center justify-between">
-                <p className="text-sm font-medium text-slate-200">Enriching Data</p>
+                <p className="text-xs font-medium text-slate-200">Enriching Data</p>
                 <span className="text-xs text-slate-400">
                   {enrichmentProgress.current} of {enrichmentProgress.total}
                 </span>
@@ -2475,9 +2475,9 @@ export default function LinkedInLeadGenerator() {
 
               {/* Real-time Detailed Progress */}
               {detailedProgress && (
-                <div className="panel-inactive rounded-lg p-4 space-y-3">
+                <div className="panel-inactive rounded-lg p-3 space-y-2">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-semibold text-slate-200">
+                    <h3 className="text-xs font-semibold text-slate-200">
                       Currently Enriching: {detailedProgress.leadName}
                     </h3>
                     <span className="text-xs text-slate-400">
@@ -2644,22 +2644,22 @@ export default function LinkedInLeadGenerator() {
       {activeTab === 'linkedin' && (
         <>
       {workflowStep === 'search' && (
-        <div className="space-y-6 animate-fade-in">
+        <div className="space-y-4 animate-fade-in">
                 <div>
-            <h2 className="text-2xl font-bold text-slate-200 tracking-tight mb-1 font-data">Configure Search</h2>
-            <p className="text-sm text-slate-400 font-data">Target and scrape leads from linkedin sales navigator.</p>
+            <h2 className="text-xl font-bold text-slate-200 tracking-tight mb-0.5 font-data">Configure Search</h2>
+            <p className="text-xs text-slate-400 font-data">Target and scrape leads from linkedin sales navigator.</p>
           </div>
           
-          <div className="space-y-6 panel-inactive rounded-2xl p-6">
+          <div className="space-y-4 panel-inactive rounded-xl p-4">
             {/* Search Type */}
-            <div className="space-y-4">
+            <div className="space-y-3">
               <label className="block text-xs font-medium text-slate-200 font-data">Search Type</label>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="space-y-1">
                   <button
                     type="button"
                     onClick={() => setSearchType('person')}
-                    className={`group relative w-full px-4 py-2.5 rounded-xl state-transition border-2 overflow-hidden ${
+                    className={`group relative w-full px-3 py-2 rounded-lg state-transition border-2 overflow-hidden ${
                       searchType === 'person' 
                         ? 'btn-active text-white' 
                         : 'btn-inactive text-slate-200'
@@ -2671,16 +2671,16 @@ export default function LinkedInLeadGenerator() {
                     <div className={`relative flex items-center justify-center gap-2 text-sm font-semibold font-data ${
                       searchType === 'person' ? 'text-white' : 'text-slate-200'
                     }`}>
-                      <Users className={`w-5 h-5 transition-transform duration-300 ${searchType === 'person' ? 'text-white scale-110' : 'text-slate-300 group-hover:text-white group-hover:scale-110'}`} />
+                      <Users className={`w-4 h-4 transition-transform duration-300 ${searchType === 'person' ? 'text-white scale-110' : 'text-slate-300 group-hover:text-white group-hover:scale-110'}`} />
                       <span className="relative z-10">People</span>
                     </div>
                   </button>
                 </div>
-                <div className="space-y-1.5">
+                <div className="space-y-1">
                   <button
                     type="button"
                     onClick={() => setSearchType('person_via_url')}
-                    className={`group relative w-full px-4 py-2.5 rounded-xl state-transition border-2 overflow-hidden ${
+                    className={`group relative w-full px-3 py-2 rounded-lg state-transition border-2 overflow-hidden ${
                       searchType === 'person_via_url' 
                         ? 'btn-active text-white' 
                         : 'btn-inactive text-slate-200'
@@ -2692,7 +2692,7 @@ export default function LinkedInLeadGenerator() {
                     <div className={`relative flex items-center justify-center gap-2 text-sm font-semibold font-data ${
                       searchType === 'person_via_url' ? 'text-white' : 'text-slate-200'
                     }`}>
-                      <Link2 className={`w-5 h-5 transition-transform duration-300 ${searchType === 'person_via_url' ? 'text-white scale-110' : 'text-slate-300 group-hover:text-white group-hover:scale-110'}`} />
+                      <Link2 className={`w-4 h-4 transition-transform duration-300 ${searchType === 'person_via_url' ? 'text-white scale-110' : 'text-slate-300 group-hover:text-white group-hover:scale-110'}`} />
                       <span className="relative z-10">Via URL</span>
                     </div>
                   </button>
@@ -2702,30 +2702,30 @@ export default function LinkedInLeadGenerator() {
 
             {/* Search Parameters */}
             {searchType === 'person_via_url' ? (
-              <div className="space-y-4">
-                <label className="block text-sm font-medium text-slate-200 font-data">Sales Navigator URL</label>
+              <div className="space-y-3">
+                <label className="block text-xs font-medium text-slate-200 font-data">Sales Navigator URL</label>
                   <input
                     type="text"
                   value={String(searchParams.url || '')}
                   onChange={(e) => updateSearchParam('url', e.target.value)}
                   placeholder="https://www.linkedin.com/sales/search/people?..."
-                  className="group w-full px-4 py-3 rounded-xl field-inactive text-slate-200  focus:field-focused hover:border-slate-600/60 font-data"
+                  className="group w-full px-3 py-2 rounded-lg field-inactive text-sm text-slate-200  focus:field-focused hover:border-slate-600/60 font-data"
                   />
                 </div>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {/* Primary Filters */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="space-y-1">
                     <label className="block text-xs font-medium text-slate-200 font-data">Job Title Keywords</label>
                   <input
                     type="text"
                       value={String(searchParams.title_keywords || '')}
                       onChange={(e) => updateSearchParam('title_keywords', e.target.value)}
                       placeholder="Director, VP, Manager"
-                      className="group w-full px-4 py-2.5 rounded-xl field-inactive text-sm text-slate-200  focus:field-focused hover:border-slate-600/60 font-data"
+                      className="group w-full px-3 py-2 rounded-lg field-inactive text-sm text-slate-200  focus:field-focused hover:border-slate-600/60 font-data"
                   />
-                  <div className="flex items-center gap-4 mt-2 relative z-10">
+                  <div className="flex items-center gap-3 mt-1.5 relative z-10">
                     <label className="flex items-center gap-2 cursor-pointer relative z-10 pointer-events-auto">
                       <input
                         type="checkbox"
@@ -2776,55 +2776,55 @@ export default function LinkedInLeadGenerator() {
                     </label>
                   </div>
                 </div>
-                  <div className="space-y-1.5">
+                  <div className="space-y-1">
                     <label className="block text-xs font-medium text-slate-200 font-data">Location</label>
                   <input
                     type="text"
                     value={String(searchParams.location || '')}
                     onChange={(e) => updateSearchParam('location', e.target.value)}
                     placeholder="Maryland, MD, United States"
-                      className="group w-full px-4 py-2.5 rounded-xl field-inactive text-sm text-slate-200  focus:field-focused hover:border-slate-600/60 font-data"
+                      className="group w-full px-3 py-2 rounded-lg field-inactive text-sm text-slate-200  focus:field-focused hover:border-slate-600/60 font-data"
                   />
                   {locationDiscoveryStatus && (
-                      <p className="text-xs text-white font-data">{locationDiscoveryStatus}</p>
+                      <p className="text-xs text-white font-data mt-0.5">{locationDiscoveryStatus}</p>
                     )}
                     </div>
-                  <div className="space-y-1.5">
+                  <div className="space-y-1">
                     <label className="block text-xs font-medium text-slate-200 font-data">Current Company</label>
                     <input
                       type="text"
                       value={String(searchParams.current_company || '')}
                       onChange={(e) => updateSearchParam('current_company', e.target.value)}
                       placeholder="Apple, Google, Microsoft"
-                      className="group w-full px-4 py-2.5 rounded-xl field-inactive text-sm text-slate-200  focus:field-focused hover:border-slate-600/60 font-data"
+                      className="group w-full px-3 py-2 rounded-lg field-inactive text-sm text-slate-200  focus:field-focused hover:border-slate-600/60 font-data"
                     />
                 </div>
-                  <div className="space-y-1.5">
+                  <div className="space-y-1">
                     <label className="block text-xs font-medium text-slate-200 font-data">Industry</label>
                   <input
                     type="text"
                     value={String(searchParams.industry || '')}
                     onChange={(e) => updateSearchParam('industry', e.target.value)}
                     placeholder="Technology, Finance, Healthcare"
-                      className="group w-full px-4 py-2.5 rounded-xl field-inactive text-sm text-slate-200  focus:field-focused hover:border-slate-600/60 font-data"
+                      className="group w-full px-3 py-2 rounded-lg field-inactive text-sm text-slate-200  focus:field-focused hover:border-slate-600/60 font-data"
                   />
                   </div>
                 </div>
 
                 {/* Company Filters */}
-                <div className="space-y-3 pt-4 border-t border-slate-700/50-subtle">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    <div className="space-y-2">
+                <div className="space-y-2 pt-3 border-t border-slate-700/50-subtle">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                    <div className="space-y-1">
                       <label className="block text-xs text-slate-400 font-data">Past Company</label>
                   <input
                     type="text"
                         value={String(searchParams.past_company || '')}
                         onChange={(e) => updateSearchParam('past_company', e.target.value)}
                         placeholder="Previous employer"
-                        className="w-full px-4 py-2 rounded-lg field-inactive text-slate-200  focus:field-focused font-data"
+                        className="w-full px-3 py-1.5 rounded-lg field-inactive text-sm text-slate-200  focus:field-focused font-data"
                   />
                 </div>
-                    <div className="space-y-2">
+                    <div className="space-y-1">
                       <label className="block text-xs text-slate-400 font-data">Company Headcount (Min)</label>
                   <input
                     type="number"
@@ -2832,10 +2832,10 @@ export default function LinkedInLeadGenerator() {
                     value={String(searchParams.company_headcount_min || '')}
                         onChange={(e) => updateSearchParam('company_headcount_min', e.target.value.trim() || undefined)}
                         placeholder="0 = Self-employed"
-                        className="w-full px-4 py-2 rounded-lg field-inactive text-slate-200  focus:field-focused font-data"
+                        className="w-full px-3 py-1.5 rounded-lg field-inactive text-sm text-slate-200  focus:field-focused font-data"
                   />
                 </div>
-                    <div className="space-y-2">
+                    <div className="space-y-1">
                       <label className="block text-xs text-slate-400 font-data">Company Headcount (Max)</label>
                   <input
                     type="number"
@@ -2843,17 +2843,17 @@ export default function LinkedInLeadGenerator() {
                     value={String(searchParams.company_headcount_max || '')}
                         onChange={(e) => updateSearchParam('company_headcount_max', e.target.value.trim() || undefined)}
                     placeholder="10000"
-                        className="w-full px-4 py-2 rounded-lg field-inactive text-slate-200  focus:field-focused font-data"
+                        className="w-full px-3 py-1.5 rounded-lg field-inactive text-sm text-slate-200  focus:field-focused font-data"
                   />
                     </div>
                   </div>
                 </div>
 
                 {/* Experience & Education Filters */}
-                <div className="space-y-3 pt-4 border-t border-slate-700/50-subtle">
+                <div className="space-y-2 pt-3 border-t border-slate-700/50-subtle">
                   <h4 className="text-xs font-medium text-slate-200 font-data">Experience & Education</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-                    <div className="space-y-2">
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
+                    <div className="space-y-1">
                       <label className="block text-xs text-slate-400 font-data">Years Experience (Min)</label>
                   <input
                     type="number"
@@ -2861,10 +2861,10 @@ export default function LinkedInLeadGenerator() {
                     value={String(searchParams.years_experience_min || '')}
                         onChange={(e) => updateSearchParam('years_experience_min', e.target.value.trim() || undefined)}
                         placeholder="0"
-                        className="w-full px-4 py-2 rounded-lg field-inactive text-slate-200  focus:field-focused font-data"
+                        className="w-full px-3 py-1.5 rounded-lg field-inactive text-sm text-slate-200  focus:field-focused font-data"
                   />
                 </div>
-                    <div className="space-y-2">
+                    <div className="space-y-1">
                       <label className="block text-xs text-slate-400 font-data">Years Experience (Max)</label>
                   <input
                     type="number"
@@ -2872,10 +2872,10 @@ export default function LinkedInLeadGenerator() {
                     value={String(searchParams.years_experience_max || '')}
                         onChange={(e) => updateSearchParam('years_experience_max', e.target.value.trim() || undefined)}
                         placeholder="10"
-                        className="w-full px-4 py-2 rounded-lg field-inactive text-slate-200  focus:field-focused font-data"
+                        className="w-full px-3 py-1.5 rounded-lg field-inactive text-sm text-slate-200  focus:field-focused font-data"
                   />
                 </div>
-                    <div className="space-y-2">
+                    <div className="space-y-1">
                       <label className="block text-xs text-slate-400 font-data">School / University</label>
                       <input
                         type="text"
@@ -2886,7 +2886,7 @@ export default function LinkedInLeadGenerator() {
                           updateSearchParam('university', val || undefined);
                         }}
                         placeholder="Stanford, Harvard"
-                        className="w-full px-4 py-2 rounded-lg field-inactive text-slate-200  focus:field-focused font-data"
+                        className="w-full px-3 py-1.5 rounded-lg field-inactive text-sm text-slate-200  focus:field-focused font-data"
                       />
               </div>
                   </div>
@@ -2895,9 +2895,9 @@ export default function LinkedInLeadGenerator() {
             )}
 
             {/* Pagination Settings */}
-            <div className="space-y-3 pt-4 border-t border-slate-700/50-subtle">
+            <div className="space-y-2 pt-3 border-t border-slate-700/50-subtle">
               <div className="flex items-center justify-between">
-                <label className="flex items-center gap-2 text-sm font-medium text-slate-200 cursor-pointer font-data">
+                <label className="flex items-center gap-2 text-xs font-medium text-slate-200 cursor-pointer font-data">
                     <input
                       type="checkbox"
                       checked={fetchAllPages}
@@ -2911,8 +2911,8 @@ export default function LinkedInLeadGenerator() {
                 </span>
               </div>
                   {fetchAllPages && (
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-2">
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-1">
                     <label className="block text-xs text-slate-400 font-data">Max Pages</label>
                       <input
                         type="number"
@@ -2923,10 +2923,10 @@ export default function LinkedInLeadGenerator() {
                           const val = parseInt(e.target.value) || 1;
                         setMaxPagesToFetch(Math.min(100, Math.max(1, val)));
                         }}
-                      className="group w-full px-4 py-2.5 rounded-xl field-inactive text-slate-200  focus:field-focused hover:border-slate-600/60 font-data"
+                      className="group w-full px-3 py-1.5 rounded-lg field-inactive text-sm text-slate-200  focus:field-focused hover:border-slate-600/60 font-data"
                     />
                     </div>
-                  <div className="space-y-2">
+                  <div className="space-y-1">
                     <label className="block text-xs text-slate-400 font-data">Results Limit</label>
                   <input
                     type="number"
@@ -2937,7 +2937,7 @@ export default function LinkedInLeadGenerator() {
                       const val = parseInt(e.target.value) || 2500;
                         updateSearchParam('limit', String(Math.min(2500, Math.max(1, val))));
                     }}
-                      className="group w-full px-4 py-2.5 rounded-xl field-inactive text-slate-200  focus:field-focused hover:border-slate-600/60 font-data"
+                      className="group w-full px-3 py-1.5 rounded-lg field-inactive text-sm text-slate-200  focus:field-focused hover:border-slate-600/60 font-data"
                     />
                 </div>
                 </div>
@@ -2946,13 +2946,13 @@ export default function LinkedInLeadGenerator() {
 
 
             {/* Search Button */}
-            <div className="pt-6 border-t border-slate-700/50 space-y-3">
+            <div className="pt-4 border-t border-slate-700/50 space-y-2">
               {/* Countdown Timer */}
               {countdownSeconds > 0 && (
-                <div className="flex items-center justify-center px-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-xl">
+                <div className="flex items-center justify-center px-3 py-2 bg-slate-800/50 border border-slate-700/50 rounded-lg">
                   <div className="flex items-center gap-2 text-slate-300">
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    <span className="text-sm font-medium">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span className="text-xs font-medium">
                       Try again in <span className="text-white font-mono font-bold">{formatCountdown(countdownSeconds)}</span>
                     </span>
                   </div>
@@ -2962,17 +2962,17 @@ export default function LinkedInLeadGenerator() {
               <button
                 onClick={handleSearch}
                 disabled={isSearching || countdownSeconds > 0}
-                className="group relative w-full py-4 bg-gradient-to-r from-gray-600 via-gray-500 to-gray-600 hover:from-gray-700 hover:via-gray-600 hover:to-gray-700 rounded-xl text-white text-base font-semibold transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center shadow-lg shadow-white/30 hover:shadow-xl hover:shadow-white/40 hover:scale-[1.02] active:scale-[0.98] overflow-hidden font-data"
+                className="group relative w-full py-3 bg-gradient-to-r from-gray-600 via-gray-500 to-gray-600 hover:from-gray-700 hover:via-gray-600 hover:to-gray-700 rounded-lg text-white text-sm font-semibold transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center shadow-lg shadow-white/30 hover:shadow-xl hover:shadow-white/40 hover:scale-[1.02] active:scale-[0.98] overflow-hidden font-data"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
                 {isSearching ? (
                   <>
-                    <Loader2 className="w-5 h-5 animate-spin mr-2 text-white relative z-10" />
+                    <Loader2 className="w-4 h-4 animate-spin mr-2 text-white relative z-10" />
                     <span className="text-white relative z-10">Searching</span>
                   </>
                 ) : (
                   <>
-                    <Search className="w-5 h-5 mr-2 text-white relative z-10 group-hover:scale-110 transition-transform duration-300" />
+                    <Search className="w-4 h-4 mr-2 text-white relative z-10 group-hover:scale-110 transition-transform duration-300" />
                     <span className="text-white relative z-10">Start Search</span>
                   </>
                 )}
@@ -2984,11 +2984,11 @@ export default function LinkedInLeadGenerator() {
 
       {/* Results */}
       {workflowStep === 'results' && results !== null && (
-        <div className="space-y-4 animate-fade-in">
+        <div className="space-y-3 animate-fade-in">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-bold text-slate-200 tracking-tight mb-1">Search Results</h2>
-              <p className="text-sm text-slate-400">
+              <h2 className="text-xl font-bold text-slate-200 tracking-tight mb-0.5">Search Results</h2>
+              <p className="text-xs text-slate-400">
                 {results.length > 0 ? `${results.length} leads found` : 'No leads found'}
               </p>
             </div>
