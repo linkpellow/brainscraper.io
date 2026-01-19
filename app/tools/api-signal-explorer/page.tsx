@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
-import { Upload, Download, Filter, X, FileJson, Activity, Server, Clock, Wifi, WifiOff, Play, Square, Tag, AlertTriangle, Zap } from 'lucide-react';
+import { Upload, Download, Filter, X, FileJson, Activity, Server, Clock, Wifi, WifiOff, Play, Square, Tag, AlertTriangle, Zap, Plus, Smartphone, Globe, Pause, Check } from 'lucide-react';
 import { buildDependencyGraph, simulateFailure, type CriticalNode, type GraphEdge } from '@/src/tools/api-signal-explorer/criticalPath';
+import { createNeuromap, addEventToNeuromap, toggleEndpointSelection, exportNeuromap, type Neuromap, type NeuromapMode } from '@/src/tools/api-signal-explorer/neuromap';
 
 type MitmFlowEvent = {
   ts: number;
