@@ -2145,8 +2145,8 @@ export async function enrichRow(
   }
   
   const finalSignals: LeadSignals = normalizeLeadSignals({
-    firstName,
-    lastName,
+    firstName: firstName || undefined,
+    lastName: lastName || undefined,
     fullName: `${firstName || ''} ${lastName || ''}`.trim() || undefined,
     email: currentEmail,
     phone: currentPhone,
