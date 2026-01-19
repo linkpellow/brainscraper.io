@@ -432,31 +432,26 @@ export function calculateConfidenceScore(signals: LeadSignals): {
  * Uses bands instead of point estimates
  */
 export function evaluateIncomeBand(estimatedIncome: { min: number; max: number; p50: number } | undefined): {
-  band: 'low' | 'gray' | 'high';
+  band: 'low' | 'high';
   confidence: number;
   requiresStrongPositives: boolean;
 } {
   if (!estimatedIncome) {
-    return { band: 'gray', confidence: 0, requiresStrongPositives: true };
+    // No income data - treat as low (conservative)
+    return { band: 'low', confidence: 0, requiresStrongPositives: false };
   }
   
-  // Get dynamic thresholds
-  const thresholds = getThresholds();
-  const incomeMaxThreshold = thresholds.INCOME_MAX_THRESHOLD || 40000;
-  const incomeHighBand = thresholds.INCOME_HIGH_BAND || 60000;
+  // Strict $60k minimum threshold
+  const minimumIncomeThreshold = 60000;
   
-  // Low band: < threshold → always skip
-  if (estimatedIncome.max < incomeMaxThreshold) {
-    return { band: 'low', confidence: 90, requiresStrongPositives: false };
+  // Use p50 (median estimate) as primary decision metric
+  // If p50 < $60k, lead is rejected
+  if (estimatedIncome.p50 < minimumIncomeThreshold) {
+    return { band: 'low', confidence: 95, requiresStrongPositives: false };
   }
   
-  // High band: >= high band → enrich
-  if (estimatedIncome.p50 >= incomeHighBand) {
-    return { band: 'high', confidence: 85, requiresStrongPositives: false };
-  }
-  
-  // Gray band: between thresholds → require 2 strong positives
-  return { band: 'gray', confidence: 60, requiresStrongPositives: true };
+  // Lead earns $60k+ - proceed
+  return { band: 'high', confidence: 85, requiresStrongPositives: false };
 }
 
 /**
@@ -491,7 +486,7 @@ export function makeEnrichmentDecision(
   // Step 3: Evaluate income band
   const incomeBand = signals.estimatedIncome 
     ? evaluateIncomeBand(signals.estimatedIncome)
-    : { band: 'gray' as const, confidence: 0, requiresStrongPositives: true };
+    : { band: 'low' as const, confidence: 0, requiresStrongPositives: false }; // No income data = low (reject)
   
   // Step 4: Determine action based on confidence and income
   let action: DecisionAction = 'full';
@@ -502,8 +497,7 @@ export function makeEnrichmentDecision(
   // Get dynamic thresholds (can be adjusted via feedback loop)
   const thresholds = getThresholds();
   const confidenceMin = thresholds.CONFIDENCE_SCORE_MIN || 30;
-  const incomeMaxThreshold = thresholds.INCOME_MAX_THRESHOLD || 40000;
-  const incomeHighBand = thresholds.INCOME_HIGH_BAND || 60000;
+  const minimumIncomeThreshold = 60000; // Strict $60k minimum
   const ageMax = thresholds.AGE_MAX || 59;
   
   // Hard skip conditions (extreme certainty)
@@ -523,11 +517,11 @@ export function makeEnrichmentDecision(
     enrichmentLevel = 'none';
     estimatedValue = 'low';
     reasons.push({
-      code: 'LOW_INCOME_BAND',
-      message: `Income max < $${Math.round(incomeMaxThreshold / 1000)}k (${incomeBand.band} band)`,
+      code: 'INCOME_BELOW_60K',
+      message: `Income p50 < $${Math.round(minimumIncomeThreshold / 1000)}k (strict threshold)`,
       confidence: incomeBand.confidence,
       stage,
-      signals: ['INCOME_MAX_BELOW_40K'],
+      signals: ['INCOME_BELOW_60K_THRESHOLD'],
     });
   } else if (signals.age && signals.age > ageMax) {
     action = 'skip';
@@ -563,7 +557,7 @@ export function makeEnrichmentDecision(
       signals: ['EMAIL_DOMAIN_VALIDATION'],
     });
   }
-  // Partial enrichment (30-60 confidence or gray income band)
+  // Partial enrichment (30-60 confidence)
   else if (confidenceScore >= 30 && confidenceScore < 60) {
     action = 'partial';
     enrichmentLevel = 'partial';
@@ -576,39 +570,6 @@ export function makeEnrichmentDecision(
       stage,
       signals: confidenceResult.components.map(c => c.name.toUpperCase()),
     });
-  } else if (incomeBand.band === 'gray' && incomeBand.requiresStrongPositives) {
-    // Check for strong positives
-    const strongPositives = [
-      confidenceScore >= 70,
-      signals.email && !signals.isFreeEmail && !signals.isDisposableEmail,
-      signals.phone && signals.phonePattern === 'valid',
-      signals.profileCompleteness && signals.profileCompleteness >= 80,
-    ].filter(Boolean).length;
-    
-    if (strongPositives >= 2) {
-      action = 'partial';
-      enrichmentLevel = 'partial';
-      estimatedValue = 'medium';
-      costEstimate = 0.015;
-      reasons.push({
-        code: 'GRAY_BAND_WITH_POSITIVES',
-        message: `Gray income band with ${strongPositives} strong positives`,
-        confidence: 65,
-        stage,
-        signals: ['INCOME_GRAY_BAND', `STRONG_POSITIVES_${strongPositives}`],
-      });
-    } else {
-      action = 'skip';
-      enrichmentLevel = 'none';
-      estimatedValue = 'low';
-      reasons.push({
-        code: 'GRAY_BAND_INSUFFICIENT_POSITIVES',
-        message: `Gray income band requires 2+ strong positives, found ${strongPositives}`,
-        confidence: 75,
-        stage,
-        signals: ['INCOME_GRAY_BAND', `STRONG_POSITIVES_${strongPositives}`],
-      });
-    }
   }
   // Full enrichment (60+ confidence and high income band)
   else {

@@ -2096,8 +2096,9 @@ export async function enrichRow(
       zipMedianIncome: zipMedianIncome,
     });
     
-    // Attach result to enrichment
-    result.incomePreQual = preQualResult;
+    // Attach result to enrichment (extract just IncomePreQualResult, exclude cohortKey)
+    const { cohortKey, ...incomePreQualResult } = preQualResult;
+    result.incomePreQual = incomePreQualResult;
     
     console.log(`[ENRICH_ROW] STEP 4.5: Income pre-qualification (two-pass):`, {
       tier: preQualResult.decision.tier,

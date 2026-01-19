@@ -827,90 +827,32 @@ function makePreQualDecision(
   requiresStrongPositives: boolean;
   reasonCode?: string;
 } {
-  // Interval-based thresholds (mirrors underwriting logic)
-  const lowBandThreshold = 40000;  // < $40k → always skip
-  const grayBandMin = 40000;        // $40k-$60k → gray band
-  const grayBandMax = 60000;
-  const highBandThreshold = 60000; // $60k+ → enrich
+  // Strict $60k threshold: ALL leads < $60k are filtered out
+  const minimumIncomeThreshold = 60000; // $60k minimum - no exceptions
   
-  // Determine income band
-  let band: 'low' | 'gray' | 'high' = 'gray';
-  let requiresStrongPositives = false;
-  
-  if (conservative.max < lowBandThreshold) {
-    band = 'low';
-  } else if (upside.p50 >= highBandThreshold) {
-    band = 'high';
-  } else {
-    band = 'gray';
-    requiresStrongPositives = true;
-  }
-  
-  // Low band: < $40k → always skip
-  if (band === 'low') {
+  // Determine income band (simplified: low or high only)
+  // Use upside p50 as the primary decision metric (most optimistic estimate)
+  // If upside p50 < $60k, lead is rejected regardless of confidence
+  if (upside.p50 < minimumIncomeThreshold) {
+    // Lead earns less than $60k - reject
     return {
       tier: 'low',
       shouldContinueEnrichment: false,
-      reason: `Low income band: Conservative max ($${Math.round(conservative.max / 1000)}k) < $${Math.round(lowBandThreshold / 1000)}k threshold`,
+      reason: `Income below $60k threshold: Upside p50 ($${Math.round(upside.p50 / 1000)}k) < $${Math.round(minimumIncomeThreshold / 1000)}k minimum`,
       band: 'low',
       requiresStrongPositives: false,
-      reasonCode: 'LOW_INCOME_BAND',
+      reasonCode: 'INCOME_BELOW_60K',
     };
   }
   
-  // High band: $60k+ → enrich
-  if (band === 'high') {
-    return {
-      tier: 'high',
-      shouldContinueEnrichment: true,
-      reason: `High income band: Upside p50 ($${Math.round(upside.p50 / 1000)}k) >= $${Math.round(highBandThreshold / 1000)}k threshold`,
-      band: 'high',
-      requiresStrongPositives: false,
-      reasonCode: 'HIGH_INCOME_BAND',
-    };
-  }
-  
-  // Gray band: $40k-$60k → require 2 strong positives
-  // Strong positives:
-  // - High confidence (>= 65%)
-  // - No conflicts
-  // - Upside min > $50k
-  const strongPositives = [
-    confidence >= 0.65,
-    conflicts.length === 0,
-    upside.min > 50000,
-  ].filter(Boolean).length;
-  
-  if (strongPositives >= 2) {
-    return {
-      tier: 'mid',
-      shouldContinueEnrichment: true,
-      reason: `Gray income band with ${strongPositives} strong positives - proceeding with enrichment`,
-      band: 'gray',
-      requiresStrongPositives: true,
-      reasonCode: 'GRAY_BAND_STRONG_POSITIVES',
-    };
-  }
-  
-  // Gray band without sufficient positives
-  if (confidence < 0.50 || conflicts.length >= 2) {
-    return {
-      tier: 'unknown',
-      shouldContinueEnrichment: true, // Conservative: proceed if uncertain
-      reason: `Gray income band: Low confidence (${Math.round(confidence * 100)}%) or multiple conflicts - proceeding conservatively`,
-      band: 'gray',
-      requiresStrongPositives: true,
-      reasonCode: 'GRAY_BAND_LOW_CONFIDENCE',
-    };
-  }
-  
+  // Lead earns $60k+ - proceed with enrichment
   return {
-    tier: 'mid',
+    tier: 'high',
     shouldContinueEnrichment: true,
-    reason: `Gray income band: Moderate confidence (${Math.round(confidence * 100)}%) with ${strongPositives} strong positives - proceeding`,
-    band: 'gray',
-    requiresStrongPositives: true,
-    reasonCode: 'GRAY_BAND_MODERATE',
+    reason: `Income meets $60k threshold: Upside p50 ($${Math.round(upside.p50 / 1000)}k) >= $${Math.round(minimumIncomeThreshold / 1000)}k minimum`,
+    band: 'high',
+    requiresStrongPositives: false,
+    reasonCode: 'INCOME_ABOVE_60K',
   };
 }
 
