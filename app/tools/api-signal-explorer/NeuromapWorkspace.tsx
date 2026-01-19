@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Pause, Play, Check, X, Download, Smartphone, Globe } from 'lucide-react';
+import { Pause, Play, Check, X, Download, Smartphone, Globe, Plus } from 'lucide-react';
 import type { Neuromap, RawNetworkEvent, NeuromapMode } from '@/src/tools/api-signal-explorer/neuromap';
 
 type EndpointData = {
