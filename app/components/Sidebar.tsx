@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Users, Sparkles, ListTodo, Settings, LogOut, FlaskConical, FileText, Brain } from 'lucide-react';
+import { Users, Sparkles, ListTodo, Settings, LogOut, FlaskConical, FileText, Brain, Activity } from 'lucide-react';
 import BackgroundJobs from './BackgroundJobs';
 import { useState } from 'react';
 
@@ -58,6 +58,11 @@ export default function Sidebar() {
       href: '/neuromapping',
       label: 'Neuromapping',
       icon: Brain,
+    },
+    {
+      href: '/tools/api-signal-explorer',
+      label: 'API Explorer',
+      icon: Activity,
     },
   ];
 
