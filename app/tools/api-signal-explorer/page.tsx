@@ -244,9 +244,191 @@ export default function APISignalExplorerPage() {
     };
   }, [flows, networkEvents, endpoints, session]);
 
+  // WebSocket connection management
+  const connectWebSocket = useCallback(() => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      return; // Already connected
+    }
+
+    setConnectionStatus('connecting');
+    setError(null);
+
+    const ws = new WebSocket('ws://localhost:8787/explorer');
+    wsRef.current = ws;
+
+    ws.onopen = () => {
+      console.log('Connected to WebSocket bridge');
+      setConnectionStatus('connected');
+      setIsLive(true);
+      endpointMapRef.current.clear();
+      
+      // Request history
+      ws.send(JSON.stringify({ type: 'get_history' }));
+    };
+
+    ws.onmessage = (event) => {
+      try {
+        const message = JSON.parse(event.data) as {
+          type: string;
+          data?: MitmFlowEvent[];
+          connected?: boolean;
+          eventCount?: number;
+        };
+
+        if (message.type === 'events_batch' && message.data) {
+          // Update flows state
+          setFlows((prev) => {
+            const updated = [...prev, ...message.data!];
+            // Update incremental map
+            for (const flow of message.data!) {
+              try {
+                const url = new URL(flow.url);
+                const networkEvent = {
+                  ts: flow.ts,
+                  method: flow.method,
+                  url: flow.url,
+                  path: url.pathname,
+                  host: url.hostname,
+                  query: Object.fromEntries(url.searchParams.entries()),
+                  reqHeaders: flow.reqHeaders || {},
+                  reqCookies: {},
+                  reqBodyText: undefined,
+                  reqBodyMime: undefined,
+                  status: flow.status,
+                  resHeaders: flow.resHeaders || {},
+                  resMime: flow.resMime,
+                  resSize: flow.resBodySize,
+                  durationMs: flow.durationMs,
+                  phase: interactionWindow && flow.ts >= interactionWindow.start && (!interactionWindow.end || flow.ts <= interactionWindow.end)
+                    ? 'interaction' as const
+                    : sessionStartRef.current && flow.ts <= (sessionStartRef.current + 4000)
+                    ? 'page_load' as const
+                    : 'background' as const,
+                };
+                updateEndpointIncremental(networkEvent);
+              } catch (e) {
+                // Invalid URL, skip
+              }
+            }
+            return updated;
+          });
+
+          // Set session start if not set
+          if (!sessionStartRef.current && message.data.length > 0) {
+            sessionStartRef.current = message.data[0].ts;
+          }
+        } else if (message.type === 'history' && message.data) {
+          // Load history
+          setFlows(message.data);
+          if (message.data.length > 0) {
+            sessionStartRef.current = message.data[0].ts;
+            for (const flow of message.data) {
+              try {
+                const url = new URL(flow.url);
+                const networkEvent = {
+                  ts: flow.ts,
+                  method: flow.method,
+                  url: flow.url,
+                  path: url.pathname,
+                  host: url.hostname,
+                  query: Object.fromEntries(url.searchParams.entries()),
+                  reqHeaders: flow.reqHeaders || {},
+                  reqCookies: {},
+                  reqBodyText: undefined,
+                  reqBodyMime: undefined,
+                  status: flow.status,
+                  resHeaders: flow.resHeaders || {},
+                  resMime: flow.resMime,
+                  resSize: flow.resBodySize,
+                  durationMs: flow.durationMs,
+                  phase: 'background' as const,
+                };
+                updateEndpointIncremental(networkEvent);
+              } catch (e) {
+                // Invalid URL, skip
+              }
+            }
+          }
+        } else if (message.type === 'status') {
+          setConnectionStatus(message.connected ? 'connected' : 'disconnected');
+        } else if (message.type === 'pong') {
+          // Heartbeat response
+        }
+      } catch (err) {
+        console.error('Error processing WebSocket message:', err);
+      }
+    };
+
+    ws.onerror = (error) => {
+      console.error('WebSocket error:', error);
+      setConnectionStatus('error');
+      setError('Failed to connect to WebSocket bridge. Make sure the bridge is running (npm run mitm:bridge)');
+    };
+
+    ws.onclose = () => {
+      console.log('WebSocket closed');
+      setConnectionStatus('disconnected');
+      setIsLive(false);
+      wsRef.current = null;
+    };
+  }, [updateEndpointIncremental, interactionWindow]);
+
+  const disconnectWebSocket = useCallback(() => {
+    if (wsRef.current) {
+      wsRef.current.close();
+      wsRef.current = null;
+    }
+    setConnectionStatus('disconnected');
+    setIsLive(false);
+  }, []);
+
+  // Interaction tagging
+  const startInteractionTagging = useCallback(() => {
+    setIsMarkingInteraction(true);
+    const start = Date.now();
+    setInteractionWindow({ start });
+    
+    // Auto-stop after 3 seconds
+    setTimeout(() => {
+      if (isMarkingInteraction) {
+        setInteractionWindow((prev) => prev ? { ...prev, end: Date.now() } : null);
+        setIsMarkingInteraction(false);
+      }
+    }, 3000);
+  }, [isMarkingInteraction]);
+
+  const stopInteractionTagging = useCallback(() => {
+    setInteractionWindow((prev) => prev ? { ...prev, end: Date.now() } : null);
+    setIsMarkingInteraction(false);
+  }, []);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (wsRef.current) {
+        wsRef.current.close();
+      }
+    };
+  }, []);
+
+  // Auto-scroll to bottom when new events arrive (if enabled)
+  useEffect(() => {
+    if (autoScroll && isLive && filteredEndpoints.length > 0) {
+      const table = document.getElementById('endpoints-table');
+      if (table) {
+        table.scrollTop = table.scrollHeight;
+      }
+    }
+  }, [filteredEndpoints.length, autoScroll, isLive]);
+
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
+
+    // Disconnect WebSocket if connected
+    if (isLive) {
+      disconnectWebSocket();
+    }
 
     setError(null);
     const reader = new FileReader();
@@ -266,6 +448,10 @@ export default function APISignalExplorerPage() {
 
         setFlows(data.flows);
         setSession(data.session || null);
+        if (data.flows.length > 0) {
+          sessionStartRef.current = data.session?.startTs || data.flows[0].ts;
+        }
+        endpointMapRef.current.clear();
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to parse export file');
       }
