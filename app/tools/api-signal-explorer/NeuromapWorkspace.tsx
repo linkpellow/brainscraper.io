@@ -1,8 +1,10 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Pause, Play, Check, X, Download, Smartphone, Globe, Plus } from 'lucide-react';
+import { Pause, Play, Check, X, Download, Smartphone, Globe, Plus, MousePointer, Keyboard, Navigation, Clock, Filter } from 'lucide-react';
 import type { Neuromap, RawNetworkEvent, NeuromapMode } from '@/src/tools/api-signal-explorer/neuromap';
+import { createActionEvent, generateActionLabel, type ActionEvent } from '@/src/tools/api-signal-explorer/actions';
+import { linkActionToEvents } from '@/src/tools/api-signal-explorer/correlate';
 
 type EndpointData = {
   method: string;
@@ -57,6 +59,40 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
     };
   }, [neuromap.mode, screenStream]);
 
+  // Handle action events from WebSocket
+  useEffect(() => {
+    if (!wsRef.current) return;
+
+    const originalOnMessage = wsRef.current.onmessage;
+    wsRef.current.onmessage = (event) => {
+      try {
+        const message = JSON.parse(event.data) as {
+          type: string;
+          action?: ActionEvent;
+          data?: Array<any>;
+        };
+
+        if (message.type === 'action' && message.action) {
+          // Add action to neuromap
+          const updatedNeuromap = { ...neuromap };
+          updatedNeuromap.actions.push(message.action);
+          
+          // Correlate to network events
+          linkActionToEvents(message.action, updatedNeuromap.events);
+          
+          onUpdate(updatedNeuromap);
+        }
+
+        // Call original handler for network events
+        if (originalOnMessage) {
+          originalOnMessage.call(wsRef.current, event);
+        }
+      } catch (err) {
+        console.error('Error processing action message:', err);
+      }
+    };
+  }, [neuromap, onUpdate]);
+
   // Connect to WebSocket for live API stream
   useEffect(() => {
     if (isPaused) return;
@@ -85,7 +121,17 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
           }>;
         };
 
-        if (message.type === 'events_batch' && message.data) {
+        if (message.type === 'action' && (message as any).action) {
+          // Handle action event
+          const action = (message as any).action as ActionEvent;
+          const updatedNeuromap = { ...neuromap };
+          updatedNeuromap.actions.push(action);
+          
+          // Correlate to existing network events
+          linkActionToEvents(action, updatedNeuromap.events);
+          
+          onUpdate(updatedNeuromap);
+        } else if (message.type === 'events_batch' && message.data) {
           // Convert to RawNetworkEvent
           const newEvents: RawNetworkEvent[] = message.data
             .map(flow => {
@@ -118,6 +164,11 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
           for (const event of newEvents) {
             addEventToNeuromap(updatedNeuromap, event);
             updateEndpointIncremental(event);
+          }
+
+          // Re-correlate all actions to new events
+          for (const action of updatedNeuromap.actions) {
+            linkActionToEvents(action, updatedNeuromap.events);
           }
 
           onUpdate(updatedNeuromap);
@@ -153,6 +204,11 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
           for (const event of historyEvents) {
             addEventToNeuromap(updatedNeuromap, event);
             updateEndpointIncremental(event);
+          }
+
+          // Correlate actions to loaded events
+          for (const action of updatedNeuromap.actions) {
+            linkActionToEvents(action, updatedNeuromap.events);
           }
 
           onUpdate(updatedNeuromap);
@@ -237,6 +293,37 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
     onUpdate({ ...neuromap });
   };
 
+  const handleMarkInteraction = () => {
+    if (isMarkingInteractionRef.current) {
+      // Stop marking
+      const end = Date.now();
+      const start = interactionStartRef.current || end - 3000;
+      const duration = end - start;
+
+      const action = createActionEvent('mark_window', start, undefined, { durationMs: duration });
+      const updatedNeuromap = { ...neuromap };
+      updatedNeuromap.actions.push(action);
+      
+      // Correlate to network events
+      linkActionToEvents(action, updatedNeuromap.events);
+      
+      onUpdate(updatedNeuromap);
+      isMarkingInteractionRef.current = false;
+      interactionStartRef.current = null;
+    } else {
+      // Start marking
+      isMarkingInteractionRef.current = true;
+      interactionStartRef.current = Date.now();
+      
+      // Auto-stop after 3 seconds
+      setTimeout(() => {
+        if (isMarkingInteractionRef.current) {
+          handleMarkInteraction();
+        }
+      }, 3000);
+    }
+  };
+
   const handleExport = () => {
     const exportData = exportNeuromap(neuromap);
     const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
@@ -246,6 +333,66 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
     a.download = `neuromap_${neuromap.id}_${Date.now()}.json`;
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  // Calculate timeline data
+  const timelineData = useMemo(() => {
+    if (neuromap.events.length === 0) return null;
+
+    const start = neuromap.createdAt;
+    const end = Math.max(...neuromap.events.map(e => e.ts), neuromap.createdAt);
+    const duration = end - start;
+
+    // Bin events into time buckets for density
+    const buckets = 100;
+    const bucketSize = duration / buckets;
+    const density = new Array(buckets).fill(0);
+    
+    for (const event of neuromap.events) {
+      const bucket = Math.floor((event.ts - start) / bucketSize);
+      if (bucket >= 0 && bucket < buckets) {
+        density[bucket]++;
+      }
+    }
+
+    const maxDensity = Math.max(...density, 1);
+
+    return {
+      start,
+      end,
+      duration,
+      density: density.map(d => d / maxDensity), // Normalize to 0-1
+      actions: neuromap.actions,
+    };
+  }, [neuromap]);
+
+  const handleTimelineClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!timelineData || !timelineRef.current) return;
+
+    const rect = timelineRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const percent = x / rect.width;
+    const clickedTime = timelineData.start + (timelineData.duration * percent);
+
+    // Set time window to 2 seconds around click
+    setTimeWindow({
+      start: clickedTime - 1000,
+      end: clickedTime + 1000,
+    });
+  };
+
+  const handleTimelineDrag = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!timelineData || !timelineRef.current) return;
+    // Simple implementation: on mouse move, update window
+    const rect = timelineRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const percent = Math.max(0, Math.min(1, x / rect.width));
+    const clickedTime = timelineData.start + (timelineData.duration * percent);
+
+    setTimeWindow({
+      start: clickedTime - 1000,
+      end: clickedTime + 1000,
+    });
   };
 
   return (
@@ -382,6 +529,17 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
                       <td className="px-3 py-2 text-xs text-slate-300 font-mono truncate max-w-[150px]">{ep.path}</td>
                       <td className="px-3 py-2 text-xs text-slate-400">{ep.count}</td>
                       <td className="px-3 py-2">
+                        {ep.actionLinked && (
+                          <span className={`px-2 py-1 rounded text-xs mr-1 ${
+                            (ep.actionConfidence || 0) > 0.7
+                              ? 'bg-green-900/30 text-green-300'
+                              : (ep.actionConfidence || 0) > 0.4
+                              ? 'bg-yellow-900/30 text-yellow-300'
+                              : 'bg-blue-900/30 text-blue-300'
+                          }`}>
+                            Action-linked {ep.actionConfidence ? `(${Math.round(ep.actionConfidence * 100)}%)` : ''}
+                          </span>
+                        )}
                         {ep.hasAuth ? (
                           <span className="px-2 py-1 rounded text-xs bg-green-900/30 text-green-300">✓</span>
                         ) : (

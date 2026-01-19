@@ -21,7 +21,11 @@ export type RawNetworkEvent = {
   phase?: "page_load" | "interaction" | "background";
   actionTag?: string;
   source: "mobile" | "browser";
+  actionId?: string;        // Linked action ID
+  actionConfidence?: number; // 0-1 confidence score
 };
+
+import type { ActionEvent } from './actions';
 
 export type Neuromap = {
   id: string;
@@ -29,6 +33,7 @@ export type Neuromap = {
   mode: NeuromapMode;
   createdAt: number;
   events: RawNetworkEvent[];
+  actions: ActionEvent[];
   selectedEndpointKeys: Set<string>;
   isActive: boolean;
 };
@@ -43,6 +48,7 @@ export function createNeuromap(name: string, mode: NeuromapMode): Neuromap {
     mode,
     createdAt: Date.now(),
     events: [],
+    actions: [],
     selectedEndpointKeys: new Set(),
     isActive: false,
   };
@@ -72,6 +78,13 @@ export function toggleEndpointSelection(neuromap: Neuromap, endpointKey: string)
 export function exportNeuromap(neuromap: Neuromap): {
   mode: NeuromapMode;
   selectedEndpoints: Array<{ method: string; host: string; path: string }>;
+  actions: ActionEvent[];
+  endpointActionLinks: Array<{
+    endpointKey: string;
+    actionId: string;
+    actionType: string;
+    confidence: number;
+  }>;
   eventCount: number;
   createdAt: number;
 } {
@@ -91,9 +104,34 @@ export function exportNeuromap(neuromap: Neuromap): {
     }
   }
 
+  // Build endpoint-action links
+  const endpointActionLinks: Array<{
+    endpointKey: string;
+    actionId: string;
+    actionType: string;
+    confidence: number;
+  }> = [];
+
+  for (const event of neuromap.events) {
+    if (event.actionId && event.actionConfidence !== undefined) {
+      const endpointKey = `${event.method} ${event.host}${event.path}`;
+      const action = neuromap.actions.find(a => a.id === event.actionId);
+      if (action) {
+        endpointActionLinks.push({
+          endpointKey,
+          actionId: event.actionId,
+          actionType: action.type,
+          confidence: event.actionConfidence,
+        });
+      }
+    }
+  }
+
   return {
     mode: neuromap.mode,
     selectedEndpoints,
+    actions: neuromap.actions,
+    endpointActionLinks,
     eventCount: neuromap.events.length,
     createdAt: neuromap.createdAt,
   };

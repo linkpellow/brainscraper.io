@@ -37,7 +37,8 @@ type MitmFlowEvent = {
 type ClientMessage = 
   | { type: 'ping' }
   | { type: 'get_history' }
-  | { type: 'clear_session' };
+  | { type: 'clear_session' }
+  | { type: 'action'; action: any };
 
 type ServerMessage =
   | { type: 'pong' }
@@ -45,6 +46,7 @@ type ServerMessage =
   | { type: 'events_batch'; data: MitmFlowEvent[] }
   | { type: 'history'; data: MitmFlowEvent[] }
   | { type: 'status'; connected: boolean; eventCount: number }
+  | { type: 'action'; action: any } // ActionEvent from client
   | { type: 'error'; message: string };
 
 class MitmBridge {

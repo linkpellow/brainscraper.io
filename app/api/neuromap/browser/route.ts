@@ -93,18 +93,40 @@ export async function GET(request: NextRequest) {
     const goButton = document.getElementById('go-button');
     const browserFrame = document.getElementById('browser-frame');
     
+    // Action capture (for browser mode)
+    // Note: This is a simplified version. Full implementation would require
+    // Playwright CDP integration to capture actions from the embedded browser.
+    
+    function sendAction(type, meta) {
+      // In a real implementation, this would send to WebSocket bridge
+      // For now, this is a placeholder
+      console.log('Action captured:', type, meta);
+    }
+    
     function navigate() {
       const url = urlInput.value.trim();
       if (url) {
         // Ensure URL has protocol
         const fullUrl = url.startsWith('http') ? url : 'https://' + url;
         browserFrame.src = fullUrl;
+        
+        // Send navigate action
+        sendAction('navigate', { url: fullUrl });
       }
     }
     
-    goButton.addEventListener('click', navigate);
+    goButton.addEventListener('click', () => {
+      sendAction('click', { selector: '#go-button' });
+      navigate();
+    });
+    
     urlInput.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') navigate();
+      if (e.key === 'Enter') {
+        sendAction('type', { textLen: urlInput.value.length, key: 'Enter' });
+        navigate();
+      } else {
+        sendAction('type', { textLen: urlInput.value.length + 1 });
+      }
     });
     
     // Update URL bar when iframe navigates
@@ -115,6 +137,13 @@ export async function GET(request: NextRequest) {
         // Cross-origin, can't access
       }
     });
+    
+    // Note: Full action capture requires Playwright CDP integration
+    // This would inject scripts into the iframe to capture:
+    // - click events (with CSS selector)
+    // - input events (text length only, not content)
+    // - form submissions
+    // - SPA route changes
   </script>
 </body>
 </html>
