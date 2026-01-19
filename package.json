@@ -15,7 +15,9 @@
     "dnc-scrub": "tsx scripts/dnc-scrub-leads-one-by-one.ts",
     "test:single-lead": "tsx scripts/test-single-lead-production.ts",
     "test:scraperapi": "tsx scripts/test-scraperapi-skip-tracing.ts",
-    "network-inspector": "tsx src/network-inspector/cli.ts"
+    "network-inspector": "tsx src/network-inspector/cli.ts",
+    "mitm:bridge": "tsx src/server/wsMitmBridge.ts",
+    "mitm:stream": "echo 'Run: mitmproxy -s tools/mitmproxy/stream_ws.py'"
   },
   "keywords": [
     "spreadsheet",
@@ -32,6 +34,7 @@
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
     "@types/three": "^0.182.0",
+    "@types/ws": "^8.18.1",
     "autoprefixer": "^10.4.22",
     "cheerio": "^1.1.2",
     "eslint": "^9.39.1",
@@ -47,6 +50,7 @@
     "tailwindcss": "^4.1.17",
     "three": "^0.182.0",
     "typescript": "^5.9.3",
+    "ws": "^8.19.0",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {

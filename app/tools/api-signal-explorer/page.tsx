@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import { Upload, Download, Filter, X, FileJson, Activity, Server, Clock } from 'lucide-react';
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
+import { Upload, Download, Filter, X, FileJson, Activity, Server, Clock, Wifi, WifiOff, Play, Square, Tag } from 'lucide-react';
 
 type MitmFlowEvent = {
   ts: number;
@@ -29,6 +29,21 @@ type MitmExport = {
 };
 
 type NoisePreset = 'default' | 'everything' | 'critical-path';
+type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'error';
+
+type EndpointData = {
+  method: string;
+  host: string;
+  path: string;
+  count: number;
+  statuses: Record<string, number>;
+  resMime?: string;
+  resSizeAvg?: number;
+  hasAuth: boolean;
+  isMutation: boolean;
+  sampleUrl: string;
+  lastSeen: number;
+};
 
 export default function APISignalExplorerPage() {
   const [flows, setFlows] = useState<MitmFlowEvent[]>([]);
@@ -36,6 +51,16 @@ export default function APISignalExplorerPage() {
   const [preset, setPreset] = useState<NoisePreset>('default');
   const [selectedEndpoints, setSelectedEndpoints] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
+  
+  // Live streaming state
+  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('disconnected');
+  const [isLive, setIsLive] = useState(false);
+  const [autoScroll, setAutoScroll] = useState(true);
+  const [isMarkingInteraction, setIsMarkingInteraction] = useState(false);
+  const [interactionWindow, setInteractionWindow] = useState<{ start: number; end?: number } | null>(null);
+  const wsRef = useRef<WebSocket | null>(null);
+  const endpointMapRef = useRef<Map<string, EndpointData>>(new Map());
+  const sessionStartRef = useRef<number | null>(null);
 
   // Convert mitmproxy flows to network events (for analysis)
   const networkEvents = useMemo(() => {
@@ -61,74 +86,122 @@ export default function APISignalExplorerPage() {
     });
   }, [flows]);
 
-  // Analyze and deduplicate endpoints
-  const endpoints = useMemo(() => {
-    if (networkEvents.length === 0) return [];
-
-    // Simple deduplication by method + host + path
-    const endpointMap = new Map<string, {
-      method: string;
-      host: string;
-      path: string;
-      count: number;
-      statuses: Record<string, number>;
-      resMime?: string;
-      resSizeAvg?: number;
-      hasAuth: boolean;
-      isMutation: boolean;
-      sampleUrl: string;
-    }>();
-
-    for (const event of networkEvents) {
-      const key = `${event.method} ${event.host}${event.path}`;
-      
-      if (!endpointMap.has(key)) {
-        endpointMap.set(key, {
-          method: event.method,
-          host: event.host,
-          path: event.path,
-          count: 0,
-          statuses: {},
-          hasAuth: false,
-          isMutation: false,
-          sampleUrl: event.url,
-        });
-      }
-
-      const endpoint = endpointMap.get(key)!;
-      endpoint.count++;
-      
-      if (event.status) {
-        const statusStr = String(event.status);
-        endpoint.statuses[statusStr] = (endpoint.statuses[statusStr] || 0) + 1;
-      }
-
-      if (event.resMime) {
-        endpoint.resMime = event.resMime;
-      }
-
-      if (event.resSize) {
-        endpoint.resSizeAvg = ((endpoint.resSizeAvg || 0) * (endpoint.count - 1) + event.resSize) / endpoint.count;
-      }
-
-      // Check for auth
-      const authHeaders = ['authorization', 'x-auth-token', 'x-api-key'];
-      if (authHeaders.some(h => event.reqHeaders[h.toLowerCase()])) {
-        endpoint.hasAuth = true;
-      }
-
-      // Check if mutation
-      if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(event.method)) {
-        endpoint.isMutation = true;
-      }
+  // Incremental deduplication (for live mode performance)
+  const updateEndpointIncremental = useCallback((event: typeof networkEvents[0]) => {
+    const key = `${event.method} ${event.host}${event.path}`;
+    
+    if (!endpointMapRef.current.has(key)) {
+      endpointMapRef.current.set(key, {
+        method: event.method,
+        host: event.host,
+        path: event.path,
+        count: 0,
+        statuses: {},
+        hasAuth: false,
+        isMutation: false,
+        sampleUrl: event.url,
+        lastSeen: event.ts,
+      });
     }
 
-    return Array.from(endpointMap.values());
-  }, [networkEvents]);
+    const endpoint = endpointMapRef.current.get(key)!;
+    endpoint.count++;
+    endpoint.lastSeen = event.ts;
+    
+    if (event.status) {
+      const statusStr = String(event.status);
+      endpoint.statuses[statusStr] = (endpoint.statuses[statusStr] || 0) + 1;
+    }
 
-  // Apply noise suppression preset
+    if (event.resMime) {
+      endpoint.resMime = event.resMime;
+    }
+
+    if (event.resSize) {
+      endpoint.resSizeAvg = ((endpoint.resSizeAvg || 0) * (endpoint.count - 1) + event.resSize) / endpoint.count;
+    }
+
+    // Check for auth
+    const authHeaders = ['authorization', 'x-auth-token', 'x-api-key'];
+    if (authHeaders.some(h => event.reqHeaders[h.toLowerCase()])) {
+      endpoint.hasAuth = true;
+    }
+
+    // Check if mutation
+    if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(event.method)) {
+      endpoint.isMutation = true;
+    }
+  }, []);
+
+  // Analyze and deduplicate endpoints (full recompute for file upload, incremental for live)
+  const endpoints = useMemo(() => {
+    if (isLive) {
+      // In live mode, use the incremental map
+      return Array.from(endpointMapRef.current.values());
+    } else {
+      // In file upload mode, do full recompute
+      if (networkEvents.length === 0) return [];
+
+      const endpointMap = new Map<string, EndpointData>();
+
+      for (const event of networkEvents) {
+        const key = `${event.method} ${event.host}${event.path}`;
+        
+        if (!endpointMap.has(key)) {
+          endpointMap.set(key, {
+            method: event.method,
+            host: event.host,
+            path: event.path,
+            count: 0,
+            statuses: {},
+            hasAuth: false,
+            isMutation: false,
+            sampleUrl: event.url,
+            lastSeen: event.ts,
+          });
+        }
+
+        const endpoint = endpointMap.get(key)!;
+        endpoint.count++;
+        endpoint.lastSeen = event.ts;
+        
+        if (event.status) {
+          const statusStr = String(event.status);
+          endpoint.statuses[statusStr] = (endpoint.statuses[statusStr] || 0) + 1;
+        }
+
+        if (event.resMime) {
+          endpoint.resMime = event.resMime;
+        }
+
+        if (event.resSize) {
+          endpoint.resSizeAvg = ((endpoint.resSizeAvg || 0) * (endpoint.count - 1) + event.resSize) / endpoint.count;
+        }
+
+        // Check for auth
+        const authHeaders = ['authorization', 'x-auth-token', 'x-api-key'];
+        if (authHeaders.some(h => event.reqHeaders[h.toLowerCase()])) {
+          endpoint.hasAuth = true;
+        }
+
+        // Check if mutation
+        if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(event.method)) {
+          endpoint.isMutation = true;
+        }
+      }
+
+      return Array.from(endpointMap.values());
+    }
+  }, [networkEvents, isLive]);
+
+  // Apply noise suppression preset and host filter
   const filteredEndpoints = useMemo(() => {
     let filtered = [...endpoints];
+
+    // Apply host filter
+    if (hostFilter.size > 0) {
+      filtered = filtered.filter((ep) => hostFilter.has(ep.host));
+    }
 
     if (preset === 'default') {
       // Hide unauthenticated, background-only, tiny responses, polling loops
@@ -149,7 +222,7 @@ export default function APISignalExplorerPage() {
     // 'everything' preset shows all
 
     return filtered.sort((a, b) => b.count - a.count);
-  }, [endpoints, preset]);
+  }, [endpoints, preset, hostFilter]);
 
   // Session statistics
   const stats = useMemo(() => {
@@ -251,6 +324,26 @@ export default function APISignalExplorerPage() {
     setSelectedEndpoints(new Set());
   };
 
+  const clearSession = () => {
+    setFlows([]);
+    setSession(null);
+    setSelectedEndpoints(new Set());
+    endpointMapRef.current.clear();
+    sessionStartRef.current = null;
+    setInteractionWindow(null);
+    if (wsRef.current) {
+      wsRef.current.send(JSON.stringify({ type: 'clear_session' }));
+    }
+  };
+
+  // Get unique hosts for filter chips
+  const uniqueHosts = useMemo(() => {
+    const hosts = new Set(endpoints.map(ep => ep.host));
+    return Array.from(hosts).sort();
+  }, [endpoints]);
+
+  const [hostFilter, setHostFilter] = useState<Set<string>>(new Set());
+
   return (
     <div className="min-h-screen p-6 sm:p-8" style={{ backgroundColor: '#0a0a0a' }}>
       <div className="max-w-7xl mx-auto">
@@ -264,8 +357,121 @@ export default function APISignalExplorerPage() {
           </p>
         </div>
 
-        {/* Upload Section */}
-        {flows.length === 0 && (
+        {/* Live Mode Controls */}
+        <div className="mb-6 p-4 bg-slate-900/50 rounded-lg border border-slate-800">
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="flex items-center gap-2">
+              {connectionStatus === 'connected' ? (
+                <Wifi className="w-5 h-5 text-green-400" />
+              ) : connectionStatus === 'connecting' ? (
+                <Activity className="w-5 h-5 text-yellow-400 animate-pulse" />
+              ) : (
+                <WifiOff className="w-5 h-5 text-slate-500" />
+              )}
+              <span className="text-sm font-medium text-slate-300">
+                Status: {connectionStatus === 'connected' ? 'Live' : connectionStatus === 'connecting' ? 'Connecting...' : 'Disconnected'}
+              </span>
+            </div>
+
+            {connectionStatus === 'disconnected' || connectionStatus === 'error' ? (
+              <button
+                onClick={connectWebSocket}
+                className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg text-white text-sm font-medium transition-colors"
+              >
+                <Play className="w-4 h-4" />
+                Connect
+              </button>
+            ) : (
+              <button
+                onClick={disconnectWebSocket}
+                className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-white text-sm font-medium transition-colors"
+              >
+                <Square className="w-4 h-4" />
+                Disconnect
+              </button>
+            )}
+
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={autoScroll}
+                onChange={(e) => setAutoScroll(e.target.checked)}
+                className="rounded"
+              />
+              <span className="text-sm text-slate-400">Auto-scroll</span>
+            </label>
+
+            {isMarkingInteraction ? (
+              <button
+                onClick={stopInteractionTagging}
+                className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg text-white text-sm font-medium transition-colors"
+              >
+                <Tag className="w-4 h-4" />
+                Stop Tagging
+              </button>
+            ) : (
+              <button
+                onClick={startInteractionTagging}
+                className="flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-white text-sm font-medium transition-colors"
+              >
+                <Tag className="w-4 h-4" />
+                Mark Next Interaction
+              </button>
+            )}
+
+            <button
+              onClick={clearSession}
+              className="flex items-center gap-2 px-3 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-white text-sm font-medium transition-colors ml-auto"
+            >
+              <X className="w-4 h-4" />
+              Clear Session
+            </button>
+          </div>
+
+          {/* Host Filter Chips */}
+          {uniqueHosts.length > 0 && (
+            <div className="mt-4 pt-4 border-t border-slate-800">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-xs text-slate-500 mr-2">Hosts:</span>
+                {uniqueHosts.map((host) => {
+                  const isSelected = hostFilter.has(host);
+                  return (
+                    <button
+                      key={host}
+                      onClick={() => {
+                        const newFilter = new Set(hostFilter);
+                        if (isSelected) {
+                          newFilter.delete(host);
+                        } else {
+                          newFilter.add(host);
+                        }
+                        setHostFilter(newFilter);
+                      }}
+                      className={`px-3 py-1 rounded-full text-xs font-mono transition-colors ${
+                        isSelected
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                      }`}
+                    >
+                      {host}
+                    </button>
+                  );
+                })}
+                {hostFilter.size > 0 && (
+                  <button
+                    onClick={() => setHostFilter(new Set())}
+                    className="px-3 py-1 rounded-full text-xs bg-slate-800 text-slate-400 hover:bg-slate-700"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Upload Section (only show when not in live mode) */}
+        {flows.length === 0 && !isLive && (
           <div className="mb-8 p-8 border-2 border-dashed border-slate-700 rounded-lg text-center">
             <FileJson className="w-12 h-12 mx-auto mb-4 text-slate-500" />
             <h2 className="text-xl font-semibold mb-2 text-slate-300">Upload mitmproxy Export</h2>
