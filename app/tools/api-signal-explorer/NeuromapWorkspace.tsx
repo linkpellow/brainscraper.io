@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Pause, Play, Check, X, Download, Smartphone, Globe, Plus, MousePointer, Keyboard, Navigation, Clock, Filter } from 'lucide-react';
 import type { Neuromap, RawNetworkEvent, NeuromapMode } from '@/src/tools/api-signal-explorer/neuromap';
 import { createActionEvent, generateActionLabel, type ActionEvent } from '@/src/tools/api-signal-explorer/actions';
