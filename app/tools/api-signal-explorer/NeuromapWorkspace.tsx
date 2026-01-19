@@ -76,6 +76,7 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
       try {
         const message = JSON.parse(event.data) as {
           type: string;
+          action?: ActionEvent;
           data?: Array<{
             ts: number;
             method: string;
