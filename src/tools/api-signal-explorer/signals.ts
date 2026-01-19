@@ -46,26 +46,11 @@ function detectIdentitySignals(
   postData: string | Record<string, string> | null,
   responseHeaders: Record<string, string>
 ): boolean {
-  // Check for session cookies
-  const sessionCookieNames = ['session', 'sessionid', 'sess', 'sid', 'jsessionid', 'phpsessid', 'aspsessionid'];
-  const hasSessionCookie = Object.keys(cookies).some(name =>
-    sessionCookieNames.some(pattern => name.toLowerCase().includes(pattern))
-  );
-
-  // Check for authorization headers
-  const hasAuthHeader = !!(
-    headers['authorization'] ||
-    headers['x-auth-token'] ||
-    headers['x-access-token'] ||
-    headers['x-api-key']
-  );
-
-  // Check for CSRF tokens in headers
-  const hasCsrfHeader = !!(
-    headers['x-csrf-token'] ||
-    headers['x-xsrf-token'] ||
-    headers['csrf-token']
-  );
+  // Use helper function
+  const authSignals = extractAuthSignalsFromHeaders(headers, cookies);
+  const hasSessionCookie = authSignals.hasSession;
+  const hasAuthHeader = authSignals.hasAuth;
+  const hasCsrfHeader = authSignals.hasCsrf;
 
   // Check for tokens in post data
   let hasTokenInBody = false;
@@ -223,12 +208,14 @@ function detectProtectionSignals(
   let hasCaptchaInBody = false;
   if (postData) {
     const bodyStr = typeof postData === 'string' ? postData : JSON.stringify(postData);
-    hasCaptchaInBody = captchaPatterns.some(pattern => bodyStr.toLowerCase().includes(pattern));
+    const bodyLower = bodyStr.toLowerCase();
+    hasCaptchaInBody = captchaPatterns.some(pattern => bodyLower.includes(pattern));
   }
 
   // Check response headers
-  const hasCaptchaInResponse = Object.keys(responseHeaders).some(key =>
-    captchaPatterns.some(pattern => key.toLowerCase().includes(pattern))
+  const responseHeaderKeys = Object.keys(responseHeaders).map(k => k.toLowerCase());
+  const hasCaptchaInResponse = captchaPatterns.some(pattern =>
+    responseHeaderKeys.some(key => key.includes(pattern.toLowerCase()))
   );
 
   // Fingerprint headers
@@ -244,11 +231,12 @@ function detectProtectionSignals(
   );
 
   // Challenge parameters
-  const challengePatterns = ['challenge', 'verify', 'validation', 'proof'];
+  const challengePatterns = ['challenge', 'verify', 'validation', 'proof', 'verification', 'challenge-response'];
   let hasChallenge = false;
   if (postData) {
     const bodyStr = typeof postData === 'string' ? postData : JSON.stringify(postData);
-    hasChallenge = challengePatterns.some(pattern => bodyStr.toLowerCase().includes(pattern));
+    const bodyLower = bodyStr.toLowerCase();
+    hasChallenge = challengePatterns.some(pattern => bodyLower.includes(pattern));
   }
 
   return hasCaptchaInHeaders || hasCaptchaInBody || hasCaptchaInResponse || hasFingerprint || hasChallenge;
@@ -370,6 +358,20 @@ export function convertToNetworkSignal(
     }
   }
 
+  // Extract cookies from headers if not provided
+  let cookies: Record<string, string> = event.reqCookies || {};
+  if (Object.keys(cookies).length === 0 && event.reqHeaders) {
+    const cookieHeader = event.reqHeaders['cookie'] || event.reqHeaders['Cookie'];
+    if (cookieHeader) {
+      cookieHeader.split(';').forEach(cookie => {
+        const [name, ...valueParts] = cookie.trim().split('=');
+        if (name && valueParts.length > 0) {
+          cookies[name.trim()] = valueParts.join('=').trim();
+        }
+      });
+    }
+  }
+
   // Parse post data
   let postData: string | Record<string, string> | null = null;
   if (event.reqBodyText) {
@@ -387,7 +389,7 @@ export function convertToNetworkSignal(
     method: event.method,
     url: event.url,
     headers: event.reqHeaders || {},
-    cookies: event.reqCookies || {},
+    cookies,
     queryParams,
     postData,
     status: event.status,

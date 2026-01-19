@@ -32,6 +32,20 @@ export type RawNetworkEvent = {
 
 import type { ActionEvent } from './actions';
 
+// Dynamic import to avoid circular dependencies
+let convertToNetworkSignal: ((event: any) => any) | null = null;
+function getConvertToNetworkSignal() {
+  if (!convertToNetworkSignal) {
+    try {
+      const signalsModule = require('./signals');
+      convertToNetworkSignal = signalsModule.convertToNetworkSignal;
+    } catch {
+      // Module not available
+    }
+  }
+  return convertToNetworkSignal;
+}
+
 export type Neuromap = {
   id: string;
   name: string;
@@ -82,7 +96,7 @@ export function toggleEndpointSelection(neuromap: Neuromap, endpointKey: string)
  */
 export function exportNeuromap(neuromap: Neuromap): {
   mode: NeuromapMode;
-  selectedEndpoints: Array<{ method: string; host: string; path: string }>;
+  selectedEndpoints: Array<{ method: string; host: string; path: string; categoryTags?: string[] }>;
   actions: ActionEvent[];
   endpointActionLinks: Array<{
     endpointKey: string;
@@ -90,11 +104,15 @@ export function exportNeuromap(neuromap: Neuromap): {
     actionType: string;
     confidence: number;
   }>;
+  endpointSignals: Array<{
+    endpointKey: string;
+    categoryTags: string[];
+  }>;
   eventCount: number;
   createdAt: number;
 } {
   // Extract unique endpoints from selected keys
-  const selectedEndpoints: Array<{ method: string; host: string; path: string }> = [];
+  const selectedEndpoints: Array<{ method: string; host: string; path: string; categoryTags?: string[] }> = [];
   
   for (const key of neuromap.selectedEndpointKeys) {
     // Key format: "METHOD host/path"
@@ -105,7 +123,24 @@ export function exportNeuromap(neuromap: Neuromap): {
       const [host, ...pathParts] = hostPath.split('/');
       const path = '/' + pathParts.join('/');
       
-      selectedEndpoints.push({ method, host, path });
+      // Get category tags from first matching event
+      const firstEvent = neuromap.events.find(e => 
+        `${e.method} ${e.host}${e.path}` === key
+      );
+      let categoryTags: string[] | undefined;
+      if (firstEvent) {
+        const converter = getConvertToNetworkSignal();
+        if (converter) {
+          try {
+            const signal = converter(firstEvent);
+            categoryTags = signal.categoryTags;
+          } catch {
+            // Ignore conversion errors
+          }
+        }
+      }
+      
+      selectedEndpoints.push({ method, host, path, categoryTags });
     }
   }
 
@@ -132,11 +167,37 @@ export function exportNeuromap(neuromap: Neuromap): {
     }
   }
 
+  // Build endpoint signals map
+  const endpointSignalsMap = new Map<string, Set<string>>();
+  const converter = getConvertToNetworkSignal();
+  if (converter) {
+    for (const event of neuromap.events) {
+      const endpointKey = `${event.method} ${event.host}${event.path}`;
+      try {
+        const signal = converter(event);
+        if (!endpointSignalsMap.has(endpointKey)) {
+          endpointSignalsMap.set(endpointKey, new Set());
+        }
+        signal.categoryTags.forEach(tag => {
+          endpointSignalsMap.get(endpointKey)!.add(tag);
+        });
+      } catch {
+        // Ignore conversion errors
+      }
+    }
+  }
+
+  const endpointSignals = Array.from(endpointSignalsMap.entries()).map(([endpointKey, tags]) => ({
+    endpointKey,
+    categoryTags: Array.from(tags),
+  }));
+
   return {
     mode: neuromap.mode,
     selectedEndpoints,
     actions: neuromap.actions,
     endpointActionLinks,
+    endpointSignals,
     eventCount: neuromap.events.length,
     createdAt: neuromap.createdAt,
   };

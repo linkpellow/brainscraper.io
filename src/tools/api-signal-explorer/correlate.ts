@@ -181,19 +181,39 @@ export function linkActionToEvents(
 ): void {
   const correlations = correlateActionToNetwork(action, events, options);
 
-  // Create a map for quick lookup
-  const eventMap = new Map<string, RawNetworkEvent>();
+  // Create a map for quick lookup by multiple keys (handle timestamp variations)
+  const eventMap = new Map<string, RawNetworkEvent[]>();
   for (const event of events) {
-    const key = `${event.ts}_${event.method}_${event.host}_${event.path}`;
-    eventMap.set(key, event);
+    const baseKey = `${event.method}_${event.host}_${event.path}`;
+    if (!eventMap.has(baseKey)) {
+      eventMap.set(baseKey, []);
+    }
+    eventMap.get(baseKey)!.push(event);
   }
 
   // Apply correlations
   for (const { eventId, confidence } of correlations) {
-    const event = eventMap.get(eventId);
-    if (event && confidence > 0.3) { // Only link if confidence > 30%
-      event.actionId = action.id;
-      event.actionConfidence = confidence;
+    // Parse eventId: "ts_method_host_path"
+    const parts = eventId.split('_');
+    if (parts.length >= 4) {
+      const method = parts[1];
+      const host = parts[2];
+      const path = parts.slice(3).join('_');
+      const baseKey = `${method}_${host}_${path}`;
+      
+      const candidates = eventMap.get(baseKey) || [];
+      // Find the event closest to the action timestamp
+      const targetEvent = candidates.reduce((closest, current) => {
+        if (!closest) return current;
+        const closestDiff = Math.abs(closest.ts - action.ts);
+        const currentDiff = Math.abs(current.ts - action.ts);
+        return currentDiff < closestDiff ? current : closest;
+      }, undefined as RawNetworkEvent | undefined);
+
+      if (targetEvent && confidence > 0.3) { // Only link if confidence > 30%
+        targetEvent.actionId = action.id;
+        targetEvent.actionConfidence = confidence;
+      }
     }
   }
 }

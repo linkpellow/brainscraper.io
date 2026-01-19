@@ -5,7 +5,7 @@ import { Pause, Play, Check, X, Download, Smartphone, Globe, Plus, MousePointer,
 import type { Neuromap, RawNetworkEvent, NeuromapMode } from '@/src/tools/api-signal-explorer/neuromap';
 import { createActionEvent, generateActionLabel, type ActionEvent } from '@/src/tools/api-signal-explorer/actions';
 import { linkActionToEvents } from '@/src/tools/api-signal-explorer/correlate';
-import { convertToNetworkSignal, getCategoryDescription, type CategoryTag } from '@/src/tools/api-signal-explorer/signals';
+import { convertToNetworkSignal, getCategoryDescription, getCategoryColor, type CategoryTag } from '@/src/tools/api-signal-explorer/signals';
 
 type EndpointData = {
   method: string;
@@ -113,6 +113,17 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
             .map(flow => {
               try {
                 const url = new URL(flow.url);
+                // Extract query parameters
+                const query: Record<string, string | string[]> = {};
+                url.searchParams.forEach((value, key) => {
+                  if (query[key]) {
+                    const existing = query[key];
+                    query[key] = Array.isArray(existing) ? [...existing, value] : [existing as string, value];
+                  } else {
+                    query[key] = value;
+                  }
+                });
+
                 return {
                   ts: flow.ts,
                   method: flow.method,
@@ -122,12 +133,15 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
                   status: flow.status,
                   reqHeaders: flow.reqHeaders,
                   resHeaders: flow.resHeaders,
+                  reqCookies: {}, // Will be extracted from headers if available
                   reqBodySize: flow.reqBodySize,
                   resBodySize: flow.resBodySize,
                   resMime: flow.resMime,
+                  query,
                   phase: undefined,
                   actionTag: undefined,
                   source: neuromap.mode,
+                  durationMs: flow.durationMs,
                 } as RawNetworkEvent;
               } catch (e) {
                 return null;
@@ -154,6 +168,31 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
             .map(flow => {
               try {
                 const url = new URL(flow.url);
+                // Extract query parameters
+                const query: Record<string, string | string[]> = {};
+                url.searchParams.forEach((value, key) => {
+                  if (query[key]) {
+                    const existing = query[key];
+                    query[key] = Array.isArray(existing) ? [...existing, value] : [existing as string, value];
+                  } else {
+                    query[key] = value;
+                  }
+                });
+
+                // Extract cookies from headers
+                const reqCookies: Record<string, string> = {};
+                if (flow.reqHeaders) {
+                  const cookieHeader = flow.reqHeaders['cookie'] || flow.reqHeaders['Cookie'];
+                  if (cookieHeader) {
+                    cookieHeader.split(';').forEach(cookie => {
+                      const [name, ...valueParts] = cookie.trim().split('=');
+                      if (name && valueParts.length > 0) {
+                        reqCookies[name.trim()] = valueParts.join('=').trim();
+                      }
+                    });
+                  }
+                }
+
                 return {
                   ts: flow.ts,
                   method: flow.method,
@@ -163,12 +202,15 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
                   status: flow.status,
                   reqHeaders: flow.reqHeaders,
                   resHeaders: flow.resHeaders,
+                  reqCookies,
                   reqBodySize: flow.reqBodySize,
                   resBodySize: flow.resBodySize,
                   resMime: flow.resMime,
+                  query,
                   phase: undefined,
                   actionTag: undefined,
                   source: neuromap.mode,
+                  durationMs: flow.durationMs,
                 } as RawNetworkEvent;
               } catch (e) {
                 return null;
