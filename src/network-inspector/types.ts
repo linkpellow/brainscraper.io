@@ -99,10 +99,11 @@ export type HarEntry = {
   response: {
     status: number;
     headers: Array<{ name: string; value: string }>;
-    content: {
+    content?: {
       mimeType?: string;
       size?: number;
       text?: string;
+      encoding?: string;
     };
     bodySize?: number;
   };
