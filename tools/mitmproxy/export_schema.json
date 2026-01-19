@@ -1,0 +1,122 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Mitmproxy Flow Export Schema",
+  "description": "Schema for mitmproxy flow exports - clean, normalized event stream",
+  "type": "object",
+  "properties": {
+    "version": {
+      "type": "string",
+      "description": "Schema version",
+      "default": "1.0.0"
+    },
+    "session": {
+      "type": "object",
+      "properties": {
+        "startTs": {
+          "type": "number",
+          "description": "Session start timestamp (epoch ms)"
+        },
+        "endTs": {
+          "type": "number",
+          "description": "Session end timestamp (epoch ms)"
+        },
+        "durationMs": {
+          "type": "number",
+          "description": "Total session duration in milliseconds"
+        }
+      }
+    },
+    "flows": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/MitmFlowEvent"
+      }
+    }
+  },
+  "required": ["version", "flows"],
+  "definitions": {
+    "MitmFlowEvent": {
+      "type": "object",
+      "description": "A single request/response flow event",
+      "properties": {
+        "ts": {
+          "type": "number",
+          "description": "Event timestamp (epoch ms)"
+        },
+        "method": {
+          "type": "string",
+          "description": "HTTP method (GET, POST, etc.)"
+        },
+        "url": {
+          "type": "string",
+          "description": "Full request URL"
+        },
+        "status": {
+          "type": "number",
+          "description": "HTTP response status code",
+          "minimum": 100,
+          "maximum": 599
+        },
+        "reqHeaders": {
+          "type": "object",
+          "description": "Request headers (redacted)",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "resHeaders": {
+          "type": "object",
+          "description": "Response headers",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "reqBodySize": {
+          "type": "number",
+          "description": "Request body size in bytes"
+        },
+        "resBodySize": {
+          "type": "number",
+          "description": "Response body size in bytes"
+        },
+        "resMime": {
+          "type": "string",
+          "description": "Response content-type (MIME type)"
+        },
+        "client": {
+          "type": "object",
+          "description": "Client connection info",
+          "properties": {
+            "ip": {
+              "type": "string",
+              "description": "Client IP address"
+            },
+            "port": {
+              "type": "number",
+              "description": "Client port"
+            }
+          }
+        },
+        "server": {
+          "type": "object",
+          "description": "Server connection info",
+          "properties": {
+            "ip": {
+              "type": "string",
+              "description": "Server IP address"
+            },
+            "port": {
+              "type": "number",
+              "description": "Server port"
+            }
+          }
+        },
+        "durationMs": {
+          "type": "number",
+          "description": "Request duration in milliseconds"
+        }
+      },
+      "required": ["ts", "method", "url"]
+    }
+  }
+}
