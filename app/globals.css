@@ -248,7 +248,8 @@ body {
    MONOCHROME DARK MODE DESIGN SYSTEM
    ============================================ */
 
-/* Spherical Interior Background */
+/* DEPRECATED: Spherical Interior Background - Replaced by WebGL Neural Pin Field */
+/*
 .spherical-bg {
   background: radial-gradient(ellipse at center, 
     rgba(40, 40, 40, 0.95) 0%,
@@ -258,66 +259,9 @@ body {
   );
   background-attachment: fixed;
 }
+*/
 
-/* Spherical Grid - Curved Perspective Creating Room-Like Depth */
-.spherical-grid {
-  position: absolute;
-  inset: -20%;
-  background-image: 
-    /* Curved grid lines that curve inward - horizontal arcs */
-    radial-gradient(ellipse 300% 150% at 50% 0%, rgba(255, 255, 255, 0.12) 0%, transparent 40%),
-    radial-gradient(ellipse 300% 150% at 50% 20%, rgba(200, 200, 200, 0.1) 0%, transparent 40%),
-    radial-gradient(ellipse 300% 150% at 50% 40%, rgba(150, 150, 150, 0.08) 0%, transparent 40%),
-    radial-gradient(ellipse 300% 150% at 50% 60%, rgba(100, 100, 100, 0.08) 0%, transparent 40%),
-    radial-gradient(ellipse 300% 150% at 50% 80%, rgba(200, 200, 200, 0.1) 0%, transparent 40%),
-    radial-gradient(ellipse 300% 150% at 50% 100%, rgba(255, 255, 255, 0.12) 0%, transparent 40%),
-    /* Curved grid lines - vertical arcs */
-    radial-gradient(ellipse 150% 300% at 0% 50%, rgba(255, 255, 255, 0.12) 0%, transparent 40%),
-    radial-gradient(ellipse 150% 300% at 20% 50%, rgba(200, 200, 200, 0.1) 0%, transparent 40%),
-    radial-gradient(ellipse 150% 300% at 40% 50%, rgba(150, 150, 150, 0.08) 0%, transparent 40%),
-    radial-gradient(ellipse 150% 300% at 60% 50%, rgba(100, 100, 100, 0.08) 0%, transparent 40%),
-    radial-gradient(ellipse 150% 300% at 80% 50%, rgba(200, 200, 200, 0.1) 0%, transparent 40%),
-    radial-gradient(ellipse 150% 300% at 100% 50%, rgba(255, 255, 255, 0.12) 0%, transparent 40%),
-    /* Perspective grid lines that curve inward */
-    repeating-linear-gradient(
-      0deg,
-      transparent,
-      transparent 47px,
-      rgba(255, 255, 255, 0.15) 48px,
-      rgba(255, 255, 255, 0.15) 50px,
-      transparent 51px,
-      transparent 97px
-    ),
-    repeating-linear-gradient(
-      90deg,
-      transparent,
-      transparent 47px,
-      rgba(200, 200, 200, 0.15) 48px,
-      rgba(200, 200, 200, 0.15) 50px,
-      transparent 51px,
-      transparent 97px
-    );
-  background-size: 
-    100% 100%,
-    100% 100%,
-    100% 100%,
-    100% 100%,
-    100% 100%,
-    100% 100%,
-    100% 100%,
-    100% 100%,
-    100% 100%,
-    100% 100%,
-    100% 100%,
-    100% 100%,
-    100% 100%,
-    100% 100%;
-  transform: perspective(1500px) rotateX(8deg) rotateY(-2deg);
-  transform-origin: center center;
-  transform-style: preserve-3d;
-  opacity: 0.7;
-  filter: blur(0.5px);
-}
+/* DEPRECATED: Spherical Grid - Replaced by WebGL Neural Pin Field */
 
 /* Flowing Energy Lines Animation */
 @keyframes energy-flow {

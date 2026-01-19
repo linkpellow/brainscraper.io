@@ -1,0 +1,455 @@
+'use client';
+
+import { useEffect, useRef, useState } from 'react';
+import * as THREE from 'three';
+
+/**
+ * Neural Pin Field Background
+ * 
+ * GPU-accelerated WebGL background using Three.js InstancedMesh
+ * Creates a living depth surface with thousands of pins that move
+ * in neural, low-frequency patterns.
+ * 
+ * Optimized for smooth animations and non-interference with enrichment processes.
+ */
+export default function NeuralPinFieldBackground() {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const sceneRef = useRef<THREE.Scene | null>(null);
+  const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
+  const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
+  const pinsRef = useRef<THREE.InstancedMesh | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
+  const mouseRef = useRef({ x: 0, y: 0 });
+  const timeRef = useRef(0);
+  const isActiveRef = useRef(true);
+  const isFormFocusedRef = useRef(false);
+  const isEnrichmentActiveRef = useRef(false);
+  const lastFrameTimeRef = useRef(0);
+  const frameCountRef = useRef(0);
+  const performanceRef = useRef({ fps: 60, frameTime: 16.67 });
+  const targetFPS = 30; // Target 30fps for smoother, less CPU-intensive animation
+  const frameInterval = 1000 / targetFPS;
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isMounted || !containerRef.current) return;
+
+    const container = containerRef.current;
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+
+    // Scene setup
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x000000);
+    scene.fog = new THREE.FogExp2(0x000000, 0.0008);
+    sceneRef.current = scene;
+
+    // Camera with subtle perspective tilt for depth
+    const camera = new THREE.PerspectiveCamera(
+      60,
+      width / height,
+      0.1,
+      1000
+    );
+    camera.position.set(0, 0, 120);
+    camera.lookAt(0, 0, 0);
+    // Subtle tilt for depth perception
+    camera.rotation.x = -0.1;
+    camera.rotation.y = 0.05;
+    cameraRef.current = camera;
+
+    // Renderer
+    const renderer = new THREE.WebGLRenderer({
+      antialias: true,
+      alpha: false,
+      powerPreference: 'high-performance',
+    });
+    renderer.setSize(width, height);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setClearColor(0x000000, 1);
+    renderer.domElement.style.position = 'fixed';
+    renderer.domElement.style.top = '0';
+    renderer.domElement.style.left = '0';
+    renderer.domElement.style.width = '100%';
+    renderer.domElement.style.height = '100%';
+    renderer.domElement.style.zIndex = '0';
+    renderer.domElement.style.pointerEvents = 'none';
+    container.appendChild(renderer.domElement);
+    rendererRef.current = renderer;
+
+    // Lighting for depth illusion - directional + ambient
+    const ambientLight = new THREE.AmbientLight(0x404040, 0.4);
+    scene.add(ambientLight);
+
+    // Primary directional light - creates depth through shading
+    const directionalLight1 = new THREE.DirectionalLight(0xffffff, 0.6);
+    directionalLight1.position.set(50, 50, 50);
+    directionalLight1.castShadow = false;
+    scene.add(directionalLight1);
+
+    // Secondary directional light - fills shadows
+    const directionalLight2 = new THREE.DirectionalLight(0x666666, 0.3);
+    directionalLight2.position.set(-50, -50, 50);
+    scene.add(directionalLight2);
+
+    // Subtle red accent light for BrainScraper branding
+    const accentLight = new THREE.PointLight(0xff5757, 0.15, 200);
+    accentLight.position.set(0, 0, 100);
+    scene.add(accentLight);
+
+    // Pin geometry - thin box
+    const pinGeometry = new THREE.BoxGeometry(0.3, 1, 0.3);
+    
+    // Pin material - dark graphite with subtle metallic highlights
+    // Very subtle specular lighting for depth perception
+    const pinMaterial = new THREE.MeshPhongMaterial({
+      color: 0x1a1a1a, // Dark graphite base
+      emissive: 0x0a0a0a, // Very subtle self-illumination
+      specular: 0x333333, // Soft metallic highlights
+      shininess: 30,
+      flatShading: false,
+    });
+
+    // Grid configuration - optimized for performance
+    // Adaptive grid size based on device capabilities
+    const getOptimalGridSize = (): number => {
+      const isHighPerf = navigator.hardwareConcurrency && navigator.hardwareConcurrency >= 8;
+      const hasHighMemory = (navigator as any).deviceMemory && (navigator as any).deviceMemory >= 8;
+      // Reduce grid size on lower-end devices
+      if (!isHighPerf && !hasHighMemory) return 70; // 70x70 = 4900 pins
+      return 90; // 90x90 = 8100 pins
+    };
+    
+    const gridSize = getOptimalGridSize();
+    const spacing = 1.2;
+    const totalPins = gridSize * gridSize;
+
+    // Create instanced mesh for performance
+    const pins = new THREE.InstancedMesh(pinGeometry, pinMaterial, totalPins);
+    pins.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    pinsRef.current = pins;
+
+    // Initialize pin positions - reuse single matrix for efficiency
+    const baseMatrix = new THREE.Matrix4();
+    const positions = new Float32Array(totalPins * 3);
+    let index = 0;
+
+    for (let i = 0; i < gridSize; i++) {
+      for (let j = 0; j < gridSize; j++) {
+        const x = (i - gridSize / 2) * spacing;
+        const z = (j - gridSize / 2) * spacing;
+        const y = 0;
+
+        positions[index * 3] = x;
+        positions[index * 3 + 1] = y;
+        positions[index * 3 + 2] = z;
+
+        baseMatrix.makeTranslation(x, y, z);
+        pins.setMatrixAt(index, baseMatrix);
+        index++;
+      }
+    }
+
+    pins.instanceMatrix.needsUpdate = true;
+    scene.add(pins);
+
+    // Neural motion functions - optimized with cached calculations
+    // Pre-compute constants to avoid repeated calculations
+    const NOISE_SCALE = 0.08;
+    const WAVE_SCALE = 0.4;
+    const INTERACTION_MAX_DIST = 15;
+    const INTERACTION_MAX_DIST_SQ = INTERACTION_MAX_DIST * INTERACTION_MAX_DIST;
+    
+    // Multi-octave Perlin-like noise using sine waves for smooth, low-frequency motion
+    const noise = (x: number, y: number, t: number): number => {
+      // Very slow, neural undulation - represents "background thought"
+      // Optimized: use fewer calculations when enrichment is active
+      const scale = isEnrichmentActiveRef.current ? 0.5 : 1.0;
+      const n1 = Math.sin(x * NOISE_SCALE + t * 0.25) * 0.4 * scale;
+      const n2 = Math.sin(y * NOISE_SCALE + t * 0.2) * 0.4 * scale;
+      const n3 = Math.sin((x + y) * 0.12 + t * 0.15) * 0.3 * scale;
+      return (n1 + n2 + n3) / 3; // Reduced from 4 to 3 calculations
+    };
+
+    const wave = (x: number, y: number, t: number): number => {
+      // Traveling radial waves - optimized with distance squared
+      const distSq = x * x + y * y;
+      const dist = Math.sqrt(distSq);
+      // Skip wave calculations when enrichment is active
+      if (isEnrichmentActiveRef.current) return 0;
+      const wave1 = Math.sin(dist * WAVE_SCALE - t * 1.5) * 0.25;
+      const wave2 = Math.sin(dist * 0.25 - t * 1.2) * 0.15;
+      return (wave1 + wave2) / 2; // Reduced from 3 to 2 waves
+    };
+
+    const interaction = (x: number, y: number, mx: number, my: number): number => {
+      // Cursor proximity effect - optimized with distance squared
+      const dx = x - mx;
+      const dy = y - my;
+      const distSq = dx * dx + dy * dy;
+      // Early exit if too far
+      if (distSq > INTERACTION_MAX_DIST_SQ) return 0;
+      // Skip interaction when enrichment is active
+      if (isEnrichmentActiveRef.current) return 0;
+      const dist = Math.sqrt(distSq);
+      const falloff = Math.exp(-(distSq) / 25); // Use distSq for faster calculation
+      return falloff * -0.6; // Depress pins near cursor
+    };
+
+    // Form focus detection - reduce motion during input
+    const handleFocus = (e: FocusEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT') {
+        isFormFocusedRef.current = true;
+      }
+    };
+    const handleBlur = (e: FocusEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT') {
+        // Check if focus moved to another form element
+        setTimeout(() => {
+          const activeElement = document.activeElement;
+          if (!activeElement || 
+              (activeElement.tagName !== 'INPUT' && 
+               activeElement.tagName !== 'TEXTAREA' && 
+               activeElement.tagName !== 'SELECT')) {
+            isFormFocusedRef.current = false;
+          }
+        }, 10);
+      }
+    };
+
+    // Use event delegation for dynamic form elements
+    document.addEventListener('focusin', handleFocus);
+    document.addEventListener('focusout', handleBlur);
+
+    // Detect enrichment activity - monitor for enrichment-related DOM changes and network activity
+    const detectEnrichmentActivity = () => {
+      try {
+        // Check for enrichment progress indicators, modals, or active API calls
+        const progressModals = document.querySelectorAll(
+          '[class*="progress"]:not([class*="hidden"]), ' +
+          '[class*="enrichment"]:not([class*="hidden"]), ' +
+          '[class*="enrich"]:not([class*="hidden"])'
+        );
+        const loadingIndicators = document.querySelectorAll(
+          '[class*="loading"]:not([class*="hidden"]), ' +
+          '[class*="spinner"]:not([class*="hidden"])'
+        );
+        const isEnriching = progressModals.length > 0 || loadingIndicators.length > 0;
+        
+        // Check for network activity - recent API calls to enrichment endpoints
+        const recentEntries = performance.getEntriesByType('resource') as PerformanceResourceTiming[];
+        const now = Date.now();
+        const hasActiveRequests = recentEntries.some(entry => {
+          const isEnrichmentAPI = entry.name.includes('/api/') && 
+            (entry.name.includes('enrich') || entry.name.includes('scrape') || entry.name.includes('job'));
+          const isRecent = now - entry.responseEnd < 3000; // 3 second window
+          return isEnrichmentAPI && isRecent;
+        });
+        
+        // Check localStorage for enrichment job status
+        let hasActiveJob = false;
+        try {
+          const jobStatus = localStorage.getItem('enrichmentJobStatus');
+          if (jobStatus) {
+            const job = JSON.parse(jobStatus);
+            hasActiveJob = job.status === 'running' || job.status === 'pending';
+          }
+        } catch (e) {
+          // Ignore localStorage errors
+        }
+        
+        isEnrichmentActiveRef.current = isEnriching || hasActiveRequests || hasActiveJob;
+      } catch (e) {
+        // Fallback: assume not enriching if detection fails
+        isEnrichmentActiveRef.current = false;
+      }
+    };
+
+    // Monitor enrichment activity periodically
+    const enrichmentCheckInterval = setInterval(detectEnrichmentActivity, 500);
+
+    // Performance monitoring
+    const updatePerformanceMetrics = (currentTime: number) => {
+      const deltaTime = currentTime - lastFrameTimeRef.current;
+      lastFrameTimeRef.current = currentTime;
+      
+      frameCountRef.current++;
+      if (frameCountRef.current % 30 === 0) { // Update every 30 frames
+        performanceRef.current.fps = Math.round(1000 / deltaTime);
+        performanceRef.current.frameTime = deltaTime;
+      }
+    };
+
+    // Animation loop with frame rate limiting and performance optimization
+    const animate = (currentTime: number = performance.now()) => {
+      if (!isActiveRef.current) {
+        animationFrameRef.current = requestAnimationFrame(animate);
+        return;
+      }
+
+      // Frame rate limiting - skip frames if too fast
+      const timeSinceLastFrame = currentTime - lastFrameTimeRef.current;
+      if (timeSinceLastFrame < frameInterval && !isEnrichmentActiveRef.current) {
+        animationFrameRef.current = requestAnimationFrame(animate);
+        return;
+      }
+
+      updatePerformanceMetrics(currentTime);
+
+      // Pause or significantly reduce work when enrichment is active
+      if (isEnrichmentActiveRef.current) {
+        // Only update every 3rd frame when enrichment is active
+        if (frameCountRef.current % 3 !== 0) {
+          animationFrameRef.current = requestAnimationFrame(animate);
+          return;
+        }
+      }
+
+      // Adaptive time step based on activity
+      let timeStep = 0.01;
+      if (isFormFocusedRef.current) timeStep = 0.003;
+      if (isEnrichmentActiveRef.current) timeStep = 0.001; // Very slow during enrichment
+      timeRef.current += timeStep;
+
+      // Update pin heights - optimized batch processing with early exits
+      const mouseX = (mouseRef.current.x / width) * gridSize * spacing - (gridSize * spacing) / 2;
+      const mouseY = (mouseRef.current.y / height) * gridSize * spacing - (gridSize * spacing) / 2;
+
+      // Use requestIdleCallback for non-critical updates when possible
+      const updatePins = () => {
+        // Reuse single matrix for all updates (more efficient than pooling for this use case)
+        const updateMatrix = baseMatrix;
+        
+        // Process in batches - skip every other pin when enrichment is active
+        const stepSize = isEnrichmentActiveRef.current ? 2 : 1;
+        
+        for (let i = 0; i < gridSize; i += stepSize) {
+          for (let j = 0; j < gridSize; j += stepSize) {
+            const x = (i - gridSize / 2) * spacing;
+            const z = (j - gridSize / 2) * spacing;
+
+            // Neural motion formula: base + waves + interaction
+            const baseNoise = noise(x, z, timeRef.current) * 0.6;
+            const waveMotion = wave(x, z, timeRef.current) * 0.3;
+            // Reduce interaction effect when form is focused or enrichment active
+            const interactionMultiplier = (isFormFocusedRef.current || isEnrichmentActiveRef.current) ? 0.1 : 0.4;
+            const interactionEffect = interaction(x, z, mouseX, mouseY) * interactionMultiplier;
+
+            let height = baseNoise + waveMotion + interactionEffect;
+            // Smooth clamping with easing
+            height = Math.max(-2.5, Math.min(2.5, height));
+
+            // Update instance matrix
+            const instanceIndex = i * gridSize + j;
+            updateMatrix.makeTranslation(x, height, z);
+            pins.setMatrixAt(instanceIndex, updateMatrix);
+            
+            // If skipping pins, interpolate for smoother appearance
+            if (stepSize > 1 && i + 1 < gridSize && j + 1 < gridSize) {
+              const nextIndex = (i + 1) * gridSize + (j + 1);
+              pins.setMatrixAt(nextIndex, updateMatrix);
+            }
+          }
+        }
+        
+        pins.instanceMatrix.needsUpdate = true;
+      };
+
+      // Use requestIdleCallback when available and not during enrichment
+      if (typeof requestIdleCallback !== 'undefined' && !isEnrichmentActiveRef.current) {
+        requestIdleCallback(updatePins, { timeout: 16 });
+      } else {
+        updatePins();
+      }
+
+      // Subtle camera parallax based on mouse (disabled when form focused or enrichment active)
+      if (camera && !isFormFocusedRef.current && !isEnrichmentActiveRef.current) {
+        const parallaxX = (mouseRef.current.x / width - 0.5) * 0.5;
+        const parallaxY = (mouseRef.current.y / height - 0.5) * 0.5;
+        camera.position.x = parallaxX;
+        camera.position.y = parallaxY;
+        camera.lookAt(parallaxX, parallaxY, 0);
+      } else if (camera) {
+        // Reset to center when form is focused or enrichment active
+        camera.position.x = 0;
+        camera.position.y = 0;
+        camera.lookAt(0, 0, 0);
+      }
+
+      renderer.render(scene, camera);
+      animationFrameRef.current = requestAnimationFrame(animate);
+    };
+
+    // Mouse tracking
+    const handleMouseMove = (e: MouseEvent) => {
+      mouseRef.current.x = e.clientX;
+      mouseRef.current.y = e.clientY;
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+
+    // Handle visibility change
+    const handleVisibilityChange = () => {
+      isActiveRef.current = !document.hidden;
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    // Handle resize
+    const handleResize = () => {
+      const newWidth = window.innerWidth;
+      const newHeight = window.innerHeight;
+
+      if (camera) {
+        camera.aspect = newWidth / newHeight;
+        camera.updateProjectionMatrix();
+      }
+
+      if (renderer) {
+        renderer.setSize(newWidth, newHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+
+    // Start animation
+    animate();
+
+    // Cleanup
+    return () => {
+      clearInterval(enrichmentCheckInterval);
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('resize', handleResize);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      document.removeEventListener('focusin', handleFocus);
+      document.removeEventListener('focusout', handleBlur);
+
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+
+      if (renderer) {
+        renderer.dispose();
+        if (container.contains(renderer.domElement)) {
+          container.removeChild(renderer.domElement);
+        }
+      }
+
+      if (pins) {
+        pins.dispose();
+      }
+
+      if (pinGeometry) pinGeometry.dispose();
+      if (pinMaterial) pinMaterial.dispose();
+    };
+  }, [isMounted]);
+
+  return <div ref={containerRef} className="fixed inset-0 pointer-events-none z-0" />;
+}

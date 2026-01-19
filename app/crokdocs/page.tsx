@@ -79,15 +79,11 @@ export default function CrokDocsPage() {
   useEffect(() => {
     // Override body background for this page
     document.body.style.backgroundColor = '#0d3d0d';
-    const sphericalBg = document.querySelector('.spherical-bg');
-    const sphericalGrid = document.querySelector('.spherical-grid');
-    if (sphericalBg) (sphericalBg as HTMLElement).style.display = 'none';
-    if (sphericalGrid) (sphericalGrid as HTMLElement).style.display = 'none';
+    // Neural Pin Field background is handled by AppLayout
+    // No need to hide it here as it's already behind content
     
     return () => {
       document.body.style.backgroundColor = '';
-      if (sphericalBg) (sphericalBg as HTMLElement).style.display = '';
-      if (sphericalGrid) (sphericalGrid as HTMLElement).style.display = '';
     };
   }, []);
 

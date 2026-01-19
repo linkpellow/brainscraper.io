@@ -8,6 +8,8 @@ import { extractLeadSummary } from './extractLeadSummary';
 import { callAPIWithConfig } from './apiToggleMiddleware';
 import { getUshaToken, clearTokenCache } from './getUshaToken';
 import { getCognitoIdToken, clearCognitoTokenCache } from './cognitoAuth';
+import type { EnrichmentStation } from './enrichmentStations';
+import { getDefaultStationConfig } from './enrichmentStations';
 
 /**
  * Detailed progress information for real-time tracking
@@ -1382,8 +1384,11 @@ async function checkDNCStatus(
 export async function enrichRow(
   row: Record<string, string | number>,
   headers: string[],
-  onProgress?: (step: EnrichmentProgress['step'], stepDetails?: EnrichmentProgress['stepDetails'], errors?: string[]) => void
+  onProgress?: (step: EnrichmentProgress['step'], stepDetails?: EnrichmentProgress['stepDetails'], errors?: string[]) => void,
+  enabledStations?: Set<EnrichmentStation>
 ): Promise<EnrichmentResult> {
+  // Default to all stations enabled if not specified
+  const stations = enabledStations || getDefaultStationConfig();
   // DIAGNOSTIC: Log input row data
   const emailColumns = headers.filter(h => isEmailColumn(h));
   const phoneColumns = headers.filter(h => isPhoneColumn(h));
@@ -1427,7 +1432,7 @@ export async function enrichRow(
   
   // STEP 2: Local ZIP lookup (FREE, LOCAL - No API calls)
   let zipCode = extractZipCode(row, headers);
-  if (!zipCode && city && state) {
+  if (!zipCode && city && state && stations.has('zip')) {
     // Only use ZIP lookup on server-side (where fs is available)
     // On client-side, this will fall back to state centroids which don't need fs
     try {
@@ -1935,7 +1940,8 @@ export async function enrichRow(
   
   // STEP 4: Telnyx Phone Intelligence (CRITICAL)
   // SKIP if age > 59 (cost savings - no need to check line type for leads we're filtering out)
-  if (phone && !ageOver59) {
+  // SKIP if station is disabled
+  if (stations.has('telnyx') && phone && !ageOver59) {
     console.log(`[ENRICH_ROW] Calling Telnyx for phone: ${phone.substring(0, 5)}...`);
     const { data, error } = await callAPIWithConfig(
       `/api/telnyx/lookup?phone=${encodeURIComponent(phone)}`,
@@ -1983,7 +1989,8 @@ export async function enrichRow(
   // STEP 4.5: INCOME PRE-QUALIFICATION (COST CONTROL GATE)
   // Runs after Telnyx, before paid enrichment decisions
   // Purpose: Prevent unnecessary API spend on clearly low-income leads
-  try {
+  if (stations.has('income-pre-qual')) {
+    try {
     const { preQualifyIncome } = await import('./enrichment/incomePreQualifier');
     
     // Extract job title and company from row (LinkedIn data)
@@ -2091,16 +2098,18 @@ export async function enrichRow(
       console.log(`[ENRICH_ROW] STEP 4.5: ⚠️  Income pre-qualification recommends SKIPPING further paid enrichment`);
       console.log(`[ENRICH_ROW] STEP 4.5: Reason: ${preQualResult.decision.reason}`);
     }
-  } catch (preQualError) {
-    // Non-fatal: log and continue
-    console.error(`[ENRICH_ROW] STEP 4.5: Income pre-qualification error (non-fatal):`, preQualError);
-    // Don't block pipeline - continue with enrichment
+    } catch (preQualError) {
+      // Non-fatal: log and continue
+      console.error(`[ENRICH_ROW] STEP 4.5: Income pre-qualification error (non-fatal):`, preQualError);
+      // Don't block pipeline - continue with enrichment
+    }
   }
   
   // STEP 5: GATEKEEP (MONEY SAVER - Cuts 30-60% of waste)
   // Income pre-qual can influence this decision, but gatekeep has final say
+  // Only run if station is enabled
   const skipTracingData = result.skipTracingData as any;
-  let shouldContinue = shouldContinueEnrichment(
+  let shouldContinue = stations.has('gatekeep') ? shouldContinueEnrichment(
     phone,
     result.lineType,
     result.carrierName,
@@ -2108,7 +2117,7 @@ export async function enrichRow(
     state,
     skipTracingData?.city,
     skipTracingData?.state
-  );
+  ) : false;
   
   // Apply income pre-qualification decision if available
   // If income pre-qual says "don't continue" AND gatekeep passed, respect income decision
@@ -2141,8 +2150,8 @@ export async function enrichRow(
   }, gatekeepError);
   
   // STEP 5.5: DNC CHECK (FREE - saves money by avoiding age enrichment on DNC numbers)
-  // Only check DNC on valid mobile numbers (after gatekeep passes)
-  if (shouldContinue && phone) {
+  // Only check DNC on valid mobile numbers (after gatekeep passes) AND station is enabled
+  if (stations.has('dnc-check') && shouldContinue && phone) {
     console.log(`[ENRICH_ROW] STEP 5.5: Checking DNC status for ${phone}...`);
     try {
       const dncResult = await checkDNCStatus(phone);
@@ -2189,7 +2198,8 @@ export async function enrichRow(
   // Age enrichment ONLY runs on high-quality leads (not VoIP/junk) AND age <= 59
   // CRITICAL OPTIMIZATION: Reuse STEP 3 search results to avoid duplicate API calls
   // SKIP if age > 59 (already filtered above, but double-check here)
-  if (shouldContinue && !ageOver59 && !hasDOBOrAge(row, headers) && firstName && lastName && phone) {
+  // Only run if station is enabled
+  if (stations.has('age') && shouldContinue && !ageOver59 && !hasDOBOrAge(row, headers) && firstName && lastName && phone) {
     // First, check if we already have age data from STEP 3 search results
     const skipTracingData = result.skipTracingData as any;
     let ageFromStep3: string | null = null;
@@ -2343,7 +2353,8 @@ export async function enrichRow(
 export async function enrichData(
   data: ParsedData,
   onProgress?: (current: number, total: number) => void,
-  onDetailedProgress?: (progress: EnrichmentProgress) => void
+  onDetailedProgress?: (progress: EnrichmentProgress) => void,
+  enabledStations?: Set<EnrichmentStation>
 ): Promise<EnrichedData> {
   const enrichedRows: EnrichedRow[] = [];
 
@@ -2398,7 +2409,7 @@ export async function enrichData(
     };
 
     // Enrich the row with progress tracking
-    const enrichment = await enrichRow(row, data.headers, reportProgress);
+    const enrichment = await enrichRow(row, data.headers, reportProgress, enabledStations);
     enrichedRow._enriched = enrichment;
 
     // Extract and add Telnyx line_type to the row if available

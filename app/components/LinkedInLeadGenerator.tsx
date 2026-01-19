@@ -13,7 +13,10 @@ import { extractLeadSummary, leadSummariesToCSV, LeadSummary } from '@/utils/ext
 import { DNCResult } from './USHAScrubber';
 import LeadListViewer from './LeadListViewer';
 import FacebookLeadGenerator from './FacebookLeadGenerator';
+import EnrichmentStationControl from './EnrichmentStationControl';
 import type { LeadListItem, SourceDetails } from '@/types/leadList';
+import type { EnrichmentStation } from '@/utils/enrichmentStations';
+import { getDefaultStationConfig } from '@/utils/enrichmentStations';
 
 interface LeadResult {
   [key: string]: unknown;
@@ -135,6 +138,7 @@ export default function LinkedInLeadGenerator() {
   const [retryAfterExpiration, setRetryAfterExpiration] = useState<number | null>(null); // Timestamp when retry is allowed
   const [countdownSeconds, setCountdownSeconds] = useState<number>(0);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [enabledStations, setEnabledStations] = useState<Set<EnrichmentStation>>(getDefaultStationConfig());
   
   // Check for imported leads from enriched page on mount
   useEffect(() => {
@@ -474,7 +478,7 @@ export default function LinkedInLeadGenerator() {
         console.log(`🧪 [TEST_ENRICH] Progress: ${current}/${total} (${Math.round((current/total)*100)}%)`);
         setEnrichmentProgress({ current, total });
         updateAPIProgress('Skip Tracing v1', { status: 'running', progress: current, total });
-      });
+      }, undefined, enabledStations);
 
       console.log('🧪 [TEST_ENRICH] ✅ Enrichment completed');
       setApiProgress(prev => prev.map(api => ({
@@ -602,7 +606,7 @@ export default function LinkedInLeadGenerator() {
         if (phase >= 6) updateAPIProgress('LinkedIn Profile', { status: 'running', progress: current, total });
         if (phase >= 7) updateAPIProgress('Fresh LinkedIn', { status: 'running', progress: current, total });
         if (phase >= 8) updateAPIProgress('Facebook Profile', { status: 'running', progress: current, total });
-      });
+      }, undefined, enabledStations);
 
       console.log('✨ [ENRICH_LIST] ✅ Enrichment completed');
       setApiProgress(prev => prev.map(api => ({
@@ -1779,7 +1783,7 @@ export default function LinkedInLeadGenerator() {
         }
         
         setEnrichmentProgress({ current: detailedProgress.current, total: detailedProgress.total });
-      });
+      }, enabledStations);
       
       console.log('✨ [ENRICH] ✅ Enrichment completed');
       console.log('✨ [ENRICH] Enriched data:', {
@@ -2945,6 +2949,13 @@ export default function LinkedInLeadGenerator() {
               )}
             </div>
 
+            {/* Enrichment Station Control */}
+            <div className="pt-4 border-t border-slate-700/50">
+              <EnrichmentStationControl
+                enabledStations={enabledStations}
+                onStationsChange={setEnabledStations}
+              />
+            </div>
 
             {/* Search Button */}
             <div className="pt-4 border-t border-slate-700/50 space-y-2">
