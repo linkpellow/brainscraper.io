@@ -123,6 +123,21 @@ export function createEndpointSummary(
       chain.recoveryEventKey === endpointKey
   ).length;
 
+  // Analyze JSON shape and entity signals
+  // Use the largest successful (2xx) response as representative
+  const successfulEvents = events.filter(
+    (e) => e.status && e.status >= 200 && e.status < 300 && e.resBodyText
+  );
+  const representativeEvent =
+    successfulEvents.length > 0
+      ? successfulEvents.reduce((a, b) => (b.resSize || 0) > (a.resSize || 0) ? b : a)
+      : events[0]; // Fallback to first event if no successful ones
+
+  const { jsonShape, entitySignals } = analyzeEventShape(representativeEvent);
+
+  // Infer intent
+  const intent = inferEndpointIntent(events);
+
   return {
     key: group.key,
     method: firstEvent.method,
