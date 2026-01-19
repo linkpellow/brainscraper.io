@@ -903,7 +903,7 @@ export default function APISignalExplorerPage() {
                     const criticalNode = ep.criticalNode;
                     
                     // Simulate failure impact if disabled
-                    const failureImpact = isDisabled && criticalNode
+                    const failureImpact = isDisabled && criticalNode && criticalNodes.size > 0
                       ? simulateFailure(criticalNodes, criticalEdges, key)
                       : null;
 
