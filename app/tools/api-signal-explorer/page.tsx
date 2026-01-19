@@ -623,14 +623,75 @@ export default function APISignalExplorerPage() {
     <div className="min-h-screen p-6 sm:p-8" style={{ backgroundColor: '#0a0a0a' }}>
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl sm:text-4xl font-bold mb-2" style={{ color: '#ff5757' }}>
-            API Signal Explorer
-          </h1>
-          <p className="text-slate-400 text-sm sm:text-base">
-            Analyze mitmproxy captures to identify important API endpoints
-          </p>
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl sm:text-4xl font-bold mb-2" style={{ color: '#ff5757' }}>
+              API Signal Explorer
+            </h1>
+            <p className="text-slate-400 text-sm sm:text-base">
+              Analyze mitmproxy captures to identify important API endpoints
+            </p>
+          </div>
+          <button
+            onClick={() => setShowNeuromapModal(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-white text-sm font-medium transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            Add Neuromap
+          </button>
         </div>
+
+        {/* Neuromap Mode Selection Modal */}
+        {showNeuromapModal && (
+          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50" onClick={() => setShowNeuromapModal(false)}>
+            <div className="bg-slate-900 rounded-lg border border-slate-800 p-6 max-w-md w-full mx-4" onClick={(e) => e.stopPropagation()}>
+              <h2 className="text-2xl font-bold mb-4" style={{ color: '#ff5757' }}>Create Neuromap</h2>
+              <p className="text-slate-400 mb-6 text-sm">Choose capture mode:</p>
+              <div className="space-y-3">
+                <button
+                  onClick={() => {
+                    setNeuromapMode('mobile');
+                    setShowNeuromapModal(false);
+                    const newNeuromap = createNeuromap(`Mobile Capture ${new Date().toLocaleTimeString()}`, 'mobile');
+                    setNeuromaps(prev => [...prev, newNeuromap]);
+                    setActiveNeuromapId(newNeuromap.id);
+                    newNeuromap.isActive = true;
+                  }}
+                  className="w-full flex items-center gap-3 p-4 bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-700 transition-colors"
+                >
+                  <Smartphone className="w-6 h-6 text-blue-400" />
+                  <div className="text-left">
+                    <div className="font-semibold text-white">Mobile Capture</div>
+                    <div className="text-xs text-slate-400">Screen share + live API stream</div>
+                  </div>
+                </button>
+                <button
+                  onClick={() => {
+                    setNeuromapMode('browser');
+                    setShowNeuromapModal(false);
+                    const newNeuromap = createNeuromap(`Browser Capture ${new Date().toLocaleTimeString()}`, 'browser');
+                    setNeuromaps(prev => [...prev, newNeuromap]);
+                    setActiveNeuromapId(newNeuromap.id);
+                    newNeuromap.isActive = true;
+                  }}
+                  className="w-full flex items-center gap-3 p-4 bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-700 transition-colors"
+                >
+                  <Globe className="w-6 h-6 text-green-400" />
+                  <div className="text-left">
+                    <div className="font-semibold text-white">Browser Capture</div>
+                    <div className="text-xs text-slate-400">Embedded Chromium + live API stream</div>
+                  </div>
+                </button>
+              </div>
+              <button
+                onClick={() => setShowNeuromapModal(false)}
+                className="mt-4 w-full px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-white text-sm transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Live Mode Controls */}
         <div className="mb-6 p-4 bg-slate-900/50 rounded-lg border border-slate-800">
