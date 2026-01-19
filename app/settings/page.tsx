@@ -184,7 +184,6 @@ export default function SettingsPage() {
                   }
                 `}
                 style={isActive ? { color: '#ff5757', borderBottomColor: '#ff5757' } : {}}
-                `}
               >
                 <Icon className="w-4 h-4" />
                 <span className="font-medium text-sm">{tab.label}</span>

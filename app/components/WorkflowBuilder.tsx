@@ -554,7 +554,6 @@ export default function WorkflowBuilder({ onSave, onRun }: WorkflowBuilderProps)
                     }
                   `}
                   style={configTab === tab.id ? { color: '#ff5757', borderBottomColor: '#ff5757' } : {}}
-                  `}
                 >
                   {tab.label}
                 </button>
