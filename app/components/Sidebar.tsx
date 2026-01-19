@@ -61,7 +61,7 @@ export default function Sidebar() {
             alt="BrainScraper Logo" 
             className="w-14 h-14 object-contain"
           />
-          <h1 className="text-xl font-bold text-white">
+          <h1 className="text-xl font-bold" style={{ color: '#ff5757' }}>
             BrainScraper
           </h1>
         </div>
@@ -81,13 +81,14 @@ export default function Sidebar() {
                 flex items-center gap-3 px-4 py-3 rounded-lg state-transition
                 ${
                   isActive
-                    ? 'nav-active text-white'
+                    ? 'nav-active'
                     : 'nav-inactive text-gray-300 hover:text-white'
                 }
               `}
+              style={isActive ? { color: '#ff5757' } : {}}
             >
-              <Icon className={`w-4 h-4 state-transition ${isActive ? 'text-white' : 'text-gray-400'}`} />
-              <span className={`font-medium text-sm ${isActive ? 'text-white' : 'text-gray-300'}`}>
+              <Icon className={`w-4 h-4 state-transition ${isActive ? '' : 'text-gray-400'}`} style={isActive ? { color: '#ff5757' } : {}} />
+              <span className={`font-medium text-sm ${isActive ? '' : 'text-gray-300'}`} style={isActive ? { color: '#ff5757' } : {}}>
                 {item.label}
               </span>
             </Link>

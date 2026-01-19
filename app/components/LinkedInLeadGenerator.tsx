@@ -2300,7 +2300,7 @@ export default function LinkedInLeadGenerator() {
       <div className="space-y-2 animate-fade-in">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-white tracking-tight drop-shadow-lg">Lead Generation</h1>
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight drop-shadow-lg" style={{ color: '#ff5757' }}>Lead Generation</h1>
           </div>
         </div>
       </div>
@@ -2314,10 +2314,11 @@ export default function LinkedInLeadGenerator() {
             border-b-2 -mb-[1px]
             ${
               activeTab === 'linkedin'
-                ? 'border-white text-white'
+                ? 'border-transparent'
                 : 'border-transparent text-slate-400 hover:text-slate-200'
             }
           `}
+          style={activeTab === 'linkedin' ? { color: '#ff5757', borderBottomColor: '#ff5757' } : {}}
         >
           <Linkedin className="w-4 h-4" />
           <span>LinkedIn</span>
@@ -2344,7 +2345,7 @@ export default function LinkedInLeadGenerator() {
       {(isSearching || isEnriching || isScrubbing) && (
         <div className="space-y-3 animate-slide-up">
           <div>
-            <h2 className="text-base font-semibold text-slate-200 mb-0.5">Progress</h2>
+            <h2 className="text-base font-semibold mb-0.5" style={{ color: '#ff5757' }}>Progress</h2>
             <p className="text-xs text-slate-400">Current operation status</p>
           </div>
 
@@ -2646,7 +2647,7 @@ export default function LinkedInLeadGenerator() {
       {workflowStep === 'search' && (
         <div className="space-y-4 animate-fade-in">
                 <div>
-            <h2 className="text-xl font-bold text-slate-200 tracking-tight mb-0.5 font-data">Configure Search</h2>
+            <h2 className="text-xl font-bold tracking-tight mb-0.5 font-data" style={{ color: '#ff5757' }}>Configure Search</h2>
             <p className="text-xs text-slate-400 font-data">Target and scrape leads from linkedin sales navigator.</p>
           </div>
           
@@ -2987,7 +2988,7 @@ export default function LinkedInLeadGenerator() {
         <div className="space-y-3 animate-fade-in">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-xl font-bold text-slate-200 tracking-tight mb-0.5">Search Results</h2>
+              <h2 className="text-xl font-bold tracking-tight mb-0.5" style={{ color: '#ff5757' }}>Search Results</h2>
               <p className="text-xs text-slate-400">
                 {results.length > 0 ? `${results.length} leads found` : 'No leads found'}
               </p>
@@ -3226,7 +3227,7 @@ export default function LinkedInLeadGenerator() {
         <div className="space-y-4 animate-fade-in">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-bold text-slate-200 tracking-tight mb-1">Enriched & Scrubbed Leads</h2>
+              <h2 className="text-2xl font-bold tracking-tight mb-1" style={{ color: '#ff5757' }}>Enriched & Scrubbed Leads</h2>
               <p className="text-sm text-slate-400">{leadSummaries.length} leads ready</p>
             </div>
             <div className="flex gap-3">

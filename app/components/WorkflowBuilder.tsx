@@ -284,7 +284,7 @@ export default function WorkflowBuilder({ onSave, onRun }: WorkflowBuilderProps)
       {/* Sidebar */}
       <div className="w-64 border-r border-slate-700/50 bg-slate-800/50 flex flex-col z-10">
         <div className="p-4 border-b border-slate-700/50">
-          <h3 className="text-sm font-semibold text-white mb-1">Pipeline Builder</h3>
+              <h3 className="text-sm font-semibold mb-1" style={{ color: '#ff5757' }}>Pipeline Builder</h3>
           <p className="text-xs text-slate-400">Click canvas to add nodes</p>
         </div>
         <div className="flex-1 overflow-y-auto p-3 space-y-3">
@@ -526,7 +526,7 @@ export default function WorkflowBuilder({ onSave, onRun }: WorkflowBuilderProps)
         <div className="w-96 border-l border-slate-700/50 bg-slate-800/50 flex flex-col z-10">
           <div className="p-4 border-b border-slate-700/50">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold text-white">Node Configuration</h3>
+              <h3 className="text-sm font-semibold" style={{ color: '#ff5757' }}>Node Configuration</h3>
               <button
                 onClick={() => setSelectedNode(null)}
                 className="p-1 hover:bg-white/10 rounded transition-colors"
@@ -549,9 +549,11 @@ export default function WorkflowBuilder({ onSave, onRun }: WorkflowBuilderProps)
                   className={`
                     px-3 py-2 text-xs font-medium transition-colors border-b-2 -mb-[1px]
                     ${configTab === tab.id
-                      ? 'text-white border-white'
+                      ? 'border-transparent'
                       : 'text-slate-400 border-transparent hover:text-slate-300'
                     }
+                  `}
+                  style={configTab === tab.id ? { color: '#ff5757', borderBottomColor: '#ff5757' } : {}}
                   `}
                 >
                   {tab.label}

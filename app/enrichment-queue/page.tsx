@@ -159,7 +159,7 @@ export default function ScrapeHistoryPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent tracking-tight drop-shadow-lg">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight drop-shadow-lg" style={{ color: '#ff5757' }}>
               Scrape History
             </h1>
             <p className="text-slate-400 mt-2 font-data">

@@ -39,7 +39,7 @@ export default function ExperimentalPage() {
                 <Workflow className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-white">Workflow Builder</h1>
+                <h1 className="text-xl font-bold" style={{ color: '#ff5757' }}>Workflow Builder</h1>
                 <p className="text-xs text-slate-400">Create automated workflows with visual builder</p>
               </div>
             </div>

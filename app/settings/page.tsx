@@ -130,7 +130,7 @@ export default function SettingsPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Settings className="w-8 h-8 text-white" />
-              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white tracking-tight drop-shadow-lg">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight drop-shadow-lg" style={{ color: '#ff5757' }}>
                 Settings
               </h1>
             </div>
@@ -179,9 +179,11 @@ export default function SettingsPage() {
                   flex items-center gap-2 px-4 py-3 border-b-2 transition-all whitespace-nowrap
                   ${
                     isActive
-                      ? 'border-blue-500 text-blue-400 bg-blue-500/10'
+                      ? 'border-transparent bg-white/5'
                       : 'border-transparent text-slate-400 hover:text-slate-200 hover:border-slate-600'
                   }
+                `}
+                style={isActive ? { color: '#ff5757', borderBottomColor: '#ff5757' } : {}}
                 `}
               >
                 <Icon className="w-4 h-4" />
@@ -222,11 +224,11 @@ export default function SettingsPage() {
 function ScrapeControlTab({ settings, updateSettings, usageStats }: any) {
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-bold text-slate-200">Scrape Control & Safety</h2>
+      <h2 className="text-xl font-bold" style={{ color: '#ff5757' }}>Scrape Control & Safety</h2>
       
       {/* Daily/Monthly Limits */}
       <div className="space-y-4">
-        <h3 className="text-lg font-semibold text-slate-300">Daily / Monthly Scrape Caps</h3>
+        <h3 className="text-lg font-semibold" style={{ color: '#ff5757' }}>Daily / Monthly Scrape Caps</h3>
         
         {/* LinkedIn Limits */}
         <div className="panel-inactive rounded-lg p-4 space-y-3">
@@ -331,7 +333,7 @@ function ScrapeControlTab({ settings, updateSettings, usageStats }: any) {
 
       {/* Rate Throttle */}
       <div className="space-y-4">
-        <h3 className="text-lg font-semibold text-slate-300">Rate-Limit Throttle</h3>
+        <h3 className="text-lg font-semibold" style={{ color: '#ff5757' }}>Rate-Limit Throttle</h3>
         <div className="panel-inactive rounded-lg p-4">
           <label className="block text-sm text-slate-400 mb-3">Speed Setting</label>
           <div className="flex gap-4">
@@ -357,7 +359,7 @@ function ScrapeControlTab({ settings, updateSettings, usageStats }: any) {
 
       {/* Cooldown Windows */}
       <div className="space-y-4">
-        <h3 className="text-lg font-semibold text-slate-300">Cooldown Windows</h3>
+        <h3 className="text-lg font-semibold" style={{ color: '#ff5757' }}>Cooldown Windows</h3>
         <div className="panel-inactive rounded-lg p-4 space-y-4">
           <label className="flex items-center gap-2 cursor-pointer">
             <input
@@ -413,7 +415,7 @@ function ScrapeControlTab({ settings, updateSettings, usageStats }: any) {
 
       {/* Retry Logic */}
       <div className="space-y-4">
-        <h3 className="text-lg font-semibold text-slate-300">Retry Logic</h3>
+        <h3 className="text-lg font-semibold" style={{ color: '#ff5757' }}>Retry Logic</h3>
         <div className="panel-inactive rounded-lg p-4 space-y-4">
           <div>
             <label className="block text-sm text-slate-400 mb-1">Max Retries per Job</label>
@@ -502,14 +504,14 @@ function ProfilesTab({ settings, updateSettings }: any) {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-bold text-slate-200">Platform-Specific Profiles</h2>
+      <h2 className="text-xl font-bold" style={{ color: '#ff5757' }}>Platform-Specific Profiles</h2>
       <p className="text-slate-400">
         Create reusable scrape profiles with platform-specific filters and schedules.
       </p>
 
       {/* Create New Profile */}
         <div className="panel-inactive rounded-lg p-4 space-y-4">
-        <h3 className="text-lg font-semibold text-slate-300">Create New Profile</h3>
+        <h3 className="text-lg font-semibold" style={{ color: '#ff5757' }}>Create New Profile</h3>
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm text-slate-400 mb-1">Profile Name</label>
@@ -707,7 +709,7 @@ function APIControlsTab({ settings, updateSettings }: any) {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-bold text-slate-200">API Controls</h2>
+      <h2 className="text-xl font-bold" style={{ color: '#ff5757' }}>API Controls</h2>
       <p className="text-slate-400">
         Toggle APIs on/off. Disabled APIs are skipped, not removed.
       </p>
@@ -798,7 +800,7 @@ function SchedulingTab({ settings, updateSettings }: any) {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-bold text-slate-200">Scheduling Intelligence</h2>
+      <h2 className="text-xl font-bold" style={{ color: '#ff5757' }}>Scheduling Intelligence</h2>
       
       <div className="space-y-4">
         <label className="flex items-center gap-2 cursor-pointer">
@@ -861,7 +863,7 @@ function SchedulingTab({ settings, updateSettings }: any) {
 
       {/* Conditional Rules */}
       <div className="space-y-4">
-        <h3 className="text-lg font-semibold text-slate-300">Conditional Rules</h3>
+        <h3 className="text-lg font-semibold" style={{ color: '#ff5757' }}>Conditional Rules</h3>
         <p className="text-sm text-slate-400">
           Define rules that control when jobs can execute (e.g., "only if LinkedIn completed")
         </p>
@@ -945,7 +947,7 @@ function SchedulingTab({ settings, updateSettings }: any) {
 function OutputTab({ settings, updateSettings }: any) {
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-bold text-slate-200">Output & Routing Settings</h2>
+      <h2 className="text-xl font-bold" style={{ color: '#ff5757' }}>Output & Routing Settings</h2>
       
       <div className="space-y-4">
         <div>
@@ -1087,11 +1089,11 @@ function NotificationsTab({ settings, updateSettings }: any) {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-bold text-slate-200">Notifications & Alerts</h2>
+      <h2 className="text-xl font-bold" style={{ color: '#ff5757' }}>Notifications & Alerts</h2>
       
       <div className="space-y-4">
         <div>
-          <h3 className="text-lg font-semibold text-slate-300 mb-3">Event Types</h3>
+          <h3 className="text-lg font-semibold mb-3" style={{ color: '#ff5757' }}>Event Types</h3>
           <div className="space-y-3">
             <label className="flex items-center gap-2 cursor-pointer">
               <input
@@ -1166,7 +1168,7 @@ function NotificationsTab({ settings, updateSettings }: any) {
         </div>
 
         <div>
-          <h3 className="text-lg font-semibold text-slate-300 mb-3">Notification Channels</h3>
+          <h3 className="text-lg font-semibold mb-3" style={{ color: '#ff5757' }}>Notification Channels</h3>
           <div className="space-y-2">
             <label className="flex items-center gap-2 cursor-pointer">
               <input
