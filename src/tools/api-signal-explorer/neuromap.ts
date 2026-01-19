@@ -4,6 +4,9 @@
  * Represents a capture session for interactive API analysis.
  */
 
+import type { CategoryTag } from './signals';
+import type { ActionEvent } from './actions';
+
 export type NeuromapMode = "mobile" | "browser";
 
 export type RawNetworkEvent = {
