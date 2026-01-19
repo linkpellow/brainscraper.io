@@ -434,3 +434,20 @@ export function getCategoryPriority(tag: CategoryTag): number {
   };
   return priorities[tag];
 }
+
+/**
+ * Get category color for UI display
+ */
+export function getCategoryColor(tag: CategoryTag): string {
+  const colors: Record<CategoryTag, string> = {
+    'identity': 'bg-blue-900/30 text-blue-300',
+    'endpoint': 'bg-purple-900/30 text-purple-300',
+    'headers': 'bg-cyan-900/30 text-cyan-300',
+    'flow-control': 'bg-yellow-900/30 text-yellow-300',
+    'timing': 'bg-green-900/30 text-green-300',
+    'error': 'bg-red-900/30 text-red-300',
+    'protection': 'bg-orange-900/30 text-orange-300',
+    'derived-meta': 'bg-pink-900/30 text-pink-300',
+  };
+  return colors[tag];
+}
