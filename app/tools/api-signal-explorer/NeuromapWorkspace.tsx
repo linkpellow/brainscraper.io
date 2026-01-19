@@ -35,7 +35,8 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
   const [timeWindow, setTimeWindow] = useState<{ start: number; end: number } | null>(null);
   const [isMarkingInteraction, setIsMarkingInteraction] = useState(false);
   const [screenStream, setScreenStream] = useState<MediaStream | null>(null);
-  const [endpoints, setEndpoints] = useState<Array<EndpointData & { selected?: boolean; actionLinked?: boolean; actionConfidence?: number }>>([]);
+  const [endpoints, setEndpoints] = useState<Array<EndpointData & { selected?: boolean; actionLinked?: boolean; actionConfidence?: number; categoryTags?: CategoryTag[] }>>([]);
+  const [selectedCategoryTag, setSelectedCategoryTag] = useState<CategoryTag | null>(null);
   const endpointMapRef = useRef<Map<string, EndpointData>>(new Map());
   const wsRef = useRef<WebSocket | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -491,6 +492,7 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
                   <th className="px-3 py-2 text-left text-xs font-semibold text-slate-400">Host</th>
                   <th className="px-3 py-2 text-left text-xs font-semibold text-slate-400">Path</th>
                   <th className="px-3 py-2 text-left text-xs font-semibold text-slate-400">Count</th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-slate-400">Linked</th>
                   <th className="px-3 py-2 text-left text-xs font-semibold text-slate-400">Auth</th>
                 </tr>
               </thead>
