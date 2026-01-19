@@ -146,23 +146,30 @@ export async function POST(request: NextRequest) {
       // Construct public URL - use API route for serving images
       const mediaUrl = `${baseUrl}/temp/${publicFileName}`;
       
-      // Verify the URL is accessible before sending
-      console.log(`[CROKDOCS_MMS] Verifying media URL is accessible: ${mediaUrl}`);
+      // Verify the URL is accessible from external perspective (like Telnyx would see it)
+      console.log(`[CROKDOCS_MMS] Verifying media URL is publicly accessible: ${mediaUrl}`);
       let mediaUrlAccessible = false;
       try {
-        const urlCheck = await fetch(mediaUrl, { method: 'HEAD' });
+        // Test without authentication headers (simulating Telnyx's fetch)
+        const urlCheck = await fetch(mediaUrl, { 
+          method: 'HEAD',
+          // Explicitly don't send cookies/auth headers
+          credentials: 'omit',
+        });
         if (urlCheck.ok) {
           mediaUrlAccessible = true;
-          console.log(`[CROKDOCS_MMS] ✅ Media URL is accessible (${urlCheck.status})`);
+          console.log(`[CROKDOCS_MMS] ✅ Media URL is publicly accessible (${urlCheck.status})`);
         } else {
           console.warn(`[CROKDOCS_MMS] ⚠️ Media URL returned ${urlCheck.status} - may cause MMS to fail`);
+          console.warn(`[CROKDOCS_MMS] ⚠️ Response headers:`, Object.fromEntries(urlCheck.headers.entries()));
         }
       } catch (urlError) {
         console.warn(`[CROKDOCS_MMS] ⚠️ Could not verify media URL: ${urlError}`);
       }
       
       if (!mediaUrlAccessible) {
-        console.warn(`[CROKDOCS_MMS] ⚠️ Media URL may not be accessible - MMS may fail. Consider using a CDN or public image host.`);
+        console.error(`[CROKDOCS_MMS] ❌ Media URL is NOT publicly accessible - MMS will FAIL!`);
+        console.error(`[CROKDOCS_MMS] ❌ Telnyx cannot fetch images from protected routes. Ensure /temp/ is excluded from authentication.`);
       }
 
       // Try each number until one works
@@ -188,10 +195,8 @@ export async function POST(request: NextRequest) {
             requestBody.messaging_profile_id = TELNYX_MESSAGING_PROFILE_ID;
           }
 
-          // Add media region if specified
-          if (TELNYX_MEDIA_REGION) {
-            requestBody.media_region = TELNYX_MEDIA_REGION;
-          }
+          // Note: media_region is not a valid field in v2/messages API
+          // It's a messaging profile configuration, not a request parameter
 
           const telnyxResponse = await fetch('https://api.telnyx.com/v2/messages', {
             method: 'POST',

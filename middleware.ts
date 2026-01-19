@@ -7,8 +7,8 @@ const AUTH_COOKIE_NAME = 'site-auth';
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Allow public access to login page and API routes
-  if (pathname === '/login' || pathname.startsWith('/api/')) {
+  // Allow public access to login page, API routes, and temp image serving
+  if (pathname === '/login' || pathname.startsWith('/api/') || pathname.startsWith('/temp/')) {
     return NextResponse.next();
   }
 
