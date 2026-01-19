@@ -93,6 +93,9 @@ export interface IncomePreQualResult {
     tier: 'low' | 'mid' | 'high' | 'unknown';
     shouldContinueEnrichment: boolean;
     reason: string;
+    band: 'low' | 'gray' | 'high';
+    requiresStrongPositives: boolean;
+    reasonCode?: string;
   };
 }
 
@@ -822,6 +825,7 @@ function makePreQualDecision(
   reason: string;
   band: 'low' | 'gray' | 'high';
   requiresStrongPositives: boolean;
+  reasonCode?: string;
 } {
   // Interval-based thresholds (mirrors underwriting logic)
   const lowBandThreshold = 40000;  // < $40k → always skip
@@ -850,6 +854,7 @@ function makePreQualDecision(
       reason: `Low income band: Conservative max ($${Math.round(conservative.max / 1000)}k) < $${Math.round(lowBandThreshold / 1000)}k threshold`,
       band: 'low',
       requiresStrongPositives: false,
+      reasonCode: 'LOW_INCOME_BAND',
     };
   }
   
@@ -861,6 +866,7 @@ function makePreQualDecision(
       reason: `High income band: Upside p50 ($${Math.round(upside.p50 / 1000)}k) >= $${Math.round(highBandThreshold / 1000)}k threshold`,
       band: 'high',
       requiresStrongPositives: false,
+      reasonCode: 'HIGH_INCOME_BAND',
     };
   }
   
@@ -882,6 +888,7 @@ function makePreQualDecision(
       reason: `Gray income band with ${strongPositives} strong positives - proceeding with enrichment`,
       band: 'gray',
       requiresStrongPositives: true,
+      reasonCode: 'GRAY_BAND_STRONG_POSITIVES',
     };
   }
   
@@ -893,6 +900,7 @@ function makePreQualDecision(
       reason: `Gray income band: Low confidence (${Math.round(confidence * 100)}%) or multiple conflicts - proceeding conservatively`,
       band: 'gray',
       requiresStrongPositives: true,
+      reasonCode: 'GRAY_BAND_LOW_CONFIDENCE',
     };
   }
   
@@ -902,6 +910,7 @@ function makePreQualDecision(
     reason: `Gray income band: Moderate confidence (${Math.round(confidence * 100)}%) with ${strongPositives} strong positives - proceeding`,
     band: 'gray',
     requiresStrongPositives: true,
+    reasonCode: 'GRAY_BAND_MODERATE',
   };
 }
 
