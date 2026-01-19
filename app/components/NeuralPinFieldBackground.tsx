@@ -36,8 +36,12 @@ export default function NeuralPinFieldBackground() {
   }, []);
 
   useEffect(() => {
-    if (!isMounted || !containerRef.current) return;
+    if (!isMounted || !containerRef.current) {
+      console.log('[NeuralPinField] Not mounted or container missing');
+      return;
+    }
 
+    console.log('[NeuralPinField] Initializing WebGL background...');
     const container = containerRef.current;
     const width = window.innerWidth;
     const height = window.innerHeight;
@@ -45,20 +49,20 @@ export default function NeuralPinFieldBackground() {
     // Scene setup
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x000000);
-    scene.fog = new THREE.FogExp2(0x000000, 0.0008);
+    scene.fog = new THREE.FogExp2(0x000000, 0.0003); // Reduced fog density for better visibility
     sceneRef.current = scene;
 
-    // Camera with subtle perspective tilt for depth
+    // Camera with subtle perspective tilt for depth - closer for better visibility
     const camera = new THREE.PerspectiveCamera(
       60,
       width / height,
       0.1,
       1000
     );
-    camera.position.set(0, 0, 120);
+    camera.position.set(0, 0, 80); // Moved closer from 120 to 80 for better visibility
     camera.lookAt(0, 0, 0);
     // Subtle tilt for depth perception
-    camera.rotation.x = -0.1;
+    camera.rotation.x = -0.15; // Increased tilt slightly for better view
     camera.rotation.y = 0.05;
     cameraRef.current = camera;
 
@@ -81,36 +85,36 @@ export default function NeuralPinFieldBackground() {
     container.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
-    // Lighting for depth illusion - directional + ambient
-    const ambientLight = new THREE.AmbientLight(0x404040, 0.4);
+    // Lighting for depth illusion - increased intensity for visibility
+    const ambientLight = new THREE.AmbientLight(0x606060, 0.8); // Increased from 0.4 to 0.8
     scene.add(ambientLight);
 
     // Primary directional light - creates depth through shading
-    const directionalLight1 = new THREE.DirectionalLight(0xffffff, 0.6);
+    const directionalLight1 = new THREE.DirectionalLight(0xffffff, 1.2); // Increased from 0.6 to 1.2
     directionalLight1.position.set(50, 50, 50);
     directionalLight1.castShadow = false;
     scene.add(directionalLight1);
 
     // Secondary directional light - fills shadows
-    const directionalLight2 = new THREE.DirectionalLight(0x666666, 0.3);
+    const directionalLight2 = new THREE.DirectionalLight(0x888888, 0.6); // Increased from 0.3 to 0.6
     directionalLight2.position.set(-50, -50, 50);
     scene.add(directionalLight2);
 
     // Subtle red accent light for BrainScraper branding
-    const accentLight = new THREE.PointLight(0xff5757, 0.15, 200);
+    const accentLight = new THREE.PointLight(0xff5757, 0.3, 200); // Increased from 0.15 to 0.3
     accentLight.position.set(0, 0, 100);
     scene.add(accentLight);
 
-    // Pin geometry - thin box
-    const pinGeometry = new THREE.BoxGeometry(0.3, 1, 0.3);
+    // Pin geometry - thin box (taller for better visibility)
+    const pinGeometry = new THREE.BoxGeometry(0.4, 2, 0.4);
     
-    // Pin material - dark graphite with subtle metallic highlights
-    // Very subtle specular lighting for depth perception
+    // Pin material - brighter graphite with metallic highlights for visibility
+    // Increased brightness and emissive for better visibility against black background
     const pinMaterial = new THREE.MeshPhongMaterial({
-      color: 0x1a1a1a, // Dark graphite base
-      emissive: 0x0a0a0a, // Very subtle self-illumination
-      specular: 0x333333, // Soft metallic highlights
-      shininess: 30,
+      color: 0x404040, // Brighter graphite base (was 0x1a1a1a)
+      emissive: 0x1a1a1a, // Increased self-illumination for visibility
+      specular: 0x666666, // Brighter metallic highlights
+      shininess: 50,
       flatShading: false,
     });
 
@@ -156,6 +160,13 @@ export default function NeuralPinFieldBackground() {
 
     pins.instanceMatrix.needsUpdate = true;
     scene.add(pins);
+    
+    console.log('[NeuralPinField] Scene initialized:', {
+      pins: totalPins,
+      gridSize,
+      cameraPosition: camera.position,
+      lights: scene.children.filter(c => c instanceof THREE.Light).length
+    });
 
     // Neural motion functions - optimized with cached calculations
     // Pre-compute constants to avoid repeated calculations
@@ -342,8 +353,8 @@ export default function NeuralPinFieldBackground() {
             const interactionEffect = interaction(x, z, mouseX, mouseY) * interactionMultiplier;
 
             let height = baseNoise + waveMotion + interactionEffect;
-            // Smooth clamping with easing
-            height = Math.max(-2.5, Math.min(2.5, height));
+            // Smooth clamping with easing - increased range for more visible movement
+            height = Math.max(-3, Math.min(3, height));
 
             // Update instance matrix
             const instanceIndex = i * gridSize + j;
@@ -385,6 +396,9 @@ export default function NeuralPinFieldBackground() {
       renderer.render(scene, camera);
       animationFrameRef.current = requestAnimationFrame(animate);
     };
+
+    // Log first frame render
+    console.log('[NeuralPinField] Starting animation loop');
 
     // Mouse tracking
     const handleMouseMove = (e: MouseEvent) => {
