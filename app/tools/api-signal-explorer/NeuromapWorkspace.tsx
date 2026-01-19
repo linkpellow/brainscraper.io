@@ -103,7 +103,7 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
                   reqBodySize: flow.reqBodySize,
                   resBodySize: flow.resBodySize,
                   resMime: flow.resMime,
-                  phase: undefined as const,
+                  phase: undefined,
                   actionTag: undefined,
                   source: neuromap.mode,
                 } as RawNetworkEvent;
@@ -139,7 +139,7 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
                   reqBodySize: flow.reqBodySize,
                   resBodySize: flow.resBodySize,
                   resMime: flow.resMime,
-                  phase: undefined as const,
+                  phase: undefined,
                   actionTag: undefined,
                   source: neuromap.mode,
                 } as RawNetworkEvent;
