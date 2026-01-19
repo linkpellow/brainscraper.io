@@ -56,6 +56,24 @@ export type EndpointSummary = {
   pollingLoop?: boolean;
   authRole?: "auth_primary" | "auth_refresh" | "auth_guard" | "data_protected" | "unauthenticated";
   retryChains?: number; // number of retry chains this endpoint participates in
+  jsonShape?: {
+    isJson: boolean;
+    depth: number;
+    keyCount: number;
+    arrayCount: number;
+    maxArrayLen: number;
+    objectCount: number;
+    hasPaginationMarkers: boolean;
+    hasErrorEnvelope: boolean;
+    sampleKeys: string[];
+  };
+  entitySignals?: {
+    hasIdLike: boolean;
+    hasTimestamps: boolean;
+    hasContactFields: boolean;
+    hasLocationFields: boolean;
+  };
+  intent?: "query" | "mutation" | "unknown";
 };
 
 export type DedupeGroup = {
