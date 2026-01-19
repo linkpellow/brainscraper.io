@@ -52,19 +52,17 @@ export default function NeuralPinFieldBackground() {
     scene.fog = new THREE.FogExp2(0x000000, 0.0004); // Subtle fog for depth
     sceneRef.current = scene;
 
-    // Camera positioned to view the pin field from above at an angle for 3D depth
+    // Camera positioned for top-down view
     const camera = new THREE.PerspectiveCamera(
       60,
       width / height,
       0.1,
       1000
     );
-    // Position camera above and looking down at the pin field
-    // This creates the 3D depth effect, not a horizontal band
-    camera.position.set(0, 50, 150); // Higher up, further back for better perspective
-    camera.lookAt(0, -10, 0); // Look slightly below center to see pins extending
-    // Angle to see the 3D depth of the pin field
-    camera.rotation.x = -0.25; // Look down at an angle
+    // Position camera directly above the pin field for top-down view
+    camera.position.set(0, 200, 0); // High above, no Z offset
+    camera.lookAt(0, 0, 0); // Look straight down at center
+    camera.rotation.x = -Math.PI / 2; // Rotate 90 degrees to look straight down
     camera.rotation.y = 0;
     cameraRef.current = camera;
 
@@ -402,16 +400,18 @@ export default function NeuralPinFieldBackground() {
       updatePins();
 
       // Subtle camera parallax based on mouse (disabled when form focused or enrichment active)
+      // For top-down view, only move X and Z (not Y which is height)
       if (camera && !isFormFocusedRef.current && !isEnrichmentActiveRef.current) {
-        const parallaxX = (mouseRef.current.x / width - 0.5) * 0.5;
-        const parallaxY = (mouseRef.current.y / height - 0.5) * 0.5;
+        const parallaxX = (mouseRef.current.x / width - 0.5) * 2;
+        const parallaxZ = (mouseRef.current.y / height - 0.5) * 2;
         camera.position.x = parallaxX;
-        camera.position.y = parallaxY;
-        camera.lookAt(parallaxX, parallaxY, 0);
+        camera.position.z = parallaxZ;
+        camera.lookAt(parallaxX, 0, parallaxZ);
       } else if (camera) {
         // Reset to center when form is focused or enrichment active
         camera.position.x = 0;
-        camera.position.y = 0;
+        camera.position.y = 200; // Maintain top-down height
+        camera.position.z = 0;
         camera.lookAt(0, 0, 0);
       }
 
