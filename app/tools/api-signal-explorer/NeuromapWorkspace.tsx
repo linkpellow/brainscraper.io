@@ -3,7 +3,20 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Pause, Play, Check, X, Download, Smartphone, Globe } from 'lucide-react';
 import type { Neuromap, RawNetworkEvent, NeuromapMode } from '@/src/tools/api-signal-explorer/neuromap';
-import type { EndpointData } from '../api-signal-explorer/page';
+
+type EndpointData = {
+  method: string;
+  host: string;
+  path: string;
+  count: number;
+  statuses: Record<string, number>;
+  resMime?: string;
+  resSizeAvg?: number;
+  hasAuth: boolean;
+  isMutation: boolean;
+  sampleUrl: string;
+  lastSeen: number;
+};
 
 type NeuromapWorkspaceProps = {
   neuromap: Neuromap;

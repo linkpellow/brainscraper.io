@@ -1076,6 +1076,26 @@ export default function APISignalExplorerPage() {
           </div>
         )}
       </div>
+
+      {/* Neuromap Workspace */}
+      {activeNeuromapId && (() => {
+        const activeNeuromap = neuromaps.find(n => n.id === activeNeuromapId);
+        if (!activeNeuromap) return null;
+        return (
+          <NeuromapWorkspace
+            neuromap={activeNeuromap}
+            onUpdate={(updated) => {
+              setNeuromaps(prev => prev.map(n => n.id === updated.id ? updated : n));
+            }}
+            onClose={() => {
+              setActiveNeuromapId(null);
+              if (activeNeuromap) {
+                activeNeuromap.isActive = false;
+              }
+            }}
+          />
+        );
+      })()}
     </div>
   );
 }
