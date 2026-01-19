@@ -10,6 +10,7 @@
 export type EnrichmentStation = 
   | 'linkedin'      // STEP 1: Extract name, city, state (foundation, no API cost)
   | 'zip'           // STEP 2: ZIP lookup (free local DB)
+  | 'gender'        // STEP 2.5: Gender detection from name (free, local)
   | 'phone-discovery' // STEP 3: Skip-tracing phone discovery (paid)
   | 'telnyx'        // STEP 4: Phone validation/carrier (paid)
   | 'income-pre-qual' // STEP 4.5: Income check (free census API)
@@ -47,6 +48,15 @@ export const STATION_DEFINITIONS: Record<EnrichmentStation, StationConfig> = {
     cost: 'free',
     dependencies: ['linkedin'], // Needs city/state
     provides: ['zipCode'],
+    required: false,
+  },
+  gender: {
+    id: 'gender',
+    name: 'Gender Detection',
+    description: 'Infer gender from first name using comprehensive name database (free, local)',
+    cost: 'free',
+    dependencies: ['linkedin'], // Needs first name
+    provides: ['gender'],
     required: false,
   },
   'phone-discovery': {

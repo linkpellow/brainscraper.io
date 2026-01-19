@@ -10,6 +10,14 @@ import { getUshaToken, clearTokenCache } from './getUshaToken';
 import { getCognitoIdToken, clearCognitoTokenCache } from './cognitoAuth';
 import type { EnrichmentStation } from './enrichmentStations';
 import { getDefaultStationConfig } from './enrichmentStations';
+import {
+  normalizeLeadSignals,
+  makeEnrichmentDecision,
+  getReasonSummary,
+  type LeadSignals,
+  type DecisionResult,
+  type DecisionStage,
+} from './enrichment/decisionEngine';
 
 /**
  * Detailed progress information for real-time tracking
@@ -676,7 +684,7 @@ function hasCompanyData(row: Record<string, string | number>, headers: string[])
  */
 class SkipTracingRateLimiter {
   private lastRequestTime: number = 0;
-  private readonly minDelayMs: number = 250; // 250ms delay = 4 req/sec (conservative to account for 2 calls per lead: search + person details)
+  private readonly minDelayMs: number = 200; // 200ms delay = 5 req/sec (optimized for speed while maintaining rate limit safety)
   private requestQueue: Array<() => void> = [];
   private processingPromise: Promise<void> | null = null;
   private consecutive429Errors: number = 0;
@@ -2034,13 +2042,12 @@ export async function enrichRow(
     }
     
     // Optional: Fetch ZIP median income if ZIP available (one API call)
+    // OPTIMIZATION: Start ZIP income fetch early, can run in parallel with other operations
     let zipMedianIncome: number | undefined = undefined;
-    if (result.zipCode) {
+    const zipIncomePromise = result.zipCode ? (async () => {
       try {
         const zip5 = String(result.zipCode).match(/\d{5}/)?.[0];
         if (zip5) {
-          // Only fetch if we have ZIP and want geographic constraint
-          // This is optional - can skip if cost is concern
           const incomeResponse = await callAPIWithConfig(
             `/api/income-by-zip?zip=${zip5}`,
             {},
@@ -2050,9 +2057,10 @@ export async function enrichRow(
           
           if (incomeResponse.data && !incomeResponse.error) {
             const incomeData = incomeResponse.data.data || incomeResponse.data;
-            zipMedianIncome = incomeData.medianIncome || incomeData.median_income || incomeData.householdIncome;
-            if (zipMedianIncome) {
+            const median = incomeData.medianIncome || incomeData.median_income || incomeData.householdIncome;
+            if (median) {
               result.incomeData = incomeData; // Store for later use
+              return median;
             }
           }
         }
@@ -2060,9 +2068,11 @@ export async function enrichRow(
         // Non-fatal: continue without ZIP income data
         console.log(`[ENRICH_ROW] STEP 4.5: Could not fetch ZIP income (non-fatal):`, incomeError);
       }
-    }
+      return undefined;
+    })() : Promise.resolve(undefined);
     
-    // Run pre-qualification
+    // Run pre-qualification (will await ZIP income if needed)
+    zipMedianIncome = await zipIncomePromise;
     const preQualResult = preQualifyIncome({
       jobTitle: jobTitle || undefined,
       company: company || undefined,
@@ -2113,9 +2123,74 @@ export async function enrichRow(
     }
   }
   
-  // STEP 5: GATEKEEP (MONEY SAVER - Cuts 30-60% of waste)
-  // Income pre-qual can influence this decision, but gatekeep has final say
-  // Only run if station is enabled
+  // STEP 5: DECISION ENGINE (Enhanced Gatekeep with Confidence Scoring)
+  // Build final signals object with all enrichment data
+  const currentPhone = result.phone || phone || undefined;
+  const currentEmail = result.email || email || undefined;
+  
+  // Extract job title and company from row if available
+  let jobTitle: string | undefined = undefined;
+  let company: string | undefined = undefined;
+  for (const header of headers) {
+    const lower = header.toLowerCase();
+    if (!jobTitle && (lower === 'title' || lower === 'job title' || lower === 'job_title' || lower === 'headline')) {
+      const value = String(row[header] || '').trim();
+      if (value) jobTitle = value;
+    }
+    if (!company && (lower === 'company' || lower === 'company name' || lower === 'company_name')) {
+      const value = String(row[header] || '').trim();
+      if (value) company = value;
+    }
+  }
+  
+  const finalSignals: LeadSignals = normalizeLeadSignals({
+    firstName,
+    lastName,
+    fullName: `${firstName || ''} ${lastName || ''}`.trim() || undefined,
+    email: currentEmail,
+    phone: currentPhone,
+    city: city || undefined,
+    state: state || undefined,
+    zipCode: result.zipCode || zipCode || undefined,
+    jobTitle,
+    company,
+    lineType: result.lineType,
+    carrierName: result.carrierName,
+    normalizedCarrier: result.normalizedCarrier,
+    dncStatus: result.dncStatus,
+    canContact: result.canContact,
+    age: ageNum,
+    dob: result.dob,
+    estimatedIncome: result.incomePreQual ? {
+      min: result.incomePreQual.conservative.min,
+      max: result.incomePreQual.conservative.max,
+      p50: result.incomePreQual.conservative.p50,
+      confidence: result.incomePreQual.estimate.confidence * 100,
+    } : undefined,
+  });
+  
+  // Make final decision at POST_TELNYX stage (after we have phone/carrier data)
+  const finalDecision = makeEnrichmentDecision(finalSignals, 'post_telnyx', stations);
+  const reasonSummary = getReasonSummary(finalDecision);
+  
+  // Store decision metadata
+  result.decisionReason = reasonSummary.reason;
+  result.decisionCodes = reasonSummary.codes;
+  result.decisionConfidence = finalDecision.confidence;
+  result.decisionAction = finalDecision.action;
+  result.enrichmentLevel = finalDecision.enrichmentLevel;
+  
+  // Log decision
+  console.log(`[DECISION_ENGINE] Final decision:`, {
+    action: finalDecision.action,
+    confidence: finalDecision.confidence,
+    enrichmentLevel: finalDecision.enrichmentLevel,
+    estimatedValue: finalDecision.estimatedValue,
+    reason: reasonSummary.reason,
+    codes: reasonSummary.codes,
+  });
+  
+  // Traditional gatekeep (for backward compatibility and additional checks)
   const skipTracingData = result.skipTracingData as any;
   let shouldContinue = stations.has('gatekeep') ? shouldContinueEnrichment(
     phone,
@@ -2127,9 +2202,18 @@ export async function enrichRow(
     skipTracingData?.state
   ) : false;
   
-  // Apply income pre-qualification decision if available
+  // Apply decision engine result (overrides traditional gatekeep if more confident)
+  if (finalDecision.action === 'skip' && finalDecision.confidence >= 85) {
+    console.log(`[DECISION_ENGINE] Overriding gatekeep - skipping enrichment (confidence: ${finalDecision.confidence})`);
+    shouldContinue = false;
+  } else if (finalDecision.action === 'partial' && finalDecision.confidence >= 70) {
+    // Partial enrichment: only free/cheap operations
+    console.log(`[DECISION_ENGINE] Partial enrichment mode (confidence: ${finalDecision.confidence})`);
+    // Continue but with limited enrichment
+  }
+  
+  // Apply income pre-qualification decision if available (backward compatibility)
   // If income pre-qual says "don't continue" AND gatekeep passed, respect income decision
-  // This prevents spending on clearly low-income leads even if phone is valid
   if (shouldContinue && result.incomePreQual && !result.incomePreQual.decision.shouldContinueEnrichment) {
     console.log(`[ENRICH_ROW] STEP 5: Income pre-qualification overrides gatekeep - skipping further paid enrichment`);
     console.log(`[ENRICH_ROW] STEP 5: Income tier: ${result.incomePreQual.decision.tier}, Reason: ${result.incomePreQual.decision.reason}`);
@@ -2564,9 +2648,19 @@ export async function enrichData(
         }
       }
       
-      // Filter: require phone number AND age <= 59 (if age is known)
+      // Filter: require phone number AND age <= threshold (if age is known)
+      // Uses dynamic threshold from decision engine
+      let ageMax = 59; // Default
+      try {
+        const { getThresholds } = await import('./enrichment/feedbackLoop');
+        const thresholds = getThresholds();
+        ageMax = thresholds.AGE_MAX || 59;
+      } catch {
+        // Use default if feedback loop not available
+      }
+      
       const hasValidPhone = phone.length >= 10;
-      const ageFilterPassed = ageNum === null || ageNum <= 59; // Allow if age unknown, filter if age > 59
+      const ageFilterPassed = ageNum === null || ageNum <= ageMax; // Allow if age unknown, filter if age > threshold
       
       if (hasValidPhone && ageFilterPassed) {
         saveEnrichedLeadImmediate(enrichedRow, leadSummary);
@@ -2574,7 +2668,7 @@ export async function enrichData(
       } else if (!hasValidPhone) {
         console.log(`🚫 [ENRICH_DATA] Skipping lead "${leadName}" - no valid phone number (email-only leads excluded)`);
       } else if (ageNum !== null && ageNum > 59) {
-        console.log(`🚫 [ENRICH_DATA] Skipping lead "${leadName}" - age ${ageNum} > 59 (filtered out for cost savings)`);
+        console.log(`🚫 [ENRICH_DATA] Skipping lead "${leadName}" - age ${ageNum} > ${ageMax} (filtered out for cost savings)`);
       }
     } catch (saveError) {
       console.error(`❌ [ENRICH_DATA] Failed to save lead ${leadName}:`, saveError);
@@ -2588,9 +2682,10 @@ export async function enrichData(
       onProgress(i + 1, data.rows.length);
     }
 
-    // Add small delay to avoid rate limiting
+    // Reduced delay for faster processing (was 100ms, now 50ms)
+    // Only delay if not the last item to avoid unnecessary wait
     if (i < data.rows.length - 1) {
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 50));
     }
   }
 

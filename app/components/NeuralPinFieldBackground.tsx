@@ -49,21 +49,23 @@ export default function NeuralPinFieldBackground() {
     // Scene setup
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x000000);
-    scene.fog = new THREE.FogExp2(0x000000, 0.0003); // Reduced fog density for better visibility
+    scene.fog = new THREE.FogExp2(0x000000, 0.0004); // Subtle fog for depth
     sceneRef.current = scene;
 
-    // Camera with subtle perspective tilt for depth - closer for better visibility
+    // Camera positioned to view the pin field from above at an angle for 3D depth
     const camera = new THREE.PerspectiveCamera(
       60,
       width / height,
       0.1,
       1000
     );
-    camera.position.set(0, 0, 80); // Moved closer from 120 to 80 for better visibility
-    camera.lookAt(0, 0, 0);
-    // Subtle tilt for depth perception
-    camera.rotation.x = -0.15; // Increased tilt slightly for better view
-    camera.rotation.y = 0.05;
+    // Position camera above and looking down at the pin field
+    // This creates the 3D depth effect, not a horizontal band
+    camera.position.set(0, 50, 150); // Higher up, further back for better perspective
+    camera.lookAt(0, -10, 0); // Look slightly below center to see pins extending
+    // Angle to see the 3D depth of the pin field
+    camera.rotation.x = -0.25; // Look down at an angle
+    camera.rotation.y = 0;
     cameraRef.current = camera;
 
     // Renderer
@@ -85,36 +87,37 @@ export default function NeuralPinFieldBackground() {
     container.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
-    // Lighting for depth illusion - increased intensity for visibility
-    const ambientLight = new THREE.AmbientLight(0x606060, 0.8); // Increased from 0.4 to 0.8
+    // Lighting for depth illusion - subtle and refined
+    const ambientLight = new THREE.AmbientLight(0x404040, 0.5);
     scene.add(ambientLight);
 
     // Primary directional light - creates depth through shading
-    const directionalLight1 = new THREE.DirectionalLight(0xffffff, 1.2); // Increased from 0.6 to 1.2
+    const directionalLight1 = new THREE.DirectionalLight(0xffffff, 0.7);
     directionalLight1.position.set(50, 50, 50);
     directionalLight1.castShadow = false;
     scene.add(directionalLight1);
 
     // Secondary directional light - fills shadows
-    const directionalLight2 = new THREE.DirectionalLight(0x888888, 0.6); // Increased from 0.3 to 0.6
+    const directionalLight2 = new THREE.DirectionalLight(0x666666, 0.3);
     directionalLight2.position.set(-50, -50, 50);
     scene.add(directionalLight2);
 
-    // Subtle red accent light for BrainScraper branding
-    const accentLight = new THREE.PointLight(0xff5757, 0.3, 200); // Increased from 0.15 to 0.3
+    // Very subtle red accent light for BrainScraper branding
+    const accentLight = new THREE.PointLight(0xff5757, 0.15, 200);
     accentLight.position.set(0, 0, 100);
     scene.add(accentLight);
 
-    // Pin geometry - thin box (taller for better visibility)
-    const pinGeometry = new THREE.BoxGeometry(0.4, 2, 0.4);
+    // Pin geometry - very thin, subtle pins for neural field effect
+    // Height represents the pin extending from the base plane
+    const pinGeometry = new THREE.BoxGeometry(0.12, 1.5, 0.12);
     
-    // Pin material - brighter graphite with metallic highlights for visibility
-    // Increased brightness and emissive for better visibility against black background
+    // Pin material - subtle, refined appearance
+    // Very subtle so pins blend into background but remain visible
     const pinMaterial = new THREE.MeshPhongMaterial({
-      color: 0x404040, // Brighter graphite base (was 0x1a1a1a)
-      emissive: 0x1a1a1a, // Increased self-illumination for visibility
-      specular: 0x666666, // Brighter metallic highlights
-      shininess: 50,
+      color: 0x252525, // Subtle dark graphite
+      emissive: 0x0a0a0a, // Very subtle self-illumination
+      specular: 0x404040, // Subtle metallic highlights
+      shininess: 40,
       flatShading: false,
     });
 
@@ -129,7 +132,7 @@ export default function NeuralPinFieldBackground() {
     };
     
     const gridSize = getOptimalGridSize();
-    const spacing = 1.2;
+    const spacing = 1.0; // Optimal spacing for 3D depth perception
     const totalPins = gridSize * gridSize;
 
     // Create instanced mesh for performance
@@ -297,6 +300,9 @@ export default function NeuralPinFieldBackground() {
       }
     };
 
+    // Initialize lastFrameTime for first frame
+    lastFrameTimeRef.current = performance.now();
+
     // Animation loop with frame rate limiting and performance optimization
     const animate = (currentTime: number = performance.now()) => {
       if (!isActiveRef.current) {
@@ -304,13 +310,16 @@ export default function NeuralPinFieldBackground() {
         return;
       }
 
-      // Frame rate limiting - skip frames if too fast
-      const timeSinceLastFrame = currentTime - lastFrameTimeRef.current;
-      if (timeSinceLastFrame < frameInterval && !isEnrichmentActiveRef.current) {
+      // Calculate delta time BEFORE updating lastFrameTime
+      const deltaTime = currentTime - lastFrameTimeRef.current;
+      
+      // Skip if delta is too small (prevent division issues)
+      if (deltaTime <= 0) {
         animationFrameRef.current = requestAnimationFrame(animate);
         return;
       }
 
+      // Update performance metrics (this updates lastFrameTimeRef)
       updatePerformanceMetrics(currentTime);
 
       // Pause or significantly reduce work when enrichment is active
@@ -322,22 +331,26 @@ export default function NeuralPinFieldBackground() {
         }
       }
 
-      // Adaptive time step based on activity
-      let timeStep = 0.01;
-      if (isFormFocusedRef.current) timeStep = 0.003;
-      if (isEnrichmentActiveRef.current) timeStep = 0.001; // Very slow during enrichment
-      timeRef.current += timeStep;
+      // Smooth, consistent time step - use delta time for frame-rate independent animation
+      const baseTimeStep = 0.008; // Slightly slower for smoother motion
+      let timeStep = baseTimeStep;
+      if (isFormFocusedRef.current) timeStep = baseTimeStep * 0.3;
+      if (isEnrichmentActiveRef.current) timeStep = baseTimeStep * 0.1; // Very slow during enrichment
+      
+      // Scale time step by actual frame delta for smooth animation
+      const normalizedDelta = Math.min(deltaTime / 16.67, 2); // Cap at 2x normal speed
+      timeRef.current += timeStep * normalizedDelta;
 
       // Update pin heights - optimized batch processing with early exits
       const mouseX = (mouseRef.current.x / width) * gridSize * spacing - (gridSize * spacing) / 2;
       const mouseY = (mouseRef.current.y / height) * gridSize * spacing - (gridSize * spacing) / 2;
 
-      // Use requestIdleCallback for non-critical updates when possible
+      // Smooth pin updates - always update all pins for consistent animation
       const updatePins = () => {
-        // Reuse single matrix for all updates (more efficient than pooling for this use case)
+        // Reuse single matrix for all updates
         const updateMatrix = baseMatrix;
         
-        // Process in batches - skip every other pin when enrichment is active
+        // Only skip pins during heavy enrichment activity
         const stepSize = isEnrichmentActiveRef.current ? 2 : 1;
         
         for (let i = 0; i < gridSize; i += stepSize) {
@@ -346,25 +359,37 @@ export default function NeuralPinFieldBackground() {
             const z = (j - gridSize / 2) * spacing;
 
             // Neural motion formula: base + waves + interaction
-            const baseNoise = noise(x, z, timeRef.current) * 0.6;
-            const waveMotion = wave(x, z, timeRef.current) * 0.3;
+            const baseNoise = noise(x, z, timeRef.current) * 0.4; // Reduced amplitude for subtler movement
+            const waveMotion = wave(x, z, timeRef.current) * 0.2; // Reduced for smoother motion
             // Reduce interaction effect when form is focused or enrichment active
-            const interactionMultiplier = (isFormFocusedRef.current || isEnrichmentActiveRef.current) ? 0.1 : 0.4;
+            const interactionMultiplier = (isFormFocusedRef.current || isEnrichmentActiveRef.current) ? 0.05 : 0.3;
             const interactionEffect = interaction(x, z, mouseX, mouseY) * interactionMultiplier;
 
             let height = baseNoise + waveMotion + interactionEffect;
-            // Smooth clamping with easing - increased range for more visible movement
-            height = Math.max(-3, Math.min(3, height));
+            // Subtle height range - pins extend upward from base
+            height = Math.max(-0.8, Math.min(0.8, height));
 
-            // Update instance matrix
+            // Update instance matrix - pin extends from base plane
+            // The pin geometry is centered, so we position it at base + height/2
             const instanceIndex = i * gridSize + j;
-            updateMatrix.makeTranslation(x, height, z);
+            const pinY = height; // Pin extends from base (y=0) by this amount
+            updateMatrix.makeTranslation(x, pinY, z);
             pins.setMatrixAt(instanceIndex, updateMatrix);
             
-            // If skipping pins, interpolate for smoother appearance
-            if (stepSize > 1 && i + 1 < gridSize && j + 1 < gridSize) {
-              const nextIndex = (i + 1) * gridSize + (j + 1);
-              pins.setMatrixAt(nextIndex, updateMatrix);
+            // If skipping pins during enrichment, copy to adjacent for smoother appearance
+            if (stepSize > 1) {
+              if (i + 1 < gridSize) {
+                const nextIndex = (i + 1) * gridSize + j;
+                pins.setMatrixAt(nextIndex, updateMatrix);
+              }
+              if (j + 1 < gridSize) {
+                const nextIndex = i * gridSize + (j + 1);
+                pins.setMatrixAt(nextIndex, updateMatrix);
+              }
+              if (i + 1 < gridSize && j + 1 < gridSize) {
+                const nextIndex = (i + 1) * gridSize + (j + 1);
+                pins.setMatrixAt(nextIndex, updateMatrix);
+              }
             }
           }
         }
@@ -372,12 +397,9 @@ export default function NeuralPinFieldBackground() {
         pins.instanceMatrix.needsUpdate = true;
       };
 
-      // Use requestIdleCallback when available and not during enrichment
-      if (typeof requestIdleCallback !== 'undefined' && !isEnrichmentActiveRef.current) {
-        requestIdleCallback(updatePins, { timeout: 16 });
-      } else {
-        updatePins();
-      }
+      // Always update pins synchronously for smooth animation
+      // requestIdleCallback causes visual glitches and lag
+      updatePins();
 
       // Subtle camera parallax based on mouse (disabled when form focused or enrichment active)
       if (camera && !isFormFocusedRef.current && !isEnrichmentActiveRef.current) {
@@ -465,5 +487,14 @@ export default function NeuralPinFieldBackground() {
     };
   }, [isMounted]);
 
-  return <div ref={containerRef} className="fixed inset-0 pointer-events-none z-0" />;
+  return (
+    <div 
+      ref={containerRef} 
+      className="fixed inset-0 pointer-events-none z-0"
+      style={{ 
+        backgroundColor: '#000000',
+        isolation: 'isolate', // Create new stacking context to prevent z-index conflicts
+      }}
+    />
+  );
 }

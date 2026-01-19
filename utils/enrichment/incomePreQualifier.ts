@@ -807,6 +807,10 @@ function calculateConfidenceWithDecay(
 // DECISION LOGIC (TWO-PASS)
 // ============================================================================
 
+/**
+ * Interval-based income decision logic (Enhanced)
+ * Uses bands instead of point estimates for better decision quality
+ */
 function makePreQualDecision(
   conservative: { min: number; max: number; p50: number },
   upside: { min: number; max: number; p50: number },
@@ -816,44 +820,88 @@ function makePreQualDecision(
   tier: 'low' | 'mid' | 'high' | 'unknown';
   shouldContinueEnrichment: boolean;
   reason: string;
+  band: 'low' | 'gray' | 'high';
+  requiresStrongPositives: boolean;
 } {
-  const floorThreshold = 50000; // Minimum viable income
-  const enrichThreshold = 75000; // Worth enriching threshold
+  // Interval-based thresholds (mirrors underwriting logic)
+  const lowBandThreshold = 40000;  // < $40k → always skip
+  const grayBandMin = 40000;        // $40k-$60k → gray band
+  const grayBandMax = 60000;
+  const highBandThreshold = 60000; // $60k+ → enrich
   
-  // Decision logic:
-  // If conservative_max < floor_threshold → STOP
-  // If upside_min > enrich_threshold → CONTINUE
-  // Else → UNKNOWN → CONTINUE LIMITED
+  // Determine income band
+  let band: 'low' | 'gray' | 'high' = 'gray';
+  let requiresStrongPositives = false;
   
-  if (conservative.max < floorThreshold) {
+  if (conservative.max < lowBandThreshold) {
+    band = 'low';
+  } else if (upside.p50 >= highBandThreshold) {
+    band = 'high';
+  } else {
+    band = 'gray';
+    requiresStrongPositives = true;
+  }
+  
+  // Low band: < $40k → always skip
+  if (band === 'low') {
     return {
       tier: 'low',
       shouldContinueEnrichment: false,
-      reason: `Conservative max ($${Math.round(conservative.max / 1000)}k) below floor threshold ($${Math.round(floorThreshold / 1000)}k)`,
+      reason: `Low income band: Conservative max ($${Math.round(conservative.max / 1000)}k) < $${Math.round(lowBandThreshold / 1000)}k threshold`,
+      band: 'low',
+      requiresStrongPositives: false,
     };
   }
   
-  if (upside.min > enrichThreshold) {
+  // High band: $60k+ → enrich
+  if (band === 'high') {
     return {
       tier: 'high',
       shouldContinueEnrichment: true,
-      reason: `Upside min ($${Math.round(upside.min / 1000)}k) above enrich threshold ($${Math.round(enrichThreshold / 1000)}k)`,
+      reason: `High income band: Upside p50 ($${Math.round(upside.p50 / 1000)}k) >= $${Math.round(highBandThreshold / 1000)}k threshold`,
+      band: 'high',
+      requiresStrongPositives: false,
     };
   }
   
-  // UNKNOWN or MID - proceed conservatively
+  // Gray band: $40k-$60k → require 2 strong positives
+  // Strong positives:
+  // - High confidence (>= 65%)
+  // - No conflicts
+  // - Upside min > $50k
+  const strongPositives = [
+    confidence >= 0.65,
+    conflicts.length === 0,
+    upside.min > 50000,
+  ].filter(Boolean).length;
+  
+  if (strongPositives >= 2) {
+    return {
+      tier: 'mid',
+      shouldContinueEnrichment: true,
+      reason: `Gray income band with ${strongPositives} strong positives - proceeding with enrichment`,
+      band: 'gray',
+      requiresStrongPositives: true,
+    };
+  }
+  
+  // Gray band without sufficient positives
   if (confidence < 0.50 || conflicts.length >= 2) {
     return {
       tier: 'unknown',
       shouldContinueEnrichment: true, // Conservative: proceed if uncertain
-      reason: `Low confidence (${Math.round(confidence * 100)}%) or multiple conflicts - proceeding conservatively`,
+      reason: `Gray income band: Low confidence (${Math.round(confidence * 100)}%) or multiple conflicts - proceeding conservatively`,
+      band: 'gray',
+      requiresStrongPositives: true,
     };
   }
   
   return {
     tier: 'mid',
     shouldContinueEnrichment: true,
-    reason: `Moderate confidence (${Math.round(confidence * 100)}%) - proceeding with enrichment`,
+    reason: `Gray income band: Moderate confidence (${Math.round(confidence * 100)}%) with ${strongPositives} strong positives - proceeding`,
+    band: 'gray',
+    requiresStrongPositives: true,
   };
 }
 
