@@ -112,9 +112,17 @@ export default function CrokDocsPage() {
             <p className="text-sm sm:text-base font-medium" style={{ color: '#ffd700', opacity: 0.9 }}>
               Dialing Statistics Dashboard
             </p>
-            <div className="flex items-center justify-center gap-2 text-xs" style={{ color: '#ffd700', opacity: 0.7 }}>
-              <Clock className="w-3 h-3" />
-              <span>Last updated: {currentTime.toLocaleTimeString()}</span>
+            <div className="space-y-2">
+              <div className="flex items-center justify-center gap-2 text-sm font-semibold" style={{ color: '#ffd700', opacity: 0.95 }}>
+                <span>Dials Tracked {currentTime.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })} {currentTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}</span>
+              </div>
+              <div className="flex items-center justify-center gap-2 text-xs" style={{ color: '#ffd700', opacity: 0.8 }}>
+                <span>Agent: Link Pellow</span>
+              </div>
+              <div className="flex items-center justify-center gap-2 text-xs" style={{ color: '#ffd700', opacity: 0.7 }}>
+                <Clock className="w-3 h-3" />
+                <span>Last updated: {currentTime.toLocaleTimeString()}</span>
+              </div>
             </div>
           </div>
 
