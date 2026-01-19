@@ -15,14 +15,19 @@ export type RawNetworkEvent = {
   status?: number;
   reqHeaders?: Record<string, string>;
   resHeaders?: Record<string, string>;
+  reqCookies?: Record<string, string>;
   reqBodySize?: number;
   resBodySize?: number;
   resMime?: string;
+  reqBodyText?: string;
+  resBodyText?: string;
+  query?: Record<string, string | string[]>;
   phase?: "page_load" | "interaction" | "background";
   actionTag?: string;
   source: "mobile" | "browser";
   actionId?: string;        // Linked action ID
   actionConfidence?: number; // 0-1 confidence score
+  durationMs?: number;
 };
 
 import type { ActionEvent } from './actions';
