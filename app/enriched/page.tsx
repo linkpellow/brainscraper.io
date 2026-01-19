@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Download, ArrowUpDown, ArrowUp, ArrowDown, Loader2, Zap, X, CheckCircle2, AlertCircle, Search, Copy, Check, Smartphone, Phone, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Download, ArrowUpDown, ArrowUp, ArrowDown, Loader2, Zap, X, CheckCircle2, AlertCircle, Search, Copy, Check, Smartphone, Phone, Sparkles, ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
 import Link from 'next/link';
 import { LeadSummary, leadSummariesToCSV, formatPhoneNumber } from '@/utils/extractLeadSummary';
 import AppLayout from '../components/AppLayout';
@@ -1340,6 +1340,49 @@ export default function EnrichedLeadsPage() {
                   onClick={() => setSelectedState('')}
                   className="absolute right-6 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-gray-300 transition-colors"
                   title="Clear state filter"
+                >
+                  <X className="w-3 h-3 sm:w-4 sm:h-4" />
+                </button>
+              )}
+            </div>
+            {/* Date Scraped Filter Dropdown */}
+            <div className="relative">
+              <select
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className={`px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold border transition-all font-data appearance-none cursor-pointer ${
+                  selectedDate
+                    ? 'border-white/80 bg-white/20 text-white shadow-lg shadow-white/50 ring-2 ring-white/50'
+                    : 'btn-inactive text-slate-200 border-slate-600'
+                }`}
+                style={{
+                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23cbd5e1' d='M6 9L1 4h10z'/%3E%3C/svg%3E")`,
+                  backgroundRepeat: 'no-repeat',
+                  backgroundPosition: 'right 0.5rem center',
+                  paddingRight: '2rem',
+                  minWidth: '120px'
+                }}
+              >
+                <option value="">All Dates</option>
+                {uniqueDates.map((dateStr) => {
+                  const date = new Date(dateStr);
+                  const formattedDate = date.toLocaleDateString('en-US', { 
+                    month: 'short', 
+                    day: 'numeric', 
+                    year: 'numeric' 
+                  });
+                  return (
+                    <option key={dateStr} value={dateStr} className="bg-slate-800 text-slate-200">
+                      {formattedDate}
+                    </option>
+                  );
+                })}
+              </select>
+              {selectedDate && (
+                <button
+                  onClick={() => setSelectedDate('')}
+                  className="absolute right-6 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-gray-300 transition-colors"
+                  title="Clear date filter"
                 >
                   <X className="w-3 h-3 sm:w-4 sm:h-4" />
                 </button>
