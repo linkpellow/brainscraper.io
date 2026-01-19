@@ -582,9 +582,9 @@ export default function EnrichedLeadsPage() {
       return <ArrowUpDown className="w-4 h-4 text-slate-400" />;
     }
     return sortDirection === 'asc' ? (
-      <ArrowUp className="w-4 h-4 text-blue-400" />
+      <ArrowUp className="w-4 h-4 text-white" />
     ) : (
-      <ArrowDown className="w-4 h-4 text-blue-400" />
+      <ArrowDown className="w-4 h-4 text-white" />
     );
   };
 
@@ -770,7 +770,7 @@ export default function EnrichedLeadsPage() {
     }
   };
 
-  const CopyableCell = ({ value, fieldId, className = '', hoverColor = 'hover:bg-gradient-to-r hover:from-blue-500/10 hover:to-purple-500/10', truncate = true }: { 
+  const CopyableCell = ({ value, fieldId, className = '', hoverColor = 'hover:bg-white/10', truncate = true }: { 
     value: string; 
     fieldId: string; 
     className?: string;
@@ -788,19 +788,19 @@ export default function EnrichedLeadsPage() {
         title={canCopy ? (value.length > 50 ? value : 'Click to copy') : ''}
       >
         <span className="flex items-center gap-1 relative z-10 min-w-0">
-          <span className={`transition-all duration-300 group-hover:text-blue-400 ${truncate ? 'truncate block max-w-full' : ''}`}>{displayValue}</span>
+          <span className={`transition-all duration-300 group-hover:text-white ${truncate ? 'truncate block max-w-full' : ''}`}>{displayValue}</span>
           {canCopy && (
             <span className="opacity-0 group-hover:opacity-100 transition-all duration-300 transform group-hover:scale-110 flex-shrink-0">
               {isCopied ? (
                 <Check className="w-3 h-3 text-emerald-400 drop-shadow-lg" />
               ) : (
-                <Copy className="w-3 h-3 text-blue-400 drop-shadow-lg" />
+                <Copy className="w-3 h-3 text-white drop-shadow-lg" />
               )}
             </span>
           )}
         </span>
         {canCopy && (
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 via-purple-500/0 to-pink-500/0 group-hover:from-blue-500/5 group-hover:via-purple-500/5 group-hover:to-pink-500/5 rounded-lg transition-all duration-500 -z-0" />
+          <div className="absolute inset-0 bg-white/0 group-hover:bg-white/5 rounded-lg transition-all duration-500 -z-0" />
         )}
       </td>
     );
@@ -860,24 +860,24 @@ export default function EnrichedLeadsPage() {
         <span className="flex items-center gap-1 relative z-10 min-w-0">
           {isEnriching ? (
             <>
-              <Loader2 className="w-3 h-3 animate-spin text-blue-400" />
-              <span className="text-xs text-blue-400">Enriching...</span>
+              <Loader2 className="w-3 h-3 animate-spin text-white" />
+              <span className="text-xs text-white">Enriching...</span>
             </>
           ) : errorMessage ? (
             <>
-              <AlertCircle className="w-3 h-3 text-red-400 flex-shrink-0" />
-              <span className="text-xs text-red-400 truncate max-w-[200px]" title={errorMessage}>
+              <AlertCircle className="w-3 h-3 text-gray-300 flex-shrink-0" />
+              <span className="text-xs text-gray-300 truncate max-w-[200px]" title={errorMessage}>
                 {errorMessage.length > 30 ? `${errorMessage.substring(0, 30)}...` : errorMessage}
               </span>
             </>
           ) : (
             <>
-              <span className={`transition-all duration-300 ${canCopy ? 'group-hover:text-blue-400' : ''} ${truncate ? 'truncate block max-w-full' : ''}`}>
+              <span className={`transition-all duration-300 ${canCopy ? 'group-hover:text-white' : ''} ${truncate ? 'truncate block max-w-full' : ''}`}>
                 {field === 'phone' ? formatPhoneNumber(displayValue) : displayValue}
               </span>
               {isEmpty && canEnrich && (
                 <span className="opacity-0 group-hover:opacity-100 transition-all duration-300 transform group-hover:scale-110 flex-shrink-0">
-                  <Sparkles className="w-3 h-3 text-purple-400 drop-shadow-lg" />
+                  <Sparkles className="w-3 h-3 text-white drop-shadow-lg" />
                 </span>
               )}
               {canCopy && (
@@ -885,7 +885,7 @@ export default function EnrichedLeadsPage() {
                   {isCopied ? (
                     <Check className="w-3 h-3 text-emerald-400 drop-shadow-lg" />
                   ) : (
-                    <Copy className="w-3 h-3 text-blue-400 drop-shadow-lg" />
+                    <Copy className="w-3 h-3 text-white drop-shadow-lg" />
                   )}
                 </span>
               )}
@@ -893,7 +893,7 @@ export default function EnrichedLeadsPage() {
           )}
         </span>
         {(canCopy || (isEmpty && canEnrich)) && (
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 via-purple-500/0 to-pink-500/0 group-hover:from-blue-500/5 group-hover:via-purple-500/5 group-hover:to-pink-500/5 rounded-lg transition-all duration-500 -z-0" />
+          <div className="absolute inset-0 bg-white/0 group-hover:bg-white/5 rounded-lg transition-all duration-500 -z-0" />
         )}
       </td>
     );
@@ -1148,7 +1148,7 @@ export default function EnrichedLeadsPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="min-w-0 flex-1">
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent tracking-tight drop-shadow-lg">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white tracking-tight drop-shadow-lg">
               Enriched Leads
             </h1>
             <p className="text-xs sm:text-sm text-slate-400 mt-1 sm:mt-2 font-medium font-data">
@@ -1207,13 +1207,13 @@ export default function EnrichedLeadsPage() {
         {dncError && (
           <div className="bg-red-900/20 border border-red-500/50 rounded-xl p-4 mb-4">
             <div className="flex items-start gap-3">
-              <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+              <AlertCircle className="w-5 h-5 text-gray-300 flex-shrink-0 mt-0.5" />
               <div className="flex-1">
-                <h3 className="text-red-400 font-semibold mb-1">DNC Scrubbing Configuration Error</h3>
-                <p className="text-red-300 text-sm mb-2">{dncError}</p>
+                <h3 className="text-gray-300 font-semibold mb-1">DNC Scrubbing Configuration Error</h3>
+                <p className="text-gray-400 text-sm mb-2">{dncError}</p>
                 <button
                   onClick={() => setDncError(null)}
-                  className="text-red-400 hover:text-red-300 text-xs underline"
+                  className="text-gray-300 hover:text-gray-400 text-xs underline"
                 >
                   Dismiss
                 </button>
@@ -1227,20 +1227,20 @@ export default function EnrichedLeadsPage() {
           <div className="space-y-4">
             {/* Search Bar */}
             <div className="relative group">
-              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 via-purple-500/20 to-pink-500/20 rounded-xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+              <div className="absolute inset-0 bg-white/20 rounded-xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
               <div className="relative panel-inactive rounded-xl">
-                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400 group-hover:text-blue-400 transition-colors pointer-events-none z-10" />
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400 group-hover:text-white transition-colors pointer-events-none z-10" />
                 <input
                   type="text"
                   placeholder="Search by name..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-12 pr-12 py-3 bg-transparent text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 rounded-xl transition-all duration-300 font-data relative z-20"
+                  className="w-full pl-12 pr-12 py-3 bg-transparent text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/50 rounded-xl transition-all duration-300 font-data relative z-20"
                 />
                 {searchQuery && (
                   <button
                     onClick={() => setSearchQuery('')}
-                    className="absolute right-4 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-red-400 transition-colors hover:scale-110"
+                    className="absolute right-4 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-gray-300 transition-colors hover:scale-110"
                   >
                     <X className="w-5 h-5" />
                   </button>
@@ -1259,7 +1259,7 @@ export default function EnrichedLeadsPage() {
                 onChange={(e) => setAgeMin(e.target.value === '' ? '' : parseInt(e.target.value) || '')}
                 min="0"
                 max="120"
-                className="w-12 sm:w-14 px-1.5 py-0.5 bg-slate-700/50 border border-slate-600 rounded text-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50"
+                className="w-12 sm:w-14 px-1.5 py-0.5 bg-slate-700/50 border border-slate-600 rounded text-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/50"
               />
               <span className="text-slate-400 text-xs">-</span>
               <input
@@ -1269,7 +1269,7 @@ export default function EnrichedLeadsPage() {
                 onChange={(e) => setAgeMax(e.target.value === '' ? '' : parseInt(e.target.value) || '')}
                 min="0"
                 max="120"
-                className="w-12 sm:w-14 px-1.5 py-0.5 bg-slate-700/50 border border-slate-600 rounded text-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50"
+                className="w-12 sm:w-14 px-1.5 py-0.5 bg-slate-700/50 border border-slate-600 rounded text-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/50"
               />
               {(ageMin !== '' || ageMax !== '') && (
                 <button
@@ -1277,7 +1277,7 @@ export default function EnrichedLeadsPage() {
                     setAgeMin('');
                     setAgeMax('');
                   }}
-                  className="ml-1 text-slate-400 hover:text-red-400 transition-colors"
+                  className="ml-1 text-slate-400 hover:text-gray-300 transition-colors"
                   title="Clear age filter"
                 >
                   <X className="w-3 h-3 sm:w-4 sm:h-4" />
@@ -1291,7 +1291,7 @@ export default function EnrichedLeadsPage() {
                 onChange={(e) => setSelectedState(e.target.value)}
                 className={`px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold border transition-all font-data appearance-none cursor-pointer ${
                   selectedState
-                    ? 'border-blue-500/80 bg-blue-500/20 text-blue-300 shadow-lg shadow-blue-500/50 ring-2 ring-blue-500/50'
+                    ? 'border-white/80 bg-white/20 text-white shadow-lg shadow-white/50 ring-2 ring-white/50'
                     : 'btn-inactive text-slate-200 border-slate-600'
                 }`}
                 style={{
@@ -1312,7 +1312,7 @@ export default function EnrichedLeadsPage() {
               {selectedState && (
                 <button
                   onClick={() => setSelectedState('')}
-                  className="absolute right-6 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-red-400 transition-colors"
+                  className="absolute right-6 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-gray-300 transition-colors"
                   title="Clear state filter"
                 >
                   <X className="w-3 h-3 sm:w-4 sm:h-4" />
@@ -1323,19 +1323,19 @@ export default function EnrichedLeadsPage() {
               onClick={() => setMobileOnly(!mobileOnly)}
               className={`flex items-center justify-center px-2 sm:px-2.5 py-1.5 sm:py-2 rounded-lg border transition-all duration-300 hover:scale-110 ${
                 mobileOnly
-                  ? 'border-purple-500/80 bg-purple-500/20 text-purple-300 shadow-lg shadow-purple-500/50 ring-2 ring-purple-500/50'
+                  ? 'border-white/80 bg-white/20 text-white shadow-lg shadow-white/50 ring-2 ring-white/50'
                   : 'btn-inactive text-slate-400'
               }`}
               title={mobileOnly ? 'Show all leads' : 'Show mobile only'}
             >
-              <Smartphone className={`w-4 h-4 sm:w-5 sm:h-5 ${mobileOnly ? 'text-purple-300' : 'text-slate-400'}`} />
+              <Smartphone className={`w-4 h-4 sm:w-5 sm:h-5 ${mobileOnly ? 'text-white' : 'text-slate-400'}`} />
             </button>
             <label className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold btn-inactive text-slate-200 cursor-pointer font-data">
               <input
                 type="checkbox"
                 checked={filterDNC}
                 onChange={(e) => setFilterDNC(e.target.checked)}
-                className="w-3 h-3 sm:w-4 sm:h-4 text-red-500 bg-slate-700 border-slate-600 rounded focus:ring-2 focus:ring-red-500 cursor-pointer accent-red-500"
+                className="w-3 h-3 sm:w-4 sm:h-4 text-gray-400 bg-slate-700 border-slate-600 rounded focus:ring-2 focus:ring-white/50 cursor-pointer accent-gray-400"
               />
               <span className="hidden sm:inline text-xs">Filter DNC</span>
               <span className="sm:hidden text-xs">No DNC</span>
@@ -1426,16 +1426,16 @@ export default function EnrichedLeadsPage() {
         {/* Leads Table */}
         {loading ? (
           <div className="px-6 py-12 panel-inactive rounded-2xl text-center">
-            <Loader2 className="w-8 h-8 text-blue-400 animate-spin mx-auto mb-4" />
+            <Loader2 className="w-8 h-8 text-white animate-spin mx-auto mb-4" />
             <p className="text-slate-300 font-medium">Loading enriched leads...</p>
           </div>
         ) : leads.length === 0 ? (
           <div className="px-6 py-12 panel-inactive rounded-2xl text-center space-y-4">
             <p className="text-slate-300 font-semibold text-lg">No enriched leads found.</p>
             <div className="text-left bg-slate-900/60 backdrop-blur-sm p-6 rounded-xl border border-slate-700/50 max-w-2xl mx-auto shadow-lg">
-              <p className="text-sm font-semibold text-slate-200 mb-3 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">To see enriched leads here:</p>
+              <p className="text-sm font-semibold text-slate-200 mb-3 text-white">To see enriched leads here:</p>
               <ol className="text-xs text-slate-400 space-y-2 list-decimal list-inside">
-                <li>Go to the <Link href="/" className="text-blue-400 hover:text-purple-400 hover:underline transition-colors">Lead Generation page</Link></li>
+                <li>Go to the <Link href="/" className="text-white hover:text-white hover:underline transition-colors">Lead Generation page</Link></li>
                 <li>Search for leads using LinkedIn Sales Navigator</li>
                 <li>Click "Enrich & Scrub" to enrich the leads</li>
                 <li>Once enrichment completes, leads will appear here automatically</li>
@@ -1449,18 +1449,18 @@ export default function EnrichedLeadsPage() {
               <table className="w-full text-xs relative z-10 font-data" style={{ tableLayout: 'fixed', width: '100%' }}>
                 <thead>
                   <tr className="table-header">
-                    <th className="px-2 py-2 text-left text-blue-400 font-semibold text-[10px] uppercase tracking-wider" style={{ width: '13%' }}>Name</th>
-                    <th className="px-2 py-2 text-left text-blue-400 font-semibold text-[10px] uppercase tracking-wider" style={{ width: '10%' }}>Phone</th>
-                    <th className="px-2 py-2 text-left text-blue-400 font-semibold text-[10px] uppercase tracking-wider" style={{ width: '17%' }}>Email</th>
-                    <th className="px-2 py-2 text-left text-blue-400 font-semibold text-[10px] uppercase tracking-wider" style={{ width: '9%' }}>City</th>
-                    <th className="px-2 py-2 text-left text-blue-400 font-semibold text-[10px] uppercase tracking-wider" style={{ width: '5%' }}>State</th>
-                    <th className="px-2 py-2 text-left text-blue-400 font-semibold text-[10px] uppercase tracking-wider" style={{ width: '7%' }}>Zipcode</th>
-                    <th className="px-2 py-2 text-left text-blue-400 font-semibold text-[10px] uppercase tracking-wider" style={{ width: '5%' }}>Age</th>
-                    <th className="px-2 py-2 text-left text-blue-400 font-semibold text-[10px] uppercase tracking-wider" style={{ width: '8%' }}>Income</th>
-                    <th className="px-2 py-2 text-left text-blue-400 font-semibold text-[10px] uppercase tracking-wider" style={{ width: '8%' }}>Line Type</th>
-                    <th className="px-2 py-2 text-left text-blue-400 font-semibold text-[10px] uppercase tracking-wider" style={{ width: '9%' }}>Carrier</th>
-                    <th className="px-2 py-2 text-left text-blue-400 font-semibold text-[10px] uppercase tracking-wider" style={{ width: '9%' }}>Date Scraped</th>
-                    <th className="px-2 py-2 text-left text-blue-400 font-semibold text-[10px] uppercase tracking-wider" style={{ width: '5%' }}>DNC</th>
+                    <th className="px-2 py-2 text-left text-white font-semibold text-[10px] uppercase tracking-wider" style={{ width: '13%' }}>Name</th>
+                    <th className="px-2 py-2 text-left text-white font-semibold text-[10px] uppercase tracking-wider" style={{ width: '10%' }}>Phone</th>
+                    <th className="px-2 py-2 text-left text-white font-semibold text-[10px] uppercase tracking-wider" style={{ width: '17%' }}>Email</th>
+                    <th className="px-2 py-2 text-left text-white font-semibold text-[10px] uppercase tracking-wider" style={{ width: '9%' }}>City</th>
+                    <th className="px-2 py-2 text-left text-white font-semibold text-[10px] uppercase tracking-wider" style={{ width: '5%' }}>State</th>
+                    <th className="px-2 py-2 text-left text-white font-semibold text-[10px] uppercase tracking-wider" style={{ width: '7%' }}>Zipcode</th>
+                    <th className="px-2 py-2 text-left text-white font-semibold text-[10px] uppercase tracking-wider" style={{ width: '5%' }}>Age</th>
+                    <th className="px-2 py-2 text-left text-white font-semibold text-[10px] uppercase tracking-wider" style={{ width: '8%' }}>Income</th>
+                    <th className="px-2 py-2 text-left text-white font-semibold text-[10px] uppercase tracking-wider" style={{ width: '8%' }}>Line Type</th>
+                    <th className="px-2 py-2 text-left text-white font-semibold text-[10px] uppercase tracking-wider" style={{ width: '9%' }}>Carrier</th>
+                    <th className="px-2 py-2 text-left text-white font-semibold text-[10px] uppercase tracking-wider" style={{ width: '9%' }}>Date Scraped</th>
+                    <th className="px-2 py-2 text-left text-white font-semibold text-[10px] uppercase tracking-wider" style={{ width: '5%' }}>DNC</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-700/30">
@@ -1491,9 +1491,9 @@ export default function EnrichedLeadsPage() {
                   }
 
                   const lineTypeColor = lead.lineType === 'mobile' 
-                    ? 'text-blue-400 font-semibold drop-shadow-[0_0_8px_rgba(59,130,246,0.5)]' 
+                    ? 'text-white font-semibold drop-shadow-[0_0_8px_rgba(59,130,246,0.5)]' 
                     : lead.lineType && lead.lineType !== 'N/A'
-                    ? 'text-red-400 font-semibold drop-shadow-[0_0_8px_rgba(248,113,113,0.5)]'
+                    ? 'text-gray-300 font-semibold drop-shadow-[0_0_8px_rgba(248,113,113,0.5)]'
                     : 'text-slate-400';
 
                   return (
@@ -1503,18 +1503,18 @@ export default function EnrichedLeadsPage() {
                       style={{ animationDelay: `${index * 20}ms` }}
                     >
                       <td 
-                        className="px-2 py-2 text-slate-100 font-semibold relative z-10 cursor-pointer transition-all duration-300 ease-out hover:scale-[1.02] hover:text-blue-400 group/name"
+                        className="px-2 py-2 text-slate-100 font-semibold relative z-10 cursor-pointer transition-all duration-300 ease-out hover:scale-[1.02] hover:text-white group/name"
                         onClick={() => lead.name && copyToClipboard(lead.name, `name-${globalIndex}`)}
                         title={lead.name ? (lead.name.length > 30 ? lead.name : 'Click to copy') : ''}
                       >
                         <span className="flex items-center gap-1 relative z-10 min-w-0">
-                          <span className="transition-all duration-300 group-hover/name:text-blue-400 truncate block max-w-full">{lead.name || 'N/A'}</span>
+                          <span className="transition-all duration-300 group-hover/name:text-white truncate block max-w-full">{lead.name || 'N/A'}</span>
                           {lead.name && (
                             <span className="opacity-0 group-hover/name:opacity-100 transition-all duration-300 transform group-hover/name:scale-110 flex-shrink-0">
                               {copiedField === `name-${globalIndex}` ? (
-                                <Check className="w-3 h-3 text-blue-400 drop-shadow-lg" />
+                                <Check className="w-3 h-3 text-white drop-shadow-lg" />
                               ) : (
-                                <Copy className="w-3 h-3 text-blue-400 drop-shadow-lg" />
+                                <Copy className="w-3 h-3 text-white drop-shadow-lg" />
                               )}
                             </span>
                           )}
@@ -1562,15 +1562,15 @@ export default function EnrichedLeadsPage() {
                         className="text-slate-300 relative z-10"
                         truncate={false}
                       />
-                      <td className="px-2 py-2 text-slate-300 relative z-10 cursor-pointer transition-all duration-300 ease-out hover:scale-[1.02] hover:text-blue-400 group/age">
+                      <td className="px-2 py-2 text-slate-300 relative z-10 cursor-pointer transition-all duration-300 ease-out hover:scale-[1.02] hover:text-white group/age">
                         <span className="flex items-center gap-1 relative z-10">
-                          <span className="transition-all duration-300 group-hover/age:text-blue-400 text-xs">{age || 'N/A'}</span>
+                          <span className="transition-all duration-300 group-hover/age:text-white text-xs">{age || 'N/A'}</span>
                           {age && (
                             <span className="opacity-0 group-hover/age:opacity-100 transition-all duration-300 transform group-hover/age:scale-110 flex-shrink-0" onClick={() => copyToClipboard(age, `age-${globalIndex}`)}>
                               {copiedField === `age-${globalIndex}` ? (
-                                <Check className="w-3 h-3 text-blue-400 drop-shadow-lg" />
+                                <Check className="w-3 h-3 text-white drop-shadow-lg" />
                               ) : (
-                                <Copy className="w-3 h-3 text-blue-400 drop-shadow-lg" />
+                                <Copy className="w-3 h-3 text-white drop-shadow-lg" />
                               )}
                             </span>
                           )}
@@ -1592,9 +1592,9 @@ export default function EnrichedLeadsPage() {
                       >
                         <span className="flex items-center gap-1 relative z-10 min-w-0">
                           {lead.lineType && lead.lineType.toLowerCase() === 'mobile' ? (
-                            <Smartphone className="w-3 h-3 text-blue-400 flex-shrink-0" />
+                            <Smartphone className="w-3 h-3 text-white flex-shrink-0" />
                           ) : lead.lineType && (lead.lineType.toLowerCase().includes('fixed') || lead.lineType.toLowerCase().includes('landline')) ? (
-                            <Phone className="w-3 h-3 text-red-400 flex-shrink-0" />
+                            <Phone className="w-3 h-3 text-gray-300 flex-shrink-0" />
                           ) : null}
                           <span className="truncate block max-w-full text-xs">{lead.lineType || 'N/A'}</span>
                           {lead.lineType && lead.lineType !== 'N/A' && (
@@ -1651,7 +1651,7 @@ export default function EnrichedLeadsPage() {
                   setRowsPerPage(Number(e.target.value));
                   setCurrentPage(1);
                 }}
-                className="px-2 py-1 bg-slate-800 border border-slate-600 rounded text-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50"
+                className="px-2 py-1 bg-slate-800 border border-slate-600 rounded text-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/50"
               >
                 <option value={25}>25</option>
                 <option value={50}>50</option>
@@ -1699,7 +1699,7 @@ export default function EnrichedLeadsPage() {
                       onClick={() => setCurrentPage(pageNum)}
                       className={`px-2 py-1 min-w-[32px] rounded text-xs sm:text-sm font-medium transition-all ${
                         currentPage === pageNum
-                          ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/50'
+                          ? 'bg-white/20 text-white shadow-lg shadow-white/50'
                           : 'btn-inactive text-slate-300 hover:text-white hover:bg-slate-700/50'
                       }`}
                     >
@@ -1765,7 +1765,7 @@ export default function EnrichedLeadsPage() {
             {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-slate-700/50">
               <div className="flex items-center gap-3">
-                <Loader2 className="w-5 h-5 text-blue-600 animate-spin" />
+                <Loader2 className="w-5 h-5 text-white animate-spin" />
                 <h2 className="text-xl font-bold text-slate-200">Enriching Leads</h2>
               </div>
               <button
@@ -1809,15 +1809,15 @@ export default function EnrichedLeadsPage() {
                   </div>
                   <div className="panel-inactive p-3 rounded-lg">
                     <div className="text-xs text-slate-400 mb-1">With Phone</div>
-                    <div className="text-lg font-bold text-blue-400">{enrichmentStats.withPhone}</div>
+                    <div className="text-lg font-bold text-white">{enrichmentStats.withPhone}</div>
                   </div>
                   <div className="panel-inactive p-3 rounded-lg">
                     <div className="text-xs text-slate-400 mb-1">With Email</div>
-                    <div className="text-lg font-bold text-blue-400">{enrichmentStats.withEmail}</div>
+                    <div className="text-lg font-bold text-white">{enrichmentStats.withEmail}</div>
                   </div>
                   <div className="panel-inactive p-3 rounded-lg">
                     <div className="text-xs text-slate-400 mb-1">With Zipcode</div>
-                    <div className="text-lg font-bold text-blue-400">{enrichmentStats.withZipcode}</div>
+                    <div className="text-lg font-bold text-white">{enrichmentStats.withZipcode}</div>
                   </div>
                   <div className="panel-inactive p-3 rounded-lg">
                     <div className="text-xs text-slate-400 mb-1">Processed</div>
@@ -1825,8 +1825,8 @@ export default function EnrichedLeadsPage() {
                   </div>
                   {enrichmentStats.errors > 0 && (
                     <div className="status-error p-3 rounded-lg">
-                      <div className="text-xs text-red-400 mb-1">Errors</div>
-                      <div className="text-lg font-bold text-red-400">{enrichmentStats.errors}</div>
+                      <div className="text-xs text-gray-300 mb-1">Errors</div>
+                      <div className="text-lg font-bold text-gray-300">{enrichmentStats.errors}</div>
                     </div>
                   )}
                 </div>
@@ -1849,7 +1849,7 @@ export default function EnrichedLeadsPage() {
                       <div
                         key={index}
                         className={`flex items-start gap-2 ${
-                          log.type === 'error' ? 'text-red-600' :
+                          log.type === 'error' ? 'text-gray-400' :
                           log.type === 'success' ? 'text-green-600' :
                           log.type === 'warning' ? 'text-yellow-600' :
                           'text-gray-700'
@@ -1881,7 +1881,7 @@ export default function EnrichedLeadsPage() {
                     setShowProgressModal(false);
                     setLoadingSaved(false);
                   }}
-                  className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white font-medium transition-all"
+                  className="w-full px-4 py-2 bg-gray-600 hover:bg-gray-700 rounded-lg text-white font-medium transition-all"
                 >
                   Close
                 </button>

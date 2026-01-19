@@ -129,8 +129,8 @@ export default function SettingsPage() {
         <div className="space-y-3 animate-fade-in">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Settings className="w-8 h-8 text-blue-400" />
-              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent tracking-tight drop-shadow-lg">
+              <Settings className="w-8 h-8 text-white" />
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white tracking-tight drop-shadow-lg">
                 Settings
               </h1>
             </div>

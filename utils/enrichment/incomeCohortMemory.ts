@@ -8,8 +8,13 @@
  * but from observed outcomes.
  */
 
-import * as fs from 'fs';
 import * as path from 'path';
+
+// Only import fs in server context
+let fs: typeof import('fs') | null = null;
+if (typeof window === 'undefined') {
+  fs = require('fs');
+}
 
 export interface CohortKey {
   title: string; // Normalized job title
@@ -132,10 +137,19 @@ function cohortKeyToString(key: CohortKey): string {
  * Load cohort memory from file
  */
 function loadCohortMemory(): CohortMemory {
+  if (!fs) {
+    // Client-side: return empty memory
+    return {
+      version: '1.0.0',
+      lastUpdated: new Date().toISOString(),
+      cohorts: {},
+    };
+  }
+  
   const dataPath = getDataFilePath();
   
   try {
-    if (fs.existsSync(dataPath)) {
+    if (fs && fs.existsSync(dataPath)) {
       const data = JSON.parse(fs.readFileSync(dataPath, 'utf-8'));
       return data as CohortMemory;
     }
@@ -155,9 +169,16 @@ function loadCohortMemory(): CohortMemory {
  * Save cohort memory to file
  */
 function saveCohortMemory(memory: CohortMemory): void {
+  if (!fs) {
+    // Client-side: skip saving
+    return;
+  }
+  
   const dataPath = getDataFilePath();
   
   try {
+    if (!fs) return;
+    
     // Ensure directory exists
     const dir = path.dirname(dataPath);
     if (!fs.existsSync(dir)) {
@@ -183,7 +204,7 @@ function getDataFilePath(): string {
   ];
   
   for (const p of possiblePaths) {
-    if (fs.existsSync(path.dirname(p))) {
+    if (fs && fs.existsSync(path.dirname(p))) {
       return p;
     }
   }

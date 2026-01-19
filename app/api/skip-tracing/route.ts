@@ -128,12 +128,6 @@ export async function GET(request: NextRequest) {
       },
       { status: 404, headers: getCorsHeaders(origin) }
     );
-
-    const origin = request.headers.get('origin');
-    return NextResponse.json(
-      { success: true, data },
-      { headers: getCorsHeaders(origin) }
-    );
   } catch (error) {
     console.error('Skip tracing API error:', error);
     const origin = request.headers.get('origin');

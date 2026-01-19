@@ -55,9 +55,9 @@ export default function BackgroundJobs() {
       case 'completed':
         return <CheckCircle2 className="w-4 h-4 text-green-400" />;
       case 'failed':
-        return <XCircle className="w-4 h-4 text-red-400" />;
+        return <XCircle className="w-4 h-4 text-gray-300" />;
       case 'running':
-        return <Loader2 className="w-4 h-4 text-blue-400 animate-spin" />;
+        return <Loader2 className="w-4 h-4 text-white animate-spin" />;
       case 'pending':
         return <Clock className="w-4 h-4 text-yellow-400" />;
       default:
@@ -70,9 +70,9 @@ export default function BackgroundJobs() {
       case 'completed':
         return 'text-green-400';
       case 'failed':
-        return 'text-red-400';
+        return 'text-gray-300';
       case 'running':
-        return 'text-blue-400';
+        return 'text-white';
       case 'pending':
         return 'text-yellow-400';
       default:
@@ -127,7 +127,7 @@ export default function BackgroundJobs() {
           <button
             onClick={() => setAutoRefresh(!autoRefresh)}
             className={`text-xs transition-colors ${
-              autoRefresh ? 'text-blue-400' : 'text-slate-400 hover:text-slate-200'
+              autoRefresh ? 'text-white' : 'text-slate-400 hover:text-slate-200'
             }`}
           >
             {autoRefresh ? 'Auto: ON' : 'Auto: OFF'}
@@ -182,7 +182,7 @@ export default function BackgroundJobs() {
             )}
 
             {job.status === 'failed' && job.error && (
-              <div className="text-xs text-red-400 status-error rounded p-2">
+              <div className="text-xs text-gray-300 status-error rounded p-2">
                 Error: {job.error}
               </div>
             )}

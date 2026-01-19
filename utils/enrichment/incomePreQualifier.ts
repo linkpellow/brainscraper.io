@@ -8,8 +8,13 @@
  * avoiding false negatives (incorrectly discarding viable leads).
  */
 
-import * as fs from 'fs';
 import * as path from 'path';
+
+// Only import fs in server context
+let fs: typeof import('fs') | null = null;
+if (typeof window === 'undefined') {
+  fs = require('fs');
+}
 import { 
   generateCohortKey, 
   getHistoricalAdjustment,
@@ -111,7 +116,7 @@ function getStateMedianIncome(state: string | undefined): number | null {
       
       let dataPath: string | null = null;
       for (const p of possiblePaths) {
-        if (fs.existsSync(p)) {
+        if (fs && fs.existsSync(p)) {
           dataPath = p;
           break;
         }
@@ -122,8 +127,12 @@ function getStateMedianIncome(state: string | undefined): number | null {
         return null;
       }
       
-      const data = JSON.parse(fs.readFileSync(dataPath, 'utf-8'));
-      stateMedianCache = data.data || {};
+      if (fs) {
+        const data = JSON.parse(fs.readFileSync(dataPath, 'utf-8'));
+        stateMedianCache = data.data || {};
+      } else {
+        return null;
+      }
     } catch (error) {
       console.warn('[INCOME_PRE_QUAL] Could not load state median income data:', error);
       return null;

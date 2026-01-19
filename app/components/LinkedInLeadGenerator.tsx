@@ -2270,7 +2270,7 @@ export default function LinkedInLeadGenerator() {
     switch (status) {
       case 'completed': return 'status-success';
       case 'running': return 'status-processing';
-      case 'error': return 'bg-red-500';
+      case 'error': return 'bg-gray-500';
       default: return 'bg-minimalist-border';
     }
   };
@@ -2300,7 +2300,7 @@ export default function LinkedInLeadGenerator() {
       <div className="space-y-3 animate-fade-in">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent tracking-tight drop-shadow-lg">Lead Generation</h1>
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white tracking-tight drop-shadow-lg">Lead Generation</h1>
           </div>
         </div>
       </div>
@@ -2314,7 +2314,7 @@ export default function LinkedInLeadGenerator() {
             border-b-2 -mb-[1px]
             ${
               activeTab === 'linkedin'
-                ? 'border-blue-400 text-blue-400'
+                ? 'border-white text-white'
                 : 'border-transparent text-slate-400 hover:text-slate-200'
             }
           `}
@@ -2330,7 +2330,7 @@ export default function LinkedInLeadGenerator() {
             border-b-2 -mb-[1px]
             ${
               activeTab === 'facebook'
-                ? 'border-blue-400 text-blue-400'
+                ? 'border-white text-white'
                 : 'border-transparent text-slate-400 hover:text-slate-200'
             }
           `}
@@ -2349,7 +2349,7 @@ export default function LinkedInLeadGenerator() {
           </div>
 
           {isSearching && (
-            <div className="group space-y-4 panel-inactive rounded-2xl p-6 hover:border-blue-500/30">
+            <div className="group space-y-4 panel-inactive rounded-2xl p-6 hover:border-white/30">
               {/* Header */}
               <div className="flex items-center justify-between">
             <div>
@@ -2371,7 +2371,7 @@ export default function LinkedInLeadGenerator() {
 
               {/* Large Leads Count */}
               <div className="text-center py-2">
-                <div className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400">
+                <div className="text-4xl font-bold text-transparent bg-clip-text text-white">
                   {scrapingProgress.leadsCollected.toLocaleString()}
                 </div>
                 <div className="text-xs text-slate-400 mt-1">
@@ -2459,7 +2459,7 @@ export default function LinkedInLeadGenerator() {
           )}
 
           {isEnriching && (
-            <div className="group space-y-3 panel-inactive rounded-2xl p-6 hover:border-purple-500/30">
+            <div className="group space-y-3 panel-inactive rounded-2xl p-6 hover:border-white/30">
               <div className="flex items-center justify-between">
                 <p className="text-sm font-medium text-slate-200">Enriching Data</p>
                 <span className="text-xs text-slate-400">
@@ -2671,7 +2671,7 @@ export default function LinkedInLeadGenerator() {
                     <div className={`relative flex items-center justify-center gap-2 text-sm font-semibold font-data ${
                       searchType === 'person' ? 'text-white' : 'text-slate-200'
                     }`}>
-                      <Users className={`w-5 h-5 transition-transform duration-300 ${searchType === 'person' ? 'text-white scale-110' : 'text-slate-300 group-hover:text-blue-400 group-hover:scale-110'}`} />
+                      <Users className={`w-5 h-5 transition-transform duration-300 ${searchType === 'person' ? 'text-white scale-110' : 'text-slate-300 group-hover:text-white group-hover:scale-110'}`} />
                       <span className="relative z-10">People</span>
                     </div>
                   </button>
@@ -2692,7 +2692,7 @@ export default function LinkedInLeadGenerator() {
                     <div className={`relative flex items-center justify-center gap-2 text-sm font-semibold font-data ${
                       searchType === 'person_via_url' ? 'text-white' : 'text-slate-200'
                     }`}>
-                      <Link2 className={`w-5 h-5 transition-transform duration-300 ${searchType === 'person_via_url' ? 'text-white scale-110' : 'text-slate-300 group-hover:text-blue-400 group-hover:scale-110'}`} />
+                      <Link2 className={`w-5 h-5 transition-transform duration-300 ${searchType === 'person_via_url' ? 'text-white scale-110' : 'text-slate-300 group-hover:text-white group-hover:scale-110'}`} />
                       <span className="relative z-10">Via URL</span>
                     </div>
                   </button>
@@ -3045,21 +3045,21 @@ export default function LinkedInLeadGenerator() {
                   }}
                   className="group px-4 py-2.5 btn-inactive rounded-xl text-slate-200 text-sm font-medium flex items-center gap-2"
                 >
-                  <Download className="w-4 h-4 group-hover:scale-110 group-hover:text-blue-400 transition-transform duration-300" />
+                  <Download className="w-4 h-4 group-hover:scale-110 group-hover:text-white transition-transform duration-300" />
                   Download CSV
             </button>
                 <button
                   onClick={addToLeadList}
                   className="group px-4 py-2.5 btn-inactive rounded-xl text-slate-200 text-sm font-medium flex items-center gap-2"
                 >
-                  <ClipboardList className="w-4 h-4 group-hover:scale-110 group-hover:text-blue-400 transition-transform duration-300" />
+                  <ClipboardList className="w-4 h-4 group-hover:scale-110 group-hover:text-white transition-transform duration-300" />
                   Add to List
                 </button>
                 <button
                   onClick={() => setShowLeadList(true)}
                   className="group px-4 py-2.5 btn-inactive rounded-xl text-slate-200 text-sm flex items-center gap-2"
                 >
-                  <Eye className="w-4 h-4 group-hover:scale-110 group-hover:text-blue-400 transition-transform duration-300" />
+                  <Eye className="w-4 h-4 group-hover:scale-110 group-hover:text-white transition-transform duration-300" />
                   View List ({leadList.length})
                 </button>
                 <button
@@ -3200,7 +3200,7 @@ export default function LinkedInLeadGenerator() {
                       const stateDisplay = state || 'N/A';
                       
                       return (
-                        <tr key={index} className="group border-b border-slate-700/30 hover:bg-gradient-to-r hover:from-blue-500/5 hover:via-purple-500/5 hover:to-pink-500/5 transition-all duration-300 hover:border-blue-500/30 cursor-pointer">
+                        <tr key={index} className="group border-b border-slate-700/30 hover:bg-gradient-to-r hover:from-blue-500/5 hover:via-purple-500/5 hover:to-pink-500/5 transition-all duration-300 hover:border-white/30 cursor-pointer">
                           <td className="px-6 py-4 text-slate-200 group-hover:text-blue-300 transition-colors duration-300 font-medium">{name}</td>
                           <td className="px-6 py-4 text-slate-400 group-hover:text-slate-300 transition-colors duration-300">{title}</td>
                           <td className="px-6 py-4 text-slate-400 group-hover:text-slate-300 transition-colors duration-300">{company}</td>

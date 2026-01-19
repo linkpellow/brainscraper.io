@@ -49,14 +49,14 @@ export default function Sidebar() {
   return (
     <aside className="w-64 h-screen fixed left-0 top-0 z-50 flex flex-col sidebar-panel">
       {/* Logo/Header */}
-      <div className="p-6 border-b border-[#8055a6]/30">
+      <div className="p-6 border-b border-white/10">
         <div className="flex items-center gap-2">
           <img 
             src="/logo.png" 
             alt="BrainScraper Logo" 
             className="w-14 h-14 object-contain"
           />
-          <h1 className="text-xl font-bold bg-gradient-to-r from-[#e272db] via-[#8055a6] to-[#54317d] bg-clip-text text-transparent">
+          <h1 className="text-xl font-bold text-white">
             BrainScraper
           </h1>
         </div>
@@ -76,13 +76,13 @@ export default function Sidebar() {
                 flex items-center gap-3 px-4 py-3 rounded-lg state-transition
                 ${
                   isActive
-                    ? 'nav-active text-[#e272db]'
-                    : 'nav-inactive text-slate-300 hover:text-[#e272db]'
+                    ? 'nav-active text-white'
+                    : 'nav-inactive text-gray-300 hover:text-white'
                 }
               `}
             >
-              <Icon className={`w-4 h-4 state-transition ${isActive ? 'text-[#e272db]' : 'text-slate-400'}`} />
-              <span className={`font-medium text-sm ${isActive ? 'bg-gradient-to-r from-[#e272db] via-[#8055a6] to-[#54317d] bg-clip-text text-transparent' : ''}`}>
+              <Icon className={`w-4 h-4 state-transition ${isActive ? 'text-white' : 'text-gray-400'}`} />
+              <span className={`font-medium text-sm ${isActive ? 'text-white' : 'text-gray-300'}`}>
                 {item.label}
               </span>
             </Link>
@@ -91,16 +91,16 @@ export default function Sidebar() {
       </nav>
 
       {/* Background Jobs Widget */}
-      <div className="p-4 border-t border-[#8055a6]/30">
+      <div className="p-4 border-t border-white/10">
         <BackgroundJobs />
       </div>
 
       {/* Logout Button */}
-      <div className="p-4 border-t border-[#8055a6]/30">
+      <div className="p-4 border-t border-white/10">
         <button
           onClick={handleLogout}
           disabled={loggingOut}
-          className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-slate-300 hover:text-red-400 hover:bg-red-500/10 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-white/10 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <LogOut className="w-4 h-4" />
           <span className="font-medium text-sm">
