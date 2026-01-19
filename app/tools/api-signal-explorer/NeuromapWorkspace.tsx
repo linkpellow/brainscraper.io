@@ -1,11 +1,15 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { Pause, Play, Check, X, Download, Smartphone, Globe, Plus, MousePointer, Keyboard, Navigation, Clock, Filter, Tag } from 'lucide-react';
+import { Pause, Play, Check, X, Download, Smartphone, Globe, Plus, MousePointer, Tag, Monitor, Rss, ChevronDown, ChevronRight } from 'lucide-react';
 import type { Neuromap, RawNetworkEvent, NeuromapMode } from '@/src/tools/api-signal-explorer/neuromap';
-import { createActionEvent, generateActionLabel, type ActionEvent } from '@/src/tools/api-signal-explorer/actions';
+import { createActionEvent, type ActionEvent } from '@/src/tools/api-signal-explorer/actions';
 import { linkActionToEvents } from '@/src/tools/api-signal-explorer/correlate';
-import { convertToNetworkSignal, getCategoryDescription, getCategoryColor, type CategoryTag } from '@/src/tools/api-signal-explorer/signals';
+import { convertToNetworkSignal, getCategoryDescription, type CategoryTag } from '@/src/tools/api-signal-explorer/signals';
+import DiagnosticsLayout from './DiagnosticsLayout';
+import MobilePreviewPanel from './MobilePreviewPanel';
+import LogsScreenPanel from './LogsScreenPanel';
+import DeepReconPanel from './DeepReconPanel';
 
 type EndpointData = {
   method: string;
@@ -28,43 +32,72 @@ type NeuromapWorkspaceProps = {
   wsUrl?: string;
 };
 
+const isElectron = typeof window !== 'undefined' && (
+  !!(window as { electronBridge?: { isElectron?: boolean } }).electronBridge?.isElectron ||
+  (typeof process !== 'undefined' && !!(process as { versions?: { electron?: string } }).versions?.electron)
+);
+
 export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl = 'ws://localhost:8787/explorer' }: NeuromapWorkspaceProps) {
+  const effectiveWsUrl =
+    typeof window !== 'undefined' && isElectron && typeof (window as unknown as { electronBridge?: { getBridgeWs?: () => string } }).electronBridge?.getBridgeWs === 'function'
+      ? (window as unknown as { electronBridge: { getBridgeWs: () => string } }).electronBridge.getBridgeWs()
+      : wsUrl;
   const [isPaused, setIsPaused] = useState(false);
   const [showSelectedOnly, setShowSelectedOnly] = useState(false);
-  const [selectedActionId, setSelectedActionId] = useState<string | null>(null);
-  const [timeWindow, setTimeWindow] = useState<{ start: number; end: number } | null>(null);
   const [isMarkingInteraction, setIsMarkingInteraction] = useState(false);
   const [screenStream, setScreenStream] = useState<MediaStream | null>(null);
   const [endpoints, setEndpoints] = useState<Array<EndpointData & { selected?: boolean; actionLinked?: boolean; actionConfidence?: number; categoryTags?: CategoryTag[] }>>([]);
   const [selectedCategoryTag, setSelectedCategoryTag] = useState<CategoryTag | null>(null);
+  const [wsStatus, setWsStatus] = useState<'connecting' | 'connected' | 'disconnected' | 'error'>('connecting');
+  const [screenShareError, setScreenShareError] = useState<string | null>(null);
+  const [launchBrowserLoading, setLaunchBrowserLoading] = useState(false);
+  const [launchBrowserError, setLaunchBrowserError] = useState<string | null>(null);
+  const [launchBrowserUrl, setLaunchBrowserUrl] = useState('');
+  type DomFeedItem = {
+    id: string;
+    domAction: { selector?: string; xpath?: string; text?: string };
+    chosen?: { method: string; url: string; reqHeaders?: Record<string, string>; resHeaders?: Record<string, string>; reqBody?: string; resBody?: string };
+  };
+  const [domActionFeed, setDomActionFeed] = useState<DomFeedItem[]>([]);
+  const [selectedFeedItem, setSelectedFeedItem] = useState<DomFeedItem | null>(null);
+  const [feedOpen, setFeedOpen] = useState(true);
+  const [wasmDecompiled, setWasmDecompiled] = useState<Array<{ ok: boolean; path: string; url?: string; error?: string; wat?: string; endpoints: string[]; keys: string[]; crypto: string[]; exportedFuncs: string[]; jsStubs: string }>>([]);
+  const [heapFindings, setHeapFindings] = useState<{ ok: boolean; method: string; error?: string; stringsTotal: number; findings: Array<{ type: string; value: string; hint: string }>; sample: string[] } | null>(null);
+  const [wssFrames, setWssFrames] = useState<Array<{ flow_id?: string; from_client?: boolean; content?: string; is_text?: boolean; ts?: number }>>([]);
+  const [hiddenDomFindings, setHiddenDomFindings] = useState<Array<{ type: string; selector?: string; valueSnippet?: string; attr?: string }>>([]);
   const endpointMapRef = useRef<Map<string, EndpointData>>(new Map());
+
+  const highlightKey = useMemo(() => {
+    const last = domActionFeed[domActionFeed.length - 1]?.chosen;
+    if (!last?.url) return null;
+    try { const u = new URL(last.url); return `${last.method || 'GET'} ${u.hostname}${u.pathname}`; } catch { return null; }
+  }, [domActionFeed]);
   const wsRef = useRef<WebSocket | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const iframeRef = useRef<HTMLIFrameElement>(null);
-  const timelineRef = useRef<HTMLDivElement>(null);
   const interactionStartRef = useRef<number | null>(null);
+  const onUpdateRef = useRef(onUpdate);
+  const neuromapRef = useRef(neuromap);
+  onUpdateRef.current = onUpdate;
+  neuromapRef.current = neuromap;
 
-  // Initialize screen share for mobile mode
+  const requestScreenShare = useCallback(() => {
+    setScreenShareError(null);
+    navigator.mediaDevices.getDisplayMedia({ video: true, audio: false })
+      .then(stream => {
+        setScreenStream(stream);
+        if (videoRef.current) videoRef.current.srcObject = stream;
+      })
+      .catch(err => {
+        setScreenShareError(err?.message || 'Share denied or unavailable');
+        console.error('Screen share error:', err);
+      });
+  }, []);
+
   useEffect(() => {
-    if (neuromap.mode === 'mobile' && !screenStream) {
-      navigator.mediaDevices.getDisplayMedia({ video: true, audio: false })
-        .then(stream => {
-          setScreenStream(stream);
-          if (videoRef.current) {
-            videoRef.current.srcObject = stream;
-          }
-        })
-        .catch(err => {
-          console.error('Screen share error:', err);
-        });
-    }
-
     return () => {
-      if (screenStream) {
-        screenStream.getTracks().forEach(track => track.stop());
-      }
+      if (screenStream) screenStream.getTracks().forEach(t => t.stop());
     };
-  }, [neuromap.mode, screenStream]);
+  }, [screenStream]);
 
   // Action events are handled in the main WebSocket message handler below
 
@@ -72,18 +105,43 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
   useEffect(() => {
     if (isPaused) return;
 
-    const ws = new WebSocket(wsUrl);
-    wsRef.current = ws;
+    setWsStatus('connecting');
+    let reconnectTimeout: NodeJS.Timeout | null = null;
+    let connectionAttempts = 0;
+    const MAX_RECONNECT_ATTEMPTS = 5;
+    const RECONNECT_DELAY = 3000; // 3 seconds
 
-    ws.onopen = () => {
-      ws.send(JSON.stringify({ type: 'get_history' }));
-    };
+    const connect = () => {
+      if (wsRef.current?.readyState === WebSocket.OPEN) {
+        return; // Already connected
+      }
 
-    ws.onmessage = (event) => {
       try {
-        const message = JSON.parse(event.data) as {
+        const ws = new WebSocket(effectiveWsUrl);
+        wsRef.current = ws;
+        connectionAttempts++;
+
+        ws.onopen = () => {
+          setWsStatus('connected');
+          connectionAttempts = 0; // Reset on successful connection
+          ws.send(JSON.stringify({ type: 'get_history' }));
+          
+          // Clear any pending reconnect timeout
+          if (reconnectTimeout) {
+            clearTimeout(reconnectTimeout);
+            reconnectTimeout = null;
+          }
+        };
+
+        ws.onmessage = (event) => {
+          try {
+            const message = JSON.parse(event.data) as {
           type: string;
           action?: ActionEvent;
+          eventType?: string;
+          selector?: string;
+          xpath?: string;
+          timestamp?: number;
           data?: Array<{
             ts: number;
             method: string;
@@ -99,15 +157,25 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
         };
 
         if (message.type === 'action' && message.action) {
-          // Handle action event
           const action = message.action;
-          const updatedNeuromap = { ...neuromap };
+          const nm = neuromapRef.current;
+          const updatedNeuromap = { ...nm };
           updatedNeuromap.actions.push(action);
-          
-          // Correlate to existing network events
-          linkActionToEvents(action, updatedNeuromap.events);
-          
-          onUpdate(updatedNeuromap);
+          linkActionToEvents(action, updatedNeuromap.events, { windowMs: 2000 });
+          onUpdateRef.current(updatedNeuromap);
+        } else if (message.type === 'target-action' && message.xpath != null && message.selector != null && typeof message.timestamp === 'number') {
+          const eventType = (message.eventType === 'click' || message.eventType === 'mouseover') ? message.eventType : 'click';
+          const action: ActionEvent = {
+            id: `target_${message.timestamp}_${Math.random().toString(36).slice(2, 10)}`,
+            ts: message.timestamp,
+            type: eventType,
+            meta: { selector: message.selector, xpath: message.xpath },
+          };
+          const nm = neuromapRef.current;
+          const updatedNeuromap = { ...nm };
+          updatedNeuromap.actions.push(action);
+          linkActionToEvents(action, updatedNeuromap.events, { windowMs: 2000 });
+          onUpdateRef.current(updatedNeuromap);
         } else if (message.type === 'events_batch' && message.data) {
           // Convert to RawNetworkEvent
           const newEvents: RawNetworkEvent[] = message.data
@@ -141,7 +209,7 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
                   query,
                   phase: undefined,
                   actionTag: undefined,
-                  source: neuromap.mode,
+                  source: neuromapRef.current.mode,
                   durationMs: flow.durationMs,
                 } as RawNetworkEvent;
               } catch (e) {
@@ -151,18 +219,18 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
             .filter((e): e is RawNetworkEvent => e !== null);
 
           // Add to neuromap
-          const updatedNeuromap = { ...neuromap };
+          const updatedNeuromap = { ...neuromapRef.current };
           for (const event of newEvents) {
             addEventToNeuromap(updatedNeuromap, event);
             updateEndpointIncremental(event);
           }
 
-          // Re-correlate all actions to new events
+          // Re-correlate all actions to new events (3s window for Electron)
           for (const action of updatedNeuromap.actions) {
-            linkActionToEvents(action, updatedNeuromap.events);
+            linkActionToEvents(action, updatedNeuromap.events, { windowMs: 2000 });
           }
 
-          onUpdate(updatedNeuromap);
+          onUpdateRef.current(updatedNeuromap);
         } else if (message.type === 'history' && message.data) {
           // Load history
           const historyEvents: RawNetworkEvent[] = message.data
@@ -210,7 +278,7 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
                   query,
                   phase: undefined,
                   actionTag: undefined,
-                  source: neuromap.mode,
+                  source: neuromapRef.current.mode,
                   durationMs: flow.durationMs,
                 } as RawNetworkEvent;
               } catch (e) {
@@ -219,51 +287,148 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
             })
             .filter((e): e is RawNetworkEvent => e !== null);
 
-          const updatedNeuromap = { ...neuromap };
+          const updatedNeuromap = { ...neuromapRef.current };
           for (const event of historyEvents) {
             addEventToNeuromap(updatedNeuromap, event);
             updateEndpointIncremental(event);
           }
 
-          // Correlate actions to loaded events
+          // Correlate actions to loaded events (3s window for Electron)
           for (const action of updatedNeuromap.actions) {
-            linkActionToEvents(action, updatedNeuromap.events);
+            linkActionToEvents(action, updatedNeuromap.events, { windowMs: 2000 });
           }
 
-          onUpdate(updatedNeuromap);
-        }
+          onUpdateRef.current(updatedNeuromap);
+        } else if (message.type === 'wss_frame') {
+          setWssFrames((prev) => [...prev.slice(-99), { flow_id: (message as { flow_id?: string }).flow_id, from_client: (message as { from_client?: boolean }).from_client, content: (message as { content?: string }).content, is_text: (message as { is_text?: boolean }).is_text, ts: (message as { ts?: number }).ts }]);
+            }
+          } catch (err) {
+            console.error('Error processing WebSocket message:', err);
+          }
+        };
+
+        ws.onerror = (error) => {
+          setWsStatus('error');
+          const errorMessage = `WebSocket connection failed to ${effectiveWsUrl}. `;
+          const diagnosticMessage = 
+            connectionAttempts === 1 
+              ? errorMessage + 'Make sure the bridge server is running: `npm run mitm:bridge`'
+              : errorMessage + `Reconnection attempt ${connectionAttempts}/${MAX_RECONNECT_ATTEMPTS}`;
+          
+          console.error(diagnosticMessage, error);
+          
+          // Attempt to reconnect if we haven't exceeded max attempts
+          if (connectionAttempts < MAX_RECONNECT_ATTEMPTS && !isPaused) {
+            reconnectTimeout = setTimeout(() => {
+              console.log(`Reconnecting to ${effectiveWsUrl}... (attempt ${connectionAttempts + 1}/${MAX_RECONNECT_ATTEMPTS})`);
+              connect();
+            }, RECONNECT_DELAY);
+          } else if (connectionAttempts >= MAX_RECONNECT_ATTEMPTS) {
+            console.error(`Failed to connect after ${MAX_RECONNECT_ATTEMPTS} attempts. Please check that the bridge server is running: npm run mitm:bridge`);
+          }
+        };
+
+        ws.onclose = (event) => {
+          setWsStatus('disconnected');
+          
+          // Only attempt to reconnect if it wasn't a normal closure and not paused
+          if (event.code !== 1000 && !isPaused && connectionAttempts < MAX_RECONNECT_ATTEMPTS) {
+            // Code 1000 = normal closure
+            // Code 1006 = abnormal closure (connection lost)
+            // Code 1001 = going away
+            const shouldReconnect = event.code === 1006 || event.code === 1001;
+            
+            if (shouldReconnect) {
+              reconnectTimeout = setTimeout(() => {
+                console.log(`Reconnecting to ${effectiveWsUrl} after close... (attempt ${connectionAttempts + 1}/${MAX_RECONNECT_ATTEMPTS})`);
+                connect();
+              }, RECONNECT_DELAY);
+            }
+          }
+        };
       } catch (err) {
-        console.error('Error processing WebSocket message:', err);
+        setWsStatus('error');
+        console.error(`Failed to create WebSocket connection to ${effectiveWsUrl}:`, err);
       }
     };
 
-    ws.onerror = (error) => {
-      console.error('WebSocket error:', error);
-    };
-
-    ws.onclose = () => {
-      console.log('WebSocket closed');
-    };
+    connect();
 
     return () => {
-      ws.close();
+      if (reconnectTimeout) {
+        clearTimeout(reconnectTimeout);
+      }
+      if (wsRef.current) {
+        wsRef.current.close(1000, 'Component unmounting'); // Normal closure
+        wsRef.current = null;
+      }
     };
-  }, [neuromap, isPaused, wsUrl, onUpdate]);
+  }, [isPaused, effectiveWsUrl]);
 
-  // Update endpoints list
+  // Neural bridge: dom-action-linked from Electron main (SIGNAL_DOM_ACTION → correlate → send)
   useEffect(() => {
-    const endpointArray = Array.from(endpointMapRef.current.values()).map(ep => ({
-      ...ep,
-      selected: neuromap.selectedEndpointKeys.has(`${ep.method} ${ep.host}${ep.path}`),
-    }));
+    if (!isElectron || typeof window === 'undefined') return;
+    const bridge = (window as { electronBridge?: { onDomActionLinked?: (d: unknown) => void } }).electronBridge;
+    if (!bridge?.onDomActionLinked) return;
+    bridge.onDomActionLinked((link: { id?: string; domAction?: unknown; chosen?: unknown }) => {
+      const da = (link?.domAction || {}) as { selector?: string; xpath?: string; text?: string };
+      const ch = link?.chosen as { method?: string; url?: string; reqHeaders?: Record<string,string>; resHeaders?: Record<string,string>; reqBody?: string; resBody?: string } | undefined;
+      setDomActionFeed((prev) => [
+        ...prev.slice(-19),
+        { id: (link?.id as string) || `f${Date.now()}`, domAction: da, chosen: ch && ch.url ? { method: ch.method || 'GET', url: ch.url, reqHeaders: ch.reqHeaders, resHeaders: ch.resHeaders, reqBody: ch.reqBody, resBody: ch.resBody } : undefined },
+      ]);
+    });
+  }, [isElectron]);
+
+  useEffect(() => {
+    if (!isElectron || typeof window === 'undefined') return;
+    const b = (window as { electronBridge?: { onWasmDecompiled?: (d: unknown) => void; onHeapFindings?: (d: unknown) => void } }).electronBridge;
+    if (b?.onWasmDecompiled) b.onWasmDecompiled((d: unknown) => setWasmDecompiled((prev) => [...prev.slice(-9), d as (typeof prev)[number]]));
+    if (b?.onHeapFindings) b.onHeapFindings((d: unknown) => setHeapFindings(d as NonNullable<typeof heapFindings>));
+    const b2 = (window as { electronBridge?: { onHiddenDomDiscovery?: (d: unknown) => void } }).electronBridge;
+    if (b2?.onHiddenDomDiscovery) b2.onHiddenDomDiscovery((d: unknown) => setHiddenDomFindings(Array.isArray(d) ? d : []));
+  }, [isElectron]);
+
+  // Update endpoints list (with action-linked flags and category tags from neuromap.events)
+  useEffect(() => {
+    const endpointArray = Array.from(endpointMapRef.current.values()).map(ep => {
+      const key = `${ep.method} ${ep.host}${ep.path}`;
+      const events = neuromap.events.filter(e => `${e.method} ${e.host}${e.path}` === key);
+      let actionLinked = false;
+      let actionConfidence: number | undefined;
+      let categoryTags: CategoryTag[] = [];
+      if (events.length > 0) {
+        const withAction = events.filter(e => e.actionId != null && e.actionConfidence != null);
+        actionLinked = withAction.length > 0;
+        if (withAction.length > 0) {
+          actionConfidence = Math.max(...withAction.map(e => e.actionConfidence!));
+        }
+        try {
+          const signal = convertToNetworkSignal(events[0]);
+          categoryTags = signal?.categoryTags ?? [];
+        } catch {
+          categoryTags = [];
+        }
+      }
+      return {
+        ...ep,
+        selected: neuromap.selectedEndpointKeys.has(key),
+        actionLinked,
+        actionConfidence,
+        categoryTags,
+      };
+    });
 
     let filtered = endpointArray;
     if (showSelectedOnly) {
       filtered = filtered.filter(ep => ep.selected);
     }
+    if (selectedCategoryTag) {
+      filtered = filtered.filter(ep => (ep.categoryTags || []).includes(selectedCategoryTag));
+    }
 
     setEndpoints(filtered.sort((a, b) => b.count - a.count));
-  }, [neuromap.selectedEndpointKeys, showSelectedOnly]);
+  }, [neuromap.selectedEndpointKeys, neuromap.events, showSelectedOnly, selectedCategoryTag]);
 
   const updateEndpointIncremental = useCallback((event: RawNetworkEvent) => {
     const key = `${event.method} ${event.host}${event.path}`;
@@ -322,9 +487,7 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
       const action = createActionEvent('mark_window', start, undefined, { durationMs: duration });
       const updatedNeuromap = { ...neuromap };
       updatedNeuromap.actions.push(action);
-      
-      // Correlate to network events
-      linkActionToEvents(action, updatedNeuromap.events);
+      linkActionToEvents(action, updatedNeuromap.events, { windowMs: 2000 });
       
       onUpdate(updatedNeuromap);
       setIsMarkingInteraction(false);
@@ -353,84 +516,52 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
     URL.revokeObjectURL(url);
   };
 
-  // Calculate timeline data
-  const timelineData = useMemo(() => {
-    if (neuromap.events.length === 0) return null;
-
-    const start = neuromap.createdAt;
-    const end = Math.max(...neuromap.events.map(e => e.ts), neuromap.createdAt);
-    const duration = end - start;
-
-    // Bin events into time buckets for density
-    const buckets = 100;
-    const bucketSize = duration / buckets;
-    const density = new Array(buckets).fill(0);
-    
-    for (const event of neuromap.events) {
-      const bucket = Math.floor((event.ts - start) / bucketSize);
-      if (bucket >= 0 && bucket < buckets) {
-        density[bucket]++;
-      }
+  const handleLaunchBrowser = useCallback(async () => {
+    setLaunchBrowserLoading(true);
+    setLaunchBrowserError(null);
+    try {
+      const res = await fetch('/api/explorer/launch-browser', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: launchBrowserUrl.trim() || undefined }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Launch failed');
+    } catch (e) {
+      setLaunchBrowserError(e instanceof Error ? e.message : 'Launch failed');
+    } finally {
+      setLaunchBrowserLoading(false);
     }
-
-    const maxDensity = Math.max(...density, 1);
-
-    return {
-      start,
-      end,
-      duration,
-      density: density.map(d => d / maxDensity), // Normalize to 0-1
-      actions: neuromap.actions,
-    };
-  }, [neuromap]);
-
-  const handleTimelineClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!timelineData || !timelineRef.current) return;
-
-    const rect = timelineRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const percent = x / rect.width;
-    const clickedTime = timelineData.start + (timelineData.duration * percent);
-
-    // Set time window to 2 seconds around click
-    setTimeWindow({
-      start: clickedTime - 1000,
-      end: clickedTime + 1000,
-    });
-  };
-
-  const handleTimelineDrag = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!timelineData || !timelineRef.current) return;
-    // Simple implementation: on mouse move, update window
-    const rect = timelineRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const percent = Math.max(0, Math.min(1, x / rect.width));
-    const clickedTime = timelineData.start + (timelineData.duration * percent);
-
-    setTimeWindow({
-      start: clickedTime - 1000,
-      end: clickedTime + 1000,
-    });
-  };
+  }, [launchBrowserUrl]);
 
   return (
     <div className="fixed inset-0 bg-black z-50 flex flex-col">
-      {/* Header */}
-      <div className="bg-slate-900 border-b border-slate-800 p-4 flex items-center justify-between">
+      {/* Header — Chromium-style; accent #ff5757, font-orbitron */}
+      <div className="shrink-0 bg-slate-900 border-b border-white/15 p-4 flex items-center justify-between">
         <div className="flex items-center gap-4">
           {neuromap.mode === 'mobile' ? (
-            <Smartphone className="w-5 h-5 text-blue-400" />
+            <Smartphone className="w-5 h-5 text-blue-400" aria-hidden />
           ) : (
-            <Globe className="w-5 h-5 text-green-400" />
+            <Globe className="w-5 h-5 text-green-400" aria-hidden />
           )}
           <div>
-            <h2 className="text-lg font-semibold text-white">{neuromap.name}</h2>
-            <div className="text-xs text-slate-400">
+            <h2 className="text-lg font-semibold font-futuristic terminal-glow-sm" style={{ color: '#ff5757' }}>{neuromap.name}</h2>
+            <div className="text-xs text-slate-400" style={{ color: 'rgba(255,255,255,0.7)' }}>
               {endpoints.length} endpoints • {neuromap.selectedEndpointKeys.size} selected
             </div>
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={handleMarkInteraction}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded text-sm ${
+              isMarkingInteraction ? 'bg-amber-600 hover:bg-amber-700 text-white' : 'bg-slate-800 hover:bg-slate-700 text-white'
+            }`}
+            title={isMarkingInteraction ? 'Stop marking (or auto-stops in 3s)' : 'Mark next 3s of requests as interaction-linked'}
+          >
+            <MousePointer className="w-4 h-4" />
+            {isMarkingInteraction ? 'Marking…' : 'Mark Interaction'}
+          </button>
           <button
             onClick={() => setIsPaused(!isPaused)}
             className="flex items-center gap-2 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded text-sm text-white"
@@ -455,58 +586,91 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
         </div>
       </div>
 
-      {/* Split View */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* Left: Screen/Browser (60%) */}
-        <div className="w-[60%] bg-black border-r border-slate-800 flex items-center justify-center">
+      {/* Diagnostics split: Mobile View (25%) | Logs Screen (75%) */}
+      <DiagnosticsLayout
+        hideLeft={isElectron && neuromap.mode === 'browser'}
+        left={
+          <MobilePreviewPanel compactForElectron={isElectron && neuromap.mode === 'browser'}>
           {neuromap.mode === 'mobile' ? (
-            <video
-              ref={videoRef}
-              autoPlay
-              playsInline
-              className="max-w-full max-h-full object-contain"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center bg-slate-900">
-              <div className="text-center p-8">
-                <Globe className="w-16 h-16 mx-auto mb-4 text-green-400" />
-                <h3 className="text-xl font-semibold mb-2 text-white">Browser Mode</h3>
-                <p className="text-slate-400 mb-4 text-sm">
-                  Configure your browser to use mitmproxy as proxy, then interact normally.
+            screenStream ? (
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                className="max-w-full max-h-full object-contain"
+                aria-label="Mobile screen share"
+              />
+            ) : (
+              <div className="terminal-border text-center p-6 max-w-md mx-4">
+                <Smartphone className="w-12 h-12 mx-auto mb-3 text-slate-500" aria-hidden />
+                <h3 className="text-base font-semibold font-futuristic text-white mb-2 terminal-glow-sm">Share your phone screen</h3>
+                <p className="text-slate-400 text-sm mb-3">
+                  Use AirPlay (iOS→Mac), Cast (Android→Chrome), or similar to show the phone on this computer, then click below and pick that window.
                 </p>
-                <p className="text-slate-500 text-xs">
-                  Network requests will be captured and displayed in real-time on the right.
+                <p className="text-slate-500 text-xs mb-4">
+                  Phone traffic: set Wi‑Fi proxy to this computer (port 8080) and install mitmproxy’s CA for HTTPS. See <code className="bg-slate-800 px-1 rounded border border-white/15">tools/mitmproxy/README.md</code>.
+                </p>
+                {screenShareError && <p className="text-amber-400 text-sm mb-3">{screenShareError}</p>}
+                <button
+                  onClick={requestScreenShare}
+                  className="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded text-sm text-white border border-white/15 transition-colors"
+                >
+                  {screenShareError ? 'Retry share screen' : 'Share screen'}
+                </button>
+              </div>
+            )
+          ) : (
+            <div className="terminal-border text-center p-8 mx-4 max-w-md">
+                <Globe className="w-16 h-16 mx-auto mb-4 text-green-400" aria-hidden />
+                <h3 className="text-xl font-semibold font-futuristic mb-2 text-white terminal-glow-sm">Browser Mode</h3>
+                <p className="text-slate-400 mb-4 text-sm">
+                  Launch Chromium with the proxy pre-configured, or set your own browser’s proxy to 127.0.0.1:8080. Click and browse; API calls appear in the logs on the right.
+                </p>
+                <div className="space-y-3 text-left">
+                  <label className="block text-xs text-slate-500">Open URL (optional)</label>
+                  <input
+                    type="url"
+                    value={launchBrowserUrl}
+                    onChange={(e) => setLaunchBrowserUrl(e.target.value)}
+                    placeholder="https://example.com"
+                    className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded text-sm text-white placeholder-slate-500"
+                  />
+                  <button
+                    onClick={handleLaunchBrowser}
+                    disabled={launchBrowserLoading}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 disabled:opacity-50 rounded text-sm text-white font-medium transition-colors"
+                  >
+                    <Monitor className="w-4 h-4" />
+                    {launchBrowserLoading ? 'Launching…' : 'Launch Chromium'}
+                  </button>
+                </div>
+                {launchBrowserError && (
+                  <p className="mt-3 text-amber-400 text-sm">{launchBrowserError}</p>
+                )}
+                <p className="text-slate-500 text-xs mt-4">
+                  Requires mitmproxy on :8080 and the bridge. Run <code className="bg-slate-800 px-1 rounded">npm run mitm:bridge</code> and <code className="bg-slate-800 px-1 rounded">mitmproxy -s tools/mitmproxy/stream_ws.py</code>.
                 </p>
               </div>
-            </div>
           )}
-        </div>
-
-        {/* Right: API List (40%) */}
-        <div className="w-[40%] bg-slate-900 flex flex-col">
-          {/* Filter */}
-          <div className="p-3 border-b border-slate-800 space-y-2">
-            <div className="flex items-center gap-4">
+          </MobilePreviewPanel>
+        }
+        right={
+          <LogsScreenPanel>
+            {/* Filter */}
+            <div className="shrink-0 p-3 border-b border-slate-800 space-y-2">
+              <div className="flex items-center gap-4">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={showSelectedOnly}
                   onChange={(e) => setShowSelectedOnly(e.target.checked)}
-                  className="rounded"
+                  className="rounded border border-white/15"
                 />
                 <span className="text-sm text-slate-300">Show Selected Only</span>
               </label>
-              {timeWindow && (
-                <button
-                  onClick={() => setTimeWindow(null)}
-                  className="px-2 py-1 text-xs bg-slate-700 hover:bg-slate-600 rounded text-slate-300"
-                >
-                  Clear Time Filter
-                </button>
-              )}
-            </div>
-            {/* Category Tag Filter */}
-            <div className="flex flex-wrap gap-1">
+              </div>
+              {/* Category Tag Filter */}
+              <div className="flex flex-wrap gap-1">
               {(['identity', 'endpoint', 'headers', 'flow-control', 'timing', 'error', 'protection'] as CategoryTag[]).map(tag => (
                 <button
                   key={tag}
@@ -522,31 +686,70 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
                   {tag}
                 </button>
               ))}
+              </div>
             </div>
-          </div>
 
-          {/* API Table */}
-          <div className="flex-1 overflow-y-auto">
-            <table className="w-full">
-              <thead className="bg-slate-800/50 sticky top-0">
+            {/* Real-time Feed (Electron: DOM click → linked request) */}
+            {isElectron && (
+              <div className="shrink-0 border-b border-slate-800">
+                <button onClick={() => setFeedOpen((o) => !o)} className="w-full px-3 py-2 flex items-center gap-2 text-left text-sm text-slate-300 hover:bg-slate-800/50">
+                  {feedOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                  <Rss className="w-4 h-4 text-amber-400/90" />
+                  Real-time Feed ({domActionFeed.length})
+                </button>
+                {feedOpen && domActionFeed.length > 0 && (
+                  <div className="max-h-32 overflow-y-auto px-3 pb-2 space-y-1">
+                    {domActionFeed.slice(-10).reverse().map((f) => (
+                      <div key={f.id} className="flex items-center gap-2 text-xs">
+                        <span className="text-slate-500 truncate max-w-[120px]" title={f.domAction.selector || f.domAction.xpath}>{f.domAction.selector || f.domAction.xpath || '—'}</span>
+                        <span className="text-slate-400">→</span>
+                        <span className="text-slate-300 font-mono truncate flex-1" title={f.chosen?.url}>{f.chosen ? `${f.chosen.method} ${f.chosen.url}` : '—'}</span>
+                        <button onClick={() => setSelectedFeedItem(f)} className="px-1.5 py-0.5 bg-slate-700 hover:bg-slate-600 rounded text-slate-300">View</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Deep Recon (Electron: Memory Vault, Wasm, WSS, Sandbox, Apex) */}
+            {isElectron && (
+              <DeepReconPanel
+                wasmDecompiled={wasmDecompiled}
+                heapFindings={heapFindings}
+                wssFrames={wssFrames}
+                hiddenDomFindings={hiddenDomFindings}
+                onSandboxRequest={(url) => ((window as { electronBridge?: { sandboxRequest?: (u: string) => Promise<unknown> } }).electronBridge?.sandboxRequest?.(url) ?? Promise.resolve({ ok: false, error: 'Unavailable' })) as Promise<{ ok?: boolean; error?: string; status?: number; body?: string; durationMs?: number }>}
+              />
+            )}
+
+            {/* API Table — font-data for logs/tables */}
+            <div className="flex-1 min-h-0 overflow-y-auto" id="neuromap-endpoints-table">
+              <table className="w-full font-data">
+              <thead className="bg-slate-800/50 sticky top-0 border-b border-white/15">
                 <tr>
-                  <th className="px-3 py-2 text-left text-xs font-semibold text-slate-400 w-8"></th>
-                  <th className="px-3 py-2 text-left text-xs font-semibold text-slate-400">Method</th>
-                  <th className="px-3 py-2 text-left text-xs font-semibold text-slate-400">Host</th>
-                  <th className="px-3 py-2 text-left text-xs font-semibold text-slate-400">Path</th>
-                  <th className="px-3 py-2 text-left text-xs font-semibold text-slate-400">Count</th>
-                  <th className="px-3 py-2 text-left text-xs font-semibold text-slate-400">Linked</th>
-                  <th className="px-3 py-2 text-left text-xs font-semibold text-slate-400">Auth</th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-slate-400 w-8" scope="col"></th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-slate-400" scope="col">Method</th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-slate-400" scope="col">Host</th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-slate-400" scope="col">Path</th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-slate-400" scope="col">Count</th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-slate-400" scope="col">Linked</th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-slate-400" scope="col">Auth</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800">
                 {endpoints.map((ep) => {
                   const key = `${ep.method} ${ep.host}${ep.path}`;
                   const isSelected = ep.selected || false;
+                  const isHighlighted = !!(highlightKey && key === highlightKey);
+                  const feedItem = isHighlighted && domActionFeed.length > 0 ? domActionFeed[domActionFeed.length - 1] : null;
                   return (
                     <tr
                       key={key}
-                      className={`hover:bg-slate-800/30 transition-colors ${isSelected ? 'bg-slate-800/50' : ''}`}
+                      className={`hover:bg-slate-800/30 transition-colors ${isSelected ? 'bg-slate-800/50' : ''} ${isHighlighted ? 'ring-1 ring-amber-400/80 bg-amber-950/30' : ''}`}
+                      onClick={isHighlighted && feedItem ? () => setSelectedFeedItem(feedItem) : undefined}
+                      role={isHighlighted && feedItem ? 'button' : undefined}
+                      title={isHighlighted ? 'Click to inspect headers & body' : undefined}
                     >
                       <td className="px-3 py-2">
                         <button
@@ -599,13 +802,79 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
               </tbody>
             </table>
             {endpoints.length === 0 && (
-              <div className="p-8 text-center text-slate-500 text-sm">
-                No endpoints captured yet. {neuromap.mode === 'mobile' ? 'Share your screen and interact.' : 'Interact with the browser.'}
+              <div className="p-8 text-center text-slate-500 text-sm space-y-1">
+                <p>No endpoints captured yet. {neuromap.mode === 'mobile' ? 'Share your screen and interact.' : 'Interact with the browser.'}</p>
+                {(wsStatus === 'disconnected' || wsStatus === 'error') && (
+                  <div className="text-amber-500/80 text-xs space-y-1">
+                    <p>Bridge not connected.</p>
+                    {wsStatus === 'error' && (
+                      <p className="text-red-400/80">Connection error: Check console for details.</p>
+                    )}
+                    <p>Run <code className="bg-slate-800 px-1 rounded">npm run mitm:bridge</code> and <code className="bg-slate-800 px-1 rounded">mitmproxy -s tools/mitmproxy/stream_ws.py</code>.</p>
+                    <p className="text-xs opacity-75">Connecting to: <code className="bg-slate-800 px-1 rounded">{effectiveWsUrl}</code></p>
+                  </div>
+                )}
+                {wsStatus === 'connecting' && <p className="text-slate-500 text-xs">Connecting to bridge…</p>}
               </div>
             )}
-          </div>
-        </div>
-      </div>
+            </div>
+
+            {/* Detail overlay: Headers & JSON body (when a Linked Request is selected) */}
+            {selectedFeedItem?.chosen && (
+              <div className="absolute inset-0 top-auto h-[45%] border-t border-amber-500/40 bg-slate-950 flex flex-col z-10">
+                <div className="shrink-0 px-3 py-2 border-b border-white/15 flex items-center justify-between">
+                  <span className="text-sm font-futuristic text-amber-400/90">Request / Response — {selectedFeedItem.chosen.method} {selectedFeedItem.chosen.url}</span>
+                  <button onClick={() => setSelectedFeedItem(null)} className="px-2 py-1 bg-slate-800 hover:bg-slate-700 rounded text-slate-300 text-sm">Close</button>
+                </div>
+                <div className="flex-1 min-h-0 overflow-auto p-3 font-data text-xs space-y-4">
+                  {selectedFeedItem.chosen.reqHeaders && Object.keys(selectedFeedItem.chosen.reqHeaders).length > 0 && (
+                    <div>
+                      <div className="text-amber-400/90 mb-1">Request Headers</div>
+                      <div className="bg-slate-900/80 rounded p-2 space-y-0.5">
+                        {Object.entries(selectedFeedItem.chosen.reqHeaders).map(([k, v]) => (
+                          <div key={k} className="flex gap-2"><span className="text-slate-500 shrink-0">{k}:</span><span className="text-slate-300 break-all">{v}</span></div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {selectedFeedItem.chosen.resHeaders && Object.keys(selectedFeedItem.chosen.resHeaders).length > 0 && (
+                    <div>
+                      <div className="text-amber-400/90 mb-1">Response Headers</div>
+                      <div className="bg-slate-900/80 rounded p-2 space-y-0.5">
+                        {Object.entries(selectedFeedItem.chosen.resHeaders).map(([k, v]) => (
+                          <div key={k} className="flex gap-2"><span className="text-slate-500 shrink-0">{k}:</span><span className="text-slate-300 break-all">{v}</span></div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {selectedFeedItem.chosen.reqBody != null && selectedFeedItem.chosen.reqBody !== '' && (
+                    <div>
+                      <div className="text-amber-400/90 mb-1">Request Body</div>
+                      <pre className="bg-slate-900/80 rounded p-2 overflow-auto max-h-32 text-slate-300 whitespace-pre-wrap break-words">
+                        {(() => { try { return JSON.stringify(JSON.parse(selectedFeedItem.chosen.reqBody!), null, 2); } catch { return selectedFeedItem.chosen.reqBody; } })()}
+                      </pre>
+                    </div>
+                  )}
+                  {selectedFeedItem.chosen.resBody != null && selectedFeedItem.chosen.resBody !== '' && (
+                    <div>
+                      <div className="text-amber-400/90 mb-1">Response Body</div>
+                      <pre className="bg-slate-900/80 rounded p-2 overflow-auto max-h-40 text-slate-300 whitespace-pre-wrap break-words">
+                        {(() => { try { return JSON.stringify(JSON.parse(selectedFeedItem.chosen.resBody!), null, 2); } catch { return selectedFeedItem.chosen.resBody; } })()}
+                      </pre>
+                    </div>
+                  )}
+                  {(!selectedFeedItem.chosen.reqHeaders || Object.keys(selectedFeedItem.chosen.reqHeaders).length === 0) &&
+                   (!selectedFeedItem.chosen.resHeaders || Object.keys(selectedFeedItem.chosen.resHeaders).length === 0) &&
+                   (selectedFeedItem.chosen.reqBody == null || selectedFeedItem.chosen.reqBody === '') &&
+                   (selectedFeedItem.chosen.resBody == null || selectedFeedItem.chosen.resBody === '') && (
+                    <div className="text-slate-500">No headers or body captured. mitmproxy may not be configured to capture bodies.</div>
+                  )}
+                </div>
+              </div>
+            )}
+          </LogsScreenPanel>
+        }
+      />
     </div>
   );
 }
