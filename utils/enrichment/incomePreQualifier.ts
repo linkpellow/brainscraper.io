@@ -139,6 +139,10 @@ function getStateMedianIncome(state: string | undefined): number | null {
     }
   }
   
+  if (!stateMedianCache) {
+    return null;
+  }
+  
   const stateUpper = state.toUpperCase().trim();
   return stateMedianCache[stateUpper] || null;
 }
