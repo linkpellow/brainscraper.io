@@ -102,6 +102,8 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
                 reqBodySize: flow.reqBodySize,
                 resBodySize: flow.resBodySize,
                 resMime: flow.resMime,
+                phase: undefined,
+                actionTag: undefined,
                 source: neuromap.mode,
               };
             } catch (e) {
@@ -110,12 +112,13 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
           }).filter((e): e is RawNetworkEvent => e !== null);
 
           // Add to neuromap
+          const updatedNeuromap = { ...neuromap };
           for (const event of newEvents) {
-            addEventToNeuromap(neuromap, event);
+            addEventToNeuromap(updatedNeuromap, event);
             updateEndpointIncremental(event);
           }
 
-          onUpdate({ ...neuromap });
+          onUpdate(updatedNeuromap);
         } else if (message.type === 'history' && message.data) {
           // Load history
           const historyEvents: RawNetworkEvent[] = message.data.map(flow => {
@@ -133,6 +136,8 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
                 reqBodySize: flow.reqBodySize,
                 resBodySize: flow.resBodySize,
                 resMime: flow.resMime,
+                phase: undefined,
+                actionTag: undefined,
                 source: neuromap.mode,
               };
             } catch (e) {
@@ -140,12 +145,13 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
             }
           }).filter((e): e is RawNetworkEvent => e !== null);
 
+          const updatedNeuromap = { ...neuromap };
           for (const event of historyEvents) {
-            addEventToNeuromap(neuromap, event);
+            addEventToNeuromap(updatedNeuromap, event);
             updateEndpointIncremental(event);
           }
 
-          onUpdate({ ...neuromap });
+          onUpdate(updatedNeuromap);
         }
       } catch (err) {
         console.error('Error processing WebSocket message:', err);
