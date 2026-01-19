@@ -297,6 +297,9 @@ describe('Scoring', () => {
 
 import { classifyPhase, findActionTag, detectPollingLoop, calculatePhaseDistribution } from '../phase';
 import { extractAuthSignals, detectRetryChains, assignAuthRole } from '../auth';
+import { analyzeJsonShape, detectEntitySignals } from '../jsonShape';
+import { inferIntent } from '../intent';
+import { redactSensitiveValues, redactEvent } from '../redact';
 
 describe('Phase Detection', () => {
   it('should classify page_load phase correctly', () => {

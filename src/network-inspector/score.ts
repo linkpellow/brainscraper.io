@@ -145,6 +145,64 @@ export function scoreEndpoint(group: DedupeGroup, summary: EndpointSummary, allE
     reasons.push('-10 unauthenticated background-only');
   }
 
+  // Data-shape scoring
+  if (summary.jsonShape) {
+    const shape = summary.jsonShape;
+
+    // +20 if JSON depth >= 4 and keyCount >= 30 (rich nested data)
+    if (shape.depth >= 4 && shape.keyCount >= 30) {
+      score += 20;
+      reasons.push('+20 rich nested JSON (depth >= 4, keys >= 30)');
+    }
+
+    // +10 if maxArrayLen >= 20 (list endpoint)
+    if (shape.maxArrayLen >= 20) {
+      score += 10;
+      reasons.push('+10 large array response (>= 20 items)');
+    }
+
+    // +10 if has pagination markers
+    if (shape.hasPaginationMarkers) {
+      score += 10;
+      reasons.push('+10 pagination markers present');
+    }
+
+    // -20 if has error envelope AND resSize < 500 (thin error-only responses)
+    if (shape.hasErrorEnvelope && summary.resSizeAvg && summary.resSizeAvg < 500) {
+      score -= 20;
+      reasons.push('-20 thin error-only response');
+    }
+
+    // -15 if isJson but keyCount < 5 AND repeats frequently (telemetry-like)
+    if (shape.isJson && shape.keyCount < 5 && summary.count > 10) {
+      score -= 15;
+      reasons.push('-15 telemetry-like (JSON with < 5 keys, frequent)');
+    }
+  }
+
+  // Entity signal scoring
+  if (summary.entitySignals) {
+    const signals = summary.entitySignals;
+
+    // +10 if has ID-like fields
+    if (signals.hasIdLike) {
+      score += 10;
+      reasons.push('+10 entity IDs present');
+    }
+
+    // +10 if has contact fields OR location fields
+    if (signals.hasContactFields || signals.hasLocationFields) {
+      score += 10;
+      reasons.push('+10 contact/location fields present');
+    }
+  }
+
+  // Intent scoring
+  if (summary.intent === 'mutation') {
+    score += 10;
+    reasons.push('+10 mutation (write operation)');
+  }
+
   // Clamp score to 0-100
   score = Math.max(0, Math.min(100, score));
 

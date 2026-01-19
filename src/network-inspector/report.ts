@@ -63,6 +63,28 @@ export function generateMarkdownReport(
   const dataProtected = sorted.filter((s) => s.authRole === 'data_protected');
   const retryDependent = sorted.filter((s) => s.retryChains && s.retryChains > 0).sort((a, b) => (b.retryChains || 0) - (a.retryChains || 0));
 
+  // Data-shape categorization
+  const richDataApis = sorted
+    .filter((s) => s.jsonShape && s.jsonShape.depth >= 4 && s.jsonShape.keyCount >= 30)
+    .sort((a, b) => (b.jsonShape?.keyCount || 0) - (a.jsonShape?.keyCount || 0))
+    .slice(0, 10);
+
+  const mutations = sorted
+    .filter((s) => s.intent === 'mutation')
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 10);
+
+  const entityHeavy = sorted
+    .filter(
+      (s) =>
+        s.entitySignals &&
+        (s.entitySignals.hasIdLike ||
+          s.entitySignals.hasContactFields ||
+          s.entitySignals.hasLocationFields)
+    )
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 10);
+
   // Detect polling loops (legacy function for backward compatibility)
   const pollingLoops = detectPollingLoops(summaries);
 

@@ -41,6 +41,10 @@ export async function processHarFile(
   // Normalize all events
   events = events.map(normalizeEvent);
 
+  // Redact sensitive data from events (before analysis to protect PII)
+  const { redactEvent } = await import('./redact');
+  events = events.map(redactEvent);
+
   // Detect retry chains (needed for auth role assignment)
   const retryChains = detectRetryChains(events);
 

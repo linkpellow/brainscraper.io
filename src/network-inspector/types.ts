@@ -17,6 +17,7 @@ export type NetworkEvent = {
   resHeaders?: Record<string, string>;
   resMime?: string;
   resSize?: number; // bytes
+  resBodyText?: string; // response body text (truncated, redacted)
   durationMs?: number;
   // optional tags
   phase?: "page_load" | "interaction" | "background";

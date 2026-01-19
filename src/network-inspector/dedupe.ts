@@ -6,6 +6,8 @@ import type { NetworkEvent, DedupeGroup, EndpointSummary } from './types';
 import { normalizedKey, queryShape, bodyFingerprint } from './normalize';
 import { detectPollingLoop, calculatePhaseDistribution } from './phase';
 import { assignAuthRole, type RetryChain } from './auth';
+import { analyzeEventShape } from './jsonShape';
+import { inferEndpointIntent } from './intent';
 
 /**
  * Group events by normalized key and optional body fingerprint
@@ -142,6 +144,9 @@ export function createEndpointSummary(
     pollingLoop,
     authRole,
     retryChains: retryChainCount > 0 ? retryChainCount : undefined,
+    jsonShape: jsonShape.isJson ? jsonShape : undefined,
+    entitySignals: entitySignals.hasIdLike || entitySignals.hasTimestamps || entitySignals.hasContactFields || entitySignals.hasLocationFields ? entitySignals : undefined,
+    intent: intent !== 'unknown' ? intent : undefined,
   };
 }
 

@@ -93,6 +93,30 @@ function parseHarEntry(
   // Extract response MIME type
   const resMime = entry.response.content?.mimeType || resHeaders['content-type'] || '';
 
+  // Extract response body text (if available, with safe limits)
+  let resBodyText: string | undefined;
+  const MAX_BODY_SIZE = 200 * 1024; // 200KB limit
+  if (entry.response.content?.text) {
+    let bodyText = entry.response.content.text;
+    
+    // Handle base64 encoding
+    if (entry.response.content.encoding === 'base64') {
+      try {
+        bodyText = Buffer.from(bodyText, 'base64').toString('utf-8');
+      } catch (e) {
+        // Invalid base64, skip body
+        bodyText = '';
+      }
+    }
+    
+    // Truncate if too large
+    if (bodyText.length > MAX_BODY_SIZE) {
+      bodyText = bodyText.substring(0, MAX_BODY_SIZE);
+    }
+    
+    resBodyText = bodyText || undefined;
+  }
+
   const networkEvent: NetworkEvent = {
     ts,
     method: entry.request.method,
@@ -108,6 +132,7 @@ function parseHarEntry(
     resHeaders,
     resMime,
     resSize,
+    resBodyText,
     durationMs: entry.time,
     phase,
     actionTag,
