@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Pause, Play, Check, X, Download, Smartphone, Globe, Plus, MousePointer, Tag, Monitor, Rss, ChevronDown, ChevronRight } from 'lucide-react';
 import type { Neuromap, RawNetworkEvent, NeuromapMode } from '@/src/tools/api-signal-explorer/neuromap';
-import { createActionEvent, type ActionEvent } from '@/src/tools/api-signal-explorer/actions';
+import { createActionEvent, type ActionEvent, type ActionType } from '@/src/tools/api-signal-explorer/actions';
 import { linkActionToEvents } from '@/src/tools/api-signal-explorer/correlate';
 import { convertToNetworkSignal, getCategoryDescription, type CategoryTag } from '@/src/tools/api-signal-explorer/signals';
 import DiagnosticsLayout from './DiagnosticsLayout';
@@ -164,7 +164,7 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
           linkActionToEvents(action, updatedNeuromap.events, { windowMs: 2000 });
           onUpdateRef.current(updatedNeuromap);
         } else if (message.type === 'target-action' && message.xpath != null && message.selector != null && typeof message.timestamp === 'number') {
-          const eventType = (message.eventType === 'click' || message.eventType === 'mouseover') ? message.eventType : 'click';
+          const eventType: ActionType = (message.eventType === 'click' || message.eventType === 'mouseover') ? message.eventType as 'click' | 'mouseover' : 'click';
           const action: ActionEvent = {
             id: `target_${message.timestamp}_${Math.random().toString(36).slice(2, 10)}`,
             ts: message.timestamp,
