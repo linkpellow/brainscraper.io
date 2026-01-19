@@ -58,6 +58,7 @@ export default function APISignalExplorerPage() {
   const [autoScroll, setAutoScroll] = useState(true);
   const [isMarkingInteraction, setIsMarkingInteraction] = useState(false);
   const [interactionWindow, setInteractionWindow] = useState<{ start: number; end?: number } | null>(null);
+  const [hostFilter, setHostFilter] = useState<Set<string>>(new Set());
   const wsRef = useRef<WebSocket | null>(null);
   const endpointMapRef = useRef<Map<string, EndpointData>>(new Map());
   const sessionStartRef = useRef<number | null>(null);
