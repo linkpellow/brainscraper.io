@@ -1,0 +1,26 @@
+services:
+  # Main Next.js Application
+  - type: web
+    name: brainscraper-io
+    runtime: node
+    region: oregon
+    plan: starter
+    branch: main
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_VERSION
+        value: 20.18.1
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      # Add your environment variables from Railway here:
+      # - key: OPENAI_API_KEY
+      #   sync: false
+      # - key: DATABASE_URL
+      #   sync: false
+      # - key: NEXT_PUBLIC_API_URL
+      #   sync: false
+    healthCheckPath: /
+    autoDeploy: true
