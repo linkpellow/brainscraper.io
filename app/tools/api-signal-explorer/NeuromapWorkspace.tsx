@@ -1669,37 +1669,106 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
   }, []);
 
   // Export workflow
-  const exportWorkflow = () => {
+  /**
+   * Export complete workflow with all metadata
+   * Mode #1 exports include button maps, form state, and validation results
+   */
+  const exportWorkflow = useCallback(() => {
     const workflow = {
+      meta: {
+        exportedAt: new Date().toISOString(),
+        mode: aiMode,
+        version: '2.0.0', // Workflow schema version
+      },
       goal: userGoal,
       constraints: userConstraints,
       targetData: targetData,
       keywordAnalysis: keywordAnalysis,
       workflowPlan: workflowPlan,
-      steps: lockedSteps.map(step => ({
+      steps: lockedSteps.map((step: LockedStep) => ({
         stepNumber: step.stepNumber,
         method: step.method,
         endpoint: step.endpoint,
         code: step.code,
         extractedVars: step.extractedVars,
         dependencies: step.dependencies,
+        status: step.status,
+        lockedAt: step.lockedAt,
       })),
       flipbook: {
         snapshotCount: flipbookSnapshots.length,
         sessionId: flipbookSessionId,
         analysis: flipbookAnalysis,
       },
-      exportedAt: new Date().toISOString(),
+      // Mode #1 specific data
+      ...(aiMode === 'fullMap' && {
+        fullMap: {
+          buttonMap: buttonMap ? {
+            totalButtons: buttonMap.totalButtons,
+            mappedButtons: buttonMap.mappedButtons,
+            unmappedButtons: buttonMap.unmappedButtons,
+            coverage: buttonMap.coverage,
+            buttons: buttonMap.buttons.map((btn: MappedElement) => ({
+              id: btn.id,
+              type: btn.type,
+              text: btn.text,
+              endpoint: btn.endpoint,
+              method: btn.method,
+              xpath: btn.xpath,
+              formState: btn.formState ? {
+                hasViewState: !!btn.formState.viewstate,
+                hasEventValidation: !!btn.formState.eventValidation,
+                customFields: Object.keys(btn.formState.customFields || {})
+              } : undefined
+            })),
+            generatedAt: buttonMap.generatedAt,
+          } : null,
+          validation: validationResult ? {
+            allPassed: validationResult.allPassed,
+            reliability: validationResult.reliability,
+            totalAttempts: validationResult.totalAttempts,
+            successfulAttempts: validationResult.successfulAttempts,
+            failedAttempts: validationResult.failedAttempts,
+            averageResponseTime: validationResult.averageResponseTime,
+            steps: validationResult.steps.map((step: { stepNumber: number; passRate: number; attempts: ValidationResult[] }) => ({
+              stepNumber: step.stepNumber,
+              passRate: step.passRate,
+              attemptCount: step.attempts.length,
+              allPassed: step.attempts.every(a => a.success),
+            })),
+          } : null,
+          formStateManagement: {
+            enabled: true,
+            autoExtractViewState: true,
+            autoInjectBetweenSteps: true,
+          },
+        },
+      }),
     };
 
     const blob = new Blob([JSON.stringify(workflow, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `workflow-${Date.now()}.json`;
+    const filename = aiMode === 'fullMap' 
+      ? `workflow-fullmap-${Date.now()}.json`
+      : `workflow-${Date.now()}.json`;
+    a.download = filename;
     a.click();
     URL.revokeObjectURL(url);
-  };
+
+    // Show success message
+    addChatMessage('assistant',
+      `✅ Workflow exported successfully!\n\n` +
+      `**File**: ${filename}\n` +
+      `**Steps**: ${lockedSteps.length}\n` +
+      `**Mode**: ${aiMode === 'fullMap' ? 'Full Map (Legacy Forms)' : aiMode === 'apiOnly' ? 'API-Only' : 'Mobile Reverse'}\n` +
+      (buttonMap ? `**Button Map**: ${buttonMap.mappedButtons}/${buttonMap.totalButtons} elements\n` : '') +
+      (validationResult ? `**Validation**: ${validationResult.reliability}% reliability\n` : '') +
+      `\nYou can re-import this workflow later to continue where you left off.`,
+      { type: 'success' }
+    );
+  }, [aiMode, userGoal, userConstraints, targetData, keywordAnalysis, workflowPlan, lockedSteps, flipbookSnapshots, flipbookSessionId, flipbookAnalysis, buttonMap, validationResult, addChatMessage]);
 
   // Calculate dynamic width based on chat panel state
   const chatPanelWidth = chatExpanded ? 600 : 400;

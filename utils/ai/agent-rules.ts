@@ -13,6 +13,40 @@ Lock the next step toward a complete, working workflow. Every message should mov
 # THE STRAIGHT LINE
 Unknown API → Goal Defined → Traffic Captured → Endpoint Tested → Step Locked → Next Step → Complete Workflow
 
+# MODE-SPECIFIC GUIDANCE
+
+## Mode #1: Full Map (Legacy Forms - No Bot Detection)
+When user selects Mode #1, you're dealing with form-based applications (.ASPX, PHP, old web apps):
+
+**Key Differences:**
+- Focus on BUTTONS and FORM SUBMISSIONS, not just API endpoints
+- Track form state (VIEWSTATE, EVENTVALIDATION) between steps
+- Validate 2x in a row (reliability requirement)
+- Ensure perpetual session/cookie management
+
+**Your Workflow:**
+1. **Map Phase**: "I've captured ${X} interactive elements. Let me generate a button map..."
+2. **Correlation**: "I found ${Y} buttons mapped to endpoints (${Z}% coverage)"
+3. **Sequential Testing**: "Each step must succeed 2x in a row for reliability"
+4. **Persistence**: "Testing cookie/session persistence with delays..."
+5. **Lock & Export**: "Workflow validated! Can run indefinitely."
+
+**Language to Use:**
+- ✅ "Let's map all the buttons on this form"
+- ✅ "I detected form state that needs to be passed between steps"
+- ✅ "Testing twice to ensure reliability"
+- ❌ Don't say "API endpoint" - say "button" or "form submission"
+- ❌ Don't skip the validation step - it's critical for Mode #1
+
+**Certainty Evidence for Mode #1:**
+- "✓ Button 'Calculate' maps to POST /Quote.aspx"
+- "✓ Form state (VIEWSTATE) automatically extracted"
+- "✓ Workflow tested 2x: 100% success rate"
+- "✓ Sessions persist indefinitely (tested with 5s delay)"
+
+## Mode #2: API-Only (Default)
+Standard modern API workflow (REST, GraphQL, etc.)
+
 # BOUNDARIES
 ABOVE THE LINE (Too Abstract - Nudge Down):
 - Theoretical discussions about APIs
@@ -249,4 +283,102 @@ export function getNextObjective(state: AgentState): string {
     default:
       return 'Move forward in the workflow';
   }
+}
+
+/**
+ * Get mode-specific system prompt enhancements
+ * Injects additional context based on the active AI mode
+ * 
+ * @param mode - The active AI mode (fullMap, apiOnly, mobileReverse)
+ * @param context - Additional context (snapshots, button map, etc.)
+ * @returns Enhanced system prompt with mode-specific instructions
+ * 
+ * @example
+ * ```typescript
+ * const enhancedPrompt = getModeSpecificPrompt('fullMap', {
+ *   totalButtons: 23,
+ *   mappedButtons: 18,
+ *   buttonMapCoverage: 78
+ * });
+ * ```
+ */
+export function getModeSpecificPrompt(
+  mode: 'fullMap' | 'apiOnly' | 'mobileReverse',
+  context?: {
+    buttonMapCoverage?: number;
+    totalButtons?: number;
+    mappedButtons?: number;
+    validationReliability?: number;
+    hasFormState?: boolean;
+    snapshotsCount?: number;
+  }
+): string {
+  let enhancement = '\n\n# CURRENT MODE CONTEXT\n';
+
+  if (mode === 'fullMap') {
+    enhancement += '**Mode #1: Full Map (Legacy Forms)** is ACTIVE\n\n';
+    enhancement += 'Your primary focus:\n';
+    enhancement += '1. Map UI elements (buttons, forms) → Network requests\n';
+    enhancement += '2. Extract and track form state (VIEWSTATE, EVENTVALIDATION)\n';
+    enhancement += '3. Ensure 2x sequential validation for reliability\n';
+    enhancement += '4. Verify session/cookie persistence\n\n';
+
+    if (context) {
+      enhancement += '**Current Progress:**\n';
+      
+      if (context.snapshotsCount) {
+        enhancement += `- ${context.snapshotsCount} DOM snapshots captured ✓\n`;
+      }
+      
+      if (context.totalButtons && context.mappedButtons !== undefined) {
+        const coverage = context.buttonMapCoverage || 0;
+        enhancement += `- Button Map: ${context.mappedButtons}/${context.totalButtons} elements (${coverage}% coverage)`;
+        if (coverage < 50) {
+          enhancement += ' ⚠️ Low coverage - encourage more interaction\n';
+        } else if (coverage < 80) {
+          enhancement += ' → Good progress, keep mapping\n';
+        } else {
+          enhancement += ' ✓ Excellent coverage!\n';
+        }
+      }
+      
+      if (context.hasFormState) {
+        enhancement += '- Form state detected ✓ (will auto-manage between steps)\n';
+      }
+      
+      if (context.validationReliability !== undefined) {
+        enhancement += `- Validation: ${context.validationReliability}% reliability`;
+        if (context.validationReliability === 100) {
+          enhancement += ' ✓ Perfect! Workflow ready.\n';
+        } else if (context.validationReliability >= 50) {
+          enhancement += ' → Needs improvement\n';
+        } else {
+          enhancement += ' ❌ Failed - needs fixing\n';
+        }
+      }
+    }
+
+    enhancement += '\n**Next Steps:**\n';
+    if (!context?.totalButtons) {
+      enhancement += '1. Generate button map to correlate UI → endpoints\n';
+    } else if ((context.buttonMapCoverage || 0) < 80) {
+      enhancement += '1. Increase button map coverage by testing more interactions\n';
+    } else if (!context?.validationReliability) {
+      enhancement += '1. Lock steps and run 2x validation\n';
+    } else if (context.validationReliability < 100) {
+      enhancement += '1. Fix validation failures and test again\n';
+    } else {
+      enhancement += '1. Export workflow - it\'s ready for production!\n';
+    }
+
+  } else if (mode === 'apiOnly') {
+    enhancement += '**Mode #2: API-Only** is ACTIVE\n\n';
+    enhancement += 'Standard modern API workflow (REST, GraphQL, gRPC)\n';
+    enhancement += 'Focus on endpoints, not UI elements.\n';
+  } else if (mode === 'mobileReverse') {
+    enhancement += '**Mode #3: Mobile App Reverse Engineering** is ACTIVE\n\n';
+    enhancement += 'Analyzing mobile app traffic patterns.\n';
+  }
+
+  return enhancement;
 }
