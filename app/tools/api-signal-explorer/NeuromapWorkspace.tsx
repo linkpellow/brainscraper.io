@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { Pause, Play, Check, X, Download, Globe, Plus, MousePointer, Tag, Monitor, Rss, ChevronDown, ChevronRight, Copy, Code, Terminal, ArrowDown, Zap, Brain, Sparkles, Loader2, Lightbulb, TrendingUp, Filter } from 'lucide-react';
+import { Pause, Play, Check, X, Download, Globe, Plus, MousePointer, Tag, Monitor, Rss, ChevronDown, ChevronRight, Copy, Code, Terminal, ArrowDown, Zap, Brain, Sparkles, Loader2, Lightbulb, TrendingUp, Filter, MessageSquare } from 'lucide-react';
 import type { Neuromap, RawNetworkEvent } from '@/src/tools/api-signal-explorer/neuromap';
 import { addEventToNeuromap, toggleEndpointSelection, exportNeuromap } from '@/src/tools/api-signal-explorer/neuromap';
 import { createActionEvent, type ActionEvent, type ActionType } from '@/src/tools/api-signal-explorer/actions';
@@ -11,6 +11,7 @@ import { analyzeKeywords, scoreEndpointRelevance, type KeywordAnalysis } from '@
 import { extractSmartVariables, detectAuthMethod, generateUsageExamples } from '@/utils/ai/smart-variables';
 import { validateResponse, suggestImprovedTarget } from '@/utils/ai/success-validator';
 import { findMatchingScenarios, getContextualHints, type Scenario } from '@/utils/ai/auto-suggestions';
+import AIChatPanel, { type ChatMessage } from './AIChatPanel';
 
 type EndpointData = {
   method: string;
@@ -234,6 +235,11 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
   
   // Endpoint filtering
   const [showOnlyRelevant, setShowOnlyRelevant] = useState(false);
+  
+  // AI Chat Panel state
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [chatProcessing, setChatProcessing] = useState(false);
   
   const endpointMapRef = useRef<Map<string, EndpointData>>(new Map());
   const wsRef = useRef<WebSocket | null>(null);
@@ -483,6 +489,138 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
     return code;
   };
 
+  // Add AI chat message
+  const addChatMessage = (role: 'user' | 'assistant', content: string, metadata?: ChatMessage['metadata']) => {
+    const message: ChatMessage = {
+      id: `msg-${Date.now()}-${Math.random()}`,
+      role,
+      content,
+      timestamp: Date.now(),
+      metadata,
+    };
+    setChatMessages(prev => [...prev, message]);
+  };
+
+  // Handle chat messages
+  const handleChatMessage = async (userMessage: string) => {
+    // Add user message
+    addChatMessage('user', userMessage);
+    setChatProcessing(true);
+
+    try {
+      // Simple keyword-based responses for now
+      const msg = userMessage.toLowerCase();
+      
+      if (msg.includes('help') || msg.includes('how')) {
+        addChatMessage('assistant', 
+          `I'm here to help you build your API workflow! Here's what I can do:\n\n` +
+          `1. Analyze your goal and suggest templates\n` +
+          `2. Filter endpoints by relevance\n` +
+          `3. Suggest the next step in your workflow\n` +
+          `4. Validate responses against your target data\n` +
+          `5. Extract variables automatically\n\n` +
+          `What would you like to start with?`,
+          { type: 'suggestion' }
+        );
+      } else if (msg.includes('goal') || msg.includes('start')) {
+        addChatMessage('assistant',
+          `Let's define your goal! Tell me what data you want to extract. For example:\n\n` +
+          `• "Get all products with prices"\n` +
+          `• "Fetch user profile data"\n` +
+          `• "Search for orders"\n\n` +
+          `Or click a template above to get started quickly!`,
+          { type: 'suggestion' }
+        );
+      } else if (msg.includes('template') || msg.includes('scenario')) {
+        if (suggestedScenarios.length > 0) {
+          addChatMessage('assistant',
+            `I found ${suggestedScenarios.length} relevant templates for you:\n\n` +
+            suggestedScenarios.map(s => `${s.icon} ${s.name}`).join('\n') +
+            `\n\nClick the "templates" button in the Goal section to apply one!`,
+            { type: 'suggestion' }
+          );
+        } else {
+          addChatMessage('assistant',
+            `I don't have any templates matching your current goal yet. Try entering a goal like "Get all products" and I'll suggest relevant templates!`,
+            { type: 'suggestion' }
+          );
+        }
+      } else if (msg.includes('endpoint') || msg.includes('traffic')) {
+        if (endpoints.length === 0) {
+          addChatMessage('assistant',
+            `No endpoints captured yet. Launch the browser and interact with the target site to capture API traffic!\n\n` +
+            `Once traffic is captured, I'll help you filter and analyze it.`,
+            { type: 'suggestion' }
+          );
+        } else {
+          addChatMessage('assistant',
+            `Great! I've captured ${endpoints.length} endpoints. ${showOnlyRelevant ? `Smart filter is ON - showing only relevant endpoints.` : `Try enabling Smart Filter to see only relevant endpoints!`}\n\n` +
+            `Select an endpoint to generate code and test it.`,
+            { type: 'success' }
+          );
+        }
+      } else if (msg.includes('test') || msg.includes('run')) {
+        if (!selectedEndpoint) {
+          addChatMessage('assistant',
+            `Select an endpoint from the Network Traffic section first, then click the Test button to execute it!\n\n` +
+            `I'll validate the response against your target data automatically.`,
+            { type: 'suggestion' }
+          );
+        } else {
+          addChatMessage('assistant',
+            `Ready to test! Click the ▶ Test button to execute the request.\n\n` +
+            `I'll check if the response matches your expected target data structure.`,
+            { type: 'suggestion' }
+          );
+        }
+      } else if (msg.includes('lock') || msg.includes('step')) {
+        if (lockedSteps.length === 0) {
+          addChatMessage('assistant',
+            `Once you have a successful test, click the 🔒 Lock button to save that step!\n\n` +
+            `I'll extract variables automatically and suggest the next step.`,
+            { type: 'suggestion' }
+          );
+        } else {
+          addChatMessage('assistant',
+            `Excellent progress! You've locked ${lockedSteps.length} step(s).\n\n` +
+            `Variables extracted: ${Object.keys(getAllAvailableVariables(lockedSteps)).join(', ')}\n\n` +
+            `Continue testing and locking steps to complete your workflow!`,
+            { type: 'success' }
+          );
+        }
+      } else {
+        // Default response - analyze current state
+        const state = {
+          hasGoal: userGoal.trim().length > 0,
+          hasEndpoints: endpoints.length > 0,
+          hasLockedSteps: lockedSteps.length > 0,
+          hasTest: testResult !== null,
+        };
+
+        let response = `Let me help you with that!\n\n`;
+        
+        if (!state.hasGoal) {
+          response += `📝 Start by defining your goal in the Goal field above.\n`;
+        } else if (!state.hasEndpoints) {
+          response += `🌐 Launch the browser to capture API traffic.\n`;
+        } else if (!state.hasTest) {
+          response += `🎯 Select an endpoint and test it.\n`;
+        } else if (!state.hasLockedSteps) {
+          response += `🔒 Lock your successful test as Step 1.\n`;
+        } else {
+          response += `🚀 Great! Keep testing and locking steps to complete your workflow.\n\n`;
+          response += `Type "help" to see all the things I can do!`;
+        }
+
+        addChatMessage('assistant', response, { type: 'suggestion' });
+      }
+    } catch (err) {
+      addChatMessage('assistant', `Sorry, I encountered an error. Please try again!`, { type: 'warning' });
+    } finally {
+      setChatProcessing(false);
+    }
+  };
+
   useEffect(() => {
     if (aiAgentActive && endpoints.length > 0 && aiAgentStatus === 'idle') {
       runAiAnalysis();
@@ -528,6 +666,55 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
     });
     setContextualHints(hints);
   }, [userGoal, userConstraints, targetData, endpoints.length, lockedSteps.length]);
+
+  // Send AI chat messages for key events
+  useEffect(() => {
+    if (keywordAnalysis && chatMessages.length === 0 && userGoal.trim()) {
+      // Welcome message when goal is set
+      const intent = keywordAnalysis.intent;
+      if (intent.confidence > 0.7) {
+        addChatMessage('assistant',
+          `Great! I detected your intent: **${intent.action}**\n\n` +
+          `${keywordAnalysis.entities.length > 0 ? `Looking for: ${keywordAnalysis.entities.map(e => e.name).join(', ')}\n` : ''}` +
+          `${suggestedScenarios.length > 0 ? `\n💡 I found ${suggestedScenarios.length} relevant templates. Click "templates" to view them!` : ''}`,
+          { type: 'success' }
+        );
+      }
+    }
+  }, [keywordAnalysis]);
+
+  useEffect(() => {
+    if (aiSuggestedStep && chatOpen) {
+      addChatMessage('assistant',
+        `🎯 **Suggested Step ${aiSuggestedStep.stepNumber}**\n\n` +
+        `${aiSuggestedStep.method} ${aiSuggestedStep.endpoint}\n\n` +
+        `*Why?* ${aiSuggestedStep.reason}\n\n` +
+        `Confidence: ${Math.round((aiSuggestedStep.confidence || 0) * 100)}%`,
+        { type: 'suggestion' }
+      );
+    }
+  }, [aiSuggestedStep]);
+
+  useEffect(() => {
+    if (testResult && chatOpen) {
+      if (testResult.success) {
+        addChatMessage('assistant',
+          `✅ **Test Successful!**\n\n` +
+          `Status: ${testResult.status} ${testResult.statusText}\n\n` +
+          `${successValidation ? `Match score: ${Math.round(successValidation.score * 100)}%\n\n` : ''}` +
+          `Ready to lock this as Step ${currentStepFocus}?`,
+          { type: 'success' }
+        );
+      } else {
+        addChatMessage('assistant',
+          `⚠️ **Test Failed**\n\n` +
+          `${testResult.error || `Status: ${testResult.status}`}\n\n` +
+          `Try a different endpoint or check the request parameters.`,
+          { type: 'warning' }
+        );
+      }
+    }
+  }, [testResult]);
 
   // Smart endpoint filtering by relevance
   const filteredEndpointsByRelevance = useMemo(() => {
@@ -778,6 +965,22 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
           <h2 className="text-lg font-bold text-red-500 font-mono tracking-wide">API SIGNAL PIPELINE</h2>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => setChatOpen(!chatOpen)}
+            className={`flex items-center gap-1.5 px-3 py-2 rounded text-xs font-medium transition-all ${
+              chatOpen 
+                ? 'bg-purple-600 hover:bg-purple-700 text-white' 
+                : 'bg-slate-700 hover:bg-slate-600 text-slate-300'
+            }`}
+          >
+            <MessageSquare className="w-3.5 h-3.5" />
+            AI Chat
+            {chatMessages.length > 0 && !chatOpen && (
+              <span className="px-1.5 py-0.5 bg-purple-600 rounded-full text-xs">
+                {chatMessages.length}
+              </span>
+            )}
+          </button>
           {aiInsightsList.filter(i => !i.dismissed).length > 0 && (
             <button
               onClick={() => setInsightsPanelOpen(!insightsPanelOpen)}
@@ -1381,6 +1584,15 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
           </div>
         </div>
       </div>
+
+      {/* AI Chat Panel */}
+      <AIChatPanel
+        isOpen={chatOpen}
+        onClose={() => setChatOpen(false)}
+        messages={chatMessages}
+        onSendMessage={handleChatMessage}
+        isProcessing={chatProcessing}
+      />
     </div>
   );
 }
