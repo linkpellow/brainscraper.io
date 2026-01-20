@@ -28,6 +28,9 @@ window.addEventListener('message', (e: MessageEvent) => {
   if (e.data && e.data.type === 'target-action-forward' && e.data.payload) {
     ipcRenderer.send('target-action', e.data.payload);
   }
+  if (e.data && e.data.type === 'DOM_FLIPBOOK_SNAPSHOT' && e.data.payload) {
+    ipcRenderer.send('DOM_FLIPBOOK_SNAPSHOT', e.data.payload);
+  }
 });
 
 // --- Fallback: target-action from preload document (initial doc only) ---

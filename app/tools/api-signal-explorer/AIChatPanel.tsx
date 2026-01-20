@@ -2,8 +2,6 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { Send, Bot, User, Sparkles, X, Maximize2, Minimize2 } from 'lucide-react';
-import AgentScratchpad from './AgentScratchpad';
-import type { AgentState } from '@/utils/ai/agent-rules';
 
 export type ChatMessage = {
   id: string;
@@ -25,7 +23,6 @@ type AIChatPanelProps = {
   isProcessing?: boolean;
   isExpanded: boolean;
   onToggleExpand: () => void;
-  agentState: AgentState;
 };
 
 export default function AIChatPanel({
@@ -34,7 +31,6 @@ export default function AIChatPanel({
   isProcessing = false,
   isExpanded,
   onToggleExpand,
-  agentState,
 }: AIChatPanelProps) {
   const [input, setInput] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -187,9 +183,6 @@ export default function AIChatPanel({
 
         <div ref={messagesEndRef} />
       </div>
-
-      {/* Agent Scratchpad */}
-      <AgentScratchpad state={agentState} />
 
       {/* Input */}
       <div className="shrink-0 border-t border-slate-700 p-4 bg-slate-800/50">

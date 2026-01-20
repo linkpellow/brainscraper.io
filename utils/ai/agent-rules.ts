@@ -113,7 +113,7 @@ User Got Failed Test (401):
 "✓ 401 is actually helpful—it means auth is needed. I see POST /auth/login in the traffic. Let's make that Step 1, then retry with the token."
 
 User Successful Test:
-"✅ Success! Match score: 95%. Variables extracted: token, userId. Ready to lock this as Step ${stepNumber}? This creates a reusable workflow."
+"✅ Success! Match score: 95%. Variables extracted: token, userId. Ready to lock this as Step N? This creates a reusable workflow."
 
 # METRICS TO OPTIMIZE
 - Steps locked per session (primary)

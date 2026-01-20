@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { Pause, Play, Check, X, Download, Globe, Plus, MousePointer, Tag, Monitor, Rss, ChevronDown, ChevronRight, Copy, Code, Terminal, ArrowDown, Zap, Brain, Sparkles, Loader2, Lightbulb, TrendingUp, Filter, MessageSquare } from 'lucide-react';
+import { Pause, Play, Check, X, Download, Globe, Plus, MousePointer, Tag, Monitor, Rss, ChevronDown, ChevronRight, Copy, Code, Terminal, ArrowDown, Zap, Brain, Sparkles, Loader2, Lightbulb, TrendingUp, Filter, MessageSquare, BookOpen } from 'lucide-react';
 import type { Neuromap, RawNetworkEvent } from '@/src/tools/api-signal-explorer/neuromap';
 import { addEventToNeuromap, toggleEndpointSelection, exportNeuromap } from '@/src/tools/api-signal-explorer/neuromap';
 import { createActionEvent, type ActionEvent, type ActionType } from '@/src/tools/api-signal-explorer/actions';
@@ -243,6 +243,12 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
   const [chatProcessing, setChatProcessing] = useState(false);
   const [conversationStep, setConversationStep] = useState<'goal' | 'constraints' | 'target' | 'complete' | null>('goal');
   const [agentState, setAgentState] = useState<AgentState>(getInitialAgentState());
+
+  // DOM Flipbook state
+  const [flipbookSnapshots, setFlipbookSnapshots] = useState<any[]>([]);
+  const [flipbookSessionId, setFlipbookSessionId] = useState<string | null>(null);
+  const [flipbookAnalysis, setFlipbookAnalysis] = useState<any>(null);
+  const [analyzingFlipbook, setAnalyzingFlipbook] = useState(false);
   
   const endpointMapRef = useRef<Map<string, EndpointData>>(new Map());
   const wsRef = useRef<WebSocket | null>(null);
@@ -815,6 +821,35 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
     setContextualHints(hints);
   }, [userGoal, userConstraints, targetData, endpoints.length, lockedSteps.length]);
 
+  // Listen for flipbook snapshots from Electron
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const handleFlipbookSnapshot = (_event: any, payload: any) => {
+      if (payload?.snapshot) {
+        console.log('[Neuromap] Flipbook snapshot received:', payload.snapshot.id);
+        
+        setFlipbookSnapshots(prev => [...prev, payload.snapshot]);
+        setFlipbookSessionId(payload.sessionId);
+
+        // Store snapshot via API
+        fetch('/api/flipbook/store', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        }).catch(err => console.error('[Neuromap] Failed to store snapshot:', err));
+      }
+    };
+
+    // @ts-ignore - Electron API
+    window.electron?.on?.('dom-flipbook-snapshot', handleFlipbookSnapshot);
+
+    return () => {
+      // @ts-ignore
+      window.electron?.off?.('dom-flipbook-snapshot', handleFlipbookSnapshot);
+    };
+  }, []);
+
   // Track endpoints captured
   useEffect(() => {
     if (endpoints.length > 0 && agentState.currentPhase === 'capture') {
@@ -942,7 +977,7 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
         } else if (testResult.status === 429) {
           response += `**Rate limit hit.** Wait a moment and try again.`;
         } else {
-          response += `${testResult.error || 'The request didn't succeed.'}\n\n`;
+          response += `${testResult.error || 'The request did not succeed.'}\n\n`;
           response += `Try a different endpoint or check the captured traffic for clues.`;
         }
 
@@ -1181,6 +1216,104 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
     }
   };
 
+  // Analyze DOM Flipbook with AI
+  const analyzeFlipbook = async () => {
+    if (!flipbookSessionId || flipbookSnapshots.length === 0) {
+      addChatMessage('assistant',
+        '⚠️ No flipbook snapshots available. Browse the target site first to capture DOM snapshots.',
+        { type: 'warning' }
+      );
+      return;
+    }
+
+    setAnalyzingFlipbook(true);
+    addChatMessage('assistant',
+      `🔍 Analyzing ${flipbookSnapshots.length} DOM snapshot${flipbookSnapshots.length > 1 ? 's' : ''}...\n\n` +
+      `This will help me understand:\n` +
+      `• Page structure and navigation patterns\n` +
+      `• Where your target data is located\n` +
+      `• Optimal automation workflow\n` +
+      `• Playwright code for seamless navigation`,
+      { type: 'suggestion' }
+    );
+
+    try {
+      const response = await fetch('/api/ai/analyze-dom-flipbook', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionId: flipbookSessionId,
+          goal: userGoal,
+          targetData: targetData,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.ok && data.analysis) {
+        setFlipbookAnalysis(data.analysis);
+
+        const analysis = data.analysis;
+        let message = `✅ **DOM Analysis Complete**\n\n`;
+
+        if (analysis.navigationPattern) {
+          message += `**Navigation**: ${analysis.navigationPattern.type}\n`;
+          message += `${analysis.navigationPattern.details}\n\n`;
+        }
+
+        if (analysis.contentStructure) {
+          message += `**Content Located**: ${analysis.contentStructure.selector}\n\n`;
+        }
+
+        if (analysis.workflowSteps && Array.isArray(analysis.workflowSteps)) {
+          message += `**Workflow Steps** (${analysis.workflowSteps.length}):\n`;
+          analysis.workflowSteps.slice(0, 3).forEach((step: any) => {
+            message += `${step.step}. ${step.action}\n`;
+          });
+          if (analysis.workflowSteps.length > 3) {
+            message += `... and ${analysis.workflowSteps.length - 3} more steps\n`;
+          }
+          message += `\n`;
+        }
+
+        if (analysis.confidence) {
+          message += `**Confidence**: ${analysis.confidence}%\n\n`;
+        }
+
+        if (analysis.playwrightCode) {
+          message += `**Playwright Code Generated** ✓\n\n`;
+          message += `I can now:\n`;
+          message += `• Auto-navigate through pages\n`;
+          message += `• Extract data with precise selectors\n` +
+          `• Handle pagination automatically`;
+        }
+
+        addChatMessage('assistant', message, { type: 'success' });
+
+        // Update agent state
+        const newState = updateAgentState(agentState, {
+          phase: agentState.currentPhase,
+          action: 'DOM flipbook analyzed',
+          outcome: 'success',
+        });
+        newState.certaintyLevels.workflow = Math.min(100, newState.certaintyLevels.workflow + 20);
+        newState.certaintyLevels.system = Math.min(100, newState.certaintyLevels.system + 15);
+        newState.goalsAchieved.push('DOM structure mapped');
+        setAgentState(newState);
+      } else {
+        throw new Error(data.error || 'Analysis failed');
+      }
+    } catch (err) {
+      console.error('[Neuromap] Flipbook analysis error:', err);
+      addChatMessage('assistant',
+        `❌ Analysis failed: ${err instanceof Error ? err.message : String(err)}`,
+        { type: 'warning' }
+      );
+    } finally {
+      setAnalyzingFlipbook(false);
+    }
+  };
+
   // Apply scenario template
   const applyScenario = (scenario: Scenario) => {
     setUserGoal(scenario.goal);
@@ -1205,6 +1338,11 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
         extractedVars: step.extractedVars,
         dependencies: step.dependencies,
       })),
+      flipbook: {
+        snapshotCount: flipbookSnapshots.length,
+        sessionId: flipbookSessionId,
+        analysis: flipbookAnalysis,
+      },
       exportedAt: new Date().toISOString(),
     };
 
@@ -1610,16 +1748,29 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
         <div className="shrink-0 flex items-center gap-3 p-4 pb-3 border-b border-slate-800">
           <div className="flex items-center justify-center w-8 h-8 bg-slate-700 rounded-full text-white font-bold text-sm">3</div>
           <h3 className="text-sm font-bold text-slate-300 tracking-wide">CAPTURE • NETWORK TRAFFIC</h3>
-          {keywordAnalysis && endpoints.length > 0 && (
-            <button
-              onClick={generateWorkflowPlan}
-              disabled={planningWorkflow}
-              className="flex items-center gap-1 px-2 py-1 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 rounded text-xs text-white"
-            >
-              {planningWorkflow ? <Loader2 className="w-3 h-3 animate-spin" /> : <Brain className="w-3 h-3" />}
-              {planningWorkflow ? 'Planning...' : 'Plan Workflow'}
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            {keywordAnalysis && endpoints.length > 0 && (
+              <button
+                onClick={generateWorkflowPlan}
+                disabled={planningWorkflow}
+                className="flex items-center gap-1 px-2 py-1 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 rounded text-xs text-white"
+              >
+                {planningWorkflow ? <Loader2 className="w-3 h-3 animate-spin" /> : <Brain className="w-3 h-3" />}
+                {planningWorkflow ? 'Planning...' : 'Plan Workflow'}
+              </button>
+            )}
+            {flipbookSnapshots.length > 0 && (
+              <button
+                onClick={analyzeFlipbook}
+                disabled={analyzingFlipbook}
+                className="flex items-center gap-1 px-2 py-1 bg-green-600 hover:bg-green-700 disabled:opacity-50 rounded text-xs text-white"
+                title={`Analyze ${flipbookSnapshots.length} DOM snapshots with AI`}
+              >
+                {analyzingFlipbook ? <Loader2 className="w-3 h-3 animate-spin" /> : <BookOpen className="w-3 h-3" />}
+                {analyzingFlipbook ? 'Analyzing...' : `Flipbook (${flipbookSnapshots.length})`}
+              </button>
+            )}
+          </div>
           {keywordAnalysis && (
             <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-400">
               <input
@@ -1851,7 +2002,6 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
         isProcessing={chatProcessing}
         isExpanded={chatExpanded}
         onToggleExpand={() => setChatExpanded(!chatExpanded)}
-        agentState={agentState}
       />
     </div>
   );
