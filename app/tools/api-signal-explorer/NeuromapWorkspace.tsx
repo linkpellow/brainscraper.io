@@ -303,14 +303,14 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
             url: flow.url || '',
             path: urlObj.pathname,
             host: urlObj.hostname,
-            status: flow.status,
+                  status: flow.status,
             reqHeaders: flow.reqHeaders || {},
             resHeaders: flow.resHeaders || {},
             reqCookies: {},
-            reqBodySize: flow.reqBodySize,
-            resBodySize: flow.resBodySize,
-            resMime: flow.resMime,
-            durationMs: flow.durationMs,
+                  reqBodySize: flow.reqBodySize,
+                  resBodySize: flow.resBodySize,
+                  resMime: flow.resMime,
+                  durationMs: flow.durationMs,
             source: 'browser',
           };
 
@@ -477,7 +477,7 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
           const code = generateCodeWithVariables(suggested, data.analysis.suggestedStep.usesVariables || []);
           setCurrentCode(code);
         }
-      } else {
+                  } else {
         console.error('[AI] Analysis failed:', data.error);
         setAiAgentStatus('idle');
       }
@@ -767,8 +767,8 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
         }
 
         addChatMessage('assistant', response, { type: 'suggestion' });
-      }
-    } catch (err) {
+        }
+      } catch (err) {
       addChatMessage('assistant', `Sorry, I encountered an error. Please try again!`, { type: 'warning' });
     } finally {
       setChatProcessing(false);
@@ -1437,13 +1437,13 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
               <Sparkles className="w-4 h-4 text-amber-400" />
               <h3 className="text-sm font-bold text-amber-400">AI DISCOVERED REQUIREMENTS</h3>
             </div>
-            <button
+          <button
               onClick={() => setInsightsPanelOpen(false)}
               className="text-slate-500 hover:text-slate-300"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
           <div className="space-y-2 max-h-32 overflow-y-auto">
             {aiInsightsList.filter(i => !i.dismissed).map(insight => (
               <div key={insight.id} className="p-3 bg-slate-900 border border-amber-500/20 rounded-lg">
@@ -1458,7 +1458,7 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
                         {insight.type.replace('_', ' ').toUpperCase()}
                       </span>
                       <span className="text-xs text-slate-500">Confidence: {Math.round(insight.confidence * 100)}%</span>
-                    </div>
+      </div>
                     <div className="text-sm text-slate-300 mb-1">{insight.rule}</div>
                     <div className="text-xs text-slate-500">{insight.suggestion}</div>
                   </div>
@@ -1475,132 +1475,37 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
         </div>
       )}
 
-      {/* PIPELINE STAGE 1: GOAL + URL INPUT */}
+      {/* Target URL Input */}
+      <div className="shrink-0 bg-gradient-to-r from-slate-900/50 to-transparent border-b border-slate-700/50 p-4">
+        <div className="flex gap-2">
+          <input
+            type="url"
+            value={launchBrowserUrl}
+            onChange={(e) => setLaunchBrowserUrl(e.target.value)}
+            placeholder="https://example.com"
+            className="flex-1 px-4 py-2 bg-slate-900 border border-slate-700/50 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:border-red-500/60"
+          />
+          <button
+            onClick={handleLaunchBrowser}
+            disabled={launchBrowserLoading}
+            className="flex items-center gap-2 px-6 py-2 bg-red-600 hover:bg-red-700 disabled:opacity-50 rounded-lg text-sm text-white font-medium transition-all"
+          >
+            <Monitor className="w-4 h-4" />
+            {launchBrowserLoading ? 'Launching...' : 'Launch Browser'}
+          </button>
+        </div>
+        {launchBrowserError && (
+          <p className="mt-2 text-red-400 text-xs">{launchBrowserError}</p>
+        )}
+      </div>
+
+      {/* PIPELINE STAGE 1: AI AGENT */}
       <div className="shrink-0 bg-gradient-to-r from-slate-900/50 to-transparent border-b border-slate-700/50 p-4">
         <div className="flex items-center gap-3 mb-3">
           <div className="flex items-center justify-center w-8 h-8 bg-slate-700 rounded-full text-white font-bold text-sm">1</div>
-          <h3 className="text-sm font-bold text-slate-300 tracking-wide">INPUT • GOAL & TARGET</h3>
-          <ArrowDown className="w-4 h-4 text-slate-600 ml-auto" />
-        </div>
-        
-        <div className="space-y-3">
-          {/* Goal */}
-          <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <label className="text-xs text-slate-500">Goal (Set via AI chat →)</label>
-              {suggestedScenarios.length > 0 && !showScenarios && (
-                <button
-                  onClick={() => setShowScenarios(true)}
-                  className="flex items-center gap-1 px-2 py-0.5 bg-slate-700 hover:bg-slate-600 rounded text-xs text-slate-300"
-                >
-                  <TrendingUp className="w-3 h-3" />
-                  {suggestedScenarios.length} templates
-                </button>
-              )}
-            </div>
-            <div
-              className="w-full px-4 py-2 bg-slate-900/50 border border-slate-700/50 rounded-lg text-sm text-white min-h-[40px] flex items-center"
-            >
-              {userGoal || <span className="text-slate-600 italic">Ask the AI assistant to get started...</span>}
-            </div>
-            
-            {/* Keyword Analysis Indicators */}
-            {keywordAnalysis && keywordAnalysis.intent.confidence > 0.7 && (
-              <div className="mt-2 flex items-center gap-2 flex-wrap">
-                <span className="px-2 py-0.5 bg-green-900/30 text-green-400 text-xs rounded">
-                  ✓ Detected: {keywordAnalysis.intent.action}
-                </span>
-                {keywordAnalysis.entities.map(entity => (
-                  <span key={entity.name} className="px-2 py-0.5 bg-blue-900/30 text-blue-400 text-xs rounded">
-                    {entity.name}
-                  </span>
-                ))}
-              </div>
-            )}
-            
-            {/* Scenario Suggestions */}
-            {showScenarios && suggestedScenarios.length > 0 && (
-              <div className="mt-2 p-3 bg-slate-900 border border-slate-700 rounded-lg space-y-2">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs text-slate-400 font-medium">Quick Start Templates</span>
-                  <button
-                    onClick={() => setShowScenarios(false)}
-                    className="text-xs text-slate-500 hover:text-slate-300"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </div>
-                {suggestedScenarios.map(scenario => (
-                  <button
-                    key={scenario.id}
-                    onClick={() => applyScenario(scenario)}
-                    className="w-full text-left p-2 bg-slate-800 hover:bg-slate-700 rounded border border-slate-700 transition-all"
-                  >
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-base">{scenario.icon}</span>
-                      <span className="text-xs text-white font-medium">{scenario.name}</span>
-                    </div>
-                    <div className="text-xs text-slate-500">{scenario.description}</div>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Constraints */}
-          <div>
-            <label className="block text-xs text-slate-500 mb-1.5">Constraints</label>
-            <div
-              className="w-full px-4 py-2 bg-slate-900/50 border border-slate-700/50 rounded-lg text-sm text-white min-h-[40px] flex items-center"
-            >
-              {userConstraints || <span className="text-slate-600 italic">None</span>}
-            </div>
-          </div>
-
-          {/* Target Data */}
-          <div>
-            <label className="block text-xs text-slate-500 mb-1.5">Target Data Structure</label>
-            <div
-              className="w-full px-4 py-2 bg-slate-900/50 border border-slate-700/50 rounded-lg text-sm text-white min-h-[40px] flex items-center"
-            >
-              {targetData || <span className="text-slate-600 italic">Not specified</span>}
-            </div>
-          </div>
-
-          {/* URL */}
-          <div>
-            <label className="block text-xs text-slate-500 mb-1.5">Target URL</label>
-            <div className="flex gap-2">
-              <input
-                type="url"
-                value={launchBrowserUrl}
-                onChange={(e) => setLaunchBrowserUrl(e.target.value)}
-                placeholder="https://example.com"
-                className="flex-1 px-4 py-2 bg-slate-900 border border-slate-700/50 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:border-red-500/60"
-              />
-              <button
-                onClick={handleLaunchBrowser}
-                disabled={launchBrowserLoading}
-                className="flex items-center gap-2 px-6 py-2 bg-red-600 hover:bg-red-700 disabled:opacity-50 rounded-lg text-sm text-white font-medium transition-all"
-              >
-                <Monitor className="w-4 h-4" />
-                {launchBrowserLoading ? 'Launching...' : 'Launch Browser'}
-              </button>
-            </div>
-            {launchBrowserError && (
-              <p className="mt-2 text-red-400 text-xs">{launchBrowserError}</p>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* PIPELINE STAGE 2: AI AGENT */}
-      <div className="shrink-0 bg-gradient-to-r from-slate-900/50 to-transparent border-b border-slate-700/50 p-4">
-        <div className="flex items-center gap-3 mb-3">
-          <div className="flex items-center justify-center w-8 h-8 bg-slate-700 rounded-full text-white font-bold text-sm">2</div>
           <h3 className="text-sm font-bold text-slate-300 tracking-wide">AI AGENT • INTELLIGENT ANALYSIS</h3>
           <div className="ml-auto flex items-center gap-2">
-            <button
+                <button
               onClick={handleAiAgentToggle}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                 aiAgentActive
@@ -1610,11 +1515,11 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
             >
               <Brain className="w-3.5 h-3.5" />
               {aiAgentActive ? 'Active' : 'Activate'}
-            </button>
+                </button>
             <ArrowDown className="w-4 h-4 text-slate-600" />
-          </div>
-        </div>
-        
+              </div>
+            </div>
+
         {aiAgentActive ? (
           <div className="space-y-3">
             {/* AI Status */}
@@ -1689,10 +1594,10 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
             >
               <Download className="w-3 h-3" />
               Export Workflow
-            </button>
+                </button>
           )}
           <ArrowDown className="w-4 h-4 text-slate-600" />
-        </div>
+                      </div>
 
         {lockedSteps.length === 0 ? (
           <div className="text-center py-4 text-slate-500 text-sm">
@@ -1728,8 +1633,8 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
                 {step.dependencies.length > 0 && (
                   <div className="text-xs text-red-400">
                     ⚠ Depends on: {step.dependencies.join(', ')}
-                  </div>
-                )}
+              </div>
+            )}
               </div>
             ))}
             
@@ -1746,7 +1651,7 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
       {/* PIPELINE STAGE 3: NETWORK LOGS */}
       <div className="flex-1 flex flex-col min-h-0 bg-gradient-to-r from-slate-900/50 to-transparent border-b border-slate-700/50">
         <div className="shrink-0 flex items-center gap-3 p-4 pb-3 border-b border-slate-800">
-          <div className="flex items-center justify-center w-8 h-8 bg-slate-700 rounded-full text-white font-bold text-sm">3</div>
+          <div className="flex items-center justify-center w-8 h-8 bg-slate-700 rounded-full text-white font-bold text-sm">2</div>
           <h3 className="text-sm font-bold text-slate-300 tracking-wide">CAPTURE • NETWORK TRAFFIC</h3>
           <div className="flex items-center gap-2">
             {keywordAnalysis && endpoints.length > 0 && (
@@ -1807,14 +1712,14 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
           ) : (
             <div className="space-y-1.5">
               {filteredEndpointsByRelevance.map((ep, idx) => {
-                const key = `${ep.method} ${ep.host}${ep.path}`;
+                  const key = `${ep.method} ${ep.host}${ep.path}`;
                 const isSelected = selectedEndpoint?.sampleUrl === ep.sampleUrl;
-                return (
+                  return (
                   <div
                     key={idx}
                     onClick={() => setSelectedEndpoint(ep)}
                     className={`p-3 rounded-lg border cursor-pointer transition-all ${
-                      isSelected
+                            isSelected
                         ? 'bg-red-900/20 border-red-500/60 shadow-lg shadow-red-500/10'
                         : 'bg-slate-900/50 border-slate-700/50 hover:bg-slate-800/60 hover:border-slate-600/60'
                     }`}
@@ -1826,12 +1731,12 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
                         ep.method === 'PUT' ? 'bg-slate-700 text-slate-300' :
                         ep.method === 'DELETE' ? 'bg-red-900/50 text-red-300' :
                         'bg-slate-700 text-slate-300'
-                      }`}>
-                        {ep.method}
-                      </span>
+                        }`}>
+                          {ep.method}
+                        </span>
                       <span className="flex-1 text-sm text-slate-300 font-mono truncate">
                         {ep.host}<span className="text-red-400">{ep.path}</span>
-                      </span>
+                          </span>
                       <span className="text-xs text-slate-500">×{ep.count}</span>
                       {ep.hasAuth && (
                         <span className="px-1.5 py-0.5 bg-red-900/30 text-red-400 text-xs rounded" title="Has auth headers">🔐</span>
@@ -1841,12 +1746,12 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
                       )}
                     </div>
                   </div>
-                );
-              })}
+                  );
+                })}
+              </div>
+            )}
             </div>
-          )}
-        </div>
-      </div>
+                </div>
 
       {/* PIPELINE STAGE 4: TEST & EXECUTE (Split View) */}
       <div className="shrink-0 bg-gradient-to-r from-slate-900/50 to-transparent" style={{ height: '35%' }}>
@@ -1876,9 +1781,9 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
                 >
                   {lang}
                 </button>
-              ))}
-            </div>
-          </div>
+                        ))}
+                      </div>
+                    </div>
           
           <div className="flex-1 grid grid-cols-2 gap-3 p-3 overflow-hidden">
             {/* LEFT: CODE */}
@@ -1902,8 +1807,8 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
                       🔒 Lock Step {currentStepFocus}
                     </button>
                   )}
-                </div>
-              </div>
+                      </div>
+                    </div>
               {!selectedEndpoint ? (
                 <div className="flex-1 flex items-center justify-center bg-slate-950 border border-slate-800 rounded-lg text-slate-600 text-sm">
                   <div className="text-center">
@@ -1919,7 +1824,7 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
                   spellCheck={false}
                 />
               )}
-            </div>
+                    </div>
 
             {/* RIGHT: RESPONSE */}
             <div className="flex flex-col">
@@ -1932,7 +1837,7 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
                     {testResult.success ? `✓ ${testResult.status} ${testResult.statusText}` : `✗ ${testResult.status || 'Error'}`}
                   </span>
                 )}
-              </div>
+                    </div>
               {!testResult ? (
                 <div className="flex-1 flex items-center justify-center bg-slate-950 border border-slate-800 rounded-lg text-slate-600 text-sm">
                   <div className="text-center">
@@ -1969,8 +1874,8 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
                       )}
                       {successValidation.suggestions.length > 0 && (
                         <div className="text-slate-500 text-xs mt-1">{successValidation.suggestions[0]}</div>
-                      )}
-                    </div>
+                  )}
+                </div>
                   )}
                   
                   {/* Response Body */}
@@ -1979,7 +1884,7 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
                       <div className="text-xs text-red-400">
                         <div className="font-bold mb-2">Error:</div>
                         <pre>{testResult.error}</pre>
-                      </div>
+              </div>
                     ) : (
                       <pre className="text-xs text-slate-300 font-mono whitespace-pre-wrap">
                         {JSON.stringify(testResult.body, null, 2)}
