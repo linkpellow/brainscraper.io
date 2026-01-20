@@ -1,12 +1,16 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { Pause, Play, Check, X, Download, Globe, Plus, MousePointer, Tag, Monitor, Rss, ChevronDown, ChevronRight, Copy, Code, Terminal, ArrowDown, Zap, Brain, Sparkles, Loader2 } from 'lucide-react';
+import { Pause, Play, Check, X, Download, Globe, Plus, MousePointer, Tag, Monitor, Rss, ChevronDown, ChevronRight, Copy, Code, Terminal, ArrowDown, Zap, Brain, Sparkles, Loader2, Lightbulb, TrendingUp, Filter } from 'lucide-react';
 import type { Neuromap, RawNetworkEvent } from '@/src/tools/api-signal-explorer/neuromap';
 import { addEventToNeuromap, toggleEndpointSelection, exportNeuromap } from '@/src/tools/api-signal-explorer/neuromap';
 import { createActionEvent, type ActionEvent, type ActionType } from '@/src/tools/api-signal-explorer/actions';
 import { linkActionToEvents } from '@/src/tools/api-signal-explorer/correlate';
 import { convertToNetworkSignal, getCategoryDescription, type CategoryTag } from '@/src/tools/api-signal-explorer/signals';
+import { analyzeKeywords, scoreEndpointRelevance, type KeywordAnalysis } from '@/utils/ai/keyword-detector';
+import { extractSmartVariables, detectAuthMethod, generateUsageExamples } from '@/utils/ai/smart-variables';
+import { validateResponse, suggestImprovedTarget } from '@/utils/ai/success-validator';
+import { findMatchingScenarios, getContextualHints, type Scenario } from '@/utils/ai/auto-suggestions';
 
 type EndpointData = {
   method: string;
@@ -203,6 +207,14 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
   const [userConstraints, setUserConstraints] = useState('');
   const [targetData, setTargetData] = useState('');
   
+  // Intelligent Analysis state
+  const [keywordAnalysis, setKeywordAnalysis] = useState<KeywordAnalysis | null>(null);
+  const [suggestedScenarios, setSuggestedScenarios] = useState<Scenario[]>([]);
+  const [showScenarios, setShowScenarios] = useState(false);
+  const [contextualHints, setContextualHints] = useState<string[]>([]);
+  const [workflowPlan, setWorkflowPlan] = useState<any>(null);
+  const [planningWorkflow, setPlanningWorkflow] = useState(false);
+  
   // Locked Pipeline state
   const [lockedSteps, setLockedSteps] = useState<LockedStep[]>([]);
   const [currentStepFocus, setCurrentStepFocus] = useState(1);
@@ -218,6 +230,10 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
   const [testResult, setTestResult] = useState<TestResult | null>(null);
   const [testLoading, setTestLoading] = useState(false);
   const [currentCode, setCurrentCode] = useState('');
+  const [successValidation, setSuccessValidation] = useState<any>(null);
+  
+  // Endpoint filtering
+  const [showOnlyRelevant, setShowOnlyRelevant] = useState(false);
   
   const endpointMapRef = useRef<Map<string, EndpointData>>(new Map());
   const wsRef = useRef<WebSocket | null>(null);
@@ -482,8 +498,54 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
                    generatePython(selectedEndpoint);
       setCurrentCode(code);
       setTestResult(null); // Clear previous test result
+      setSuccessValidation(null);
     }
   }, [selectedEndpoint, snippetLang]);
+
+  // Keyword analysis when goal changes
+  useEffect(() => {
+    if (userGoal.trim()) {
+      const analysis = analyzeKeywords(userGoal, userConstraints, targetData);
+      setKeywordAnalysis(analysis);
+      
+      // Find matching scenarios
+      const matches = findMatchingScenarios(userGoal, targetData);
+      setSuggestedScenarios(matches);
+    } else {
+      setKeywordAnalysis(null);
+      setSuggestedScenarios([]);
+    }
+  }, [userGoal, userConstraints, targetData]);
+
+  // Update contextual hints based on current state
+  useEffect(() => {
+    const hints = getContextualHints({
+      hasGoal: userGoal.trim().length > 0,
+      hasConstraints: userConstraints.trim().length > 0,
+      hasTarget: targetData.trim().length > 0,
+      hasEndpoints: endpoints.length > 0,
+      lockedStepsCount: lockedSteps.length,
+    });
+    setContextualHints(hints);
+  }, [userGoal, userConstraints, targetData, endpoints.length, lockedSteps.length]);
+
+  // Smart endpoint filtering by relevance
+  const filteredEndpointsByRelevance = useMemo(() => {
+    if (!showOnlyRelevant || !keywordAnalysis) {
+      return endpoints;
+    }
+    
+    const scored = endpoints.map(ep => ({
+      endpoint: ep,
+      relevance: scoreEndpointRelevance(ep.path, ep.method, keywordAnalysis),
+    }));
+    
+    // Filter to only show relevant (score > 0.3)
+    return scored
+      .filter(s => s.relevance > 0.3)
+      .sort((a, b) => b.relevance - a.relevance)
+      .map(s => s.endpoint);
+  }, [endpoints, showOnlyRelevant, keywordAnalysis]);
 
   // Test code snippet
   const executeCode = async () => {
@@ -491,6 +553,7 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
     
     setTestLoading(true);
     setTestResult(null);
+    setSuccessValidation(null);
     
     try {
       const variables = getAllAvailableVariables(lockedSteps);
@@ -509,6 +572,20 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
 
       if (data.ok && data.result) {
         setTestResult(data.result);
+        
+        // Validate against target data if provided
+        if (data.result.success && targetData.trim()) {
+          const validation = validateResponse(data.result.body, targetData);
+          setSuccessValidation(validation);
+          
+          // If validation fails, suggest improvements
+          if (!validation.isValid && validation.score < 0.5) {
+            const improved = suggestImprovedTarget(data.result.body, targetData);
+            if (improved) {
+              validation.suggestions.push(`Consider updating target to: ${improved}`);
+            }
+          }
+        }
         
         // Observe pattern (send to AI)
         await observePattern({
@@ -548,8 +625,12 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
   const lockCurrentStep = () => {
     if (!testResult || !testResult.success || !selectedEndpoint) return;
     
-    const extractedVars = extractVariablesFromResponse(testResult.body);
+    // Use SMART variable extraction
+    const extractedVars = extractSmartVariables(testResult.body);
     const dependencies = findDependencies(currentCode, lockedSteps);
+    
+    // Detect auth method if this looks like a login step
+    const authMethod = detectAuthMethod(testResult.body);
     
     const newStep: LockedStep = {
       id: `step-${currentStepFocus}`,
@@ -568,8 +649,17 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
     setCurrentStepFocus(prev => prev + 1);
     setAiAgentStatus('idle'); // Trigger re-analysis for next step
     
+    // Show usage examples for extracted variables
+    if (Object.keys(extractedVars).length > 0) {
+      const examples = generateUsageExamples(extractedVars);
+      if (examples.length > 0) {
+        console.log('[Smart Lock] Variable usage examples:', examples);
+      }
+    }
+    
     // Clear current test
     setTestResult(null);
+    setSuccessValidation(null);
     setSelectedEndpoint(null);
     setCurrentCode('');
   };
@@ -606,12 +696,59 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
     }
   };
 
+  // Generate complete workflow plan
+  const generateWorkflowPlan = async () => {
+    if (!userGoal.trim() || endpoints.length === 0) return;
+    
+    setPlanningWorkflow(true);
+    setWorkflowPlan(null);
+    
+    try {
+      const response = await fetch('/api/ai/plan-workflow', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          goal: userGoal,
+          constraints: userConstraints,
+          targetData: targetData,
+          endpoints: endpoints.map(ep => ({
+            method: ep.method,
+            host: ep.host,
+            path: ep.path,
+            hasAuth: ep.hasAuth,
+            count: ep.count,
+          })),
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.ok && data.plan) {
+        setWorkflowPlan(data.plan);
+      }
+    } catch (err) {
+      console.error('[Workflow Plan] Error:', err);
+    } finally {
+      setPlanningWorkflow(false);
+    }
+  };
+
+  // Apply scenario template
+  const applyScenario = (scenario: Scenario) => {
+    setUserGoal(scenario.goal);
+    setUserConstraints(scenario.constraints);
+    setTargetData(scenario.targetData);
+    setShowScenarios(false);
+  };
+
   // Export workflow
   const exportWorkflow = () => {
     const workflow = {
       goal: userGoal,
       constraints: userConstraints,
       targetData: targetData,
+      keywordAnalysis: keywordAnalysis,
+      workflowPlan: workflowPlan,
       steps: lockedSteps.map(step => ({
         stepNumber: step.stepNumber,
         method: step.method,
@@ -676,6 +813,18 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
         </div>
       </div>
 
+      {/* Contextual Hints Banner */}
+      {contextualHints.length > 0 && (
+        <div className="shrink-0 bg-slate-800/50 border-b border-slate-700/30 px-4 py-2">
+          <div className="flex items-center gap-2">
+            <Lightbulb className="w-4 h-4 text-yellow-400" />
+            <div className="flex-1 text-xs text-slate-400">
+              {contextualHints[0]}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* AI Insights Panel (Collapsible) */}
       {insightsPanelOpen && aiInsightsList.filter(i => !i.dismissed).length > 0 && (
         <div className="shrink-0 bg-amber-900/20 border-b border-amber-500/30 p-4">
@@ -733,7 +882,18 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
         <div className="space-y-3">
           {/* Goal */}
           <div>
-            <label className="block text-xs text-slate-500 mb-1.5">Goal (What do you want to achieve?)</label>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="text-xs text-slate-500">Goal (What do you want to achieve?)</label>
+              {suggestedScenarios.length > 0 && !showScenarios && (
+                <button
+                  onClick={() => setShowScenarios(true)}
+                  className="flex items-center gap-1 px-2 py-0.5 bg-slate-700 hover:bg-slate-600 rounded text-xs text-slate-300"
+                >
+                  <TrendingUp className="w-3 h-3" />
+                  {suggestedScenarios.length} templates
+                </button>
+              )}
+            </div>
             <input
               type="text"
               value={userGoal}
@@ -741,6 +901,48 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
               placeholder="e.g., Get all product listings with prices"
               className="w-full px-4 py-2 bg-slate-900 border border-slate-700/50 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:border-red-500/60"
             />
+            
+            {/* Keyword Analysis Indicators */}
+            {keywordAnalysis && keywordAnalysis.intent.confidence > 0.7 && (
+              <div className="mt-2 flex items-center gap-2 flex-wrap">
+                <span className="px-2 py-0.5 bg-green-900/30 text-green-400 text-xs rounded">
+                  ✓ Detected: {keywordAnalysis.intent.action}
+                </span>
+                {keywordAnalysis.entities.map(entity => (
+                  <span key={entity.name} className="px-2 py-0.5 bg-blue-900/30 text-blue-400 text-xs rounded">
+                    {entity.name}
+                  </span>
+                ))}
+              </div>
+            )}
+            
+            {/* Scenario Suggestions */}
+            {showScenarios && suggestedScenarios.length > 0 && (
+              <div className="mt-2 p-3 bg-slate-900 border border-slate-700 rounded-lg space-y-2">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs text-slate-400 font-medium">Quick Start Templates</span>
+                  <button
+                    onClick={() => setShowScenarios(false)}
+                    className="text-xs text-slate-500 hover:text-slate-300"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+                {suggestedScenarios.map(scenario => (
+                  <button
+                    key={scenario.id}
+                    onClick={() => applyScenario(scenario)}
+                    className="w-full text-left p-2 bg-slate-800 hover:bg-slate-700 rounded border border-slate-700 transition-all"
+                  >
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-base">{scenario.icon}</span>
+                      <span className="text-xs text-white font-medium">{scenario.name}</span>
+                    </div>
+                    <div className="text-xs text-slate-500">{scenario.description}</div>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Constraints */}
@@ -948,6 +1150,28 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
         <div className="shrink-0 flex items-center gap-3 p-4 pb-3 border-b border-slate-800">
           <div className="flex items-center justify-center w-8 h-8 bg-slate-700 rounded-full text-white font-bold text-sm">3</div>
           <h3 className="text-sm font-bold text-slate-300 tracking-wide">CAPTURE • NETWORK TRAFFIC</h3>
+          {keywordAnalysis && endpoints.length > 0 && (
+            <button
+              onClick={generateWorkflowPlan}
+              disabled={planningWorkflow}
+              className="flex items-center gap-1 px-2 py-1 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 rounded text-xs text-white"
+            >
+              {planningWorkflow ? <Loader2 className="w-3 h-3 animate-spin" /> : <Brain className="w-3 h-3" />}
+              {planningWorkflow ? 'Planning...' : 'Plan Workflow'}
+            </button>
+          )}
+          {keywordAnalysis && (
+            <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-400">
+              <input
+                type="checkbox"
+                checked={showOnlyRelevant}
+                onChange={(e) => setShowOnlyRelevant(e.target.checked)}
+                className="rounded border border-slate-600"
+              />
+              <Filter className="w-3 h-3" />
+              Smart Filter
+            </label>
+          )}
           <label className="ml-auto flex items-center gap-2 cursor-pointer text-xs text-slate-400">
             <input
               type="checkbox"
@@ -961,17 +1185,17 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
         </div>
         
         <div className="flex-1 overflow-y-auto px-4 py-2">
-          {filteredEndpoints.length === 0 ? (
+          {filteredEndpointsByRelevance.length === 0 ? (
             <div className="flex items-center justify-center h-full text-slate-500 text-sm">
               <div className="text-center">
                 <Monitor className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                <p>No traffic captured yet</p>
-                <p className="text-xs mt-1">Launch browser and browse a site</p>
+                <p>{showOnlyRelevant ? 'No relevant endpoints found' : 'No traffic captured yet'}</p>
+                <p className="text-xs mt-1">{showOnlyRelevant ? 'Try disabling Smart Filter' : 'Launch browser and browse a site'}</p>
               </div>
             </div>
           ) : (
             <div className="space-y-1.5">
-              {filteredEndpoints.map((ep, idx) => {
+              {filteredEndpointsByRelevance.map((ep, idx) => {
                 const key = `${ep.method} ${ep.host}${ep.path}`;
                 const isSelected = selectedEndpoint?.sampleUrl === ep.sampleUrl;
                 return (
@@ -1106,17 +1330,51 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
                   </div>
                 </div>
               ) : (
-                <div className="flex-1 overflow-y-auto p-3 bg-slate-950 border border-slate-700 rounded-lg">
-                  {testResult.error ? (
-                    <div className="text-xs text-red-400">
-                      <div className="font-bold mb-2">Error:</div>
-                      <pre>{testResult.error}</pre>
+                <div className="flex-1 overflow-y-auto space-y-2">
+                  {/* Success Validation */}
+                  {successValidation && targetData.trim() && (
+                    <div className={`p-2 rounded text-xs ${
+                      successValidation.isValid 
+                        ? 'bg-green-900/20 border border-green-500/30'
+                        : successValidation.score > 0.5
+                          ? 'bg-amber-900/20 border border-amber-500/30'
+                          : 'bg-red-900/20 border border-red-500/30'
+                    }`}>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className={`font-medium ${
+                          successValidation.isValid ? 'text-green-400' :
+                          successValidation.score > 0.5 ? 'text-amber-400' :
+                          'text-red-400'
+                        }`}>
+                          {successValidation.isValid ? '✓ Matches Target' : successValidation.score > 0.5 ? '⚠ Partial Match' : '✗ No Match'}
+                        </span>
+                        <span className="text-slate-500">{Math.round(successValidation.score * 100)}%</span>
+                      </div>
+                      {successValidation.matches.length > 0 && (
+                        <div className="text-slate-400 text-xs">✓ Found: {successValidation.matches.join(', ')}</div>
+                      )}
+                      {successValidation.missing.length > 0 && (
+                        <div className="text-red-400 text-xs">✗ Missing: {successValidation.missing.join(', ')}</div>
+                      )}
+                      {successValidation.suggestions.length > 0 && (
+                        <div className="text-slate-500 text-xs mt-1">{successValidation.suggestions[0]}</div>
+                      )}
                     </div>
-                  ) : (
-                    <pre className="text-xs text-slate-300 font-mono whitespace-pre-wrap">
-                      {JSON.stringify(testResult.body, null, 2)}
-                    </pre>
                   )}
+                  
+                  {/* Response Body */}
+                  <div className="flex-1 p-3 bg-slate-950 border border-slate-700 rounded-lg overflow-auto">
+                    {testResult.error ? (
+                      <div className="text-xs text-red-400">
+                        <div className="font-bold mb-2">Error:</div>
+                        <pre>{testResult.error}</pre>
+                      </div>
+                    ) : (
+                      <pre className="text-xs text-slate-300 font-mono whitespace-pre-wrap">
+                        {JSON.stringify(testResult.body, null, 2)}
+                      </pre>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
