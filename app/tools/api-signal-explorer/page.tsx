@@ -557,7 +557,19 @@ export default function APISignalExplorerPage() {
     setIsLive(false);
   }, []);
 
+  // Detect if running in production (Railway, Render, etc.)
+  const isProduction = typeof window !== 'undefined' && 
+    (window.location.hostname.includes('railway.app') ||
+     window.location.hostname.includes('.onrender.com') ||
+     window.location.hostname.includes('.up.railway.app') ||
+     (process.env.NODE_ENV === 'production' && !window.location.hostname.includes('localhost')));
+
   const handleLaunchBrowser = useCallback(async () => {
+    if (isProduction) {
+      setError('Browser automation is only available locally. Mode 1 requires Playwright and mitmproxy installed on your local machine. Use HAR import or manual mode instead.');
+      return;
+    }
+
     setLaunchBrowserLoading(true);
     setError(null);
     try {
@@ -576,7 +588,7 @@ export default function APISignalExplorerPage() {
     } finally {
       setLaunchBrowserLoading(false);
     }
-  }, [checkServiceStatus]);
+  }, [checkServiceStatus, isProduction]);
 
   // Interaction tagging
   const startInteractionTagging = useCallback(() => {
@@ -768,13 +780,19 @@ export default function APISignalExplorerPage() {
             {!activeNeuromapId && (
               <button
                 onClick={handleLaunchBrowser}
-                disabled={launchBrowserLoading}
+                disabled={launchBrowserLoading || isProduction}
                 className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 disabled:opacity-50 rounded-lg text-white text-sm font-medium transition-colors shadow-lg shadow-green-500/20"
-                title="Auto-starts mitmproxy and bridge, then launches Chromium with proxy configured. Click and browse; API calls appear in real-time."
+                title={isProduction ? 'Browser automation only works locally' : 'Auto-starts mitmproxy and bridge, then launches Chromium with proxy configured. Click and browse; API calls appear in real-time.'}
               >
                 <Monitor className="w-4 h-4" />
-                {launchBrowserLoading ? 'Starting Services & Launching…' : 'Launch Browser (Auto-Setup)'}
+                {launchBrowserLoading ? 'Starting Services & Launching…' : isProduction ? 'Launch Browser (Local Only)' : 'Launch Browser (Auto-Setup)'}
               </button>
+            )}
+            
+            {isProduction && (
+              <p className="text-yellow-400 text-xs">
+                ⚠️ Browser auto-capture requires local setup. Use HAR import instead.
+              </p>
             )}
 
             <label className="flex items-center gap-2 cursor-pointer">

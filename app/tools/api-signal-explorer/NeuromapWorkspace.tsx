@@ -492,7 +492,19 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
     URL.revokeObjectURL(url);
   };
 
+  // Detect if running in production (Railway, Render, etc.)
+  const isProduction = typeof window !== 'undefined' && 
+    (window.location.hostname.includes('railway.app') ||
+     window.location.hostname.includes('.onrender.com') ||
+     window.location.hostname.includes('.up.railway.app') ||
+     process.env.NODE_ENV === 'production' && !window.location.hostname.includes('localhost'));
+
   const handleLaunchBrowser = async () => {
+    if (isProduction) {
+      setLaunchBrowserError('Browser automation is only available locally. Mode 1 requires Playwright and mitmproxy installed on your local machine.');
+      return;
+    }
+
     setLaunchBrowserLoading(true);
     setLaunchBrowserError(null);
     try {
@@ -2339,13 +2351,19 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
           />
           <button
             onClick={handleLaunchBrowser}
-            disabled={launchBrowserLoading}
+            disabled={launchBrowserLoading || isProduction}
             className="flex items-center gap-2 px-6 py-2 bg-red-600 hover:bg-red-700 disabled:opacity-50 rounded-lg text-sm text-white font-medium transition-all"
+            title={isProduction ? 'Browser automation only works locally' : 'Launch Chromium with mitmproxy'}
           >
             <Monitor className="w-4 h-4" />
-            {launchBrowserLoading ? 'Launching...' : 'Launch Browser'}
+            {launchBrowserLoading ? 'Launching...' : isProduction ? 'Launch Browser (Local Only)' : 'Launch Browser'}
           </button>
         </div>
+        {isProduction && (
+          <p className="mt-2 text-yellow-400 text-xs">
+            ⚠️ Mode 1 auto-capture requires local setup (mitmproxy + Playwright). Use HAR import or manual mode instead.
+          </p>
+        )}
         {launchBrowserError && (
           <p className="mt-2 text-red-400 text-xs">{launchBrowserError}</p>
         )}
