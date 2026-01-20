@@ -1868,15 +1868,45 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
       setApiDiscovery({ discovery, apiCalls, summary, filtering });
 
       // Build detailed message
-      let message = `✅ **API Discovery Complete**\n\n`;
+      let message = `✅ **API Discovery Complete (V2 - 2026 Production Grade)**\n\n`;
       
       // CRITICAL: Show noise filtering results
-      message += `🔍 **Traffic Filtering**:\n`;
+      message += `🔍 **Traffic Filtering (Full Noise Cancellation)**:\n`;
       message += `• Total Captured: ${filtering.stats.total} requests\n`;
       message += `• **Noise Filtered**: ${filtering.stats.noise} (${filtering.stats.noisePercentage}%) ❌\n`;
-      message += `• **Valuable Signals**: ${filtering.stats.valuable} (${100 - filtering.stats.noisePercentage}%) ✓\n`;
+      message += `• **Valuable Signals**: ${filtering.stats.valuable} ✓\n`;
+      if (filtering.stats.uncertain > 0) {
+        message += `• **Uncertain**: ${filtering.stats.uncertain} ⚠️ (needs review)\n`;
+      }
+      if (filtering.stats.duplicates > 0) {
+        message += `• **Duplicates Removed**: ${filtering.stats.duplicates} 🔄\n`;
+      }
+      
+      // Show confidence breakdown
+      if (filtering.stats.confidenceLevels) {
+        message += `\n**Confidence Breakdown**:\n`;
+        if (filtering.stats.confidenceLevels.definite_valuable > 0) {
+          message += `• Definite Valuable: ${filtering.stats.confidenceLevels.definite_valuable} ✅✅\n`;
+        }
+        if (filtering.stats.confidenceLevels.probable_valuable > 0) {
+          message += `• Probable Valuable: ${filtering.stats.confidenceLevels.probable_valuable} ✅\n`;
+        }
+        if (filtering.stats.confidenceLevels.uncertain > 0) {
+          message += `• Uncertain: ${filtering.stats.confidenceLevels.uncertain} ⚠️\n`;
+        }
+        if (filtering.stats.confidenceLevels.probable_noise > 0) {
+          message += `• Probable Noise: ${filtering.stats.confidenceLevels.probable_noise} ❌\n`;
+        }
+        if (filtering.stats.confidenceLevels.definite_noise > 0) {
+          message += `• Definite Noise: ${filtering.stats.confidenceLevels.definite_noise} ❌❌\n`;
+        }
+      }
+      
       if (filtering.stats.topNoiseReasons.length > 0) {
-        message += `• Top Noise: ${filtering.stats.topNoiseReasons.slice(0, 2).map((r: any) => r.reason).join(', ')}\n`;
+        message += `\n**Top Noise Reasons**:\n`;
+        filtering.stats.topNoiseReasons.slice(0, 3).forEach((r: any) => {
+          message += `• ${r.reason} (${r.count}x)\n`;
+        });
       }
       message += `\n`;
 
@@ -2280,7 +2310,7 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
                         {insight.type.replace('_', ' ').toUpperCase()}
                       </span>
                       <span className="text-xs text-slate-500">Confidence: {Math.round(insight.confidence * 100)}%</span>
-      </div>
+                    </div>
                     <div className="text-sm text-slate-300 mb-1">{insight.rule}</div>
                     <div className="text-xs text-slate-500">{insight.suggestion}</div>
                   </div>
@@ -2553,6 +2583,12 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
                       <div>• Direct APIs: {apiDiscovery.summary.directAPIs}</div>
                       <div>• Form Endpoints: {apiDiscovery.summary.formEndpoints}</div>
                       <div>• Noise Filtered: {apiDiscovery.summary.noiseFiltered} ({apiDiscovery.summary.noisePercentage}%)</div>
+                      {apiDiscovery.summary.uncertainCount > 0 && (
+                        <div>• Uncertain: {apiDiscovery.summary.uncertainCount} ⚠️</div>
+                      )}
+                      {apiDiscovery.summary.duplicates > 0 && (
+                        <div>• Duplicates: {apiDiscovery.summary.duplicates} 🔄</div>
+                      )}
                     </div>
                   </div>
 

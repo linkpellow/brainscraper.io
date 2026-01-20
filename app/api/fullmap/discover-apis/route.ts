@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { discoverAPIs, generateAPICall, type NetworkEvent } from '@/src/tools/api-signal-explorer/api-discovery';
-import { filterNetworkTraffic } from '@/src/tools/api-signal-explorer/traffic-filter';
+import { filterNetworkTraffic } from '@/src/tools/api-signal-explorer/traffic-filter-v2';
 
 /**
  * POST /api/fullmap/discover-apis
@@ -30,16 +30,20 @@ export async function POST(request: NextRequest) {
     console.log(`[API Discovery] Step 1: Filtering noise...`);
     const filtered = filterNetworkTraffic(networkEvents);
     
-    console.log(`[API Discovery] Filtering results:`);
+    console.log(`[API Discovery] Filtering results (V2):`);
     console.log(`  - Total: ${filtered.stats.total}`);
     console.log(`  - Valuable: ${filtered.stats.valuable} (${100 - filtered.stats.noisePercentage}%)`);
+    console.log(`  - Uncertain: ${filtered.stats.uncertain} (review needed)`);
     console.log(`  - Noise: ${filtered.stats.noise} (${filtered.stats.noisePercentage}%)`);
+    console.log(`  - Duplicates: ${filtered.stats.duplicates}`);
+    console.log(`  - Confidence levels:`, filtered.stats.confidenceLevels);
     console.log(`  - Tokens extracted: ${filtered.extractedTokens.length}`);
     console.log(`  - Variables extracted: ${filtered.extractedVariables.length}`);
 
     // STEP 2: RUN API DISCOVERY ON CLEAN DATA
     console.log(`[API Discovery] Step 2: Discovering APIs from valuable traffic...`);
-    const valuableEvents = [...filtered.valuableAPIs, ...filtered.formSubmissions];
+    // Include uncertain events for API discovery (better to analyze than miss)
+    const valuableEvents = [...filtered.valuableAPIs, ...filtered.formSubmissions, ...filtered.uncertain];
     const discovery = discoverAPIs(valuableEvents);
 
     // Generate API calls for direct APIs
@@ -73,6 +77,9 @@ export async function POST(request: NextRequest) {
         topAPI: discovery.directAPIs[0] || null,
         noiseFiltered: filtered.stats.noise,
         noisePercentage: filtered.stats.noisePercentage,
+        uncertainCount: filtered.stats.uncertain,
+        duplicates: filtered.stats.duplicates,
+        confidenceLevels: filtered.stats.confidenceLevels,
         tokensFound: filtered.extractedTokens.length,
         variablesFound: filtered.extractedVariables.length
       }
