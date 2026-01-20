@@ -259,6 +259,14 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
   const [validationResult, setValidationResult] = useState<SequentialTestResult | null>(null);
   const [validating, setValidating] = useState(false);
   
+  // Mode #1: State Variant Testing
+  const [stateVariantMap, setStateVariantMap] = useState<any>(null);
+  const [testingStates, setTestingStates] = useState(false);
+  const [stateTestCases, setStateTestCases] = useState<Array<{ state: string; zipcode: string; description?: string }>>([
+    { state: 'CO', zipcode: '80202', description: 'Colorado - Denver' },
+    { state: 'CA', zipcode: '90210', description: 'California - Beverly Hills' }
+  ]);
+  
   // Tabs and notifications
   const [activeTab, setActiveTab] = useState<'logs' | 'code'>('logs');
   const [hasNewCodeSnippet, setHasNewCodeSnippet] = useState(false);
@@ -1660,6 +1668,146 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
     }
   }, [lockedSteps, flipbookSessionId, agentState, addChatMessage]);
 
+  /**
+   * Test multiple states to detect form variations
+   * Mode #1 feature for multi-state applications (quote builders, etc.)
+   */
+  const testMultipleStates = useCallback(async () => {
+    if (!flipbookSessionId) {
+      addChatMessage('assistant',
+        '⚠️ No session ID available. Please reload the page.',
+        { type: 'warning' }
+      );
+      return;
+    }
+
+    if (stateTestCases.length < 2) {
+      addChatMessage('assistant',
+        '⚠️ At least 2 states required for comparison. Add more test cases below.',
+        { type: 'warning' }
+      );
+      return;
+    }
+
+    setTestingStates(true);
+    addChatMessage('assistant',
+      `🔍 Testing ${stateTestCases.length} states for form variations...\n\n` +
+      `States to test:\n` +
+      stateTestCases.map(tc => `• ${tc.state} (${tc.zipcode}) - ${tc.description || 'No description'}`).join('\n') +
+      `\n\n⏳ This will compare form structures across all states...`,
+      { type: 'suggestion' }
+    );
+
+    try {
+      // Call API to test states
+      const response = await fetch('/api/fullmap/test-states', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionId: flipbookSessionId,
+          testCases: stateTestCases
+        })
+      });
+
+      const data = await response.json();
+
+      if (!data.ok) {
+        throw new Error(data.error || 'Failed to test states');
+      }
+
+      const { variantMap, adaptiveWorkflow, validationResults, summary } = data;
+      setStateVariantMap({ variantMap, adaptiveWorkflow, validationResults });
+
+      // Build detailed message
+      let message = `✅ **Multi-State Analysis Complete**\n\n`;
+      message += `📊 **Summary**:\n`;
+      message += `• States Tested: ${summary.testedStates.join(', ')}\n`;
+      message += `• Total Variations: ${summary.totalVariations}\n`;
+      message += `• Critical Variations: ${summary.criticalVariations}\n`;
+      message += `• Adaptation Strategy: ${summary.adaptationStrategy.replace('_', ' ').toUpperCase()}\n`;
+      message += `• Average Coverage: ${Math.round(summary.averageCoverage * 100)}%\n\n`;
+
+      if (summary.criticalVariations > 0) {
+        message += `**⚠️ Critical Variations Detected**:\n`;
+        variantMap.variations
+          .filter((v: any) => v.impact === 'critical')
+          .slice(0, 3)
+          .forEach((v: any) => {
+            message += `• **${v.field}** (${v.type.replace('_', ' ')})\n`;
+            Object.entries(v.states).forEach(([state, value]: [string, any]) => {
+              if (v.type === 'dropdown_options' && Array.isArray(value)) {
+                message += `  └─ ${state}: ${value.length} options\n`;
+              } else {
+                message += `  └─ ${state}: ${value}\n`;
+              }
+            });
+          });
+        if (variantMap.variations.filter((v: any) => v.impact === 'critical').length > 3) {
+          message += `... and ${variantMap.variations.filter((v: any) => v.impact === 'critical').length - 3} more critical variations\n`;
+        }
+        message += `\n`;
+      }
+
+      message += `**🎯 Adaptation Strategy**: ${summary.adaptationStrategy}\n`;
+      if (summary.adaptationStrategy === 'parameterized') {
+        message += `→ Simple: Pass state parameter, forms are mostly consistent\n`;
+      } else if (summary.adaptationStrategy === 'conditional') {
+        message += `→ Medium: Use if/else logic for state-specific options\n`;
+      } else {
+        message += `→ Complex: Requires separate workflows per state\n`;
+      }
+
+      message += `\n**Per-State Validation**:\n`;
+      validationResults.forEach((result: any) => {
+        const icon = result.valid ? '✓' : '⚠';
+        message += `${icon} **${result.state}**: ${Math.round(result.coverage * 100)}% coverage`;
+        if (!result.valid) {
+          message += ` (${result.missingFields.length} missing fields)`;
+        }
+        message += `\n`;
+      });
+
+      message += `\n🎯 Ready to build adaptive workflow! The system understands state differences.`;
+
+      addChatMessage('assistant', message, { type: 'success' });
+
+      // Update agent state
+      const newState = updateAgentState(agentState, {
+        phase: 'analysis',
+        action: 'Multi-state variation detected',
+        outcome: 'success',
+      });
+      newState.certaintyLevels.workflow = Math.min(100, newState.certaintyLevels.workflow + 20);
+      newState.goalsAchieved.push(`Mapped variations across ${summary.testedStates.length} states`);
+      setAgentState(newState);
+
+    } catch (err) {
+      console.error('[FullMap] State testing error:', err);
+      
+      let errorMessage = '❌ Multi-state testing failed\n\n';
+      
+      if (err instanceof Error) {
+        if (err.message.includes('Not enough snapshots')) {
+          errorMessage += '**Issue**: Not enough DOM snapshots captured\n';
+          errorMessage += '**Solution**: For each state, enter the zipcode in the browser and capture a snapshot before running multi-state test.';
+        } else if (err.message.includes('At least 2 test cases')) {
+          errorMessage += '**Issue**: Need at least 2 states for comparison\n';
+          errorMessage += '**Solution**: Add more test cases below (different zipcodes representing different states).';
+        } else {
+          errorMessage += `**Error**: ${err.message}\n`;
+          errorMessage += '**Solution**: Check the console for details or try again.';
+        }
+      } else {
+        errorMessage += `**Error**: ${String(err)}\n`;
+        errorMessage += '**Solution**: An unexpected error occurred. Please try again.';
+      }
+      
+      addChatMessage('assistant', errorMessage, { type: 'warning' });
+    } finally {
+      setTestingStates(false);
+    }
+  }, [flipbookSessionId, stateTestCases, agentState, addChatMessage]);
+
   // Apply scenario template
   const applyScenario = useCallback((scenario: Scenario) => {
     setUserGoal(scenario.goal);
@@ -2228,6 +2376,113 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
                 )}
               </div>
             )}
+
+            {/* Multi-State Testing */}
+            <div className="mt-4 pt-4 border-t border-slate-700/50">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-xs text-slate-400 font-medium">MULTI-STATE TESTING</span>
+                <span className="text-xs text-slate-600">• Detects state-specific variations</span>
+              </div>
+              
+              <div className="space-y-2 mb-3">
+                <div className="text-xs text-slate-500 mb-2">
+                  Test multiple zipcodes to detect form differences across states:
+                </div>
+                {stateTestCases.map((testCase, idx) => (
+                  <div key={idx} className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={testCase.state}
+                      onChange={(e) => {
+                        const newCases = [...stateTestCases];
+                        newCases[idx].state = e.target.value;
+                        setStateTestCases(newCases);
+                      }}
+                      placeholder="State"
+                      className="w-16 px-2 py-1 bg-slate-900 border border-slate-700 rounded text-xs text-white focus:outline-none focus:border-purple-500"
+                    />
+                    <input
+                      type="text"
+                      value={testCase.zipcode}
+                      onChange={(e) => {
+                        const newCases = [...stateTestCases];
+                        newCases[idx].zipcode = e.target.value;
+                        setStateTestCases(newCases);
+                      }}
+                      placeholder="Zipcode"
+                      className="w-24 px-2 py-1 bg-slate-900 border border-slate-700 rounded text-xs text-white focus:outline-none focus:border-purple-500"
+                    />
+                    <input
+                      type="text"
+                      value={testCase.description || ''}
+                      onChange={(e) => {
+                        const newCases = [...stateTestCases];
+                        newCases[idx].description = e.target.value;
+                        setStateTestCases(newCases);
+                      }}
+                      placeholder="Description (optional)"
+                      className="flex-1 px-2 py-1 bg-slate-900 border border-slate-700 rounded text-xs text-white focus:outline-none focus:border-purple-500"
+                    />
+                    {stateTestCases.length > 2 && (
+                      <button
+                        onClick={() => setStateTestCases(stateTestCases.filter((_, i) => i !== idx))}
+                        className="text-red-500 hover:text-red-400 text-xs"
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                ))}
+                <button
+                  onClick={() => setStateTestCases([...stateTestCases, { state: '', zipcode: '', description: '' }])}
+                  className="text-xs text-purple-400 hover:text-purple-300"
+                >
+                  + Add State
+                </button>
+              </div>
+
+              <button
+                onClick={testMultipleStates}
+                disabled={testingStates || stateTestCases.length < 2}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 rounded-lg text-xs text-white font-medium transition-all"
+              >
+                {testingStates ? (
+                  <>
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                    <span>Testing States...</span>
+                  </>
+                ) : (
+                  <>
+                    <Zap className="w-3 h-3" />
+                    <span>Test Multiple States</span>
+                  </>
+                )}
+              </button>
+
+              {/* State Variant Map Display */}
+              {stateVariantMap && (
+                <div className="mt-3 p-3 bg-slate-900 border border-purple-600/30 rounded-lg">
+                  <div className="text-xs text-purple-400 font-medium mb-2">
+                    🗺️ Multi-State Analysis: {stateVariantMap.variantMap.totalVariations} variations found
+                  </div>
+                  <div className="text-xs text-slate-400 space-y-1">
+                    <div>• Strategy: {stateVariantMap.variantMap.adaptationStrategy.replace('_', ' ').toUpperCase()}</div>
+                    <div>• Critical Variations: {stateVariantMap.variantMap.variations.filter((v: any) => v.impact === 'critical').length}</div>
+                    <div>• States: {stateVariantMap.variantMap.testedStates.join(', ')}</div>
+                  </div>
+                  {stateVariantMap.validationResults && (
+                    <div className="mt-2 pt-2 border-t border-slate-700">
+                      <div className="text-xs text-slate-500 mb-1">Per-State Coverage:</div>
+                      {stateVariantMap.validationResults.map((result: any, idx: number) => (
+                        <div key={idx} className="text-xs text-slate-400">
+                          {result.valid ? '✓' : '⚠'} {result.state}: {Math.round(result.coverage * 100)}%
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>
