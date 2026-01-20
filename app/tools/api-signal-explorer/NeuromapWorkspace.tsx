@@ -240,6 +240,7 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
   const [chatExpanded, setChatExpanded] = useState(false);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatProcessing, setChatProcessing] = useState(false);
+  const [conversationStep, setConversationStep] = useState<'goal' | 'constraints' | 'target' | 'complete' | null>('goal');
   
   const endpointMapRef = useRef<Map<string, EndpointData>>(new Map());
   const wsRef = useRef<WebSocket | null>(null);
@@ -489,6 +490,82 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
     return code;
   };
 
+  // Handle conversational goal/constraints/target collection
+  const handleConversationFlow = async (userMessage: string) => {
+    const msg = userMessage.trim();
+
+    if (conversationStep === 'goal') {
+      // User is answering the goal question
+      setUserGoal(msg);
+      
+      addChatMessage('assistant',
+        `Perfect! Your goal: **"${msg}"**\n\n` +
+        `Now, are there any **constraints** I should know about?\n\n` +
+        `For example:\n` +
+        `• "Must be authenticated"\n` +
+        `• "Rate limited to 100 requests/min"\n` +
+        `• "Requires pagination"\n\n` +
+        `Or just say "none" or "skip" if there are no special constraints.`,
+        { type: 'suggestion' }
+      );
+      
+      setConversationStep('constraints');
+    } 
+    else if (conversationStep === 'constraints') {
+      // User is answering constraints question
+      if (msg.toLowerCase() !== 'none' && msg.toLowerCase() !== 'skip') {
+        setUserConstraints(msg);
+      }
+      
+      addChatMessage('assistant',
+        `${msg.toLowerCase() === 'none' || msg.toLowerCase() === 'skip' ? 'Got it, no special constraints.' : `Noted! Constraints: **"${msg}"**`}\n\n` +
+        `Finally, what **data structure** are you expecting in the response?\n\n` +
+        `Examples:\n` +
+        `• "{ id, name, price, stock }"\n` +
+        `• "Array of { product_id, title, quantity }"\n` +
+        `• "id, email, username, created_at"\n\n` +
+        `This helps me validate responses automatically!`,
+        { type: 'suggestion' }
+      );
+      
+      setConversationStep('target');
+    }
+    else if (conversationStep === 'target') {
+      // User is answering target data question
+      setTargetData(msg);
+      
+      // Analyze the complete input
+      const analysis = analyzeKeywords(userGoal, userConstraints, msg);
+      const matches = findMatchingScenarios(userGoal, msg);
+      
+      let response = `Excellent! I've got everything I need:\n\n`;
+      response += `✓ **Goal**: ${userGoal}\n`;
+      response += `✓ **Constraints**: ${userConstraints || 'None'}\n`;
+      response += `✓ **Target Data**: ${msg}\n\n`;
+      
+      if (analysis.intent.confidence > 0.7) {
+        response += `🎯 **Detected Intent**: ${analysis.intent.action}\n`;
+        if (analysis.entities.length > 0) {
+          response += `📦 **Entities**: ${analysis.entities.map(e => e.name).join(', ')}\n`;
+        }
+      }
+      
+      response += `\n🚀 **Next Steps**:\n`;
+      response += `1. Launch the browser to capture API traffic\n`;
+      response += `2. I'll filter endpoints by relevance\n`;
+      response += `3. Select and test endpoints\n`;
+      response += `4. Lock successful steps\n\n`;
+      
+      if (matches.length > 0) {
+        response += `💡 I also found ${matches.length} similar template${matches.length > 1 ? 's' : ''} if you want to compare!`;
+      }
+      
+      addChatMessage('assistant', response, { type: 'success' });
+      
+      setConversationStep('complete');
+    }
+  };
+
   // Add AI chat message
   const addChatMessage = (role: 'user' | 'assistant', content: string, metadata?: ChatMessage['metadata']) => {
     const message: ChatMessage = {
@@ -508,6 +585,13 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
     setChatProcessing(true);
 
     try {
+      // Check if we're in conversation flow
+      if (conversationStep && conversationStep !== 'complete') {
+        await handleConversationFlow(userMessage);
+        setChatProcessing(false);
+        return;
+      }
+
       // Simple keyword-based responses for now
       const msg = userMessage.toLowerCase();
       
@@ -667,21 +751,22 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
     setContextualHints(hints);
   }, [userGoal, userConstraints, targetData, endpoints.length, lockedSteps.length]);
 
-  // Send AI chat messages for key events
+  // Send welcome message on mount
   useEffect(() => {
-    if (keywordAnalysis && chatMessages.length === 0 && userGoal.trim()) {
-      // Welcome message when goal is set
-      const intent = keywordAnalysis.intent;
-      if (intent.confidence > 0.7) {
-        addChatMessage('assistant',
-          `Great! I detected your intent: **${intent.action}**\n\n` +
-          `${keywordAnalysis.entities.length > 0 ? `Looking for: ${keywordAnalysis.entities.map(e => e.name).join(', ')}\n` : ''}` +
-          `${suggestedScenarios.length > 0 ? `\n💡 I found ${suggestedScenarios.length} relevant templates. Click "templates" to view them!` : ''}`,
-          { type: 'success' }
-        );
-      }
+    if (chatMessages.length === 0) {
+      // Initial welcome message
+      addChatMessage('assistant',
+        `👋 Hi! I'm your AI assistant. Let's build your API workflow together!\n\n` +
+        `**First, what's your goal?**\n\n` +
+        `Tell me what data you want to extract. For example:\n` +
+        `• "Get all products with prices"\n` +
+        `• "Fetch user profile data"\n` +
+        `• "Search for orders by date"\n\n` +
+        `What would you like to do?`,
+        { type: 'suggestion' }
+      );
     }
-  }, [keywordAnalysis]);
+  }, []);
 
   useEffect(() => {
     if (aiSuggestedStep) {
@@ -1088,7 +1173,7 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
           {/* Goal */}
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <label className="text-xs text-slate-500">Goal (What do you want to achieve?)</label>
+              <label className="text-xs text-slate-500">Goal (Set via AI chat →)</label>
               {suggestedScenarios.length > 0 && !showScenarios && (
                 <button
                   onClick={() => setShowScenarios(true)}
@@ -1099,13 +1184,11 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
                 </button>
               )}
             </div>
-            <input
-              type="text"
-              value={userGoal}
-              onChange={(e) => setUserGoal(e.target.value)}
-              placeholder="e.g., Get all product listings with prices"
-              className="w-full px-4 py-2 bg-slate-900 border border-slate-700/50 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:border-red-500/60"
-            />
+            <div
+              className="w-full px-4 py-2 bg-slate-900/50 border border-slate-700/50 rounded-lg text-sm text-white min-h-[40px] flex items-center"
+            >
+              {userGoal || <span className="text-slate-600 italic">Ask the AI assistant to get started...</span>}
+            </div>
             
             {/* Keyword Analysis Indicators */}
             {keywordAnalysis && keywordAnalysis.intent.confidence > 0.7 && (
@@ -1152,26 +1235,22 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
 
           {/* Constraints */}
           <div>
-            <label className="block text-xs text-slate-500 mb-1.5">Constraints (optional)</label>
-            <input
-              type="text"
-              value={userConstraints}
-              onChange={(e) => setUserConstraints(e.target.value)}
-              placeholder="e.g., Must be authenticated, paginated, rate-limited"
-              className="w-full px-4 py-2 bg-slate-900 border border-slate-700/50 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:border-red-500/60"
-            />
+            <label className="block text-xs text-slate-500 mb-1.5">Constraints</label>
+            <div
+              className="w-full px-4 py-2 bg-slate-900/50 border border-slate-700/50 rounded-lg text-sm text-white min-h-[40px] flex items-center"
+            >
+              {userConstraints || <span className="text-slate-600 italic">None</span>}
+            </div>
           </div>
 
           {/* Target Data */}
           <div>
-            <label className="block text-xs text-slate-500 mb-1.5">Target Data (Success criteria)</label>
-            <input
-              type="text"
-              value={targetData}
-              onChange={(e) => setTargetData(e.target.value)}
-              placeholder='e.g., JSON with: { id, name, price, stock }'
-              className="w-full px-4 py-2 bg-slate-900 border border-slate-700/50 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:border-red-500/60"
-            />
+            <label className="block text-xs text-slate-500 mb-1.5">Target Data Structure</label>
+            <div
+              className="w-full px-4 py-2 bg-slate-900/50 border border-slate-700/50 rounded-lg text-sm text-white min-h-[40px] flex items-center"
+            >
+              {targetData || <span className="text-slate-600 italic">Not specified</span>}
+            </div>
           </div>
 
           {/* URL */}
