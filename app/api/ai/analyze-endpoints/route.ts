@@ -35,7 +35,7 @@ Dependencies: ${s.dependencies?.join(', ') || 'none'}`).join('\n')}`
     }, []);
 
     const variablesContext = availableVariables.length > 0
-      ? `\n\nAVAILABLE VARIABLES (from previous steps):\n${availableVariables.map(v => `- {{${v}}}`).join('\n')}`
+      ? `\n\nAVAILABLE VARIABLES (from previous steps):\n${availableVariables.map((v: string) => `- {{${v}}}`).join('\n')}`
       : '';
 
     const prompt = `You are an expert API reverse engineering assistant helping build a step-by-step workflow.
