@@ -12,6 +12,8 @@ import { extractSmartVariables, detectAuthMethod, generateUsageExamples } from '
 import { validateResponse, suggestImprovedTarget } from '@/utils/ai/success-validator';
 import { findMatchingScenarios, getContextualHints, type Scenario } from '@/utils/ai/auto-suggestions';
 import { getInitialAgentState, updateAgentState, shouldLoop, getNextObjective, type AgentState } from '@/utils/ai/agent-rules';
+import { extractFormState, extractInteractiveElements, buildFormActionMap, generateButtonMap, type FormActionMap, type DOMSnapshot } from '@/src/tools/api-signal-explorer/form-correlator';
+import { validateSequentially, validatePersistence, type SequentialTestResult } from '@/src/tools/api-signal-explorer/sequential-validator';
 import AIChatPanel, { type ChatMessage } from './AIChatPanel';
 
 type EndpointData = {
@@ -250,9 +252,22 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
   const [flipbookAnalysis, setFlipbookAnalysis] = useState<any>(null);
   const [analyzingFlipbook, setAnalyzingFlipbook] = useState(false);
   
+  // Mode #1: Full Map state
+  const [buttonMap, setButtonMap] = useState<any>(null);
+  const [generatingButtonMap, setGeneratingButtonMap] = useState(false);
+  const [validationResult, setValidationResult] = useState<SequentialTestResult | null>(null);
+  const [validating, setValidating] = useState(false);
+  
   // Tabs and notifications
   const [activeTab, setActiveTab] = useState<'logs' | 'code'>('logs');
   const [hasNewCodeSnippet, setHasNewCodeSnippet] = useState(false);
+  
+  // Human/AI control mode
+  const [controlMode, setControlMode] = useState<'human' | 'ai'>('ai');
+  
+  // AI Mode Types
+  type AIMode = 'fullMap' | 'apiOnly' | 'mobileReverse';
+  const [aiMode, setAiMode] = useState<AIMode>('apiOnly');
   
   const endpointMapRef = useRef<Map<string, EndpointData>>(new Map());
   const wsRef = useRef<WebSocket | null>(null);
@@ -1319,6 +1334,185 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
     }
   };
 
+  // ════════════════════════════════════════════════════════════════════
+  // MODE #1: FULL MAP HANDLERS
+  // ════════════════════════════════════════════════════════════════════
+
+  /**
+   * Generate button map from DOM snapshots and network events
+   */
+  const generateFullButtonMap = async () => {
+    if (flipbookSnapshots.length === 0) {
+      addChatMessage('assistant',
+        '⚠️ No DOM snapshots available. Launch browser and interact with the site to capture form elements.',
+        { type: 'warning' }
+      );
+      return;
+    }
+
+    setGeneratingButtonMap(true);
+    addChatMessage('assistant',
+      `🗺️ Generating Full Map from ${flipbookSnapshots.length} snapshot${flipbookSnapshots.length > 1 ? 's' : ''}...\n\n` +
+      `Mapping:\n` +
+      `• All buttons, forms, and interactive elements\n` +
+      `• Form state (VIEWSTATE, EVENTVALIDATION)\n` +
+      `• Element → Endpoint correlations\n` +
+      `• Sequential dependencies`,
+      { type: 'suggestion' }
+    );
+
+    try {
+      // Convert endpoints to array format needed by correlator
+      const networkEvents = endpoints.map(ep => ({
+        ts: ep.lastSeen,
+        method: ep.method,
+        url: ep.sampleUrl,
+        path: ep.path,
+        reqBodyText: ep.sampleReqBody,
+        reqHeaders: ep.sampleHeaders
+      }));
+
+      // Generate button map
+      const map = generateButtonMap(flipbookSnapshots, networkEvents);
+      setButtonMap(map);
+
+      let message = `✅ **Full Map Complete**\n\n`;
+      message += `📊 **Summary**:\n`;
+      message += `• Total Interactive Elements: ${map.totalButtons}\n`;
+      message += `• Mapped to Endpoints: ${map.mappedButtons} (${Math.round((map.mappedButtons / map.totalButtons) * 100)}%)\n`;
+      message += `• Unmapped: ${map.unmappedButtons}\n\n`;
+
+      if (map.mappedButtons > 0) {
+        message += `**Mapped Elements**:\n`;
+        map.buttons.slice(0, 5).forEach((btn: any) => {
+          if (btn.endpoint) {
+            message += `• **${btn.text || btn.id}** (${btn.type}) → ${btn.method} ${btn.endpoint}\n`;
+            if (btn.formState?.viewstate) {
+              message += `  └─ Form state detected ✓\n`;
+            }
+          }
+        });
+        if (map.mappedButtons > 5) {
+          message += `... and ${map.mappedButtons - 5} more mapped elements\n`;
+        }
+        message += `\n`;
+        message += `🎯 Ready to build auto-quote workflow!`;
+      } else {
+        message += `⚠️ No elements mapped yet. Try interacting with the site (click buttons, submit forms) to capture more data.`;
+      }
+
+      addChatMessage('assistant', message, { type: 'success' });
+
+      // Update agent state
+      const newState = updateAgentState(agentState, {
+        phase: 'execution',
+        action: 'Full button map generated',
+        outcome: 'success',
+      });
+      newState.certaintyLevels.workflow = Math.min(100, newState.certaintyLevels.workflow + 25);
+      newState.goalsAchieved.push('All buttons mapped to endpoints');
+      setAgentState(newState);
+
+    } catch (err) {
+      console.error('[FullMap] Button map generation error:', err);
+      addChatMessage('assistant',
+        `❌ Failed to generate button map: ${err instanceof Error ? err.message : String(err)}`,
+        { type: 'warning' }
+      );
+    } finally {
+      setGeneratingButtonMap(false);
+    }
+  };
+
+  /**
+   * Validate locked steps 2x in sequence (Mode #1 requirement)
+   */
+  const validateWorkflow2x = async () => {
+    if (lockedSteps.length === 0) {
+      addChatMessage('assistant',
+        '⚠️ No steps locked yet. Lock at least one step before validation.',
+        { type: 'warning' }
+      );
+      return;
+    }
+
+    setValidating(true);
+    addChatMessage('assistant',
+      `🔄 Validating workflow (2x in sequence)...\n\n` +
+      `Testing ${lockedSteps.length} step${lockedSteps.length > 1 ? 's' : ''}:\n` +
+      lockedSteps.map(s => `• Step ${s.stepNumber}: ${s.method} ${s.endpoint}`).join('\n'),
+      { type: 'suggestion' }
+    );
+
+    try {
+      const result = await validateSequentially(lockedSteps, 2);
+      setValidationResult(result);
+
+      let message = result.allPassed 
+        ? `✅ **Validation Passed** (2/2 attempts successful)\n\n`
+        : `⚠️ **Validation Failed**\n\n`;
+
+      message += `📊 **Results**:\n`;
+      message += `• Success Rate: ${Math.round(result.reliability * 100)}%\n`;
+      message += `• Avg Response Time: ${Math.round(result.averageResponseTime)}ms\n`;
+      message += `• Total Tests: ${result.totalAttempts}\n`;
+      message += `• Passed: ${result.successfulAttempts}\n`;
+      message += `• Failed: ${result.failedAttempts}\n\n`;
+
+      result.steps.forEach(step => {
+        const icon = step.passRate === 1 ? '✓' : step.passRate > 0.5 ? '⚠' : '✗';
+        message += `${icon} **Step ${step.stepNumber}**: ${Math.round(step.passRate * 100)}% pass rate\n`;
+        
+        // Show attempt details
+        step.attempts.forEach(attempt => {
+          const status = attempt.success ? '✓' : '✗';
+          message += `  ${status} Attempt ${attempt.attempt}: ${attempt.statusCode} (${attempt.responseTime}ms)`;
+          if (attempt.error) {
+            message += ` - ${attempt.error}`;
+          }
+          if (attempt.formStateUpdated) {
+            message += ` [Form state updated]`;
+          }
+          message += `\n`;
+        });
+      });
+
+      if (result.allPassed) {
+        message += `\n🎯 **Workflow Ready**\n`;
+        message += `All steps validated successfully. This workflow can run automatically and persist indefinitely.`;
+      } else {
+        message += `\n❌ **Action Required**\n`;
+        message += `Some steps failed. Review the failures above and adjust the workflow.`;
+      }
+
+      addChatMessage('assistant', message, { 
+        type: result.allPassed ? 'success' : 'warning' 
+      });
+
+      // Update agent state
+      if (result.allPassed) {
+        const newState = updateAgentState(agentState, {
+          phase: 'completion',
+          action: 'Workflow validated 2x',
+          outcome: 'success',
+        });
+        newState.certaintyLevels.workflow = 100;
+        newState.certaintyLevels.system = 100;
+        newState.goalsAchieved.push('Workflow can persist indefinitely');
+        setAgentState(newState);
+      }
+
+    } catch (err) {
+      console.error('[FullMap] Validation error:', err);
+      addChatMessage('assistant',
+        `❌ Validation failed: ${err instanceof Error ? err.message : String(err)}`,
+        { type: 'warning' }
+      );
+    } finally {
+      setValidating(false);
+    }
+  };
+
   // Apply scenario template
   const applyScenario = (scenario: Scenario) => {
     setUserGoal(scenario.goal);
@@ -1507,6 +1701,81 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
         )}
       </div>
 
+      {/* HUMAN/AI CONTROL TOGGLE */}
+      <div className="shrink-0 bg-gradient-to-r from-slate-900/50 to-transparent border-b border-slate-700/50 p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-slate-400 font-medium">CONTROL MODE</span>
+            <div className="flex items-center gap-2 bg-slate-900 rounded-lg p-1">
+              <button
+                onClick={() => setControlMode('human')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                  controlMode === 'human'
+                    ? 'bg-blue-600 text-white shadow-lg'
+                    : 'text-slate-400 hover:text-slate-300'
+                }`}
+              >
+                <span className="text-base">👤</span>
+                HUMAN
+              </button>
+              <button
+                onClick={() => setControlMode('ai')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                  controlMode === 'ai'
+                    ? 'bg-red-600 text-white shadow-lg'
+                    : 'text-slate-400 hover:text-slate-300'
+                }`}
+              >
+                <Brain className="w-4 h-4" />
+                AI
+              </button>
+            </div>
+          </div>
+          <div className="text-xs text-slate-500">
+            {controlMode === 'human' 
+              ? 'Manual workflow building - AI assistance disabled' 
+              : 'AI-powered suggestions and analysis enabled'}
+          </div>
+        </div>
+        
+        {/* AI MODE SELECTOR - Shows when AI is active */}
+        {controlMode === 'ai' && (
+          <div className="mt-4 pt-4 border-t border-slate-700/50">
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-slate-400 font-medium">AI MODE</span>
+              <select
+                value={aiMode}
+                onChange={(e) => setAiMode(e.target.value as AIMode)}
+                className="flex-1 px-3 py-2 bg-slate-900 border border-slate-700/50 rounded-lg text-sm text-white focus:outline-none focus:border-red-500/60"
+              >
+                <option value="fullMap">Mode #1: Full Map (Legacy Forms - No Bot Detection)</option>
+                <option value="apiOnly">Mode #2: API-Only (Current)</option>
+                <option value="mobileReverse">Mode #3: Mobile App Reverse Engineering</option>
+              </select>
+            </div>
+            <div className="mt-2 text-xs text-slate-500">
+              {aiMode === 'fullMap' && (
+                <div className="flex items-start gap-2">
+                  <span className="text-green-400">✓</span>
+                  <div>
+                    <div className="font-medium text-slate-400">Full Map Mode Active</div>
+                    <div className="mt-1">
+                      • Maps every button/form element → API endpoint<br/>
+                      • Extracts form state (VIEWSTATE, EVENTVALIDATION)<br/>
+                      • Sequential validation (2x success required)<br/>
+                      • Perpetual cookie/session management<br/>
+                      • Best for: Legacy .ASPX, PHP, or simple form-based apps
+                    </div>
+                  </div>
+                </div>
+              )}
+              {aiMode === 'apiOnly' && 'Focus on API endpoints and network traffic only'}
+              {aiMode === 'mobileReverse' && 'Reverse engineer mobile app API patterns'}
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* LOCKED PIPELINE - MOVED TO TOP */}
       <div className="shrink-0 bg-gradient-to-r from-green-900/10 to-transparent border-b border-green-600/20 p-4">
         <div className="flex items-center gap-3 mb-3">
@@ -1569,29 +1838,110 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
             </div>
           </div>
         )}
+
+        {/* MODE #1: FULL MAP CONTROLS */}
+        {aiMode === 'fullMap' && controlMode === 'ai' && (
+          <div className="mt-4 pt-4 border-t border-slate-700/50">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-xs text-slate-400 font-medium">FULL MAP TOOLS</span>
+            </div>
+            
+            <div className="flex gap-2">
+              <button
+                onClick={generateFullButtonMap}
+                disabled={generatingButtonMap || flipbookSnapshots.length === 0}
+                className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 rounded-lg text-xs text-white font-medium transition-all"
+              >
+                {generatingButtonMap ? <Loader2 className="w-3 h-3 animate-spin" /> : <Zap className="w-3 h-3" />}
+                Generate Button Map
+              </button>
+
+              {lockedSteps.length > 0 && (
+                <button
+                  onClick={validateWorkflow2x}
+                  disabled={validating}
+                  className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 disabled:opacity-50 rounded-lg text-xs text-white font-medium transition-all"
+                >
+                  {validating ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
+                  Validate 2x
+                </button>
+              )}
+            </div>
+
+            {/* Button Map Display */}
+            {buttonMap && (
+              <div className="mt-3 p-3 bg-slate-900 border border-purple-600/30 rounded-lg">
+                <div className="text-xs text-purple-400 font-medium mb-2">
+                  🗺️ Button Map: {buttonMap.mappedButtons}/{buttonMap.totalButtons} elements mapped
+                </div>
+                <div className="max-h-32 overflow-y-auto space-y-1">
+                  {buttonMap.buttons.slice(0, 10).map((btn: any, idx: number) => (
+                    <div key={idx} className="text-xs text-slate-400">
+                      {btn.endpoint ? (
+                        <span className="text-green-400">✓</span>
+                      ) : (
+                        <span className="text-slate-600">○</span>
+                      )} {btn.text || btn.id} ({btn.type}) {btn.endpoint && `→ ${btn.endpoint}`}
+                    </div>
+                  ))}
+                  {buttonMap.buttons.length > 10 && (
+                    <div className="text-xs text-slate-600">
+                      ... and {buttonMap.buttons.length - 10} more elements
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Validation Results Display */}
+            {validationResult && (
+              <div className={`mt-3 p-3 border rounded-lg ${
+                validationResult.allPassed 
+                  ? 'bg-green-900/20 border-green-600/30' 
+                  : 'bg-red-900/20 border-red-600/30'
+              }`}>
+                <div className={`text-xs font-medium mb-2 ${
+                  validationResult.allPassed ? 'text-green-400' : 'text-red-400'
+                }`}>
+                  {validationResult.allPassed ? '✓ Validation Passed' : '✗ Validation Failed'} ({validationResult.successfulAttempts}/{validationResult.totalAttempts})
+                </div>
+                <div className="text-xs text-slate-400">
+                  Reliability: {Math.round(validationResult.reliability * 100)}% • 
+                  Avg Response: {Math.round(validationResult.averageResponseTime)}ms
+                </div>
+                {!validationResult.allPassed && (
+                  <div className="mt-2 text-xs text-red-400">
+                    {validationResult.failedAttempts} step(s) failed. Review failures in chat.
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* AI AGENT */}
-      <div className="shrink-0 bg-gradient-to-r from-slate-900/50 to-transparent border-b border-slate-700/50 p-4">
-        <div className="flex items-center gap-3 mb-3">
-          <h3 className="text-sm font-bold text-slate-300 tracking-wide">AI AGENT • INTELLIGENT ANALYSIS</h3>
-          <div className="ml-auto flex items-center gap-2">
-                <button
-              onClick={handleAiAgentToggle}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                aiAgentActive
-                  ? 'bg-red-600 text-white shadow-lg'
-                  : 'bg-slate-700 text-slate-400 hover:bg-slate-600'
-              }`}
-            >
-              <Brain className="w-3.5 h-3.5" />
-              {aiAgentActive ? 'Active' : 'Activate'}
-                </button>
-            <ArrowDown className="w-4 h-4 text-slate-600" />
+      {controlMode === 'ai' && (
+        <div className="shrink-0 bg-gradient-to-r from-slate-900/50 to-transparent border-b border-slate-700/50 p-4">
+          <div className="flex items-center gap-3 mb-3">
+            <h3 className="text-sm font-bold text-slate-300 tracking-wide">AI AGENT • INTELLIGENT ANALYSIS</h3>
+            <div className="ml-auto flex items-center gap-2">
+                  <button
+                onClick={handleAiAgentToggle}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                  aiAgentActive
+                    ? 'bg-red-600 text-white shadow-lg'
+                    : 'bg-slate-700 text-slate-400 hover:bg-slate-600'
+                }`}
+              >
+                <Brain className="w-3.5 h-3.5" />
+                {aiAgentActive ? 'Active' : 'Activate'}
+                  </button>
+              <ArrowDown className="w-4 h-4 text-slate-600" />
+                </div>
               </div>
-            </div>
 
-        {aiAgentActive ? (
+          {aiAgentActive ? (
           <div className="space-y-3">
             {/* AI Status */}
             <div className="flex items-center gap-2 px-3 py-2 bg-slate-900/50 border border-slate-700/50 rounded-lg">
@@ -1649,71 +1999,6 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
             <Brain className="w-10 h-10 mx-auto mb-2 text-slate-700 opacity-50" />
             <p className="text-xs text-slate-600">AI Agent disabled</p>
             <p className="text-xs text-slate-700 mt-1">Click "Activate" to enable intelligent analysis</p>
-          </div>
-        )}
-      </div>
-
-      {/* DUPLICATE LOCKED PIPELINE - REMOVE THIS ONE */}
-      <div className="shrink-0 bg-gradient-to-r from-green-900/10 to-transparent border-b border-green-600/20 p-4" style={{ display: 'none' }}>
-        <div className="flex items-center gap-3 mb-3">
-          <h3 className="text-sm font-bold text-green-400 tracking-wide">LOCKED PIPELINE • {lockedSteps.length} STEPS</h3>
-          {lockedSteps.length > 0 && (
-            <button 
-              onClick={exportWorkflow}
-              className="ml-auto flex items-center gap-1.5 px-3 py-1.5 bg-red-600 hover:bg-red-700 rounded text-xs text-white font-medium"
-            >
-              <Download className="w-3 h-3" />
-              Export Workflow
-                </button>
-          )}
-          <ArrowDown className="w-4 h-4 text-slate-600" />
-                      </div>
-
-        {lockedSteps.length === 0 ? (
-          <div className="text-center py-4 text-slate-500 text-sm">
-            <div className="text-slate-600 mb-2">No steps locked yet</div>
-            <div className="text-xs text-slate-700">Test and lock your first step below to start building your workflow</div>
-          </div>
-        ) : (
-          <div className="space-y-2 max-h-48 overflow-y-auto">
-            {lockedSteps.map(step => (
-              <div key={step.id} className="p-3 bg-slate-900 border border-green-600/30 rounded-lg">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-green-400 font-bold text-sm">✓ Step {step.stepNumber}</span>
-                    <span className="text-slate-400 text-xs font-mono">{step.method} {step.endpoint}</span>
-                    <span className="px-2 py-0.5 bg-green-900/30 text-green-400 text-xs rounded">LOCKED</span>
-                  </div>
-                  <button 
-                    onClick={() => setLockedSteps(prev => prev.filter(s => s.id !== step.id))}
-                    className="text-xs text-red-500 hover:text-red-400"
-                  >
-                    Delete
-                  </button>
-                </div>
-                
-                {Object.keys(step.extractedVars).length > 0 && (
-                  <div className="text-xs text-slate-500 mb-1">
-                    → Variables: {Object.entries(step.extractedVars).map(([k, v]) => 
-                      `${k}="${String(v).substring(0, 15)}${String(v).length > 15 ? '...' : ''}"`
-                    ).join(', ')}
-                  </div>
-                )}
-                
-                {step.dependencies.length > 0 && (
-                  <div className="text-xs text-red-400">
-                    ⚠ Depends on: {step.dependencies.join(', ')}
-              </div>
-            )}
-              </div>
-            ))}
-            
-            <div className="p-3 bg-slate-900/50 border border-slate-700 border-dashed rounded-lg">
-              <div className="flex items-center gap-2 text-slate-500">
-                <span className="text-sm">→ Step {currentStepFocus}:</span>
-                <span className="text-xs">{aiAgentStatus === 'analyzing' ? 'AI mapping...' : 'Ready to test'}</span>
-              </div>
-            </div>
           </div>
         )}
       </div>

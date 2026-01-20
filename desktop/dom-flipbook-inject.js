@@ -81,6 +81,177 @@
   };
 
   // ════════════════════════════════════════════════════════════════════
+  // FORM STATE EXTRACTION (Mode #1: Full Map)
+  // ════════════════════════════════════════════════════════════════════
+
+  /**
+   * Extract form state from current page (VIEWSTATE, EVENTVALIDATION, etc.)
+   * Specifically designed for .ASPX and legacy form-based apps
+   */
+  function extractFormState() {
+    const formState = {
+      viewstate: null,
+      viewstateGenerator: null,
+      eventValidation: null,
+      eventTarget: null,
+      eventArgument: null,
+      customFields: {}
+    };
+
+    // Find all hidden input fields
+    const hiddenFields = document.querySelectorAll('input[type="hidden"]');
+    
+    hiddenFields.forEach(field => {
+      const name = field.name;
+      const value = field.value;
+      
+      if (!name) return;
+      
+      // Extract standard ASP.NET fields
+      if (name === '__VIEWSTATE') {
+        formState.viewstate = value;
+      } else if (name === '__VIEWSTATEGENERATOR') {
+        formState.viewstateGenerator = value;
+      } else if (name === '__EVENTVALIDATION') {
+        formState.eventValidation = value;
+      } else if (name === '__EVENTTARGET') {
+        formState.eventTarget = value;
+      } else if (name === '__EVENTARGUMENT') {
+        formState.eventArgument = value;
+      } else if (!name.startsWith('__')) {
+        // Store custom hidden fields
+        formState.customFields[name] = value;
+      }
+    });
+
+    return formState;
+  }
+
+  /**
+   * Extract all interactive elements (buttons, inputs, selects, etc.)
+   * Maps UI elements to their potential API triggers
+   */
+  function extractInteractiveElements() {
+    const elements = [];
+
+    // Extract all buttons and submit inputs
+    document.querySelectorAll('button, input[type="button"], input[type="submit"]').forEach(el => {
+      const element = {
+        type: el.type === 'submit' ? 'submit' : 'button',
+        id: el.id || null,
+        name: el.name || null,
+        value: el.value || el.textContent?.trim() || null,
+        onclick: el.getAttribute('onclick') || null,
+        xpath: getXPath(el),
+        text: el.textContent?.trim() || el.value || null,
+        disabled: el.disabled,
+        visible: isElementVisible(el)
+      };
+
+      elements.push(element);
+    });
+
+    // Extract all select dropdowns
+    document.querySelectorAll('select').forEach(el => {
+      const element = {
+        type: 'select',
+        id: el.id || null,
+        name: el.name || null,
+        onchange: el.getAttribute('onchange') || null,
+        xpath: getXPath(el),
+        options: Array.from(el.options).map(opt => ({
+          value: opt.value,
+          text: opt.textContent?.trim()
+        })),
+        selectedIndex: el.selectedIndex,
+        visible: isElementVisible(el)
+      };
+
+      elements.push(element);
+    });
+
+    // Extract text inputs (for completeness)
+    document.querySelectorAll('input[type="text"], input[type="email"], input[type="tel"], input[type="number"], input[type="password"]').forEach(el => {
+      const element = {
+        type: 'input',
+        inputType: el.type,
+        id: el.id || null,
+        name: el.name || null,
+        placeholder: el.placeholder || null,
+        xpath: getXPath(el),
+        required: el.required,
+        visible: isElementVisible(el)
+      };
+
+      elements.push(element);
+    });
+
+    // Extract radio buttons and checkboxes
+    document.querySelectorAll('input[type="radio"], input[type="checkbox"]').forEach(el => {
+      const element = {
+        type: el.type,
+        id: el.id || null,
+        name: el.name || null,
+        value: el.value || null,
+        checked: el.checked,
+        xpath: getXPath(el),
+        visible: isElementVisible(el)
+      };
+
+      elements.push(element);
+    });
+
+    return elements;
+  }
+
+  /**
+   * Get XPath for an element (for precise targeting)
+   */
+  function getXPath(element) {
+    if (element.id) {
+      return `//*[@id="${element.id}"]`;
+    }
+
+    const parts = [];
+    let current = element;
+
+    while (current && current.nodeType === Node.ELEMENT_NODE) {
+      let index = 0;
+      let sibling = current.previousSibling;
+
+      while (sibling) {
+        if (sibling.nodeType === Node.ELEMENT_NODE && sibling.nodeName === current.nodeName) {
+          index++;
+        }
+        sibling = sibling.previousSibling;
+      }
+
+      const tagName = current.nodeName.toLowerCase();
+      const part = index > 0 ? `${tagName}[${index + 1}]` : tagName;
+      parts.unshift(part);
+
+      current = current.parentNode;
+    }
+
+    return parts.length ? `/${parts.join('/')}` : '';
+  }
+
+  /**
+   * Check if element is actually visible on the page
+   */
+  function isElementVisible(el) {
+    if (!el) return false;
+    
+    const style = window.getComputedStyle(el);
+    if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') {
+      return false;
+    }
+
+    const rect = el.getBoundingClientRect();
+    return rect.width > 0 && rect.height > 0;
+  }
+
+  // ════════════════════════════════════════════════════════════════════
   // CORE: FULL DOM CAPTURE
   // ════════════════════════════════════════════════════════════════════
 
@@ -127,6 +298,12 @@
 
       // Detect page structure
       snapshot.metadata = detectPageStructure();
+      
+      // Extract form state (for Mode #1: Full Map)
+      snapshot.formState = extractFormState();
+      
+      // Extract interactive elements (buttons, forms, inputs)
+      snapshot.interactions = extractInteractiveElements();
 
       // Reset mutation counter
       state.mutationCount = 0;
