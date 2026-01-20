@@ -698,17 +698,19 @@ export default function APISignalExplorerPage() {
   );
 
   return (
-    <div className="min-h-screen p-6 sm:p-8" style={{ backgroundColor: '#0a0a0a' }}>
-      <div className={`mx-auto ${activeNeuromapId ? 'max-w-full' : 'max-w-7xl'}`}>
-        {/* Header */}
-        <div className="mb-8 flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl sm:text-4xl font-bold mb-2" style={{ color: '#ff5757' }}>
-              API Signal Explorer
-            </h1>
-            <p className="text-slate-400 text-sm sm:text-base">
-              {activeNeuromapId ? 'Live API signal capture with mitmproxy' : 'Create a neuromap to start capturing API signals'}
-            </p>
+    <div className="min-h-screen p-4" style={{ backgroundColor: '#0a0a0a' }}>
+      <div className="mx-auto max-w-full">
+        {/* Compact Header */}
+        <div className="mb-4 flex items-center justify-between bg-gradient-to-r from-slate-900/50 to-transparent p-4 rounded-lg border border-slate-800/50">
+          <div className="flex items-center gap-4">
+            <div>
+              <h1 className="text-2xl font-bold" style={{ color: '#ff5757' }}>
+                API Signal Explorer
+              </h1>
+              <p className="text-slate-500 text-xs">
+                {activeNeuromapId ? 'Live capture active' : 'Real-time API traffic analysis'}
+              </p>
+            </div>
           </div>
           {!activeNeuromapId && (
             <button
@@ -739,10 +741,10 @@ export default function APISignalExplorerPage() {
           )}
         </div>
 
-        {/* Live Mode Controls - Only show when no active neuromap */}
+        {/* Live Mode Controls - Compact row */}
         {!activeNeuromapId && (
-          <div className="mb-6 p-4 bg-slate-900/50 rounded-lg border border-slate-800">
-          <div className="flex flex-wrap items-center gap-4">
+          <div className="mb-3 p-3 bg-slate-900/30 rounded-lg border border-slate-800/50">
+          <div className="flex flex-wrap items-center gap-3 text-sm">
             <div className="flex items-center gap-2">
               {connectionStatus === 'connected' ? (
                 <Wifi className="w-5 h-5 text-green-400" />
@@ -1249,25 +1251,23 @@ export default function APISignalExplorerPage() {
           </div>
         )}
 
-        {/* Unified Neuromap View - Single source of truth */}
+        {/* Integrated Neuromap View */}
         {activeNeuromapId ? (() => {
           const activeNeuromap = neuromaps.find(n => n.id === activeNeuromapId);
           if (!activeNeuromap) return null;
           return (
-            <div className="mt-8">
-              <NeuromapWorkspace
-                neuromap={activeNeuromap}
-                onUpdate={(updated) => {
-                  setNeuromaps(prev => prev.map(n => n.id === updated.id ? updated : n));
-                }}
-                onClose={() => {
-                  setActiveNeuromapId(null);
-                  if (activeNeuromap) {
-                    activeNeuromap.isActive = false;
-                  }
-                }}
-              />
-            </div>
+            <NeuromapWorkspace
+              neuromap={activeNeuromap}
+              onUpdate={(updated) => {
+                setNeuromaps(prev => prev.map(n => n.id === updated.id ? updated : n));
+              }}
+              onClose={() => {
+                setActiveNeuromapId(null);
+                if (activeNeuromap) {
+                  activeNeuromap.isActive = false;
+                }
+              }}
+            />
           );
         })() : null}
       </div>

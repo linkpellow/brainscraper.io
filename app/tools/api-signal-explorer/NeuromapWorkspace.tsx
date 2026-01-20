@@ -513,49 +513,44 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
   }, [launchBrowserUrl]);
 
   return (
-    <div className="w-full flex flex-col bg-black rounded-lg border border-slate-800 overflow-hidden" style={{ minHeight: '600px', maxHeight: '90vh' }}>
-      {/* Header — Chromium-style; accent #ff5757, font-orbitron */}
-      <div className="shrink-0 bg-slate-900 border-b border-white/15 p-4 flex items-center justify-between">
+    <div className="w-full flex flex-col bg-black rounded-lg border border-slate-800 overflow-hidden" style={{ height: '75vh' }}>
+      {/* Compact Header */}
+      <div className="shrink-0 bg-slate-900 border-b border-white/15 p-3 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Globe className="w-5 h-5 text-green-400" aria-hidden />
           <div>
-            <h2 className="text-lg font-semibold font-futuristic terminal-glow-sm" style={{ color: '#ff5757' }}>{neuromap.name}</h2>
-            <div className="text-xs text-slate-400" style={{ color: 'rgba(255,255,255,0.7)' }}>
-              {endpoints.length} endpoints • {neuromap.selectedEndpointKeys.size} selected
+            <h2 className="text-base font-semibold font-futuristic terminal-glow-sm" style={{ color: '#ff5757' }}>{neuromap.name}</h2>
+            <div className="text-xs text-slate-500 flex items-center gap-2">
+              <span>{endpoints.length} endpoints</span>
+              <span>•</span>
+              <span>{neuromap.selectedEndpointKeys.size} selected</span>
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           <button
             onClick={handleMarkInteraction}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded text-sm ${
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs ${
               isMarkingInteraction ? 'bg-amber-600 hover:bg-amber-700 text-white' : 'bg-slate-800 hover:bg-slate-700 text-white'
             }`}
             title={isMarkingInteraction ? 'Stop marking (or auto-stops in 3s)' : 'Mark next 3s of requests as interaction-linked'}
           >
-            <MousePointer className="w-4 h-4" />
-            {isMarkingInteraction ? 'Marking…' : 'Mark Interaction'}
+            <MousePointer className="w-3.5 h-3.5" />
+            {isMarkingInteraction ? 'Marking…' : 'Mark'}
           </button>
           <button
             onClick={() => setIsPaused(!isPaused)}
-            className="flex items-center gap-2 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded text-sm text-white"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 rounded text-xs text-white"
           >
-            {isPaused ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
+            {isPaused ? <Play className="w-3.5 h-3.5" /> : <Pause className="w-3.5 h-3.5" />}
             {isPaused ? 'Resume' : 'Pause'}
           </button>
           <button
             onClick={handleExport}
-            className="flex items-center gap-2 px-3 py-1.5 bg-green-600 hover:bg-green-700 rounded text-sm text-white"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 bg-green-600 hover:bg-green-700 rounded text-xs text-white"
           >
-            <Download className="w-4 h-4" />
+            <Download className="w-3.5 h-3.5" />
             Export
-          </button>
-          <button
-            onClick={onClose}
-            className="flex items-center gap-2 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded text-sm text-white"
-          >
-            <X className="w-4 h-4" />
-            Close
           </button>
         </div>
       </div>
