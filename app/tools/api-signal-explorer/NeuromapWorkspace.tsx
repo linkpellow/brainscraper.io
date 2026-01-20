@@ -1364,7 +1364,12 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
       {/* Main Workspace */}
       <div 
         className="flex flex-col bg-black border-r border-slate-800 overflow-hidden transition-all duration-300" 
-        style={{ width: workspaceWidth, height: '88vh' }}
+        style={{ 
+          width: workspaceWidth, 
+          height: '88vh',
+          transform: 'scale(0.7)',
+          transformOrigin: 'top left'
+        }}
       >
       {/* Header */}
       <div className="shrink-0 bg-gradient-to-r from-slate-900 to-slate-800 border-b border-slate-700/50 p-4 flex items-center justify-between">
@@ -1757,7 +1762,7 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
       <div className="shrink-0 bg-gradient-to-r from-slate-900/50 to-transparent" style={{ height: '35%' }}>
         <div className="h-full flex flex-col">
           <div className="shrink-0 flex items-center gap-3 p-3 border-b border-slate-800">
-            <div className="flex items-center justify-center w-8 h-8 bg-slate-700 rounded-full text-white font-bold text-sm">4</div>
+            <div className="flex items-center justify-center w-8 h-8 bg-slate-700 rounded-full text-white font-bold text-sm">3</div>
             <h3 className="text-sm font-bold text-slate-300 tracking-wide">EXECUTE • TEST & VALIDATE</h3>
             <div className="ml-auto flex items-center gap-2">
               {(['curl', 'fetch', 'axios', 'python'] as CodeSnippetLang[]).map((lang) => (
