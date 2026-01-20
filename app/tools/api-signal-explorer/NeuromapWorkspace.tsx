@@ -143,21 +143,35 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
         
         if (data.type === 'flow') {
           const flow = data.data;
+          
+          // Parse URL to get host and path
+          let urlObj: URL | null = null;
+          try {
+            urlObj = new URL(flow.url || '');
+          } catch (err) {
+            console.warn('[neuromap] Invalid URL:', flow.url);
+            return;
+          }
+          
           const networkEvent: RawNetworkEvent = {
             ts: flow.ts || Date.now(),
             method: flow.method || 'GET',
             url: flow.url || '',
+            path: urlObj.pathname,
+            host: urlObj.hostname,
             status: flow.status,
             reqHeaders: flow.reqHeaders || {},
             resHeaders: flow.resHeaders || {},
+            reqCookies: {},
             reqBodySize: flow.reqBodySize,
             resBodySize: flow.resBodySize,
             resMime: flow.resMime,
             durationMs: flow.durationMs,
+            source: 'browser',
           };
 
-          const updated = addEventToNeuromap(neuromapRef.current, networkEvent);
-          onUpdateRef.current(updated);
+          addEventToNeuromap(neuromapRef.current, networkEvent);
+          onUpdateRef.current(neuromapRef.current);
 
           // Update endpoints incrementally
           try {
