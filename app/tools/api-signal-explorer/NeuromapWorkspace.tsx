@@ -237,7 +237,7 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
   const [showOnlyRelevant, setShowOnlyRelevant] = useState(false);
   
   // AI Chat Panel state
-  const [chatOpen, setChatOpen] = useState(false);
+  const [chatExpanded, setChatExpanded] = useState(false);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatProcessing, setChatProcessing] = useState(false);
   
@@ -684,7 +684,7 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
   }, [keywordAnalysis]);
 
   useEffect(() => {
-    if (aiSuggestedStep && chatOpen) {
+    if (aiSuggestedStep) {
       addChatMessage('assistant',
         `🎯 **Suggested Step ${aiSuggestedStep.stepNumber}**\n\n` +
         `${aiSuggestedStep.method} ${aiSuggestedStep.endpoint}\n\n` +
@@ -696,7 +696,7 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
   }, [aiSuggestedStep]);
 
   useEffect(() => {
-    if (testResult && chatOpen) {
+    if (testResult) {
       if (testResult.success) {
         addChatMessage('assistant',
           `✅ **Test Successful!**\n\n` +
@@ -956,8 +956,17 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
     URL.revokeObjectURL(url);
   };
 
+  // Calculate dynamic width based on chat panel state
+  const chatPanelWidth = chatExpanded ? 600 : 400;
+  const workspaceWidth = `calc(100% - ${chatPanelWidth}px)`;
+
   return (
-    <div className="w-full flex flex-col bg-black rounded-lg border border-slate-800 overflow-hidden" style={{ height: '88vh' }}>
+    <div className="w-full flex h-screen">
+      {/* Main Workspace */}
+      <div 
+        className="flex flex-col bg-black border-r border-slate-800 overflow-hidden transition-all duration-300" 
+        style={{ width: workspaceWidth, height: '88vh' }}
+      >
       {/* Header */}
       <div className="shrink-0 bg-gradient-to-r from-slate-900 to-slate-800 border-b border-slate-700/50 p-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -965,22 +974,15 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
           <h2 className="text-lg font-bold text-red-500 font-mono tracking-wide">API SIGNAL PIPELINE</h2>
         </div>
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => setChatOpen(!chatOpen)}
-            className={`flex items-center gap-1.5 px-3 py-2 rounded text-xs font-medium transition-all ${
-              chatOpen 
-                ? 'bg-purple-600 hover:bg-purple-700 text-white' 
-                : 'bg-slate-700 hover:bg-slate-600 text-slate-300'
-            }`}
-          >
+          <div className="flex items-center gap-1.5 px-3 py-2 bg-purple-900/30 border border-purple-600/30 rounded text-xs text-purple-400">
             <MessageSquare className="w-3.5 h-3.5" />
-            AI Chat
-            {chatMessages.length > 0 && !chatOpen && (
-              <span className="px-1.5 py-0.5 bg-purple-600 rounded-full text-xs">
+            <span>AI Assistant Active</span>
+            {chatMessages.length > 0 && (
+              <span className="px-1.5 py-0.5 bg-purple-600 rounded-full text-xs text-white">
                 {chatMessages.length}
               </span>
             )}
-          </button>
+          </div>
           {aiInsightsList.filter(i => !i.dismissed).length > 0 && (
             <button
               onClick={() => setInsightsPanelOpen(!insightsPanelOpen)}
@@ -1585,13 +1587,15 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
         </div>
       </div>
 
-      {/* AI Chat Panel */}
+      </div>
+
+      {/* AI Chat Panel - Always Visible */}
       <AIChatPanel
-        isOpen={chatOpen}
-        onClose={() => setChatOpen(false)}
         messages={chatMessages}
         onSendMessage={handleChatMessage}
         isProcessing={chatProcessing}
+        isExpanded={chatExpanded}
+        onToggleExpand={() => setChatExpanded(!chatExpanded)}
       />
     </div>
   );

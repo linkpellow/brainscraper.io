@@ -18,22 +18,21 @@ export type ChatMessage = {
 };
 
 type AIChatPanelProps = {
-  isOpen: boolean;
-  onClose: () => void;
   messages: ChatMessage[];
   onSendMessage: (message: string) => void;
   isProcessing?: boolean;
+  isExpanded: boolean;
+  onToggleExpand: () => void;
 };
 
 export default function AIChatPanel({
-  isOpen,
-  onClose,
   messages,
   onSendMessage,
   isProcessing = false,
+  isExpanded,
+  onToggleExpand,
 }: AIChatPanelProps) {
   const [input, setInput] = useState('');
-  const [isExpanded, setIsExpanded] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -47,8 +46,6 @@ export default function AIChatPanel({
       setInput('');
     }
   };
-
-  if (!isOpen) return null;
 
   return (
     <div
@@ -67,25 +64,17 @@ export default function AIChatPanel({
             <p className="text-xs text-slate-400">Powered by GPT-4</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setIsExpanded(!isExpanded)}
-            className="p-1.5 hover:bg-slate-700 rounded transition-colors"
-            title={isExpanded ? 'Minimize' : 'Expand'}
-          >
-            {isExpanded ? (
-              <Minimize2 className="w-4 h-4 text-slate-400" />
-            ) : (
-              <Maximize2 className="w-4 h-4 text-slate-400" />
-            )}
-          </button>
-          <button
-            onClick={onClose}
-            className="p-1.5 hover:bg-slate-700 rounded transition-colors"
-          >
-            <X className="w-4 h-4 text-slate-400" />
-          </button>
-        </div>
+        <button
+          onClick={onToggleExpand}
+          className="p-1.5 hover:bg-slate-700 rounded transition-colors"
+          title={isExpanded ? 'Minimize' : 'Expand'}
+        >
+          {isExpanded ? (
+            <Minimize2 className="w-4 h-4 text-slate-400" />
+          ) : (
+            <Maximize2 className="w-4 h-4 text-slate-400" />
+          )}
+        </button>
       </div>
 
       {/* Messages */}
