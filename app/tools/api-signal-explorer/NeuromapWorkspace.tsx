@@ -25,6 +25,39 @@ type EndpointData = {
   sampleResBody?: string;
 };
 
+type LockedStep = {
+  id: string;
+  stepNumber: number;
+  endpoint: string;
+  method: string;
+  code: string;
+  response: any;
+  extractedVars: Record<string, any>;
+  dependencies: string[];
+  lockedAt: number;
+  status: 'success';
+};
+
+type AIInsight = {
+  id: string;
+  type: 'credential_required' | 'conditional_logic' | 'temporal_constraint' | 'rate_limit' | 'field_dependency' | 'pagination_pattern' | 'validation_rule';
+  rule: string;
+  confidence: number;
+  severity: 'high' | 'medium' | 'low';
+  suggestion: string;
+  autoFixable: boolean;
+  dismissed: boolean;
+};
+
+type TestResult = {
+  success: boolean;
+  status: number;
+  statusText: string;
+  headers: Record<string, any>;
+  body: any;
+  error?: string;
+};
+
 type NeuromapWorkspaceProps = {
   neuromap: Neuromap;
   onUpdate: (neuromap: Neuromap) => void;
@@ -88,6 +121,65 @@ function copyToClipboard(text: string, callback: () => void) {
   callback();
 }
 
+// Extract variables from response
+function extractVariablesFromResponse(response: any): Record<string, any> {
+  const vars: Record<string, any> = {};
+  
+  if (!response) return vars;
+  
+  // Common patterns
+  if (response.token) vars.token = response.token;
+  if (response.access_token) vars.access_token = response.access_token;
+  if (response.accessToken) vars.accessToken = response.accessToken;
+  if (response.refresh_token) vars.refresh_token = response.refresh_token;
+  if (response.session_id) vars.session_id = response.session_id;
+  if (response.sessionId) vars.sessionId = response.sessionId;
+  if (response.user?.id) vars.userId = response.user.id;
+  if (response.userId) vars.userId = response.userId;
+  if (response.id) vars.id = response.id;
+  if (response.data?.id) vars.dataId = response.data.id;
+  
+  return vars;
+}
+
+// Find dependencies in code
+function findDependencies(code: string, lockedSteps: LockedStep[]): string[] {
+  const deps: string[] = [];
+  
+  lockedSteps.forEach(step => {
+    Object.keys(step.extractedVars || {}).forEach(varName => {
+      const varPattern = `{{step${step.stepNumber}.${varName}}}`;
+      if (code.includes(varPattern)) {
+        deps.push(`step${step.stepNumber}.${varName}`);
+      }
+    });
+  });
+  
+  return deps;
+}
+
+// Get all available variables from locked steps
+function getAllAvailableVariables(lockedSteps: LockedStep[]): Record<string, any> {
+  const allVars: Record<string, any> = {};
+  
+  lockedSteps.forEach(step => {
+    Object.entries(step.extractedVars || {}).forEach(([key, value]) => {
+      allVars[`step${step.stepNumber}.${key}`] = value;
+    });
+  });
+  
+  return allVars;
+}
+
+// Replace variables in code
+function replaceVariablesInCode(code: string, variables: Record<string, any>): string {
+  let result = code;
+  Object.entries(variables).forEach(([key, value]) => {
+    result = result.replace(new RegExp(`{{${key}}}`, 'g'), String(value));
+  });
+  return result;
+}
+
 export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl = 'ws://localhost:8787/explorer' }: NeuromapWorkspaceProps) {
   const effectiveWsUrl =
     typeof window !== 'undefined' && isElectron && typeof (window as unknown as { electronBridge?: { getBridgeWs?: () => string } }).electronBridge?.getBridgeWs === 'function'
@@ -106,11 +198,26 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
   const [copiedEndpoint, setCopiedEndpoint] = useState<string | null>(null);
   const [selectedEndpoint, setSelectedEndpoint] = useState<EndpointData | null>(null);
   
+  // Goal/Constraints state
+  const [userGoal, setUserGoal] = useState('');
+  const [userConstraints, setUserConstraints] = useState('');
+  const [targetData, setTargetData] = useState('');
+  
+  // Locked Pipeline state
+  const [lockedSteps, setLockedSteps] = useState<LockedStep[]>([]);
+  const [currentStepFocus, setCurrentStepFocus] = useState(1);
+  
   // AI Agent state
   const [aiAgentActive, setAiAgentActive] = useState(false);
   const [aiAgentStatus, setAiAgentStatus] = useState<'idle' | 'analyzing' | 'completed'>('idle');
-  const [aiInsights, setAiInsights] = useState<string[]>([]);
-  const [aiRecommendations, setAiRecommendations] = useState<Array<{ type: string; message: string }>>([]);
+  const [aiSuggestedStep, setAiSuggestedStep] = useState<any>(null);
+  const [aiInsightsList, setAiInsightsList] = useState<AIInsight[]>([]);
+  const [insightsPanelOpen, setInsightsPanelOpen] = useState(true);
+  
+  // Test & Execution state  
+  const [testResult, setTestResult] = useState<TestResult | null>(null);
+  const [testLoading, setTestLoading] = useState(false);
+  const [currentCode, setCurrentCode] = useState('');
   
   const endpointMapRef = useRef<Map<string, EndpointData>>(new Map());
   const wsRef = useRef<WebSocket | null>(null);
@@ -291,37 +398,73 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
     setAiAgentActive(!aiAgentActive);
     if (!aiAgentActive) {
       setAiAgentStatus('idle');
-      setAiInsights([]);
-      setAiRecommendations([]);
+      setAiSuggestedStep(null);
     }
   };
 
   const runAiAnalysis = async () => {
     setAiAgentStatus('analyzing');
     
-    // TODO: Implement AI analysis logic
-    // This is where we'll integrate with AI models to:
-    // - Analyze endpoint patterns
-    // - Detect authentication flows
-    // - Identify API versioning
-    // - Suggest optimal capture strategies
-    // - Detect rate limits
-    // - Map data dependencies
+    try {
+      const response = await fetch('/api/ai/analyze-endpoints', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          goal: userGoal,
+          constraints: userConstraints,
+          targetData: targetData,
+          endpoints: endpoints.map(ep => ({
+            method: ep.method,
+            host: ep.host,
+            path: ep.path,
+            hasAuth: ep.hasAuth,
+            count: ep.count,
+            statuses: ep.statuses,
+            sampleHeaders: ep.sampleHeaders,
+            sampleUrl: ep.sampleUrl,
+          })),
+          lockedSteps: lockedSteps,
+          currentStepNumber: currentStepFocus,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.ok && data.analysis) {
+        setAiSuggestedStep(data.analysis.suggestedStep);
+        setAiAgentStatus('completed');
+        
+        // Auto-select the suggested endpoint if found
+        const suggested = endpoints.find(
+          ep => ep.path === data.analysis.suggestedStep?.endpoint &&
+                ep.method === data.analysis.suggestedStep?.method
+        );
+        if (suggested) {
+          setSelectedEndpoint(suggested);
+          
+          // Generate code with variables
+          const code = generateCodeWithVariables(suggested, data.analysis.suggestedStep.usesVariables || []);
+          setCurrentCode(code);
+        }
+      } else {
+        console.error('[AI] Analysis failed:', data.error);
+        setAiAgentStatus('idle');
+      }
+    } catch (err) {
+      console.error('[AI] Error running analysis:', err);
+      setAiAgentStatus('idle');
+    }
+  };
+  
+  const generateCodeWithVariables = (endpoint: EndpointData, usesVariables: string[]): string => {
+    let code = generateCurl(endpoint);
     
-    // Skeletal placeholder
-    setTimeout(() => {
-      setAiInsights([
-        'Analyzing endpoint patterns...',
-        'Detecting authentication schemes...',
-        'Mapping API structure...',
-      ]);
-      setAiRecommendations([
-        { type: 'auth', message: 'OAuth 2.0 flow detected - capture access_token' },
-        { type: 'performance', message: 'Consider rate limiting - 100 req/min detected' },
-        { type: 'structure', message: 'REST API v2 - endpoints follow /api/v2/* pattern' },
-      ]);
-      setAiAgentStatus('completed');
-    }, 2000);
+    // Add variable placeholders
+    usesVariables.forEach(varName => {
+      code = code.replace(/(-H 'Authorization: [^']*')/g, `-H 'Authorization: Bearer {{${varName}}}'`);
+    });
+    
+    return code;
   };
 
   useEffect(() => {
@@ -329,6 +472,165 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
       runAiAnalysis();
     }
   }, [aiAgentActive, endpoints.length, aiAgentStatus]);
+
+  // Auto-generate code when endpoint is selected
+  useEffect(() => {
+    if (selectedEndpoint) {
+      const code = snippetLang === 'curl' ? generateCurl(selectedEndpoint) :
+                   snippetLang === 'fetch' ? generateFetch(selectedEndpoint) :
+                   snippetLang === 'axios' ? generateAxios(selectedEndpoint) :
+                   generatePython(selectedEndpoint);
+      setCurrentCode(code);
+      setTestResult(null); // Clear previous test result
+    }
+  }, [selectedEndpoint, snippetLang]);
+
+  // Test code snippet
+  const executeCode = async () => {
+    if (!currentCode || !selectedEndpoint) return;
+    
+    setTestLoading(true);
+    setTestResult(null);
+    
+    try {
+      const variables = getAllAvailableVariables(lockedSteps);
+      
+      const response = await fetch('/api/execute-snippet', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          code: currentCode,
+          language: snippetLang,
+          variables: variables,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.ok && data.result) {
+        setTestResult(data.result);
+        
+        // Observe pattern (send to AI)
+        await observePattern({
+          type: data.result.success ? 'test_success' : 'test_failure',
+          details: {
+            endpoint: selectedEndpoint.path,
+            method: selectedEndpoint.method,
+            status: data.result.status,
+            response: data.result.body,
+          }
+        });
+      } else {
+        setTestResult({
+          success: false,
+          status: 0,
+          statusText: 'Execution Error',
+          headers: {},
+          body: null,
+          error: data.error || 'Unknown error',
+        });
+      }
+    } catch (err) {
+      setTestResult({
+        success: false,
+        status: 0,
+        statusText: 'Error',
+        headers: {},
+        body: null,
+        error: err instanceof Error ? err.message : String(err),
+      });
+    } finally {
+      setTestLoading(false);
+    }
+  };
+
+  // Lock current step
+  const lockCurrentStep = () => {
+    if (!testResult || !testResult.success || !selectedEndpoint) return;
+    
+    const extractedVars = extractVariablesFromResponse(testResult.body);
+    const dependencies = findDependencies(currentCode, lockedSteps);
+    
+    const newStep: LockedStep = {
+      id: `step-${currentStepFocus}`,
+      stepNumber: currentStepFocus,
+      endpoint: selectedEndpoint.path,
+      method: selectedEndpoint.method,
+      code: currentCode,
+      response: testResult.body,
+      extractedVars: extractedVars,
+      dependencies: dependencies,
+      lockedAt: Date.now(),
+      status: 'success',
+    };
+    
+    setLockedSteps(prev => [...prev, newStep]);
+    setCurrentStepFocus(prev => prev + 1);
+    setAiAgentStatus('idle'); // Trigger re-analysis for next step
+    
+    // Clear current test
+    setTestResult(null);
+    setSelectedEndpoint(null);
+    setCurrentCode('');
+  };
+
+  // Send observation to AI
+  const observePattern = async (event: { type: string; details: any }) => {
+    try {
+      const response = await fetch('/api/ai/observe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          event,
+          context: {
+            currentStep: currentStepFocus,
+            lockedSteps: lockedSteps,
+            goal: userGoal,
+          },
+          timeline: [] // Could track full timeline if needed
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.ok && data.observation && data.observation.isSignificant) {
+        const newInsight: AIInsight = {
+          id: `insight-${Date.now()}`,
+          ...data.observation,
+          dismissed: false,
+        };
+        setAiInsightsList(prev => [...prev, newInsight]);
+      }
+    } catch (err) {
+      console.error('[AI Observe] Error:', err);
+    }
+  };
+
+  // Export workflow
+  const exportWorkflow = () => {
+    const workflow = {
+      goal: userGoal,
+      constraints: userConstraints,
+      targetData: targetData,
+      steps: lockedSteps.map(step => ({
+        stepNumber: step.stepNumber,
+        method: step.method,
+        endpoint: step.endpoint,
+        code: step.code,
+        extractedVars: step.extractedVars,
+        dependencies: step.dependencies,
+      })),
+      exportedAt: new Date().toISOString(),
+    };
+
+    const blob = new Blob([JSON.stringify(workflow, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `workflow-${Date.now()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <div className="w-full flex flex-col bg-black rounded-lg border border-slate-800 overflow-hidden" style={{ height: '88vh' }}>
@@ -339,6 +641,15 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
           <h2 className="text-lg font-bold text-red-500 font-mono tracking-wide">API SIGNAL PIPELINE</h2>
         </div>
         <div className="flex items-center gap-2">
+          {aiInsightsList.filter(i => !i.dismissed).length > 0 && (
+            <button
+              onClick={() => setInsightsPanelOpen(!insightsPanelOpen)}
+              className="flex items-center gap-1.5 px-3 py-2 bg-amber-600 hover:bg-amber-700 rounded text-xs text-white font-medium"
+            >
+              <Brain className="w-3.5 h-3.5" />
+              {aiInsightsList.filter(i => !i.dismissed).length} Insights
+            </button>
+          )}
           <button
             onClick={handleMarkInteraction}
             className={`flex items-center gap-1.5 px-3 py-2 rounded text-xs font-medium ${
@@ -365,33 +676,122 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
         </div>
       </div>
 
-      {/* PIPELINE STAGE 1: URL INPUT */}
+      {/* AI Insights Panel (Collapsible) */}
+      {insightsPanelOpen && aiInsightsList.filter(i => !i.dismissed).length > 0 && (
+        <div className="shrink-0 bg-amber-900/20 border-b border-amber-500/30 p-4">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-amber-400" />
+              <h3 className="text-sm font-bold text-amber-400">AI DISCOVERED REQUIREMENTS</h3>
+            </div>
+            <button
+              onClick={() => setInsightsPanelOpen(false)}
+              className="text-slate-500 hover:text-slate-300"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+          <div className="space-y-2 max-h-32 overflow-y-auto">
+            {aiInsightsList.filter(i => !i.dismissed).map(insight => (
+              <div key={insight.id} className="p-3 bg-slate-900 border border-amber-500/20 rounded-lg">
+                <div className="flex items-start justify-between mb-2">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                        insight.severity === 'high' ? 'bg-red-900/30 text-red-400' :
+                        insight.severity === 'medium' ? 'bg-amber-900/30 text-amber-400' :
+                        'bg-slate-700 text-slate-400'
+                      }`}>
+                        {insight.type.replace('_', ' ').toUpperCase()}
+                      </span>
+                      <span className="text-xs text-slate-500">Confidence: {Math.round(insight.confidence * 100)}%</span>
+                    </div>
+                    <div className="text-sm text-slate-300 mb-1">{insight.rule}</div>
+                    <div className="text-xs text-slate-500">{insight.suggestion}</div>
+                  </div>
+                  <button
+                    onClick={() => setAiInsightsList(prev => prev.map(i => i.id === insight.id ? {...i, dismissed: true} : i))}
+                    className="text-xs text-slate-500 hover:text-slate-300 ml-2"
+                  >
+                    Dismiss
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* PIPELINE STAGE 1: GOAL + URL INPUT */}
       <div className="shrink-0 bg-gradient-to-r from-slate-900/50 to-transparent border-b border-slate-700/50 p-4">
         <div className="flex items-center gap-3 mb-3">
           <div className="flex items-center justify-center w-8 h-8 bg-slate-700 rounded-full text-white font-bold text-sm">1</div>
-          <h3 className="text-sm font-bold text-slate-300 tracking-wide">INPUT • TARGET URL</h3>
+          <h3 className="text-sm font-bold text-slate-300 tracking-wide">INPUT • GOAL & TARGET</h3>
           <ArrowDown className="w-4 h-4 text-slate-600 ml-auto" />
         </div>
-        <div className="flex gap-2">
-          <input
-            type="url"
-            value={launchBrowserUrl}
-            onChange={(e) => setLaunchBrowserUrl(e.target.value)}
-            placeholder="https://api.example.com or https://example.com"
-            className="flex-1 px-4 py-2.5 bg-slate-900 border border-slate-700/50 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:border-red-500/60"
-          />
-          <button
-            onClick={handleLaunchBrowser}
-            disabled={launchBrowserLoading}
-            className="flex items-center gap-2 px-6 py-2.5 bg-red-600 hover:bg-red-700 disabled:opacity-50 rounded-lg text-sm text-white font-medium transition-all"
-          >
-            <Monitor className="w-4 h-4" />
-            {launchBrowserLoading ? 'Launching...' : 'Launch Browser'}
-          </button>
+        
+        <div className="space-y-3">
+          {/* Goal */}
+          <div>
+            <label className="block text-xs text-slate-500 mb-1.5">Goal (What do you want to achieve?)</label>
+            <input
+              type="text"
+              value={userGoal}
+              onChange={(e) => setUserGoal(e.target.value)}
+              placeholder="e.g., Get all product listings with prices"
+              className="w-full px-4 py-2 bg-slate-900 border border-slate-700/50 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:border-red-500/60"
+            />
+          </div>
+
+          {/* Constraints */}
+          <div>
+            <label className="block text-xs text-slate-500 mb-1.5">Constraints (optional)</label>
+            <input
+              type="text"
+              value={userConstraints}
+              onChange={(e) => setUserConstraints(e.target.value)}
+              placeholder="e.g., Must be authenticated, paginated, rate-limited"
+              className="w-full px-4 py-2 bg-slate-900 border border-slate-700/50 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:border-red-500/60"
+            />
+          </div>
+
+          {/* Target Data */}
+          <div>
+            <label className="block text-xs text-slate-500 mb-1.5">Target Data (Success criteria)</label>
+            <input
+              type="text"
+              value={targetData}
+              onChange={(e) => setTargetData(e.target.value)}
+              placeholder='e.g., JSON with: { id, name, price, stock }'
+              className="w-full px-4 py-2 bg-slate-900 border border-slate-700/50 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:border-red-500/60"
+            />
+          </div>
+
+          {/* URL */}
+          <div>
+            <label className="block text-xs text-slate-500 mb-1.5">Target URL</label>
+            <div className="flex gap-2">
+              <input
+                type="url"
+                value={launchBrowserUrl}
+                onChange={(e) => setLaunchBrowserUrl(e.target.value)}
+                placeholder="https://example.com"
+                className="flex-1 px-4 py-2 bg-slate-900 border border-slate-700/50 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:border-red-500/60"
+              />
+              <button
+                onClick={handleLaunchBrowser}
+                disabled={launchBrowserLoading}
+                className="flex items-center gap-2 px-6 py-2 bg-red-600 hover:bg-red-700 disabled:opacity-50 rounded-lg text-sm text-white font-medium transition-all"
+              >
+                <Monitor className="w-4 h-4" />
+                {launchBrowserLoading ? 'Launching...' : 'Launch Browser'}
+              </button>
+            </div>
+            {launchBrowserError && (
+              <p className="mt-2 text-red-400 text-xs">{launchBrowserError}</p>
+            )}
+          </div>
         </div>
-        {launchBrowserError && (
-          <p className="mt-2 text-red-400 text-xs">{launchBrowserError}</p>
-        )}
       </div>
 
       {/* PIPELINE STAGE 2: AI AGENT */}
@@ -437,33 +837,34 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
               )}
             </div>
 
-            {/* AI Insights */}
-            {aiInsights.length > 0 && (
-              <div className="space-y-1.5">
-                {aiInsights.map((insight, idx) => (
-                  <div key={idx} className="flex items-start gap-2 text-xs text-slate-400 px-2">
-                    <span className="text-red-500 mt-0.5">•</span>
-                    <span>{insight}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* AI Recommendations */}
-            {aiRecommendations.length > 0 && (
-              <div className="grid grid-cols-1 gap-2">
-                {aiRecommendations.map((rec, idx) => (
-                  <div
-                    key={idx}
-                    className="flex items-start gap-2 px-3 py-2 bg-slate-900/50 border border-slate-700/50 rounded-lg"
-                  >
-                    <Sparkles className="w-3.5 h-3.5 text-red-400 mt-0.5 flex-shrink-0" />
-                    <div className="flex-1">
-                      <div className="text-xs font-medium text-slate-300 mb-0.5 capitalize">{rec.type}</div>
-                      <div className="text-xs text-slate-400">{rec.message}</div>
+            {/* AI Suggested Step */}
+            {aiSuggestedStep && (
+              <div className="p-3 bg-slate-900/50 border border-red-500/30 rounded-lg">
+                <div className="flex items-start gap-2 mb-2">
+                  <Sparkles className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
+                  <div className="flex-1">
+                    <div className="text-sm font-medium text-slate-300 mb-1">
+                      Suggested: Step {aiSuggestedStep.stepNumber}
+                    </div>
+                    <div className="text-xs text-slate-400 mb-2">
+                      {aiSuggestedStep.method} {aiSuggestedStep.endpoint}
+                    </div>
+                    <div className="text-xs text-slate-500">
+                      {aiSuggestedStep.reason}
+                    </div>
+                    {aiSuggestedStep.usesVariables && aiSuggestedStep.usesVariables.length > 0 && (
+                      <div className="text-xs text-amber-400 mt-2">
+                        Uses: {aiSuggestedStep.usesVariables.join(', ')}
+                      </div>
+                    )}
+                    <div className="text-xs text-slate-600 mt-2">
+                      Expected: {aiSuggestedStep.expectedResult}
                     </div>
                   </div>
-                ))}
+                </div>
+                <div className="text-xs text-slate-600">
+                  Confidence: {Math.round((aiSuggestedStep.confidence || 0) * 100)}%
+                </div>
               </div>
             )}
           </div>
@@ -472,6 +873,72 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
             <Brain className="w-10 h-10 mx-auto mb-2 text-slate-700 opacity-50" />
             <p className="text-xs text-slate-600">AI Agent disabled</p>
             <p className="text-xs text-slate-700 mt-1">Click "Activate" to enable intelligent analysis</p>
+          </div>
+        )}
+      </div>
+
+      {/* LOCKED PIPELINE SECTION */}
+      <div className="shrink-0 bg-gradient-to-r from-green-900/10 to-transparent border-b border-green-600/20 p-4">
+        <div className="flex items-center gap-3 mb-3">
+          <div className="flex items-center justify-center w-8 h-8 bg-green-600 rounded-full text-white font-bold text-sm">🔒</div>
+          <h3 className="text-sm font-bold text-green-400 tracking-wide">LOCKED PIPELINE • {lockedSteps.length} STEPS</h3>
+          {lockedSteps.length > 0 && (
+            <button 
+              onClick={exportWorkflow}
+              className="ml-auto flex items-center gap-1.5 px-3 py-1.5 bg-red-600 hover:bg-red-700 rounded text-xs text-white font-medium"
+            >
+              <Download className="w-3 h-3" />
+              Export Workflow
+            </button>
+          )}
+          <ArrowDown className="w-4 h-4 text-slate-600" />
+        </div>
+
+        {lockedSteps.length === 0 ? (
+          <div className="text-center py-4 text-slate-500 text-sm">
+            <div className="text-slate-600 mb-2">No steps locked yet</div>
+            <div className="text-xs text-slate-700">Test and lock your first step below to start building your workflow</div>
+          </div>
+        ) : (
+          <div className="space-y-2 max-h-48 overflow-y-auto">
+            {lockedSteps.map(step => (
+              <div key={step.id} className="p-3 bg-slate-900 border border-green-600/30 rounded-lg">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-green-400 font-bold text-sm">✓ Step {step.stepNumber}</span>
+                    <span className="text-slate-400 text-xs font-mono">{step.method} {step.endpoint}</span>
+                    <span className="px-2 py-0.5 bg-green-900/30 text-green-400 text-xs rounded">LOCKED</span>
+                  </div>
+                  <button 
+                    onClick={() => setLockedSteps(prev => prev.filter(s => s.id !== step.id))}
+                    className="text-xs text-red-500 hover:text-red-400"
+                  >
+                    Delete
+                  </button>
+                </div>
+                
+                {Object.keys(step.extractedVars).length > 0 && (
+                  <div className="text-xs text-slate-500 mb-1">
+                    → Variables: {Object.entries(step.extractedVars).map(([k, v]) => 
+                      `${k}="${String(v).substring(0, 15)}${String(v).length > 15 ? '...' : ''}"`
+                    ).join(', ')}
+                  </div>
+                )}
+                
+                {step.dependencies.length > 0 && (
+                  <div className="text-xs text-red-400">
+                    ⚠ Depends on: {step.dependencies.join(', ')}
+                  </div>
+                )}
+              </div>
+            ))}
+            
+            <div className="p-3 bg-slate-900/50 border border-slate-700 border-dashed rounded-lg">
+              <div className="flex items-center gap-2 text-slate-500">
+                <span className="text-sm">→ Step {currentStepFocus}:</span>
+                <span className="text-xs">{aiAgentStatus === 'analyzing' ? 'AI mapping...' : 'Ready to test'}</span>
+              </div>
+            </div>
           </div>
         )}
       </div>
@@ -546,20 +1013,29 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
         </div>
       </div>
 
-      {/* PIPELINE STAGE 4: CODE SNIPPETS */}
-      <div className="shrink-0 bg-gradient-to-r from-slate-900/50 to-transparent" style={{ height: '30%' }}>
+      {/* PIPELINE STAGE 4: TEST & EXECUTE (Split View) */}
+      <div className="shrink-0 bg-gradient-to-r from-slate-900/50 to-transparent" style={{ height: '35%' }}>
         <div className="h-full flex flex-col">
-          <div className="shrink-0 flex items-center gap-3 p-4 pb-3 border-b border-slate-800">
+          <div className="shrink-0 flex items-center gap-3 p-3 border-b border-slate-800">
             <div className="flex items-center justify-center w-8 h-8 bg-slate-700 rounded-full text-white font-bold text-sm">4</div>
-            <h3 className="text-sm font-bold text-slate-300 tracking-wide">OUTPUT • CODE SNIPPETS</h3>
+            <h3 className="text-sm font-bold text-slate-300 tracking-wide">EXECUTE • TEST & VALIDATE</h3>
             <div className="ml-auto flex items-center gap-2">
               {(['curl', 'fetch', 'axios', 'python'] as CodeSnippetLang[]).map((lang) => (
                 <button
                   key={lang}
-                  onClick={() => setSnippetLang(lang)}
-                  className={`px-3 py-1 text-xs rounded-lg font-medium transition-all ${
+                  onClick={() => {
+                    setSnippetLang(lang);
+                    if (selectedEndpoint) {
+                      const code = lang === 'curl' ? generateCurl(selectedEndpoint) :
+                                   lang === 'fetch' ? generateFetch(selectedEndpoint) :
+                                   lang === 'axios' ? generateAxios(selectedEndpoint) :
+                                   generatePython(selectedEndpoint);
+                      setCurrentCode(code);
+                    }
+                  }}
+                  className={`px-2 py-1 text-xs rounded font-medium transition-all ${
                     snippetLang === lang
-                      ? 'bg-red-600 text-white shadow-lg'
+                      ? 'bg-red-600 text-white'
                       : 'bg-slate-700 text-slate-400 hover:bg-slate-600'
                   }`}
                 >
@@ -569,46 +1045,81 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
             </div>
           </div>
           
-          <div className="flex-1 overflow-y-auto p-4">
-            {!selectedEndpoint ? (
-              <div className="flex items-center justify-center h-full text-slate-500 text-sm">
-                <div className="text-center">
-                  <Terminal className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                  <p>Select an endpoint above to generate code</p>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Code className="w-4 h-4 text-red-400" />
-                    <span className="text-xs text-slate-400 font-mono">{selectedEndpoint.method} {selectedEndpoint.host}{selectedEndpoint.path}</span>
-                  </div>
+          <div className="flex-1 grid grid-cols-2 gap-3 p-3 overflow-hidden">
+            {/* LEFT: CODE */}
+            <div className="flex flex-col">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs text-slate-500 font-medium">CODE</span>
+                <div className="flex gap-2">
                   <button
-                    onClick={() => {
-                      const code = snippetLang === 'curl' ? generateCurl(selectedEndpoint) :
-                                   snippetLang === 'fetch' ? generateFetch(selectedEndpoint) :
-                                   snippetLang === 'axios' ? generateAxios(selectedEndpoint) :
-                                   generatePython(selectedEndpoint);
-                      copyToClipboard(code, () => {
-                        setCopiedEndpoint(selectedEndpoint.sampleUrl);
-                        setTimeout(() => setCopiedEndpoint(null), 2000);
-                      });
-                    }}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 hover:bg-red-700 rounded text-xs text-white font-medium"
+                    onClick={executeCode}
+                    disabled={!currentCode || testLoading}
+                    className="flex items-center gap-1 px-3 py-1 bg-slate-700 hover:bg-slate-600 disabled:opacity-50 rounded text-xs text-white"
                   >
-                    {copiedEndpoint === selectedEndpoint.sampleUrl ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
-                    {copiedEndpoint === selectedEndpoint.sampleUrl ? 'Copied!' : 'Copy'}
+                    {testLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Play className="w-3 h-3" />}
+                    Test
                   </button>
+                  {testResult?.success && (
+                    <button
+                      onClick={lockCurrentStep}
+                      className="flex items-center gap-1 px-3 py-1 bg-green-600 hover:bg-green-700 rounded text-xs text-white font-medium"
+                    >
+                      🔒 Lock Step {currentStepFocus}
+                    </button>
+                  )}
                 </div>
-                <pre className="p-4 bg-slate-950 border border-slate-700 rounded-lg text-xs text-slate-300 font-mono overflow-x-auto">
-                  {snippetLang === 'curl' && generateCurl(selectedEndpoint)}
-                  {snippetLang === 'fetch' && generateFetch(selectedEndpoint)}
-                  {snippetLang === 'axios' && generateAxios(selectedEndpoint)}
-                  {snippetLang === 'python' && generatePython(selectedEndpoint)}
-                </pre>
               </div>
-            )}
+              {!selectedEndpoint ? (
+                <div className="flex-1 flex items-center justify-center bg-slate-950 border border-slate-800 rounded-lg text-slate-600 text-sm">
+                  <div className="text-center">
+                    <Terminal className="w-10 h-10 mx-auto mb-2 opacity-50" />
+                    <p className="text-xs">Select endpoint above</p>
+                  </div>
+                </div>
+              ) : (
+                <textarea
+                  value={currentCode}
+                  onChange={(e) => setCurrentCode(e.target.value)}
+                  className="flex-1 p-3 bg-slate-950 border border-slate-700 rounded-lg text-xs text-slate-300 font-mono resize-none focus:outline-none focus:border-red-500/60"
+                  spellCheck={false}
+                />
+              )}
+            </div>
+
+            {/* RIGHT: RESPONSE */}
+            <div className="flex flex-col">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs text-slate-500 font-medium">RESPONSE</span>
+                {testResult && (
+                  <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                    testResult.success ? 'bg-green-900/30 text-green-400' : 'bg-red-900/30 text-red-400'
+                  }`}>
+                    {testResult.success ? `✓ ${testResult.status} ${testResult.statusText}` : `✗ ${testResult.status || 'Error'}`}
+                  </span>
+                )}
+              </div>
+              {!testResult ? (
+                <div className="flex-1 flex items-center justify-center bg-slate-950 border border-slate-800 rounded-lg text-slate-600 text-sm">
+                  <div className="text-center">
+                    <Code className="w-10 h-10 mx-auto mb-2 opacity-50" />
+                    <p className="text-xs">Run test to see response</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex-1 overflow-y-auto p-3 bg-slate-950 border border-slate-700 rounded-lg">
+                  {testResult.error ? (
+                    <div className="text-xs text-red-400">
+                      <div className="font-bold mb-2">Error:</div>
+                      <pre>{testResult.error}</pre>
+                    </div>
+                  ) : (
+                    <pre className="text-xs text-slate-300 font-mono whitespace-pre-wrap">
+                      {JSON.stringify(testResult.body, null, 2)}
+                    </pre>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
