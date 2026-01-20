@@ -1,8 +1,23 @@
 /**
  * Form Correlator - Maps DOM elements to Network requests
  * Used for Mode #1: Full Map (Legacy Forms)
+ * 
+ * @module form-correlator
+ * @description Provides utilities to correlate DOM interactions with network traffic
+ * for legacy form-based applications (ASP.NET, PHP, etc.)
+ * 
+ * @example
+ * ```typescript
+ * import { generateButtonMap, extractFormState } from './form-correlator';
+ * 
+ * const formState = extractFormState(htmlString);
+ * const buttonMap = generateButtonMap(domSnapshots, networkEvents);
+ * ```
  */
 
+/**
+ * Represents an interactive DOM element (button, input, select, etc.)
+ */
 export type FormElement = {
   type: 'button' | 'submit' | 'input' | 'select' | 'radio' | 'checkbox';
   id: string;
@@ -30,28 +45,64 @@ export type FormActionMap = {
   timestamp?: number;
 };
 
+/**
+ * Represents a captured DOM element in the tree structure
+ */
+export type DOMElement = {
+  tag: string;
+  id: string | null;
+  classes: string[];
+  attributes: Record<string, string>;
+  position: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    visible: boolean;
+    inViewport: boolean;
+  };
+  text?: string;
+  children?: DOMElement[];
+};
+
+/**
+ * Complete DOM snapshot captured at a specific point in time
+ */
 export type DOMSnapshot = {
   id: string;
   timestamp: number;
   url: string;
   html: string;
-  elements: any[];
+  elements: DOMElement[];
   formState?: FormState;
   interactions?: FormElement[];
+  scrollPosition?: { x: number; y: number };
+  viewport?: { width: number; height: number };
 };
 
+/**
+ * Network request associated with a form interaction
+ */
+export type NetworkRequest = {
+  method: string;
+  url: string;
+  path: string;
+  timestamp: number;
+  payload?: string;
+  headers?: Record<string, string>;
+  status?: number;
+  responseTime?: number;
+};
+
+/**
+ * Result of correlating a DOM element with network traffic
+ */
 export type CorrelationResult = {
   element: FormElement;
-  networkRequest?: {
-    method: string;
-    url: string;
-    path: string;
-    timestamp: number;
-    payload?: any;
-    headers?: Record<string, string>;
-  };
-  confidence: number; // 0-1
+  networkRequest?: NetworkRequest;
+  confidence: number; // 0-1 (1 = perfect match)
   timeDeltaMs: number;
+  matchReasons: string[]; // Why this correlation was made
 };
 
 /**
@@ -172,6 +223,24 @@ export function extractInteractiveElements(html: string): FormElement[] {
 /**
  * Correlate DOM interactions with network requests
  * Matches elements to endpoints based on timing and patterns
+ * 
+ * @param domSnapshot - Single DOM snapshot to analyze
+ * @param networkEvents - Array of network events to correlate
+ * @param timeWindowMs - Time window for correlation (default: 2000ms)
+ * @returns Array of correlation results sorted by confidence
+ * 
+ * @description
+ * Uses multiple heuristics to match UI elements with network requests:
+ * - Timing proximity (closer events = higher confidence)
+ * - Element name/ID in request payload
+ * - __doPostBack pattern matching
+ * - HTTP method matching (POST for submits)
+ * 
+ * @example
+ * ```typescript
+ * const correlations = correlateInteractions(snapshot, events, 1500);
+ * const bestMatch = correlations[0]; // Highest confidence
+ * ```
  */
 export function correlateInteractions(
   domSnapshot: DOMSnapshot,
@@ -200,24 +269,28 @@ export function correlateInteractions(
     // Try to match element to network event
     for (const event of candidateEvents) {
       let confidence = 0;
+      const matchReasons: string[] = [];
       const timeDelta = event.ts - domSnapshot.timestamp;
 
       // Check if element name appears in request body
       if (event.reqBodyText && element.name) {
         if (event.reqBodyText.includes(element.name)) {
           confidence += 0.4;
+          matchReasons.push(`Element name '${element.name}' found in payload`);
         }
         if (element.id && event.reqBodyText.includes(element.id)) {
           confidence += 0.3;
+          matchReasons.push(`Element ID '${element.id}' found in payload`);
         }
       }
 
-      // Check for __doPostBack pattern
+      // Check for __doPostBack pattern (ASP.NET)
       if (element.onclick && element.onclick.includes('__doPostBack')) {
         const targetMatch = element.onclick.match(/__doPostBack\('([^']*)',/);
         if (targetMatch && event.reqBodyText) {
           if (event.reqBodyText.includes(`__EVENTTARGET=${targetMatch[1]}`)) {
             confidence += 0.5;
+            matchReasons.push(`ASP.NET postback target matched: ${targetMatch[1]}`);
           }
         }
       }
@@ -225,15 +298,28 @@ export function correlateInteractions(
       // POST requests are more likely to be form submissions
       if (event.method === 'POST' && element.type === 'submit') {
         confidence += 0.2;
+        matchReasons.push('POST method + submit button');
       }
 
       // Closer in time = higher confidence
       if (timeDelta < 500) {
         confidence += 0.3;
+        matchReasons.push(`Very close timing (${timeDelta}ms)`);
       } else if (timeDelta < 1000) {
         confidence += 0.2;
+        matchReasons.push(`Close timing (${timeDelta}ms)`);
       } else if (timeDelta < 1500) {
         confidence += 0.1;
+        matchReasons.push(`Near timing (${timeDelta}ms)`);
+      }
+
+      // Check for form ID match (if element is inside a form)
+      if (event.reqBodyText && element.id) {
+        const formMatch = event.reqBodyText.match(/form[_-]?id=([^&]+)/i);
+        if (formMatch && element.id.includes(formMatch[1])) {
+          confidence += 0.2;
+          matchReasons.push(`Form ID matched: ${formMatch[1]}`);
+        }
       }
 
       // Only add if we have reasonable confidence
@@ -249,14 +335,20 @@ export function correlateInteractions(
             headers: event.reqHeaders
           },
           confidence: Math.min(confidence, 1.0),
-          timeDeltaMs: timeDelta
+          timeDeltaMs: timeDelta,
+          matchReasons
         });
       }
     }
   }
 
-  // Sort by confidence (highest first)
-  return results.sort((a, b) => b.confidence - a.confidence);
+  // Sort by confidence (highest first), then by time delta (closest first)
+  return results.sort((a, b) => {
+    if (Math.abs(a.confidence - b.confidence) < 0.05) {
+      return a.timeDeltaMs - b.timeDeltaMs;
+    }
+    return b.confidence - a.confidence;
+  });
 }
 
 /**
@@ -287,7 +379,46 @@ export function buildFormActionMap(
 }
 
 /**
+ * Mapped button/element with correlation data
+ */
+export type MappedElement = {
+  id: string;
+  type: string;
+  text?: string;
+  endpoint?: string;
+  method?: string;
+  confidence?: number;
+  formState?: FormState;
+  xpath?: string;
+  snapshotId?: string;
+};
+
+/**
+ * Complete button map result
+ */
+export type ButtonMapResult = {
+  totalButtons: number;
+  mappedButtons: number;
+  unmappedButtons: number;
+  buttons: MappedElement[];
+  coverage: number; // 0-1 (percentage mapped)
+  generatedAt: number; // timestamp
+  snapshotsAnalyzed: number;
+  networkEventsAnalyzed: number;
+};
+
+/**
  * Generate a complete button map for UI display
+ * 
+ * @param domSnapshots - Array of captured DOM snapshots
+ * @param networkEvents - Array of captured network events
+ * @returns Complete button map with correlation data
+ * 
+ * @example
+ * ```typescript
+ * const buttonMap = generateButtonMap(snapshots, events);
+ * console.log(`Mapped ${buttonMap.mappedButtons}/${buttonMap.totalButtons} elements`);
+ * ```
  */
 export function generateButtonMap(
   domSnapshots: DOMSnapshot[],
@@ -299,20 +430,7 @@ export function generateButtonMap(
     reqBodyText?: string;
     reqHeaders?: Record<string, string>;
   }>
-): {
-  totalButtons: number;
-  mappedButtons: number;
-  unmappedButtons: number;
-  buttons: Array<{
-    id: string;
-    type: string;
-    text?: string;
-    endpoint?: string;
-    method?: string;
-    confidence?: number;
-    formState?: FormState;
-  }>;
-} {
+): ButtonMapResult {
   const allMaps: FormActionMap[] = [];
   
   for (const snapshot of domSnapshots) {
@@ -320,21 +438,28 @@ export function generateButtonMap(
     allMaps.push(...maps);
   }
 
-  const buttonMap = allMaps.map(map => ({
+  const buttonMap: MappedElement[] = allMaps.map(map => ({
     id: map.element.id || map.element.name || 'unknown',
     type: map.element.type,
     text: map.element.text || map.element.value,
     endpoint: map.expectedEndpoint,
     method: 'POST', // Most .ASPX forms use POST
-    formState: map.formState
+    formState: map.formState,
+    xpath: map.element.xpath,
+    snapshotId: domSnapshots.find(s => s.timestamp === map.timestamp)?.id
   }));
 
   const mapped = buttonMap.filter(b => b.endpoint).length;
+  const coverage = buttonMap.length > 0 ? mapped / buttonMap.length : 0;
 
   return {
     totalButtons: buttonMap.length,
     mappedButtons: mapped,
     unmappedButtons: buttonMap.length - mapped,
-    buttons: buttonMap
+    buttons: buttonMap,
+    coverage,
+    generatedAt: Date.now(),
+    snapshotsAnalyzed: domSnapshots.length,
+    networkEventsAnalyzed: networkEvents.length
   };
 }

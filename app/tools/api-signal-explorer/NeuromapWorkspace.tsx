@@ -12,8 +12,9 @@ import { extractSmartVariables, detectAuthMethod, generateUsageExamples } from '
 import { validateResponse, suggestImprovedTarget } from '@/utils/ai/success-validator';
 import { findMatchingScenarios, getContextualHints, type Scenario } from '@/utils/ai/auto-suggestions';
 import { getInitialAgentState, updateAgentState, shouldLoop, getNextObjective, type AgentState } from '@/utils/ai/agent-rules';
-import { extractFormState, extractInteractiveElements, buildFormActionMap, generateButtonMap, type FormActionMap, type DOMSnapshot } from '@/src/tools/api-signal-explorer/form-correlator';
-import { validateSequentially, validatePersistence, type SequentialTestResult } from '@/src/tools/api-signal-explorer/sequential-validator';
+import { type ButtonMapResult, type DOMSnapshot, type MappedElement } from '@/src/tools/api-signal-explorer/form-correlator';
+import { type SequentialTestResult, type ValidationResult } from '@/src/tools/api-signal-explorer/sequential-validator';
+import { ErrorBoundary } from './ErrorBoundary';
 import AIChatPanel, { type ChatMessage } from './AIChatPanel';
 
 type EndpointData = {
@@ -253,7 +254,7 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
   const [analyzingFlipbook, setAnalyzingFlipbook] = useState(false);
   
   // Mode #1: Full Map state
-  const [buttonMap, setButtonMap] = useState<any>(null);
+  const [buttonMap, setButtonMap] = useState<ButtonMapResult | null>(null);
   const [generatingButtonMap, setGeneratingButtonMap] = useState(false);
   const [validationResult, setValidationResult] = useState<SequentialTestResult | null>(null);
   const [validating, setValidating] = useState(false);
@@ -268,6 +269,68 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
   // AI Mode Types
   type AIMode = 'fullMap' | 'apiOnly' | 'mobileReverse';
   const [aiMode, setAiMode] = useState<AIMode>('apiOnly');
+  
+  // ═══════════════════════════════════════════════════════════════════
+  // PERFORMANCE OPTIMIZATIONS: Memoized Computations
+  // ═══════════════════════════════════════════════════════════════════
+
+  /**
+   * Memoized network events for correlation
+   * Only recomputes when endpoints change
+   */
+  const networkEventsForCorrelation = useMemo(() => {
+    return endpoints.map(ep => ({
+      ts: ep.lastSeen,
+      method: ep.method,
+      url: ep.sampleUrl,
+      path: ep.path,
+      reqBodyText: ep.sampleReqBody,
+      reqHeaders: ep.sampleHeaders
+    }));
+  }, [endpoints]);
+
+  /**
+   * Memoized button map coverage statistics
+   * Avoid recalculating percentages on every render
+   */
+  const buttonMapCoverage = useMemo(() => {
+    if (!buttonMap) return null;
+    return {
+      percentage: Math.round(buttonMap.coverage * 100),
+      mapped: buttonMap.mappedButtons,
+      total: buttonMap.totalButtons,
+      unmapped: buttonMap.unmappedButtons
+    };
+  }, [buttonMap]);
+
+  /**
+   * Memoized validation summary
+   * Pre-computes display values for validation results
+   */
+  const validationSummary = useMemo(() => {
+    if (!validationResult) return null;
+    return {
+      passed: validationResult.allPassed,
+      reliability: Math.round(validationResult.reliability * 100),
+      avgResponseTime: Math.round(validationResult.averageResponseTime),
+      successRate: `${validationResult.successfulAttempts}/${validationResult.totalAttempts}`
+    };
+  }, [validationResult]);
+
+  /**
+   * Memoized filtered endpoints for Mode #1
+   * Only includes relevant endpoints based on AI mode
+   */
+  const relevantEndpoints = useMemo(() => {
+    if (aiMode !== 'fullMap') return endpoints;
+    
+    // For Mode #1, prioritize POST requests (form submissions)
+    return endpoints.sort((a, b) => {
+      if (a.method === 'POST' && b.method !== 'POST') return -1;
+      if (a.method !== 'POST' && b.method === 'POST') return 1;
+      return b.lastSeen - a.lastSeen; // Most recent first
+    });
+  }, [endpoints, aiMode]);
   
   const endpointMapRef = useRef<Map<string, EndpointData>>(new Map());
   const wsRef = useRef<WebSocket | null>(null);
@@ -1340,11 +1403,20 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
 
   /**
    * Generate button map from DOM snapshots and network events
+   * Memoized with useCallback to prevent unnecessary re-creation
    */
-  const generateFullButtonMap = async () => {
+  const generateFullButtonMap = useCallback(async () => {
     if (flipbookSnapshots.length === 0) {
       addChatMessage('assistant',
         '⚠️ No DOM snapshots available. Launch browser and interact with the site to capture form elements.',
+        { type: 'warning' }
+      );
+      return;
+    }
+
+    if (!flipbookSessionId) {
+      addChatMessage('assistant',
+        '⚠️ No session ID available. Please reload the page.',
         { type: 'warning' }
       );
       return;
@@ -1362,7 +1434,7 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
     );
 
     try {
-      // Convert endpoints to array format needed by correlator
+      // Convert endpoints to array format needed by API
       const networkEvents = endpoints.map(ep => ({
         ts: ep.lastSeen,
         method: ep.method,
@@ -1372,8 +1444,23 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
         reqHeaders: ep.sampleHeaders
       }));
 
-      // Generate button map
-      const map = generateButtonMap(flipbookSnapshots, networkEvents);
+      // Call API to generate button map
+      const response = await fetch('/api/fullmap/generate-button-map', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionId: flipbookSessionId,
+          networkEvents
+        })
+      });
+
+      const data = await response.json();
+
+      if (!data.ok || !data.buttonMap) {
+        throw new Error(data.error || 'Failed to generate button map');
+      }
+
+      const map = data.buttonMap;
       setButtonMap(map);
 
       let message = `✅ **Full Map Complete**\n\n`;
@@ -1415,19 +1502,39 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
 
     } catch (err) {
       console.error('[FullMap] Button map generation error:', err);
-      addChatMessage('assistant',
-        `❌ Failed to generate button map: ${err instanceof Error ? err.message : String(err)}`,
-        { type: 'warning' }
-      );
+      
+      let errorMessage = '❌ Failed to generate button map\n\n';
+      
+      if (err instanceof Error) {
+        if (err.message.includes('Failed to load DOM snapshots')) {
+          errorMessage += '**Issue**: Could not load DOM snapshots from session\n';
+          errorMessage += '**Solution**: Try launching the browser and browsing the site again to capture fresh snapshots.';
+        } else if (err.message.includes('No snapshots found')) {
+          errorMessage += '**Issue**: No DOM snapshots available\n';
+          errorMessage += '**Solution**: Navigate through the site in the launched browser to capture form interactions.';
+        } else if (err.message.includes('network')) {
+          errorMessage += '**Issue**: Network request failed\n';
+          errorMessage += '**Solution**: Check your connection and try again.';
+        } else {
+          errorMessage += `**Error**: ${err.message}\n`;
+          errorMessage += '**Solution**: Please check the console for details or try again.';
+        }
+      } else {
+        errorMessage += `**Error**: ${String(err)}\n`;
+        errorMessage += '**Solution**: Please try again or contact support if the issue persists.';
+      }
+      
+      addChatMessage('assistant', errorMessage, { type: 'warning' });
     } finally {
       setGeneratingButtonMap(false);
     }
-  };
+  }, [flipbookSnapshots, flipbookSessionId, endpoints, agentState, addChatMessage]);
 
   /**
    * Validate locked steps 2x in sequence (Mode #1 requirement)
+   * Memoized with useCallback to prevent unnecessary re-creation
    */
-  const validateWorkflow2x = async () => {
+  const validateWorkflow2x = useCallback(async () => {
     if (lockedSteps.length === 0) {
       addChatMessage('assistant',
         '⚠️ No steps locked yet. Lock at least one step before validation.',
@@ -1445,7 +1552,25 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
     );
 
     try {
-      const result = await validateSequentially(lockedSteps, 2);
+      // Call API to validate workflow
+      const response = await fetch('/api/fullmap/validate-workflow', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          steps: lockedSteps,
+          mode: 'sequential',
+          numAttempts: 2,
+          sessionId: flipbookSessionId
+        })
+      });
+
+      const data = await response.json();
+
+      if (!data.ok || !data.result) {
+        throw new Error(data.error || 'Validation failed');
+      }
+
+      const result = data.result;
       setValidationResult(result);
 
       let message = result.allPassed 
@@ -1459,12 +1584,12 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
       message += `• Passed: ${result.successfulAttempts}\n`;
       message += `• Failed: ${result.failedAttempts}\n\n`;
 
-      result.steps.forEach(step => {
+      result.steps.forEach((step: { stepNumber: number; passRate: number; attempts: ValidationResult[] }) => {
         const icon = step.passRate === 1 ? '✓' : step.passRate > 0.5 ? '⚠' : '✗';
         message += `${icon} **Step ${step.stepNumber}**: ${Math.round(step.passRate * 100)}% pass rate\n`;
         
         // Show attempt details
-        step.attempts.forEach(attempt => {
+        step.attempts.forEach((attempt: ValidationResult) => {
           const status = attempt.success ? '✓' : '✗';
           message += `  ${status} Attempt ${attempt.attempt}: ${attempt.statusCode} (${attempt.responseTime}ms)`;
           if (attempt.error) {
@@ -1504,22 +1629,44 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
 
     } catch (err) {
       console.error('[FullMap] Validation error:', err);
-      addChatMessage('assistant',
-        `❌ Validation failed: ${err instanceof Error ? err.message : String(err)}`,
-        { type: 'warning' }
-      );
+      
+      let errorMessage = '❌ Workflow validation failed\n\n';
+      
+      if (err instanceof Error) {
+        if (err.message.includes('timeout') || err.message.includes('timed out')) {
+          errorMessage += '**Issue**: Request timed out\n';
+          errorMessage += '**Solution**: The endpoint may be slow or unreachable. Check the endpoint URL and try again.';
+        } else if (err.message.includes('network') || err.message.includes('fetch')) {
+          errorMessage += '**Issue**: Network connection failed\n';
+          errorMessage += '**Solution**: Check your internet connection and verify the endpoint is accessible.';
+        } else if (err.message.includes('auth') || err.message.includes('401')) {
+          errorMessage += '**Issue**: Authentication failed\n';
+          errorMessage += '**Solution**: The session may have expired. Try refreshing your cookies or logging in again.';
+        } else if (err.message.includes('CORS')) {
+          errorMessage += '**Issue**: CORS policy blocked the request\n';
+          errorMessage += '**Solution**: The endpoint needs to allow cross-origin requests. This is a server configuration issue.';
+        } else {
+          errorMessage += `**Error**: ${err.message}\n`;
+          errorMessage += '**Solution**: Check the error details above and adjust your workflow steps.';
+        }
+      } else {
+        errorMessage += `**Error**: ${String(err)}\n`;
+        errorMessage += '**Solution**: An unexpected error occurred. Please try again.';
+      }
+      
+      addChatMessage('assistant', errorMessage, { type: 'warning' });
     } finally {
       setValidating(false);
     }
-  };
+  }, [lockedSteps, flipbookSessionId, agentState, addChatMessage]);
 
   // Apply scenario template
-  const applyScenario = (scenario: Scenario) => {
+  const applyScenario = useCallback((scenario: Scenario) => {
     setUserGoal(scenario.goal);
     setUserConstraints(scenario.constraints);
     setTargetData(scenario.targetData);
     setShowScenarios(false);
-  };
+  }, []);
 
   // Export workflow
   const exportWorkflow = () => {
@@ -2001,7 +2148,8 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
             <p className="text-xs text-slate-700 mt-1">Click "Activate" to enable intelligent analysis</p>
           </div>
         )}
-      </div>
+        </div>
+      )}
 
       {/* NETWORK LOGS + CODE SNIPPETS (TABBED) */}
       <div className="flex-1 flex flex-col min-h-0 bg-gradient-to-r from-slate-900/50 to-transparent border-b border-slate-700/50">
