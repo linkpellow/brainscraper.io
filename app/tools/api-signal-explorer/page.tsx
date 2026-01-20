@@ -697,6 +697,16 @@ export default function APISignalExplorerPage() {
     (typeof process !== 'undefined' && !!(process as { versions?: { electron?: string } }).versions?.electron)
   );
 
+  // Auto-create neuromap on page load
+  useEffect(() => {
+    if (neuromaps.length === 0) {
+      const newNeuromap = createNeuromap('API Capture Session', 'browser');
+      setNeuromaps([newNeuromap]);
+      setActiveNeuromapId(newNeuromap.id);
+      newNeuromap.isActive = true;
+    }
+  }, []);
+
   return (
     <div className="min-h-screen p-4" style={{ backgroundColor: '#0a0a0a' }}>
       <div className="mx-auto max-w-full">
@@ -712,33 +722,6 @@ export default function APISignalExplorerPage() {
               </p>
             </div>
           </div>
-          {!activeNeuromapId && (
-            <button
-              onClick={() => {
-                const newNeuromap = createNeuromap(`Browser Capture ${new Date().toLocaleTimeString()}`, 'browser');
-                setNeuromaps(prev => [...prev, newNeuromap]);
-                setActiveNeuromapId(newNeuromap.id);
-                newNeuromap.isActive = true;
-              }}
-              className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-white text-sm font-medium transition-colors"
-            >
-              <Plus className="w-4 h-4" />
-              Create Neuromap
-            </button>
-          )}
-          {activeNeuromapId && (
-            <button
-              onClick={() => {
-                const activeNeuromap = neuromaps.find(n => n.id === activeNeuromapId);
-                if (activeNeuromap) activeNeuromap.isActive = false;
-                setActiveNeuromapId(null);
-              }}
-              className="flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-white text-sm font-medium transition-colors"
-            >
-              <X className="w-4 h-4" />
-              Close Neuromap
-            </button>
-          )}
         </div>
 
         {/* Live Mode Controls - Compact row */}
