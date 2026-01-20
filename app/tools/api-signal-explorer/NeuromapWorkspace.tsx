@@ -2489,27 +2489,27 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
         </div>
       )}
 
-        {/* MODE #1: FULL MAP CONTROLS - Simplified */}
-        {aiMode === 'fullMap' && controlMode === 'ai' && (
-          <div className="shrink-0 bg-gradient-to-r from-slate-900/50 to-transparent border-b border-slate-700/50 p-4">
-            <button
-              onClick={discoverBackendAPIs}
-              disabled={discoveringAPIs || endpoints.length === 0}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-red-600 hover:bg-red-700 disabled:opacity-50 rounded-lg text-sm text-white font-medium transition-all"
-              title={endpoints.length === 0 ? 'Launch browser first' : 'Discover backend APIs'}
-            >
-              {discoveringAPIs ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Discovering APIs...</span>
-                </>
-              ) : (
-                <>
-                  <Zap className="w-4 h-4" />
-                  <span>Discover Backend APIs</span>
-                </>
-              )}
-            </button>
+      {/* MODE #1: FULL MAP CONTROLS - Simplified */}
+      {aiMode === 'fullMap' && controlMode === 'ai' && (
+        <div className="shrink-0 bg-gradient-to-r from-slate-900/50 to-transparent border-b border-slate-700/50 p-4">
+          <button
+            onClick={discoverBackendAPIs}
+            disabled={discoveringAPIs || endpoints.length === 0}
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-red-600 hover:bg-red-700 disabled:opacity-50 rounded-lg text-sm text-white font-medium transition-all"
+            title={endpoints.length === 0 ? 'Launch browser first' : 'Discover backend APIs'}
+          >
+            {discoveringAPIs ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Discovering APIs...</span>
+              </>
+            ) : (
+              <>
+                <Zap className="w-4 h-4" />
+                <span>Discover Backend APIs</span>
+              </>
+            )}
+          </button>
 
               {/* API Discovery Results */}
               {apiDiscovery && (
@@ -2791,7 +2791,7 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
             </div>
           </div>
         )}
-      </div>
+      )}
 
       {/* AI AGENT */}
       {controlMode === 'ai' && (
