@@ -250,6 +250,10 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
   const [flipbookAnalysis, setFlipbookAnalysis] = useState<any>(null);
   const [analyzingFlipbook, setAnalyzingFlipbook] = useState(false);
   
+  // Tabs and notifications
+  const [activeTab, setActiveTab] = useState<'logs' | 'code'>('logs');
+  const [hasNewCodeSnippet, setHasNewCodeSnippet] = useState(false);
+  
   const endpointMapRef = useRef<Map<string, EndpointData>>(new Map());
   const wsRef = useRef<WebSocket | null>(null);
   const interactionStartRef = useRef<number | null>(null);
@@ -476,6 +480,7 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
           // Generate code with variables
           const code = generateCodeWithVariables(suggested, data.analysis.suggestedStep.usesVariables || []);
           setCurrentCode(code);
+          setHasNewCodeSnippet(true); // Show notification badge
         }
                   } else {
         console.error('[AI] Analysis failed:', data.error);
@@ -1360,15 +1365,13 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
   const workspaceWidth = `calc(100% - ${chatPanelWidth}px)`;
 
   return (
-    <div className="w-full flex h-screen">
+    <div className="w-full flex h-screen" style={{ transform: 'scale(0.7)', transformOrigin: 'top left', width: '142.86%', height: '142.86%' }}>
       {/* Main Workspace */}
       <div 
         className="flex flex-col bg-black border-r border-slate-800 overflow-hidden transition-all duration-300" 
         style={{ 
           width: workspaceWidth, 
-          height: '88vh',
-          transform: 'scale(0.7)',
-          transformOrigin: 'top left'
+          height: '88vh'
         }}
       >
       {/* Header */}
@@ -1504,10 +1507,73 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
         )}
       </div>
 
-      {/* PIPELINE STAGE 1: AI AGENT */}
+      {/* LOCKED PIPELINE - MOVED TO TOP */}
+      <div className="shrink-0 bg-gradient-to-r from-green-900/10 to-transparent border-b border-green-600/20 p-4">
+        <div className="flex items-center gap-3 mb-3">
+          <h3 className="text-sm font-bold text-green-400 tracking-wide">LOCKED PIPELINE • {lockedSteps.length} STEPS</h3>
+          {lockedSteps.length > 0 && (
+            <button 
+              onClick={exportWorkflow}
+              className="ml-auto flex items-center gap-1.5 px-3 py-1.5 bg-red-600 hover:bg-red-700 rounded text-xs text-white font-medium"
+            >
+              <Download className="w-3 h-3" />
+              Export Workflow
+            </button>
+          )}
+        </div>
+
+        {lockedSteps.length === 0 ? (
+          <div className="text-center py-4 text-slate-500 text-sm">
+            <div className="text-slate-600 mb-2">No steps locked yet</div>
+            <div className="text-xs text-slate-700">Test and lock your first step below to start building your workflow</div>
+          </div>
+        ) : (
+          <div className="space-y-2 max-h-48 overflow-y-auto">
+            {lockedSteps.map(step => (
+              <div key={step.id} className="p-3 bg-slate-900 border border-green-600/30 rounded-lg">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-green-400 font-bold text-sm">✓ Step {step.stepNumber}</span>
+                    <span className="text-slate-400 text-xs font-mono">{step.method} {step.endpoint}</span>
+                    <span className="px-2 py-0.5 bg-green-900/30 text-green-400 text-xs rounded">LOCKED</span>
+                  </div>
+                  <button 
+                    onClick={() => setLockedSteps(prev => prev.filter(s => s.id !== step.id))}
+                    className="text-xs text-red-500 hover:text-red-400"
+                  >
+                    Delete
+                  </button>
+                </div>
+                
+                {Object.keys(step.extractedVars).length > 0 && (
+                  <div className="text-xs text-slate-500 mb-1">
+                    → Variables: {Object.entries(step.extractedVars).map(([k, v]) => 
+                      `${k}="${String(v).substring(0, 15)}${String(v).length > 15 ? '...' : ''}"`
+                    ).join(', ')}
+                  </div>
+                )}
+                
+                {step.dependencies.length > 0 && (
+                  <div className="text-xs text-red-400">
+                    ⚠ Depends on: {step.dependencies.join(', ')}
+                  </div>
+                )}
+              </div>
+            ))}
+            
+            <div className="p-3 bg-slate-900/50 border border-slate-700 border-dashed rounded-lg">
+              <div className="flex items-center gap-2 text-slate-500">
+                <span className="text-sm">→ Step {currentStepFocus}:</span>
+                <span className="text-xs">{aiAgentStatus === 'analyzing' ? 'AI mapping...' : 'Ready to test'}</span>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* AI AGENT */}
       <div className="shrink-0 bg-gradient-to-r from-slate-900/50 to-transparent border-b border-slate-700/50 p-4">
         <div className="flex items-center gap-3 mb-3">
-          <div className="flex items-center justify-center w-8 h-8 bg-slate-700 rounded-full text-white font-bold text-sm">1</div>
           <h3 className="text-sm font-bold text-slate-300 tracking-wide">AI AGENT • INTELLIGENT ANALYSIS</h3>
           <div className="ml-auto flex items-center gap-2">
                 <button
@@ -1587,10 +1653,9 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
         )}
       </div>
 
-      {/* LOCKED PIPELINE SECTION */}
-      <div className="shrink-0 bg-gradient-to-r from-green-900/10 to-transparent border-b border-green-600/20 p-4">
+      {/* DUPLICATE LOCKED PIPELINE - REMOVE THIS ONE */}
+      <div className="shrink-0 bg-gradient-to-r from-green-900/10 to-transparent border-b border-green-600/20 p-4" style={{ display: 'none' }}>
         <div className="flex items-center gap-3 mb-3">
-          <div className="flex items-center justify-center w-8 h-8 bg-green-600 rounded-full text-white font-bold text-sm">🔒</div>
           <h3 className="text-sm font-bold text-green-400 tracking-wide">LOCKED PIPELINE • {lockedSteps.length} STEPS</h3>
           {lockedSteps.length > 0 && (
             <button 
@@ -1653,11 +1718,50 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
         )}
       </div>
 
-      {/* PIPELINE STAGE 3: NETWORK LOGS */}
+      {/* NETWORK LOGS + CODE SNIPPETS (TABBED) */}
       <div className="flex-1 flex flex-col min-h-0 bg-gradient-to-r from-slate-900/50 to-transparent border-b border-slate-700/50">
-        <div className="shrink-0 flex items-center gap-3 p-4 pb-3 border-b border-slate-800">
-          <div className="flex items-center justify-center w-8 h-8 bg-slate-700 rounded-full text-white font-bold text-sm">2</div>
-          <h3 className="text-sm font-bold text-slate-300 tracking-wide">CAPTURE • NETWORK TRAFFIC</h3>
+        <div className="shrink-0 flex items-center justify-between p-4 pb-0 border-b border-slate-800">
+          {/* Tabs */}
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                setActiveTab('logs');
+              }}
+              className={`px-4 py-2 text-sm font-medium rounded-t transition-all ${
+                activeTab === 'logs'
+                  ? 'bg-slate-900 text-white border-b-2 border-red-500'
+                  : 'text-slate-500 hover:text-slate-300'
+              }`}
+            >
+              CAPTURE • NETWORK TRAFFIC
+            </button>
+            <button
+              onClick={() => {
+                setActiveTab('code');
+                setHasNewCodeSnippet(false); // Clear notification when tab is opened
+              }}
+              className={`relative px-4 py-2 text-sm font-medium rounded-t transition-all ${
+                activeTab === 'code'
+                  ? 'bg-slate-900 text-white border-b-2 border-red-500'
+                  : 'text-slate-500 hover:text-slate-300'
+              }`}
+            >
+              CODE SNIPPETS
+              {hasNewCodeSnippet && activeTab !== 'code' && (
+                <span className="absolute -top-1 -right-1 flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-green-500 rounded-full animate-pulse">
+                  1
+                </span>
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* Tab Content */}
+        {activeTab === 'logs' && (
+          <div className="flex-1 flex flex-col min-h-0">
+            <div className="shrink-0 flex items-center gap-3 p-4 pb-3"
+            >
+              <h3 className="text-sm font-bold text-slate-300 tracking-wide">ENDPOINTS</h3>
           <div className="flex items-center gap-2">
             {keywordAnalysis && endpoints.length > 0 && (
               <button
@@ -1756,13 +1860,58 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
               </div>
             )}
             </div>
-                </div>
+          </div>
+        )}
 
-      {/* PIPELINE STAGE 4: TEST & EXECUTE (Split View) */}
+        {/* Code Tab */}
+        {activeTab === 'code' && (
+          <div className="flex-1 flex flex-col min-h-0 p-4">
+            <h3 className="text-sm font-bold text-slate-300 tracking-wide mb-3">GENERATED CODE SNIPPETS</h3>
+            {!currentCode ? (
+              <div className="flex-1 flex items-center justify-center text-slate-600 text-sm">
+                No code generated yet. Select an endpoint to generate code.
+              </div>
+            ) : (
+              <div className="flex-1 flex flex-col min-h-0">
+                <div className="flex gap-2 mb-3">
+                  {(['curl', 'fetch', 'axios', 'python'] as const).map((lang) => (
+                    <button
+                      key={lang}
+                      onClick={() => {
+                        if (selectedEndpoint) {
+                          const code = lang === 'curl' ? generateCurl(selectedEndpoint) :
+                                     lang === 'fetch' ? generateFetch(selectedEndpoint) :
+                                     lang === 'axios' ? generateAxios(selectedEndpoint) :
+                                     generatePython(selectedEndpoint);
+                          setCurrentCode(code);
+                          setSnippetLang(lang);
+                        }
+                      }}
+                      className={`px-3 py-1.5 rounded text-xs font-medium transition-all ${
+                        snippetLang === lang
+                          ? 'bg-red-600 text-white'
+                          : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                      }`}
+                    >
+                      {lang}
+                    </button>
+                  ))}
+                </div>
+                <div className="flex-1 overflow-auto bg-slate-950 border border-slate-800 rounded-lg p-4">
+                  <pre className="text-xs text-slate-300 font-mono whitespace-pre-wrap">
+                    {currentCode}
+                  </pre>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* TEST & EXECUTE */}
       <div className="shrink-0 bg-gradient-to-r from-slate-900/50 to-transparent" style={{ height: '35%' }}>
         <div className="h-full flex flex-col">
           <div className="shrink-0 flex items-center gap-3 p-3 border-b border-slate-800">
-            <div className="flex items-center justify-center w-8 h-8 bg-slate-700 rounded-full text-white font-bold text-sm">3</div>
             <h3 className="text-sm font-bold text-slate-300 tracking-wide">EXECUTE • TEST & VALIDATE</h3>
             <div className="ml-auto flex items-center gap-2">
               {(['curl', 'fetch', 'axios', 'python'] as CodeSnippetLang[]).map((lang) => (
