@@ -1,9 +1,4 @@
-import type { Metadata } from 'next';
-
-export const metadata: Metadata = {
-  title: 'BrainScraper • Start',
-  description: 'API Signal Intelligence Platform',
-};
+'use client';
 
 export default function BrainScraperStartPage() {
   return (
