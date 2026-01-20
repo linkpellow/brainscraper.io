@@ -2488,38 +2488,40 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
       </div>
 
       {/* LOCKED PIPELINE - MOVED TO TOP */}
-      <div className="shrink-0 bg-gradient-to-r from-green-900/10 to-transparent border-b border-green-600/20 p-4">
-        <div className="flex items-center gap-3 mb-3">
-          <h3 className="text-sm font-bold text-green-400 tracking-wide">LOCKED PIPELINE • {lockedSteps.length} STEPS</h3>
+      <div className="shrink-0 bg-gradient-to-r from-green-900/10 to-transparent border-b border-green-600/20 p-2.5">
+        <div className="flex items-center gap-2 mb-2">
+          <h3 className="font-bold text-green-400 tracking-wide" style={{ fontSize: '11px' }}>LOCKED PIPELINE • {lockedSteps.length} STEPS</h3>
           {lockedSteps.length > 0 && (
             <button 
               onClick={exportWorkflow}
-              className="ml-auto flex items-center gap-1.5 px-3 py-1.5 bg-red-600 hover:bg-red-700 rounded text-xs text-white font-medium"
+              className="ml-auto flex items-center gap-1 px-2 py-1 bg-red-600 hover:bg-red-700 rounded text-white font-medium"
+              style={{ fontSize: '9px' }}
             >
-              <Download className="w-3 h-3" />
+              <Download className="w-2.5 h-2.5" />
               Export Workflow
             </button>
           )}
         </div>
 
         {lockedSteps.length === 0 ? (
-          <div className="text-center py-4 text-slate-500 text-sm">
-            <div className="text-slate-600 mb-2">No steps locked yet</div>
-            <div className="text-xs text-slate-700">Test and lock your first step below to start building your workflow</div>
+          <div className="text-center py-2 text-slate-500" style={{ fontSize: '10px' }}>
+            <div className="text-slate-600 mb-1">No steps locked yet</div>
+            <div className="text-slate-700" style={{ fontSize: '9px' }}>Test and lock your first step below to start building your workflow</div>
           </div>
         ) : (
-          <div className="space-y-2 max-h-48 overflow-y-auto">
+          <div className="space-y-1.5 max-h-32 overflow-y-auto">
             {lockedSteps.map(step => (
-              <div key={step.id} className="p-3 bg-slate-900 border border-green-600/30 rounded-lg">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-green-400 font-bold text-sm">✓ Step {step.stepNumber}</span>
-                    <span className="text-slate-400 text-xs font-mono">{step.method} {step.endpoint}</span>
-                    <span className="px-2 py-0.5 bg-green-900/30 text-green-400 text-xs rounded">LOCKED</span>
+              <div key={step.id} className="p-2 bg-slate-900 border border-green-600/30 rounded-lg">
+                <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-green-400 font-bold" style={{ fontSize: '10px' }}>✓ Step {step.stepNumber}</span>
+                    <span className="text-slate-400 font-mono" style={{ fontSize: '9px' }}>{step.method} {step.endpoint}</span>
+                    <span className="px-1.5 py-0.5 bg-green-900/30 text-green-400 rounded" style={{ fontSize: '8px' }}>LOCKED</span>
                   </div>
                   <button 
                     onClick={() => setLockedSteps(prev => prev.filter(s => s.id !== step.id))}
-                    className="text-xs text-red-500 hover:text-red-400"
+                    className="text-red-500 hover:text-red-400"
+                    style={{ fontSize: '9px' }}
                   >
                     Delete
                   </button>
@@ -2958,18 +2960,19 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
 
       {/* NETWORK LOGS + CODE SNIPPETS (TABBED) */}
       <div className="flex-1 flex flex-col min-h-0 bg-gradient-to-r from-slate-900/50 to-transparent border-b border-slate-700/50">
-        <div className="shrink-0 flex items-center justify-between p-4 pb-0 border-b border-slate-800">
+        <div className="shrink-0 flex items-center justify-between p-2.5 pb-0 border-b border-slate-800">
           {/* Tabs */}
-          <div className="flex gap-2">
+          <div className="flex gap-1.5">
             <button
               onClick={() => {
                 setActiveTab('logs');
               }}
-              className={`px-4 py-2 text-sm font-medium rounded-t transition-all ${
+              className={`px-2.5 py-1.5 font-medium rounded-t transition-all ${
                 activeTab === 'logs'
                   ? 'bg-slate-900 text-white border-b-2 border-red-500'
                   : 'text-slate-500 hover:text-slate-300'
               }`}
+              style={{ fontSize: '10px' }}
             >
               CAPTURE • NETWORK TRAFFIC
             </button>
@@ -2978,15 +2981,16 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
                 setActiveTab('code');
                 setHasNewCodeSnippet(false); // Clear notification when tab is opened
               }}
-              className={`relative px-4 py-2 text-sm font-medium rounded-t transition-all ${
+              className={`relative px-2.5 py-1.5 font-medium rounded-t transition-all ${
                 activeTab === 'code'
                   ? 'bg-slate-900 text-white border-b-2 border-red-500'
                   : 'text-slate-500 hover:text-slate-300'
               }`}
+              style={{ fontSize: '10px' }}
             >
               CODE SNIPPETS
               {hasNewCodeSnippet && activeTab !== 'code' && (
-                <span className="absolute -top-1 -right-1 flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-green-500 rounded-full animate-pulse">
+                <span className="absolute -top-1 -right-1 flex items-center justify-center w-4 h-4 font-bold text-white bg-green-500 rounded-full animate-pulse" style={{ fontSize: '8px' }}>
                   1
                 </span>
               )}
@@ -2997,16 +3001,17 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
         {/* Tab Content */}
         {activeTab === 'logs' && (
           <div className="flex-1 flex flex-col min-h-0">
-            <div className="shrink-0 flex items-center gap-3 p-4 pb-3">
-              <h3 className="text-sm font-bold text-slate-300 tracking-wide">ENDPOINTS</h3>
-              <div className="flex items-center gap-2">
+            <div className="shrink-0 flex items-center gap-2 p-2.5 pb-2">
+              <h3 className="font-bold text-slate-300 tracking-wide" style={{ fontSize: '11px' }}>ENDPOINTS</h3>
+              <div className="flex items-center gap-1.5">
             {keywordAnalysis && endpoints.length > 0 && (
               <button
                 onClick={generateWorkflowPlan}
                 disabled={planningWorkflow}
-                className="flex items-center gap-1 px-2 py-1 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 rounded text-xs text-white"
+                className="flex items-center gap-1 px-1.5 py-0.5 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 rounded text-white"
+                style={{ fontSize: '9px' }}
               >
-                {planningWorkflow ? <Loader2 className="w-3 h-3 animate-spin" /> : <Brain className="w-3 h-3" />}
+                {planningWorkflow ? <Loader2 className="w-2.5 h-2.5 animate-spin" /> : <Brain className="w-2.5 h-2.5" />}
                 {planningWorkflow ? 'Planning...' : 'Plan Workflow'}
               </button>
             )}
@@ -3014,49 +3019,52 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
               <button
                 onClick={analyzeFlipbook}
                 disabled={analyzingFlipbook}
-                className="flex items-center gap-1 px-2 py-1 bg-green-600 hover:bg-green-700 disabled:opacity-50 rounded text-xs text-white"
+                className="flex items-center gap-1 px-1.5 py-0.5 bg-green-600 hover:bg-green-700 disabled:opacity-50 rounded text-white"
+                style={{ fontSize: '9px' }}
                 title={`Analyze ${flipbookSnapshots.length} DOM snapshots with AI`}
               >
-                {analyzingFlipbook ? <Loader2 className="w-3 h-3 animate-spin" /> : <BookOpen className="w-3 h-3" />}
+                {analyzingFlipbook ? <Loader2 className="w-2.5 h-2.5 animate-spin" /> : <BookOpen className="w-2.5 h-2.5" />}
                 {analyzingFlipbook ? 'Analyzing...' : `Flipbook (${flipbookSnapshots.length})`}
               </button>
             )}
-              </div>
-              {keywordAnalysis && (
-                <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-400">
+            </div>
+            {keywordAnalysis && (
+                <label className="flex items-center gap-1.5 cursor-pointer text-slate-400" style={{ fontSize: '9px' }}>
                   <input
                     type="checkbox"
                     checked={showOnlyRelevant}
                     onChange={(e) => setShowOnlyRelevant(e.target.checked)}
                     className="rounded border border-slate-600"
+                    style={{ width: '10px', height: '10px' }}
                   />
-                  <Filter className="w-3 h-3" />
+                  <Filter className="w-2.5 h-2.5" />
                   Smart Filter
                 </label>
               )}
-              <label className="ml-auto flex items-center gap-2 cursor-pointer text-xs text-slate-400">
+              <label className="ml-auto flex items-center gap-1.5 cursor-pointer text-slate-400" style={{ fontSize: '9px' }}>
                 <input
                   type="checkbox"
                   checked={showSelectedOnly}
                   onChange={(e) => setShowSelectedOnly(e.target.checked)}
                   className="rounded border border-slate-600"
+                  style={{ width: '10px', height: '10px' }}
                 />
                 Selected Only
               </label>
-              <ArrowDown className="w-4 h-4 text-slate-600" />
+              <ArrowDown className="w-3 h-3 text-slate-600" />
             </div>
         
-        <div className="flex-1 overflow-y-auto px-4 py-2">
+        <div className="flex-1 overflow-y-auto px-2.5 py-1.5">
           {filteredEndpointsByRelevance.length === 0 ? (
-            <div className="flex items-center justify-center h-full text-slate-500 text-sm">
+            <div className="flex items-center justify-center h-full text-slate-500" style={{ fontSize: '10px' }}>
               <div className="text-center">
-                <Monitor className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                <Monitor className="w-8 h-8 mx-auto mb-2 opacity-50" />
                 <p>{showOnlyRelevant ? 'No relevant endpoints found' : 'No traffic captured yet'}</p>
                 <p className="text-xs mt-1">{showOnlyRelevant ? 'Try disabling Smart Filter' : 'Launch browser and browse a site'}</p>
               </div>
             </div>
           ) : (
-            <div className="space-y-1.5">
+            <div className="space-y-1">
               {filteredEndpointsByRelevance.map((ep, idx) => {
                   const key = `${ep.method} ${ep.host}${ep.path}`;
                 const isSelected = selectedEndpoint?.sampleUrl === ep.sampleUrl;
@@ -3064,31 +3072,32 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
                   <div
                     key={idx}
                     onClick={() => setSelectedEndpoint(ep)}
-                    className={`p-3 rounded-lg border cursor-pointer transition-all ${
+                    className={`p-2 rounded-lg border cursor-pointer transition-all ${
                             isSelected
                         ? 'bg-red-900/20 border-red-500/60 shadow-lg shadow-red-500/10'
                         : 'bg-slate-900/50 border-slate-700/50 hover:bg-slate-800/60 hover:border-slate-600/60'
                     }`}
                   >
-                    <div className="flex items-center gap-3">
-                      <span className={`px-2 py-0.5 rounded text-xs font-bold ${
+                    <div className="flex items-center gap-2">
+                      <span className={`px-1.5 py-0.5 rounded font-bold ${
                         ep.method === 'GET' ? 'bg-slate-800 text-slate-300' :
                         ep.method === 'POST' ? 'bg-slate-700 text-white' :
                         ep.method === 'PUT' ? 'bg-slate-700 text-slate-300' :
                         ep.method === 'DELETE' ? 'bg-red-900/50 text-red-300' :
                         'bg-slate-700 text-slate-300'
-                        }`}>
+                        }`}
+                        style={{ fontSize: '8px' }}>
                           {ep.method}
                         </span>
-                      <span className="flex-1 text-sm text-slate-300 font-mono truncate">
+                      <span className="flex-1 text-slate-300 font-mono truncate" style={{ fontSize: '10px' }}>
                         {ep.host}<span className="text-red-400">{ep.path}</span>
                           </span>
-                      <span className="text-xs text-slate-500">×{ep.count}</span>
+                      <span className="text-slate-500" style={{ fontSize: '9px' }}>×{ep.count}</span>
                       {ep.hasAuth && (
-                        <span className="px-1.5 py-0.5 bg-red-900/30 text-red-400 text-xs rounded" title="Has auth headers">🔐</span>
+                        <span className="px-1 py-0.5 bg-red-900/30 text-red-400 rounded" title="Has auth headers" style={{ fontSize: '8px' }}>🔐</span>
                       )}
                       {isSelected && (
-                        <Check className="w-4 h-4 text-red-400" />
+                        <Check className="w-3 h-3 text-red-400" />
                       )}
                     </div>
                   </div>
@@ -3146,11 +3155,11 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
       </div>
 
       {/* TEST & EXECUTE */}
-      <div className="shrink-0 bg-gradient-to-r from-slate-900/50 to-transparent" style={{ height: '35%' }}>
+      <div className="shrink-0 bg-gradient-to-r from-slate-900/50 to-transparent" style={{ maxHeight: '40vh', minHeight: '200px' }}>
         <div className="h-full flex flex-col">
-          <div className="shrink-0 flex items-center gap-3 p-3 border-b border-slate-800">
-            <h3 className="text-sm font-bold text-slate-300 tracking-wide">EXECUTE • TEST & VALIDATE</h3>
-            <div className="ml-auto flex items-center gap-2">
+          <div className="shrink-0 flex items-center gap-2 p-2 border-b border-slate-800">
+            <h3 className="font-bold text-slate-300 tracking-wide" style={{ fontSize: '11px' }}>EXECUTE • TEST & VALIDATE</h3>
+            <div className="ml-auto flex items-center gap-1.5">
               {(['curl', 'fetch', 'axios', 'python'] as CodeSnippetLang[]).map((lang) => (
                 <button
                   key={lang}
@@ -3164,11 +3173,12 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
                       setCurrentCode(code);
                     }
                   }}
-                  className={`px-2 py-1 text-xs rounded font-medium transition-all ${
+                  className={`px-1.5 py-0.5 rounded font-medium transition-all ${
                     snippetLang === lang
                       ? 'bg-red-600 text-white'
                       : 'bg-slate-700 text-slate-400 hover:bg-slate-600'
                   }`}
+                  style={{ fontSize: '9px' }}
                 >
                   {lang}
                 </button>
