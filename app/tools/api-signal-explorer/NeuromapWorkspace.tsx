@@ -333,16 +333,16 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
   return (
     <div className="w-full flex flex-col bg-black rounded-lg border border-slate-800 overflow-hidden" style={{ height: '88vh' }}>
       {/* Header */}
-      <div className="shrink-0 bg-gradient-to-r from-slate-900 to-slate-800 border-b border-cyan-500/30 p-4 flex items-center justify-between">
+      <div className="shrink-0 bg-gradient-to-r from-slate-900 to-slate-800 border-b border-slate-700/50 p-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Zap className="w-6 h-6 text-cyan-400" />
-          <h2 className="text-lg font-bold text-cyan-400 font-mono tracking-wide">API SIGNAL PIPELINE</h2>
+          <Zap className="w-6 h-6 text-red-500" />
+          <h2 className="text-lg font-bold text-red-500 font-mono tracking-wide">API SIGNAL PIPELINE</h2>
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={handleMarkInteraction}
             className={`flex items-center gap-1.5 px-3 py-2 rounded text-xs font-medium ${
-              isMarkingInteraction ? 'bg-amber-600 hover:bg-amber-700 text-white' : 'bg-slate-700 hover:bg-slate-600 text-slate-300'
+              isMarkingInteraction ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-slate-700 hover:bg-slate-600 text-slate-300'
             }`}
           >
             <MousePointer className="w-3.5 h-3.5" />
@@ -357,7 +357,7 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
           </button>
           <button
             onClick={handleExport}
-            className="flex items-center gap-1.5 px-3 py-2 bg-green-600 hover:bg-green-700 rounded text-xs text-white"
+            className="flex items-center gap-1.5 px-3 py-2 bg-red-600 hover:bg-red-700 rounded text-xs text-white"
           >
             <Download className="w-3.5 h-3.5" />
             Export
@@ -366,10 +366,10 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
       </div>
 
       {/* PIPELINE STAGE 1: URL INPUT */}
-      <div className="shrink-0 bg-gradient-to-r from-purple-900/20 to-transparent border-b border-purple-500/30 p-4">
+      <div className="shrink-0 bg-gradient-to-r from-slate-900/50 to-transparent border-b border-slate-700/50 p-4">
         <div className="flex items-center gap-3 mb-3">
-          <div className="flex items-center justify-center w-8 h-8 bg-purple-600 rounded-full text-white font-bold text-sm">1</div>
-          <h3 className="text-sm font-bold text-purple-400 tracking-wide">INPUT • TARGET URL</h3>
+          <div className="flex items-center justify-center w-8 h-8 bg-slate-700 rounded-full text-white font-bold text-sm">1</div>
+          <h3 className="text-sm font-bold text-slate-300 tracking-wide">INPUT • TARGET URL</h3>
           <ArrowDown className="w-4 h-4 text-slate-600 ml-auto" />
         </div>
         <div className="flex gap-2">
@@ -378,33 +378,33 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
             value={launchBrowserUrl}
             onChange={(e) => setLaunchBrowserUrl(e.target.value)}
             placeholder="https://api.example.com or https://example.com"
-            className="flex-1 px-4 py-2.5 bg-slate-900 border border-purple-500/30 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:border-purple-500/60"
+            className="flex-1 px-4 py-2.5 bg-slate-900 border border-slate-700/50 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:border-red-500/60"
           />
           <button
             onClick={handleLaunchBrowser}
             disabled={launchBrowserLoading}
-            className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 disabled:opacity-50 rounded-lg text-sm text-white font-medium transition-all"
+            className="flex items-center gap-2 px-6 py-2.5 bg-red-600 hover:bg-red-700 disabled:opacity-50 rounded-lg text-sm text-white font-medium transition-all"
           >
             <Monitor className="w-4 h-4" />
             {launchBrowserLoading ? 'Launching...' : 'Launch Browser'}
           </button>
         </div>
         {launchBrowserError && (
-          <p className="mt-2 text-amber-400 text-xs">{launchBrowserError}</p>
+          <p className="mt-2 text-red-400 text-xs">{launchBrowserError}</p>
         )}
       </div>
 
       {/* PIPELINE STAGE 2: AI AGENT */}
-      <div className="shrink-0 bg-gradient-to-r from-orange-900/20 to-transparent border-b border-orange-500/30 p-4">
+      <div className="shrink-0 bg-gradient-to-r from-slate-900/50 to-transparent border-b border-slate-700/50 p-4">
         <div className="flex items-center gap-3 mb-3">
-          <div className="flex items-center justify-center w-8 h-8 bg-orange-600 rounded-full text-white font-bold text-sm">2</div>
-          <h3 className="text-sm font-bold text-orange-400 tracking-wide">AI AGENT • INTELLIGENT ANALYSIS</h3>
+          <div className="flex items-center justify-center w-8 h-8 bg-slate-700 rounded-full text-white font-bold text-sm">2</div>
+          <h3 className="text-sm font-bold text-slate-300 tracking-wide">AI AGENT • INTELLIGENT ANALYSIS</h3>
           <div className="ml-auto flex items-center gap-2">
             <button
               onClick={handleAiAgentToggle}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                 aiAgentActive
-                  ? 'bg-orange-600 text-white shadow-lg'
+                  ? 'bg-red-600 text-white shadow-lg'
                   : 'bg-slate-700 text-slate-400 hover:bg-slate-600'
               }`}
             >
@@ -418,16 +418,16 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
         {aiAgentActive ? (
           <div className="space-y-3">
             {/* AI Status */}
-            <div className="flex items-center gap-2 px-3 py-2 bg-slate-900/50 border border-orange-500/30 rounded-lg">
+            <div className="flex items-center gap-2 px-3 py-2 bg-slate-900/50 border border-slate-700/50 rounded-lg">
               {aiAgentStatus === 'analyzing' ? (
                 <>
-                  <Loader2 className="w-4 h-4 text-orange-400 animate-spin" />
-                  <span className="text-xs text-orange-400">Analyzing traffic patterns...</span>
+                  <Loader2 className="w-4 h-4 text-red-400 animate-spin" />
+                  <span className="text-xs text-red-400">Analyzing traffic patterns...</span>
                 </>
               ) : aiAgentStatus === 'completed' ? (
                 <>
-                  <Sparkles className="w-4 h-4 text-orange-400" />
-                  <span className="text-xs text-orange-400">Analysis complete</span>
+                  <Sparkles className="w-4 h-4 text-red-400" />
+                  <span className="text-xs text-red-400">Analysis complete</span>
                 </>
               ) : (
                 <>
@@ -442,7 +442,7 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
               <div className="space-y-1.5">
                 {aiInsights.map((insight, idx) => (
                   <div key={idx} className="flex items-start gap-2 text-xs text-slate-400 px-2">
-                    <span className="text-orange-500 mt-0.5">•</span>
+                    <span className="text-red-500 mt-0.5">•</span>
                     <span>{insight}</span>
                   </div>
                 ))}
@@ -455,11 +455,11 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
                 {aiRecommendations.map((rec, idx) => (
                   <div
                     key={idx}
-                    className="flex items-start gap-2 px-3 py-2 bg-orange-900/20 border border-orange-500/20 rounded-lg"
+                    className="flex items-start gap-2 px-3 py-2 bg-slate-900/50 border border-slate-700/50 rounded-lg"
                   >
-                    <Sparkles className="w-3.5 h-3.5 text-orange-400 mt-0.5 flex-shrink-0" />
+                    <Sparkles className="w-3.5 h-3.5 text-red-400 mt-0.5 flex-shrink-0" />
                     <div className="flex-1">
-                      <div className="text-xs font-medium text-orange-300 mb-0.5 capitalize">{rec.type}</div>
+                      <div className="text-xs font-medium text-slate-300 mb-0.5 capitalize">{rec.type}</div>
                       <div className="text-xs text-slate-400">{rec.message}</div>
                     </div>
                   </div>
@@ -477,10 +477,10 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
       </div>
 
       {/* PIPELINE STAGE 3: NETWORK LOGS */}
-      <div className="flex-1 flex flex-col min-h-0 bg-gradient-to-r from-cyan-900/10 to-transparent border-b border-cyan-500/30">
+      <div className="flex-1 flex flex-col min-h-0 bg-gradient-to-r from-slate-900/50 to-transparent border-b border-slate-700/50">
         <div className="shrink-0 flex items-center gap-3 p-4 pb-3 border-b border-slate-800">
-          <div className="flex items-center justify-center w-8 h-8 bg-cyan-600 rounded-full text-white font-bold text-sm">3</div>
-          <h3 className="text-sm font-bold text-cyan-400 tracking-wide">CAPTURE • NETWORK TRAFFIC</h3>
+          <div className="flex items-center justify-center w-8 h-8 bg-slate-700 rounded-full text-white font-bold text-sm">3</div>
+          <h3 className="text-sm font-bold text-slate-300 tracking-wide">CAPTURE • NETWORK TRAFFIC</h3>
           <label className="ml-auto flex items-center gap-2 cursor-pointer text-xs text-slate-400">
             <input
               type="checkbox"
@@ -513,29 +513,29 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
                     onClick={() => setSelectedEndpoint(ep)}
                     className={`p-3 rounded-lg border cursor-pointer transition-all ${
                       isSelected
-                        ? 'bg-cyan-900/40 border-cyan-500/60 shadow-lg shadow-cyan-500/20'
+                        ? 'bg-red-900/20 border-red-500/60 shadow-lg shadow-red-500/10'
                         : 'bg-slate-900/50 border-slate-700/50 hover:bg-slate-800/60 hover:border-slate-600/60'
                     }`}
                   >
                     <div className="flex items-center gap-3">
                       <span className={`px-2 py-0.5 rounded text-xs font-bold ${
-                        ep.method === 'GET' ? 'bg-green-900/50 text-green-300' :
-                        ep.method === 'POST' ? 'bg-blue-900/50 text-blue-300' :
-                        ep.method === 'PUT' ? 'bg-yellow-900/50 text-yellow-300' :
+                        ep.method === 'GET' ? 'bg-slate-800 text-slate-300' :
+                        ep.method === 'POST' ? 'bg-slate-700 text-white' :
+                        ep.method === 'PUT' ? 'bg-slate-700 text-slate-300' :
                         ep.method === 'DELETE' ? 'bg-red-900/50 text-red-300' :
                         'bg-slate-700 text-slate-300'
                       }`}>
                         {ep.method}
                       </span>
                       <span className="flex-1 text-sm text-slate-300 font-mono truncate">
-                        {ep.host}<span className="text-cyan-400">{ep.path}</span>
+                        {ep.host}<span className="text-red-400">{ep.path}</span>
                       </span>
                       <span className="text-xs text-slate-500">×{ep.count}</span>
                       {ep.hasAuth && (
-                        <span className="px-1.5 py-0.5 bg-amber-900/30 text-amber-400 text-xs rounded" title="Has auth headers">🔐</span>
+                        <span className="px-1.5 py-0.5 bg-red-900/30 text-red-400 text-xs rounded" title="Has auth headers">🔐</span>
                       )}
                       {isSelected && (
-                        <Check className="w-4 h-4 text-cyan-400" />
+                        <Check className="w-4 h-4 text-red-400" />
                       )}
                     </div>
                   </div>
@@ -547,11 +547,11 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
       </div>
 
       {/* PIPELINE STAGE 4: CODE SNIPPETS */}
-      <div className="shrink-0 bg-gradient-to-r from-green-900/20 to-transparent" style={{ height: '30%' }}>
+      <div className="shrink-0 bg-gradient-to-r from-slate-900/50 to-transparent" style={{ height: '30%' }}>
         <div className="h-full flex flex-col">
           <div className="shrink-0 flex items-center gap-3 p-4 pb-3 border-b border-slate-800">
-            <div className="flex items-center justify-center w-8 h-8 bg-green-600 rounded-full text-white font-bold text-sm">4</div>
-            <h3 className="text-sm font-bold text-green-400 tracking-wide">OUTPUT • CODE SNIPPETS</h3>
+            <div className="flex items-center justify-center w-8 h-8 bg-slate-700 rounded-full text-white font-bold text-sm">4</div>
+            <h3 className="text-sm font-bold text-slate-300 tracking-wide">OUTPUT • CODE SNIPPETS</h3>
             <div className="ml-auto flex items-center gap-2">
               {(['curl', 'fetch', 'axios', 'python'] as CodeSnippetLang[]).map((lang) => (
                 <button
@@ -559,7 +559,7 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
                   onClick={() => setSnippetLang(lang)}
                   className={`px-3 py-1 text-xs rounded-lg font-medium transition-all ${
                     snippetLang === lang
-                      ? 'bg-green-600 text-white shadow-lg'
+                      ? 'bg-red-600 text-white shadow-lg'
                       : 'bg-slate-700 text-slate-400 hover:bg-slate-600'
                   }`}
                 >
@@ -581,7 +581,7 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Code className="w-4 h-4 text-green-400" />
+                    <Code className="w-4 h-4 text-red-400" />
                     <span className="text-xs text-slate-400 font-mono">{selectedEndpoint.method} {selectedEndpoint.host}{selectedEndpoint.path}</span>
                   </div>
                   <button
@@ -595,13 +595,13 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
                         setTimeout(() => setCopiedEndpoint(null), 2000);
                       });
                     }}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-green-600 hover:bg-green-700 rounded text-xs text-white font-medium"
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 hover:bg-red-700 rounded text-xs text-white font-medium"
                   >
                     {copiedEndpoint === selectedEndpoint.sampleUrl ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
                     {copiedEndpoint === selectedEndpoint.sampleUrl ? 'Copied!' : 'Copy'}
                   </button>
                 </div>
-                <pre className="p-4 bg-slate-950 border border-slate-700 rounded-lg text-xs text-green-300 font-mono overflow-x-auto">
+                <pre className="p-4 bg-slate-950 border border-slate-700 rounded-lg text-xs text-slate-300 font-mono overflow-x-auto">
                   {snippetLang === 'curl' && generateCurl(selectedEndpoint)}
                   {snippetLang === 'fetch' && generateFetch(selectedEndpoint)}
                   {snippetLang === 'axios' && generateAxios(selectedEndpoint)}
