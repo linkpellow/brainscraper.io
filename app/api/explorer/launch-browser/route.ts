@@ -23,6 +23,23 @@ export async function POST(req: NextRequest) {
     const body = await req.json().catch(() => ({}));
     const url = typeof body?.url === 'string' && body.url.trim() ? body.url.trim() : 'about:blank';
 
+    // First, ensure mitmproxy and bridge are running
+    console.log('[launch-browser] Starting services...');
+    try {
+      const servicesResponse = await fetch(`http://localhost:${process.env.PORT || 3000}/api/explorer/start-services`, {
+        method: 'POST',
+      });
+      const servicesData = await servicesResponse.json();
+      console.log('[launch-browser] Services status:', servicesData);
+      
+      if (!servicesData.ok && servicesData.status?.errors?.length) {
+        console.warn('[launch-browser] Service warnings:', servicesData.status.errors);
+      }
+    } catch (servErr) {
+      console.warn('[launch-browser] Could not start services automatically:', servErr);
+      // Continue anyway - services might already be running
+    }
+
     const { chromium } = await import('playwright');
 
     // Close any previously launched browser so we don't pile up

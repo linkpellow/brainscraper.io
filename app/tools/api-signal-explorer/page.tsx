@@ -126,6 +126,7 @@ export default function APISignalExplorerPage() {
   const [neuromaps, setNeuromaps] = useState<Neuromap[]>([]);
   const [activeNeuromapId, setActiveNeuromapId] = useState<string | null>(null);
   const [launchBrowserLoading, setLaunchBrowserLoading] = useState(false);
+  const [servicesStatus, setServicesStatus] = useState<{ mitm: string; bridge: string } | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const endpointMapRef = useRef<Map<string, EndpointData>>(new Map());
   const sessionStartRef = useRef<number | null>(null);
@@ -405,6 +406,19 @@ export default function APISignalExplorerPage() {
     };
   }, [flows, networkEvents, endpoints, session]);
 
+  // Check service status
+  const checkServiceStatus = useCallback(async () => {
+    try {
+      const res = await fetch('/api/explorer/start-services');
+      const data = await res.json();
+      if (data.ok && data.status) {
+        setServicesStatus(data.status);
+      }
+    } catch (err) {
+      console.warn('Could not check service status:', err);
+    }
+  }, []);
+
   // WebSocket connection management
   const connectWebSocket = useCallback(() => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
@@ -554,12 +568,15 @@ export default function APISignalExplorerPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Launch failed');
+      
+      // Check service status after launch
+      setTimeout(checkServiceStatus, 1000);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Launch failed');
     } finally {
       setLaunchBrowserLoading(false);
     }
-  }, []);
+  }, [checkServiceStatus]);
 
   // Interaction tagging
   const startInteractionTagging = useCallback(() => {
@@ -593,12 +610,19 @@ export default function APISignalExplorerPage() {
   // Auto-scroll to bottom when new events arrive (if enabled)
   useEffect(() => {
     if (autoScroll && isLive && filteredEndpoints.length > 0) {
-      const table = document.getElementById('endpoints-table');
+      const table = document.getElementById('endpoints-grid');
       if (table) {
         table.scrollTop = table.scrollHeight;
       }
     }
   }, [filteredEndpoints.length, autoScroll, isLive]);
+
+  // Check service status on mount and periodically
+  useEffect(() => {
+    checkServiceStatus();
+    const interval = setInterval(checkServiceStatus, 5000); // Check every 5 seconds
+    return () => clearInterval(interval);
+  }, [checkServiceStatus]);
 
 
   const handleExportSelected = () => {
@@ -728,9 +752,27 @@ export default function APISignalExplorerPage() {
                 <WifiOff className="w-5 h-5 text-slate-500" />
               )}
               <span className="text-sm font-medium text-slate-300">
-                Status: {connectionStatus === 'connected' ? 'Live' : connectionStatus === 'connecting' ? 'Connecting...' : 'Disconnected'}
+                Bridge: {connectionStatus === 'connected' ? 'Connected' : connectionStatus === 'connecting' ? 'Connecting...' : 'Disconnected'}
               </span>
             </div>
+
+            {/* Service Status Indicators */}
+            {servicesStatus && (
+              <>
+                <div className={`flex items-center gap-1.5 px-2 py-1 rounded text-xs ${
+                  servicesStatus.mitm === 'running' ? 'bg-green-900/30 text-green-400' : 'bg-slate-800 text-slate-500'
+                }`}>
+                  <Server className="w-3 h-3" />
+                  <span>mitmproxy</span>
+                </div>
+                <div className={`flex items-center gap-1.5 px-2 py-1 rounded text-xs ${
+                  servicesStatus.bridge === 'running' ? 'bg-green-900/30 text-green-400' : 'bg-slate-800 text-slate-500'
+                }`}>
+                  <Activity className="w-3 h-3" />
+                  <span>ws bridge</span>
+                </div>
+              </>
+            )}
 
             {connectionStatus === 'disconnected' || connectionStatus === 'error' ? (
               <button
@@ -755,11 +797,11 @@ export default function APISignalExplorerPage() {
               <button
                 onClick={handleLaunchBrowser}
                 disabled={launchBrowserLoading}
-                className="flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 disabled:opacity-50 rounded-lg text-white text-sm font-medium transition-colors"
-                title="Open Chromium with proxy 127.0.0.1:8080. Requires mitmproxy and bridge. Use the browser to click and browse; API calls appear below."
+                className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 disabled:opacity-50 rounded-lg text-white text-sm font-medium transition-colors shadow-lg shadow-green-500/20"
+                title="Auto-starts mitmproxy and bridge, then launches Chromium with proxy configured. Click and browse; API calls appear in real-time."
               >
                 <Monitor className="w-4 h-4" />
-                {launchBrowserLoading ? 'Launching…' : 'Launch Chromium'}
+                {launchBrowserLoading ? 'Starting Services & Launching…' : 'Launch Browser (Auto-Setup)'}
               </button>
             )}
 
