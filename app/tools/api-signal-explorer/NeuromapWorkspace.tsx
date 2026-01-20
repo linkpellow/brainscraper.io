@@ -1864,13 +1864,49 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
         throw new Error(data.error || 'API discovery failed');
       }
 
-      const { discovery, apiCalls, summary } = data;
-      setApiDiscovery({ discovery, apiCalls, summary });
+      const { discovery, apiCalls, summary, filtering } = data;
+      setApiDiscovery({ discovery, apiCalls, summary, filtering });
 
       // Build detailed message
       let message = `✅ **API Discovery Complete**\n\n`;
-      message += `📊 **Summary**:\n`;
-      message += `• Total Requests Analyzed: ${discovery.totalRequests}\n`;
+      
+      // CRITICAL: Show noise filtering results
+      message += `🔍 **Traffic Filtering**:\n`;
+      message += `• Total Captured: ${filtering.stats.total} requests\n`;
+      message += `• **Noise Filtered**: ${filtering.stats.noise} (${filtering.stats.noisePercentage}%) ❌\n`;
+      message += `• **Valuable Signals**: ${filtering.stats.valuable} (${100 - filtering.stats.noisePercentage}%) ✓\n`;
+      if (filtering.stats.topNoiseReasons.length > 0) {
+        message += `• Top Noise: ${filtering.stats.topNoiseReasons.slice(0, 2).map((r: any) => r.reason).join(', ')}\n`;
+      }
+      message += `\n`;
+
+      // CRITICAL: Show extracted tokens
+      if (filtering.extractedTokens.length > 0) {
+        message += `🔐 **Tokens Extracted**: ${filtering.extractedTokens.length}\n`;
+        const tokensByType = filtering.extractedTokens.reduce((acc: any, t: any) => {
+          acc[t.type] = (acc[t.type] || 0) + 1;
+          return acc;
+        }, {});
+        Object.entries(tokensByType).forEach(([type, count]) => {
+          message += `• ${type.toUpperCase()}: ${count}\n`;
+        });
+        message += `\n`;
+      }
+
+      // CRITICAL: Show extracted variables
+      if (filtering.extractedVariables.length > 0) {
+        message += `🎯 **Dynamic Variables**: ${filtering.extractedVariables.length}\n`;
+        const varsByType = filtering.extractedVariables.reduce((acc: any, v: any) => {
+          acc[v.type] = (acc[v.type] || 0) + 1;
+          return acc;
+        }, {});
+        Object.entries(varsByType).forEach(([type, count]) => {
+          message += `• ${type.toUpperCase()}: ${count}\n`;
+        });
+        message += `\n`;
+      }
+
+      message += `📊 **API Classification**:\n`;
       message += `• Direct APIs Found: ${summary.directAPIs}\n`;
       message += `• Form Endpoints: ${summary.formEndpoints}\n`;
       message += `• API Probability: ${summary.apiCallProbability}%\n`;
@@ -2499,26 +2535,73 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
 
               {/* API Discovery Results */}
               {apiDiscovery && (
-                <div className="mt-3 p-3 bg-slate-900 border border-red-600/30 rounded-lg">
-                  <div className={`text-xs font-medium mb-2 ${
-                    apiDiscovery.summary.recommendation === 'use_direct_api' 
-                      ? 'text-green-400' 
-                      : apiDiscovery.summary.recommendation === 'hybrid'
-                      ? 'text-amber-400'
-                      : 'text-slate-400'
-                  }`}>
-                    {apiDiscovery.summary.recommendation === 'use_direct_api' && '🎯 Direct APIs Found!'}
-                    {apiDiscovery.summary.recommendation === 'hybrid' && '⚙️ Hybrid Approach (APIs + Forms)'}
-                    {apiDiscovery.summary.recommendation === 'use_form_automation' && '📝 Form Automation Required'}
+                <div className="mt-3 space-y-2">
+                  {/* Main Result */}
+                  <div className="p-3 bg-slate-900 border border-red-600/30 rounded-lg">
+                    <div className={`text-xs font-medium mb-2 ${
+                      apiDiscovery.summary.recommendation === 'use_direct_api' 
+                        ? 'text-green-400' 
+                        : apiDiscovery.summary.recommendation === 'hybrid'
+                        ? 'text-amber-400'
+                        : 'text-slate-400'
+                    }`}>
+                      {apiDiscovery.summary.recommendation === 'use_direct_api' && '🎯 Direct APIs Found!'}
+                      {apiDiscovery.summary.recommendation === 'hybrid' && '⚙️ Hybrid Approach (APIs + Forms)'}
+                      {apiDiscovery.summary.recommendation === 'use_form_automation' && '📝 Form Automation Required'}
+                    </div>
+                    <div className="text-xs text-slate-400 space-y-1">
+                      <div>• Direct APIs: {apiDiscovery.summary.directAPIs}</div>
+                      <div>• Form Endpoints: {apiDiscovery.summary.formEndpoints}</div>
+                      <div>• Noise Filtered: {apiDiscovery.summary.noiseFiltered} ({apiDiscovery.summary.noisePercentage}%)</div>
+                    </div>
                   </div>
-                  <div className="text-xs text-slate-400 space-y-1">
-                    <div>• Direct APIs: {apiDiscovery.summary.directAPIs}</div>
-                    <div>• Form Endpoints: {apiDiscovery.summary.formEndpoints}</div>
-                    <div>• API Probability: {apiDiscovery.summary.apiCallProbability}%</div>
-                  </div>
+
+                  {/* CRITICAL: Extracted Tokens */}
+                  {apiDiscovery.filtering?.extractedTokens?.length > 0 && (
+                    <div className="p-3 bg-green-900/20 border border-green-600/30 rounded-lg">
+                      <div className="text-xs font-medium text-green-400 mb-2">
+                        🔐 Tokens Found: {apiDiscovery.filtering.extractedTokens.length}
+                      </div>
+                      <div className="text-xs text-slate-400 space-y-1">
+                        {apiDiscovery.filtering.extractedTokens.slice(0, 3).map((token: any, idx: number) => (
+                          <div key={idx}>
+                            • {token.type.toUpperCase()} ({token.location}): {token.name}
+                          </div>
+                        ))}
+                        {apiDiscovery.filtering.extractedTokens.length > 3 && (
+                          <div className="text-slate-500">
+                            ... and {apiDiscovery.filtering.extractedTokens.length - 3} more
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* CRITICAL: Extracted Variables */}
+                  {apiDiscovery.filtering?.extractedVariables?.length > 0 && (
+                    <div className="p-3 bg-purple-900/20 border border-purple-600/30 rounded-lg">
+                      <div className="text-xs font-medium text-purple-400 mb-2">
+                        🎯 Variables: {apiDiscovery.filtering.extractedVariables.length}
+                      </div>
+                      <div className="text-xs text-slate-400 space-y-1">
+                        {apiDiscovery.filtering.extractedVariables.slice(0, 3).map((v: any, idx: number) => (
+                          <div key={idx}>
+                            • {v.type.toUpperCase()}: {v.name}
+                          </div>
+                        ))}
+                        {apiDiscovery.filtering.extractedVariables.length > 3 && (
+                          <div className="text-slate-500">
+                            ... and {apiDiscovery.filtering.extractedVariables.length - 3} more
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Top API */}
                   {apiDiscovery.summary.topAPI && (
-                    <div className="mt-2 pt-2 border-t border-slate-700">
-                      <div className="text-xs text-green-400 mb-1">
+                    <div className="p-3 bg-slate-900 border border-green-600/30 rounded-lg">
+                      <div className="text-xs text-green-400 font-medium mb-1">
                         Top API: {apiDiscovery.summary.topAPI.method} {apiDiscovery.summary.topAPI.path}
                       </div>
                       <div className="text-xs text-slate-500">

@@ -1,14 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { discoverAPIs, generateAPICall, type NetworkEvent } from '@/src/tools/api-signal-explorer/api-discovery';
+import { filterNetworkTraffic } from '@/src/tools/api-signal-explorer/traffic-filter';
 
 /**
  * POST /api/fullmap/discover-apis
  * 
  * Analyzes network traffic to identify real backend APIs vs form submissions
  * Priority 1: Find direct API calls to bypass form interaction
+ * CRITICAL: Filters out junk (analytics, ads, assets) first
  * 
  * @param networkEvents - Captured network events from session
- * @returns API discovery results with recommendation
+ * @returns API discovery results with recommendation, tokens, variables
  */
 export async function POST(request: NextRequest) {
   try {
@@ -24,8 +26,21 @@ export async function POST(request: NextRequest) {
 
     console.log(`[API Discovery] Analyzing ${networkEvents.length} network events...`);
 
-    // Run API discovery
-    const discovery = discoverAPIs(networkEvents);
+    // STEP 1: FILTER OUT NOISE (CRITICAL)
+    console.log(`[API Discovery] Step 1: Filtering noise...`);
+    const filtered = filterNetworkTraffic(networkEvents);
+    
+    console.log(`[API Discovery] Filtering results:`);
+    console.log(`  - Total: ${filtered.stats.total}`);
+    console.log(`  - Valuable: ${filtered.stats.valuable} (${100 - filtered.stats.noisePercentage}%)`);
+    console.log(`  - Noise: ${filtered.stats.noise} (${filtered.stats.noisePercentage}%)`);
+    console.log(`  - Tokens extracted: ${filtered.extractedTokens.length}`);
+    console.log(`  - Variables extracted: ${filtered.extractedVariables.length}`);
+
+    // STEP 2: RUN API DISCOVERY ON CLEAN DATA
+    console.log(`[API Discovery] Step 2: Discovering APIs from valuable traffic...`);
+    const valuableEvents = [...filtered.valuableAPIs, ...filtered.formSubmissions];
+    const discovery = discoverAPIs(valuableEvents);
 
     // Generate API calls for direct APIs
     const apiCalls = discovery.directAPIs.map(endpoint => ({
@@ -44,12 +59,22 @@ export async function POST(request: NextRequest) {
       ok: true,
       discovery,
       apiCalls,
+      filtering: {
+        stats: filtered.stats,
+        extractedTokens: filtered.extractedTokens,
+        extractedVariables: filtered.extractedVariables,
+        noiseReasons: filtered.stats.topNoiseReasons
+      },
       summary: {
         directAPIs: discovery.directAPIs.length,
         formEndpoints: discovery.formEndpoints.length,
         apiCallProbability: Math.round(discovery.apiCallProbability * 100),
         recommendation: discovery.recommendation,
-        topAPI: discovery.directAPIs[0] || null
+        topAPI: discovery.directAPIs[0] || null,
+        noiseFiltered: filtered.stats.noise,
+        noisePercentage: filtered.stats.noisePercentage,
+        tokensFound: filtered.extractedTokens.length,
+        variablesFound: filtered.extractedVariables.length
       }
     });
 
