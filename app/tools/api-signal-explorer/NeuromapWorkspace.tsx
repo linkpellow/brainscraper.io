@@ -336,15 +336,7 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
       <div className="shrink-0 bg-gradient-to-r from-slate-900 to-slate-800 border-b border-cyan-500/30 p-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Zap className="w-6 h-6 text-cyan-400" />
-          <div>
-            <h2 className="text-lg font-bold text-cyan-400 font-mono tracking-wide">API SIGNAL PIPELINE</h2>
-            <div className="text-xs text-slate-500 flex items-center gap-2">
-              <span className={`w-2 h-2 rounded-full ${wsStatus === 'connected' ? 'bg-green-400' : wsStatus === 'connecting' ? 'bg-yellow-400 animate-pulse' : 'bg-red-400'}`} />
-              <span>{endpoints.length} endpoints captured</span>
-              <span>•</span>
-              <span>{selectedEndpoints.length} selected</span>
-            </div>
-          </div>
+          <h2 className="text-lg font-bold text-cyan-400 font-mono tracking-wide">API SIGNAL PIPELINE</h2>
         </div>
         <div className="flex items-center gap-2">
           <button

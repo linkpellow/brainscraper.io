@@ -710,19 +710,6 @@ export default function APISignalExplorerPage() {
   return (
     <div className="min-h-screen p-4" style={{ backgroundColor: '#0a0a0a' }}>
       <div className="mx-auto max-w-full">
-        {/* Compact Header */}
-        <div className="mb-4 flex items-center justify-between bg-gradient-to-r from-slate-900/50 to-transparent p-4 rounded-lg border border-slate-800/50">
-          <div className="flex items-center gap-4">
-            <div>
-              <h1 className="text-2xl font-bold" style={{ color: '#ff5757' }}>
-                API Signal Explorer
-              </h1>
-              <p className="text-slate-500 text-xs">
-                {activeNeuromapId ? 'Live capture active' : 'Real-time API traffic analysis'}
-              </p>
-            </div>
-          </div>
-        </div>
 
         {/* Live Mode Controls - Compact row */}
         {!activeNeuromapId && (
