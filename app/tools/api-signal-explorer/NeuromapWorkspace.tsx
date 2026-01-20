@@ -267,6 +267,10 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
     { state: 'CA', zipcode: '90210', description: 'California - Beverly Hills' }
   ]);
   
+  // Mode #1: API Discovery (Priority 1)
+  const [apiDiscovery, setApiDiscovery] = useState<any>(null);
+  const [discoveringAPIs, setDiscoveringAPIs] = useState(false);
+  
   // Tabs and notifications
   const [activeTab, setActiveTab] = useState<'logs' | 'code'>('logs');
   const [hasNewCodeSnippet, setHasNewCodeSnippet] = useState(false);
@@ -1808,6 +1812,174 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
     }
   }, [flipbookSessionId, stateTestCases, agentState, addChatMessage]);
 
+  /**
+   * Discover APIs - PRIORITY 1
+   * Analyzes network traffic to find direct API calls (bypass form automation)
+   */
+  const discoverBackendAPIs = useCallback(async () => {
+    if (endpoints.length === 0) {
+      addChatMessage('assistant',
+        '⚠️ No network traffic captured yet. Launch browser and interact with the site to capture API calls.',
+        { type: 'warning' }
+      );
+      return;
+    }
+
+    setDiscoveringAPIs(true);
+    addChatMessage('assistant',
+      `🔍 **PRIORITY 1: Discovering Backend APIs**\n\n` +
+      `Analyzing ${endpoints.length} network requests...\n\n` +
+      `Looking for:\n` +
+      `• Direct API endpoints (JSON, REST, GraphQL)\n` +
+      `• Backend calls that bypass form UI\n` +
+      `• Authentication methods (cookies, tokens)\n\n` +
+      `⏳ This will determine if you need form automation or can call APIs directly...`,
+      { type: 'suggestion' }
+    );
+
+    try {
+      // Convert endpoints to network events format
+      const networkEvents = endpoints.map(ep => ({
+        ts: ep.lastSeen,
+        method: ep.method,
+        url: ep.sampleUrl,
+        path: ep.path,
+        reqBodyText: ep.sampleReqBody,
+        reqHeaders: ep.sampleHeaders,
+        resBodyText: ep.sampleResBody,
+        status: Object.keys(ep.statuses)[0] ? parseInt(Object.keys(ep.statuses)[0]) : undefined,
+        responseTime: undefined
+      }));
+
+      // Call API discovery
+      const response = await fetch('/api/fullmap/discover-apis', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ networkEvents })
+      });
+
+      const data = await response.json();
+
+      if (!data.ok) {
+        throw new Error(data.error || 'API discovery failed');
+      }
+
+      const { discovery, apiCalls, summary } = data;
+      setApiDiscovery({ discovery, apiCalls, summary });
+
+      // Build detailed message
+      let message = `✅ **API Discovery Complete**\n\n`;
+      message += `📊 **Summary**:\n`;
+      message += `• Total Requests Analyzed: ${discovery.totalRequests}\n`;
+      message += `• Direct APIs Found: ${summary.directAPIs}\n`;
+      message += `• Form Endpoints: ${summary.formEndpoints}\n`;
+      message += `• API Probability: ${summary.apiCallProbability}%\n`;
+      message += `• **Recommendation**: ${summary.recommendation.toUpperCase().replace(/_/g, ' ')}\n\n`;
+
+      if (summary.recommendation === 'use_direct_api') {
+        message += `🎯 **EXCELLENT NEWS!** Direct API calls found!\n\n`;
+        message += `You can bypass form automation entirely. Found ${summary.directAPIs} direct API endpoint${summary.directAPIs > 1 ? 's' : ''}:\n\n`;
+
+        discovery.directAPIs.slice(0, 3).forEach((api: any, idx: number) => {
+          message += `**${idx + 1}. ${api.method} ${api.path}**\n`;
+          message += `• Confidence: ${Math.round(api.confidence * 100)}%\n`;
+          message += `• Evidence: ${api.evidence.join(', ')}\n`;
+          if (api.authentication?.type !== 'none') {
+            message += `• Auth: ${api.authentication.type.toUpperCase()}`;
+            if (api.authentication.cookieNames) {
+              message += ` (${api.authentication.cookieNames.length} cookies)`;
+            }
+            message += `\n`;
+          }
+          message += `• Parameters: ${api.parameters.length} detected\n`;
+          message += `\n`;
+        });
+
+        if (discovery.directAPIs.length > 3) {
+          message += `... and ${discovery.directAPIs.length - 3} more API endpoints\n\n`;
+        }
+
+        message += `✅ **Next Steps**:\n`;
+        message += `1. Review API calls in "Code Snippets" tab\n`;
+        message += `2. Test with curl/Postman\n`;
+        message += `3. Extract auth cookies if needed\n`;
+        message += `4. Build direct API integration (no form needed!)\n`;
+
+      } else if (summary.recommendation === 'hybrid') {
+        message += `⚙️ **Hybrid Approach Recommended**\n\n`;
+        message += `Found both direct APIs (${summary.directAPIs}) and form endpoints (${summary.formEndpoints}).\n\n`;
+        message += `**Strategy**:\n`;
+        message += `1. Use direct APIs where available\n`;
+        message += `2. Fall back to form automation for remaining steps\n`;
+        message += `3. Combine both for optimal workflow\n\n`;
+
+        if (discovery.directAPIs.length > 0) {
+          const topAPI = discovery.directAPIs[0];
+          message += `**Top API Candidate**: ${topAPI.method} ${topAPI.path} (${Math.round(topAPI.confidence * 100)}% confidence)\n`;
+        }
+
+      } else {
+        message += `📝 **Form Automation Required**\n\n`;
+        message += `No direct API calls detected. The quote system uses form submissions only.\n\n`;
+        message += `**Next Steps**:\n`;
+        message += `1. Use Mode #1 button mapping\n`;
+        message += `2. Extract form state (VIEWSTATE, cookies)\n`;
+        message += `3. Build form automation workflow\n`;
+        message += `4. Use auth-worker for cookie persistence\n\n`;
+
+        if (discovery.formEndpoints.length > 0) {
+          message += `**Form Endpoints Found**: ${discovery.formEndpoints.length}\n`;
+          discovery.formEndpoints.slice(0, 2).forEach((form: any) => {
+            message += `• ${form.method} ${form.path}\n`;
+          });
+        }
+      }
+
+      addChatMessage('assistant', message, { 
+        type: summary.recommendation === 'use_direct_api' ? 'success' : 'suggestion' 
+      });
+
+      // Update agent state
+      const newState = updateAgentState(agentState, {
+        phase: 'discovery',
+        action: 'API discovery completed',
+        outcome: 'success',
+      });
+      newState.certaintyLevels.system = summary.recommendation === 'use_direct_api' ? 100 : 70;
+      newState.goalsAchieved.push(
+        summary.recommendation === 'use_direct_api' 
+          ? 'Direct API calls discovered - form automation not needed!'
+          : 'Form-based workflow identified'
+      );
+      setAgentState(newState);
+
+      // If direct APIs found, generate code snippets
+      if (apiCalls && apiCalls.length > 0) {
+        const topAPI = apiCalls[0];
+        // Set curl command as default snippet
+        setCurrentCode(topAPI.curlCommand);
+        setHasNewCodeSnippet(true);
+      }
+
+    } catch (err) {
+      console.error('[API Discovery] Error:', err);
+      
+      let errorMessage = '❌ API discovery failed\n\n';
+      
+      if (err instanceof Error) {
+        errorMessage += `**Error**: ${err.message}\n`;
+        errorMessage += '**Solution**: Check the console for details or try capturing more traffic.';
+      } else {
+        errorMessage += `**Error**: ${String(err)}\n`;
+        errorMessage += '**Solution**: An unexpected error occurred. Please try again.';
+      }
+      
+      addChatMessage('assistant', errorMessage, { type: 'warning' });
+    } finally {
+      setDiscoveringAPIs(false);
+    }
+  }, [endpoints, agentState, addChatMessage]);
+
   // Apply scenario template
   const applyScenario = useCallback((scenario: Scenario) => {
     setUserGoal(scenario.goal);
@@ -2292,10 +2464,77 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
             role="region"
             aria-label="Full Map Mode Controls"
           >
+            {/* PRIORITY 1: API DISCOVERY */}
+            <div className="mb-4 p-4 bg-gradient-to-r from-red-900/20 to-purple-900/20 border border-red-600/30 rounded-lg">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="px-2 py-1 bg-red-600 text-white text-xs font-bold rounded">PRIORITY 1</span>
+                <span className="text-xs text-red-400 font-medium">API DISCOVERY</span>
+                <span className="text-xs text-slate-600">• Find direct backend APIs (no form needed)</span>
+              </div>
+              
+              <div className="text-xs text-slate-400 mb-3">
+                First, check if the system has direct API calls you can use. If found, you won't need form automation!
+              </div>
+
+              <button
+                onClick={discoverBackendAPIs}
+                disabled={discoveringAPIs || endpoints.length === 0}
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-red-600 hover:bg-red-700 disabled:opacity-50 rounded-lg text-sm text-white font-medium transition-all focus:outline-none focus:ring-2 focus:ring-red-500"
+                aria-label="Discover backend APIs from network traffic"
+                aria-busy={discoveringAPIs}
+                title={endpoints.length === 0 ? 'Launch browser first to capture API calls' : 'Analyze network traffic to find direct API endpoints'}
+              >
+                {discoveringAPIs ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
+                    <span>Discovering APIs...</span>
+                  </>
+                ) : (
+                  <>
+                    <Zap className="w-4 h-4" aria-hidden="true" />
+                    <span>Discover Backend APIs</span>
+                  </>
+                )}
+              </button>
+
+              {/* API Discovery Results */}
+              {apiDiscovery && (
+                <div className="mt-3 p-3 bg-slate-900 border border-red-600/30 rounded-lg">
+                  <div className={`text-xs font-medium mb-2 ${
+                    apiDiscovery.summary.recommendation === 'use_direct_api' 
+                      ? 'text-green-400' 
+                      : apiDiscovery.summary.recommendation === 'hybrid'
+                      ? 'text-amber-400'
+                      : 'text-slate-400'
+                  }`}>
+                    {apiDiscovery.summary.recommendation === 'use_direct_api' && '🎯 Direct APIs Found!'}
+                    {apiDiscovery.summary.recommendation === 'hybrid' && '⚙️ Hybrid Approach (APIs + Forms)'}
+                    {apiDiscovery.summary.recommendation === 'use_form_automation' && '📝 Form Automation Required'}
+                  </div>
+                  <div className="text-xs text-slate-400 space-y-1">
+                    <div>• Direct APIs: {apiDiscovery.summary.directAPIs}</div>
+                    <div>• Form Endpoints: {apiDiscovery.summary.formEndpoints}</div>
+                    <div>• API Probability: {apiDiscovery.summary.apiCallProbability}%</div>
+                  </div>
+                  {apiDiscovery.summary.topAPI && (
+                    <div className="mt-2 pt-2 border-t border-slate-700">
+                      <div className="text-xs text-green-400 mb-1">
+                        Top API: {apiDiscovery.summary.topAPI.method} {apiDiscovery.summary.topAPI.path}
+                      </div>
+                      <div className="text-xs text-slate-500">
+                        Confidence: {Math.round(apiDiscovery.summary.topAPI.confidence * 100)}%
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
             <div className="flex items-center gap-2 mb-3">
               <span className="text-xs text-slate-400 font-medium" id="fullmap-tools-label">
                 FULL MAP TOOLS
               </span>
+              <span className="text-xs text-slate-600">• If no direct APIs found</span>
             </div>
             
             <div className="flex gap-2" role="group" aria-labelledby="fullmap-tools-label">
