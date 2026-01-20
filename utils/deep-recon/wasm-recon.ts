@@ -85,8 +85,8 @@ export async function decompileToWat(wasmPath: string): Promise<{ wat: string } 
       resolve({ error: `wasm2wat timed out after ${WASM2WAT_TIMEOUT_MS}ms` });
     }, WASM2WAT_TIMEOUT_MS);
 
-    proc.stdout?.on('data', (d: Buffer) => { stdout += d.toString('utf-8', 'replace'); });
-    proc.stderr?.on('data', (d: Buffer) => { stderr += d.toString('utf-8', 'replace'); });
+    proc.stdout?.on('data', (d: Buffer) => { stdout += d.toString('utf-8'); });
+    proc.stderr?.on('data', (d: Buffer) => { stderr += d.toString('utf-8'); });
     proc.on('error', (e) => {
       clearTimeout(to);
       resolve({ error: `wasm2wat not found or failed to start: ${e.message}. Install wabt: brew install wabt` });

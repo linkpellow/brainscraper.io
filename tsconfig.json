@@ -41,6 +41,9 @@
     "scripts/**/*",
     "test-*.ts",
     "desktop",
-    "dist"
+    "dist",
+    "**/__tests__/**/*",
+    "**/*.test.ts",
+    "**/*.test.tsx"
   ]
 }

@@ -19,6 +19,9 @@
 
 import type { DOMSnapshot, FormElement } from './form-correlator';
 
+// Re-export for external use
+export type { DOMSnapshot, FormElement };
+
 /**
  * Represents a test case for a specific state/zipcode
  */

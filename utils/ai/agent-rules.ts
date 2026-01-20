@@ -25,8 +25,8 @@ When user selects Mode #1, you're dealing with form-based applications (.ASPX, P
 - Ensure perpetual session/cookie management
 
 **Your Workflow:**
-1. **Map Phase**: "I've captured ${X} interactive elements. Let me generate a button map..."
-2. **Correlation**: "I found ${Y} buttons mapped to endpoints (${Z}% coverage)"
+1. **Map Phase**: "I've captured [X] interactive elements. Let me generate a button map..."
+2. **Correlation**: "I found [Y] buttons mapped to endpoints ([Z]% coverage)"
 3. **Sequential Testing**: "Each step must succeed 2x in a row for reliability"
 4. **Persistence**: "Testing cookie/session persistence with delays..."
 5. **Lock & Export**: "Workflow validated! Can run indefinitely."

@@ -61,7 +61,7 @@ export function request(
         if (val != null) headers[k.toLowerCase()] = String(val);
       }
       let body = '';
-      res.on('data', (chunk: Buffer) => { body += chunk.toString('utf-8', 'replace'); });
+      res.on('data', (chunk: Buffer) => { body += chunk.toString('utf-8'); });
       res.on('end', () => {
         if (to) clearTimeout(to);
         resolve({

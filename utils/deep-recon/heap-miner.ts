@@ -115,8 +115,12 @@ export async function takeHeapSnapshotWithCDP(wc: WebContents): Promise<HeapMine
     }
   };
 
+  const onMessageWrapper = (_e: unknown, method: unknown, params: unknown) => {
+    onMessage(_e, method as string, params as { chunk?: string });
+  };
+
   try {
-    (wc.debugger as unknown as { on(event: string, cb: (...a: unknown[]) => void) }).on('message', onMessage);
+    (wc.debugger as unknown as { on(event: string, cb: (...a: unknown[]) => void): void }).on('message', onMessageWrapper);
   } catch {
     return {
       ok: false,
@@ -130,12 +134,12 @@ export async function takeHeapSnapshotWithCDP(wc: WebContents): Promise<HeapMine
 
   const cleanup = () => {
     try {
-      (wc.debugger as unknown as { off(event: string, cb: (...a: unknown[]) => void) }).off('message', onMessage);
+      (wc.debugger as unknown as { off(event: string, cb: (...a: unknown[]) => void): void }).off('message', onMessageWrapper);
     } catch { /* ignore */ }
   };
 
   try {
-    await (wc.debugger as { attach(version?: string): Promise<void> }).attach('1.3');
+    await (wc.debugger as unknown as { attach(version?: string): Promise<void> }).attach('1.3');
   } catch (e) {
     cleanup();
     return {
@@ -183,7 +187,7 @@ export async function takeHeapSnapshotWithCDP(wc: WebContents): Promise<HeapMine
   });
 
   try {
-    await (wc.debugger as { detach(): Promise<void> }).detach();
+    await (wc.debugger as unknown as { detach(): Promise<void> }).detach();
   } catch { /* ignore */ }
   cleanup();
 
@@ -237,7 +241,7 @@ const FALLBACK_SCRIPT = `
  */
 export async function heapMineWithRuntime(wc: WebContents): Promise<HeapMinerResult> {
   try {
-    await (wc.debugger as { attach(v?: string): Promise<void> }).attach('1.3');
+    await (wc.debugger as unknown as { attach(v?: string): Promise<void> }).attach('1.3');
   } catch (e) {
     return {
       ok: false,
@@ -251,7 +255,7 @@ export async function heapMineWithRuntime(wc: WebContents): Promise<HeapMinerRes
 
   let res: HeapMinerResult;
   try {
-    const r = await (wc.debugger as { sendCommand(m: string, p?: object): Promise<{ result?: { value?: string } }> })
+    const r = await (wc.debugger as unknown as { sendCommand(m: string, p?: object): Promise<{ result?: { value?: string } }> })
       .sendCommand('Runtime.evaluate', { expression: FALLBACK_SCRIPT });
     const raw = r?.result?.value;
     const arr: string[] = typeof raw === 'string' ? (() => { try { return JSON.parse(raw); } catch { return []; } })() : [];
@@ -276,7 +280,7 @@ export async function heapMineWithRuntime(wc: WebContents): Promise<HeapMinerRes
     };
   }
   try {
-    await (wc.debugger as { detach(): Promise<void> }).detach();
+    await (wc.debugger as unknown as { detach(): Promise<void> }).detach();
   } catch { /* ignore */ }
   return res;
 }
