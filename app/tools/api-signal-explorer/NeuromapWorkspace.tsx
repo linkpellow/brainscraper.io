@@ -1770,6 +1770,54 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
     );
   }, [aiMode, userGoal, userConstraints, targetData, keywordAnalysis, workflowPlan, lockedSteps, flipbookSnapshots, flipbookSessionId, flipbookAnalysis, buttonMap, validationResult, addChatMessage]);
 
+  // ═══════════════════════════════════════════════════════════════════
+  // KEYBOARD NAVIGATION
+  // ═══════════════════════════════════════════════════════════════════
+
+  /**
+   * Global keyboard shortcuts for Mode #1
+   * - Ctrl/Cmd + M: Toggle control mode
+   * - Ctrl/Cmd + B: Generate button map
+   * - Ctrl/Cmd + V: Validate workflow
+   * - Ctrl/Cmd + E: Export workflow
+   */
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ctrl/Cmd + M: Toggle control mode
+      if ((e.ctrlKey || e.metaKey) && e.key === 'm') {
+        e.preventDefault();
+        setControlMode(prev => prev === 'human' ? 'ai' : 'human');
+      }
+
+      // Ctrl/Cmd + B: Generate button map (Mode #1 only)
+      if ((e.ctrlKey || e.metaKey) && e.key === 'b' && aiMode === 'fullMap' && controlMode === 'ai') {
+        e.preventDefault();
+        if (!generatingButtonMap && flipbookSnapshots.length > 0) {
+          generateFullButtonMap();
+        }
+      }
+
+      // Ctrl/Cmd + V: Validate workflow (Mode #1 only)
+      if ((e.ctrlKey || e.metaKey) && e.key === 'v' && aiMode === 'fullMap' && controlMode === 'ai') {
+        e.preventDefault();
+        if (!validating && lockedSteps.length > 0) {
+          validateWorkflow2x();
+        }
+      }
+
+      // Ctrl/Cmd + E: Export workflow
+      if ((e.ctrlKey || e.metaKey) && e.key === 'e') {
+        e.preventDefault();
+        if (lockedSteps.length > 0) {
+          exportWorkflow();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [controlMode, aiMode, generatingButtonMap, validating, flipbookSnapshots.length, lockedSteps.length, generateFullButtonMap, validateWorkflow2x, exportWorkflow]);
+
   // Calculate dynamic width based on chat panel state
   const chatPanelWidth = chatExpanded ? 600 : 400;
   const workspaceWidth = `calc(100% - ${chatPanelWidth}px)`;
@@ -1918,36 +1966,59 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
       </div>
 
       {/* HUMAN/AI CONTROL TOGGLE */}
-      <div className="shrink-0 bg-gradient-to-r from-slate-900/50 to-transparent border-b border-slate-700/50 p-4">
+      <div 
+        className="shrink-0 bg-gradient-to-r from-slate-900/50 to-transparent border-b border-slate-700/50 p-4"
+        role="region"
+        aria-label="Control Mode Selection"
+      >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <span className="text-xs text-slate-400 font-medium">CONTROL MODE</span>
-            <div className="flex items-center gap-2 bg-slate-900 rounded-lg p-1">
+            <span className="text-xs text-slate-400 font-medium" id="control-mode-label">
+              CONTROL MODE
+            </span>
+            <div 
+              className="flex items-center gap-2 bg-slate-900 rounded-lg p-1"
+              role="radiogroup"
+              aria-labelledby="control-mode-label"
+            >
               <button
                 onClick={() => setControlMode('human')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                   controlMode === 'human'
                     ? 'bg-blue-600 text-white shadow-lg'
                     : 'text-slate-400 hover:text-slate-300'
                 }`}
+                role="radio"
+                aria-checked={controlMode === 'human'}
+                aria-label="Human control mode - Manual workflow building"
+                tabIndex={controlMode === 'human' ? 0 : -1}
               >
-                <span className="text-base">👤</span>
-                HUMAN
+                <span className="text-base" aria-hidden="true">👤</span>
+                <span>HUMAN</span>
               </button>
               <button
                 onClick={() => setControlMode('ai')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all focus:outline-none focus:ring-2 focus:ring-red-500 ${
                   controlMode === 'ai'
                     ? 'bg-red-600 text-white shadow-lg'
                     : 'text-slate-400 hover:text-slate-300'
                 }`}
+                role="radio"
+                aria-checked={controlMode === 'ai'}
+                aria-label="AI control mode - AI-powered suggestions and analysis"
+                tabIndex={controlMode === 'ai' ? 0 : -1}
               >
-                <Brain className="w-4 h-4" />
-                AI
+                <Brain className="w-4 h-4" aria-hidden="true" />
+                <span>AI</span>
               </button>
             </div>
           </div>
-          <div className="text-xs text-slate-500">
+          <div 
+            className="text-xs text-slate-500"
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
+          >
             {controlMode === 'human' 
               ? 'Manual workflow building - AI assistance disabled' 
               : 'AI-powered suggestions and analysis enabled'}
@@ -1956,20 +2027,31 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
         
         {/* AI MODE SELECTOR - Shows when AI is active */}
         {controlMode === 'ai' && (
-          <div className="mt-4 pt-4 border-t border-slate-700/50">
+          <div 
+            className="mt-4 pt-4 border-t border-slate-700/50"
+            role="region"
+            aria-label="AI Mode Configuration"
+          >
             <div className="flex items-center gap-3">
-              <span className="text-xs text-slate-400 font-medium">AI MODE</span>
+              <label 
+                htmlFor="ai-mode-select" 
+                className="text-xs text-slate-400 font-medium"
+              >
+                AI MODE
+              </label>
               <select
+                id="ai-mode-select"
                 value={aiMode}
                 onChange={(e) => setAiMode(e.target.value as AIMode)}
-                className="flex-1 px-3 py-2 bg-slate-900 border border-slate-700/50 rounded-lg text-sm text-white focus:outline-none focus:border-red-500/60"
+                className="flex-1 px-3 py-2 bg-slate-900 border border-slate-700/50 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-red-500"
+                aria-describedby="ai-mode-description"
               >
                 <option value="fullMap">Mode #1: Full Map (Legacy Forms - No Bot Detection)</option>
                 <option value="apiOnly">Mode #2: API-Only (Current)</option>
                 <option value="mobileReverse">Mode #3: Mobile App Reverse Engineering</option>
               </select>
             </div>
-            <div className="mt-2 text-xs text-slate-500">
+            <div id="ai-mode-description" className="mt-2 text-xs text-slate-500" role="status" aria-live="polite">
               {aiMode === 'fullMap' && (
                 <div className="flex items-start gap-2">
                   <span className="text-green-400">✓</span>
@@ -2057,29 +2139,43 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
 
         {/* MODE #1: FULL MAP CONTROLS */}
         {aiMode === 'fullMap' && controlMode === 'ai' && (
-          <div className="mt-4 pt-4 border-t border-slate-700/50">
+          <div 
+            className="mt-4 pt-4 border-t border-slate-700/50"
+            role="region"
+            aria-label="Full Map Mode Controls"
+          >
             <div className="flex items-center gap-2 mb-3">
-              <span className="text-xs text-slate-400 font-medium">FULL MAP TOOLS</span>
+              <span className="text-xs text-slate-400 font-medium" id="fullmap-tools-label">
+                FULL MAP TOOLS
+              </span>
             </div>
             
-            <div className="flex gap-2">
+            <div className="flex gap-2" role="group" aria-labelledby="fullmap-tools-label">
               <button
                 onClick={generateFullButtonMap}
                 disabled={generatingButtonMap || flipbookSnapshots.length === 0}
-                className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 rounded-lg text-xs text-white font-medium transition-all"
+                className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 rounded-lg text-xs text-white font-medium transition-all focus:outline-none focus:ring-2 focus:ring-purple-500"
+                aria-label="Generate button map from DOM snapshots"
+                aria-busy={generatingButtonMap}
+                aria-disabled={generatingButtonMap || flipbookSnapshots.length === 0}
+                title={flipbookSnapshots.length === 0 ? 'Launch browser first to capture snapshots' : 'Correlate UI elements with network requests'}
               >
-                {generatingButtonMap ? <Loader2 className="w-3 h-3 animate-spin" /> : <Zap className="w-3 h-3" />}
-                Generate Button Map
+                {generatingButtonMap ? <Loader2 className="w-3 h-3 animate-spin" aria-hidden="true" /> : <Zap className="w-3 h-3" aria-hidden="true" />}
+                <span>Generate Button Map</span>
               </button>
 
               {lockedSteps.length > 0 && (
                 <button
                   onClick={validateWorkflow2x}
                   disabled={validating}
-                  className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 disabled:opacity-50 rounded-lg text-xs text-white font-medium transition-all"
+                  className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 disabled:opacity-50 rounded-lg text-xs text-white font-medium transition-all focus:outline-none focus:ring-2 focus:ring-green-500"
+                  aria-label={`Validate workflow with ${lockedSteps.length} steps twice in sequence`}
+                  aria-busy={validating}
+                  aria-disabled={validating}
+                  title="Run workflow 2x to ensure reliability"
                 >
-                  {validating ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
-                  Validate 2x
+                  {validating ? <Loader2 className="w-3 h-3 animate-spin" aria-hidden="true" /> : <Check className="w-3 h-3" aria-hidden="true" />}
+                  <span>Validate 2x</span>
                 </button>
               )}
             </div>
