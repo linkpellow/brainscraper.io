@@ -2217,31 +2217,31 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
   }, [controlMode, aiMode, generatingButtonMap, validating, flipbookSnapshots.length, lockedSteps.length, generateFullButtonMap, validateWorkflow2x, exportWorkflow]);
 
   // Calculate dynamic width based on chat panel state
-  const chatPanelWidth = chatExpanded ? 600 : 400;
+  const chatPanelWidth = chatExpanded ? 420 : 280;
   const workspaceWidth = `calc(100% - ${chatPanelWidth}px)`;
 
   return (
-    <div className="w-full flex h-screen" style={{ transform: 'scale(0.7)', transformOrigin: 'top left', width: '142.86%', height: '142.86%' }}>
+    <div className="w-full flex h-screen" style={{ fontSize: '11px' }}>
       {/* Main Workspace */}
       <div 
         className="flex flex-col bg-black border-r border-slate-800 overflow-hidden transition-all duration-300" 
         style={{ 
           width: workspaceWidth, 
-          height: '88vh'
+          height: '100vh'
         }}
       >
       {/* Header */}
-      <div className="shrink-0 bg-gradient-to-r from-slate-900 to-slate-800 border-b border-slate-700/50 p-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Zap className="w-6 h-6 text-red-500" />
-          <h2 className="text-lg font-bold text-red-500 font-mono tracking-wide">API SIGNAL PIPELINE</h2>
+      <div className="shrink-0 bg-gradient-to-r from-slate-900 to-slate-800 border-b border-slate-700/50 p-2.5 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Zap className="w-4 h-4 text-red-500" />
+          <h2 className="text-sm font-bold text-red-500 font-mono tracking-wide">API SIGNAL PIPELINE</h2>
         </div>
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1.5 px-3 py-2 bg-purple-900/30 border border-purple-600/30 rounded text-xs text-purple-400">
-            <MessageSquare className="w-3.5 h-3.5" />
-            <span>AI Assistant</span>
+          <div className="flex items-center gap-1 px-2 py-1 bg-purple-900/30 border border-purple-600/30 rounded" style={{ fontSize: '10px' }}>
+            <MessageSquare className="w-3 h-3" />
+            <span className="text-purple-400">AI Assistant</span>
             {chatMessages.length > 0 && (
-              <span className="px-1.5 py-0.5 bg-purple-600 rounded-full text-xs text-white">
+              <span className="px-1 py-0.5 bg-purple-600 rounded-full text-white" style={{ fontSize: '9px' }}>
                 {chatMessages.length}
               </span>
             )}
@@ -2249,33 +2249,37 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
           {aiInsightsList.filter(i => !i.dismissed).length > 0 && (
             <button
               onClick={() => setInsightsPanelOpen(!insightsPanelOpen)}
-              className="flex items-center gap-1.5 px-3 py-2 bg-amber-600 hover:bg-amber-700 rounded text-xs text-white font-medium"
+              className="flex items-center gap-1 px-2 py-1 bg-amber-600 hover:bg-amber-700 rounded text-white font-medium"
+              style={{ fontSize: '10px' }}
             >
-              <Brain className="w-3.5 h-3.5" />
+              <Brain className="w-3 h-3" />
               {aiInsightsList.filter(i => !i.dismissed).length} Insights
             </button>
           )}
           <button
             onClick={handleMarkInteraction}
-            className={`flex items-center gap-1.5 px-3 py-2 rounded text-xs font-medium ${
+            className={`flex items-center gap-1 px-2 py-1 rounded font-medium ${
               isMarkingInteraction ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-slate-700 hover:bg-slate-600 text-slate-300'
             }`}
+            style={{ fontSize: '10px' }}
           >
-            <MousePointer className="w-3.5 h-3.5" />
+            <MousePointer className="w-3 h-3" />
             {isMarkingInteraction ? 'Marking...' : 'Mark'}
           </button>
           <button
             onClick={() => setIsPaused(!isPaused)}
-            className="flex items-center gap-1.5 px-3 py-2 bg-slate-700 hover:bg-slate-600 rounded text-xs text-slate-300"
+            className="flex items-center gap-1 px-2 py-1 bg-slate-700 hover:bg-slate-600 rounded text-slate-300"
+            style={{ fontSize: '10px' }}
           >
-            {isPaused ? <Play className="w-3.5 h-3.5" /> : <Pause className="w-3.5 h-3.5" />}
+            {isPaused ? <Play className="w-3 h-3" /> : <Pause className="w-3 h-3" />}
             {isPaused ? 'Resume' : 'Pause'}
           </button>
           <button
             onClick={handleExport}
-            className="flex items-center gap-1.5 px-3 py-2 bg-red-600 hover:bg-red-700 rounded text-xs text-white"
+            className="flex items-center gap-1 px-2 py-1 bg-red-600 hover:bg-red-700 rounded text-white"
+            style={{ fontSize: '10px' }}
           >
-            <Download className="w-3.5 h-3.5" />
+            <Download className="w-3 h-3" />
             Export
           </button>
         </div>
@@ -2340,85 +2344,90 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
       )}
 
       {/* Target URL Input */}
-      <div className="shrink-0 bg-gradient-to-r from-slate-900/50 to-transparent border-b border-slate-700/50 p-4">
-        <div className="flex gap-2">
+      <div className="shrink-0 bg-gradient-to-r from-slate-900/50 to-transparent border-b border-slate-700/50 p-2.5">
+        <div className="flex gap-1.5">
           <input
             type="url"
             value={launchBrowserUrl}
             onChange={(e) => setLaunchBrowserUrl(e.target.value)}
             placeholder="https://example.com"
-            className="flex-1 px-4 py-2 bg-slate-900 border border-slate-700/50 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:border-red-500/60"
+            className="flex-1 px-2.5 py-1.5 bg-slate-900 border border-slate-700/50 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-red-500/60"
+            style={{ fontSize: '11px' }}
           />
           <button
             onClick={handleLaunchBrowser}
             disabled={launchBrowserLoading || isProduction}
-            className="flex items-center gap-2 px-6 py-2 bg-red-600 hover:bg-red-700 disabled:opacity-50 rounded-lg text-sm text-white font-medium transition-all"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 hover:bg-red-700 disabled:opacity-50 rounded-lg text-white font-medium transition-all"
             title={isProduction ? 'Browser automation only works locally' : 'Launch Chromium with mitmproxy'}
+            style={{ fontSize: '10px' }}
           >
-            <Monitor className="w-4 h-4" />
+            <Monitor className="w-3 h-3" />
             {launchBrowserLoading ? 'Launching...' : isProduction ? 'Launch Browser (Local Only)' : 'Launch Browser'}
           </button>
         </div>
         {isProduction && (
-          <p className="mt-2 text-yellow-400 text-xs">
+          <p className="mt-1.5 text-yellow-400" style={{ fontSize: '9px' }}>
             ⚠️ Mode 1 auto-capture requires local setup (mitmproxy + Playwright). Use HAR import or manual mode instead.
           </p>
         )}
         {launchBrowserError && (
-          <p className="mt-2 text-red-400 text-xs">{launchBrowserError}</p>
+          <p className="mt-1.5 text-red-400" style={{ fontSize: '9px' }}>{launchBrowserError}</p>
         )}
       </div>
 
       {/* HUMAN/AI CONTROL TOGGLE */}
       <div 
-        className="shrink-0 bg-gradient-to-r from-slate-900/50 to-transparent border-b border-slate-700/50 p-4"
+        className="shrink-0 bg-gradient-to-r from-slate-900/50 to-transparent border-b border-slate-700/50 p-2.5"
         role="region"
         aria-label="Control Mode Selection"
       >
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className="text-xs text-slate-400 font-medium" id="control-mode-label">
+          <div className="flex items-center gap-2">
+            <span className="text-slate-400 font-medium" id="control-mode-label" style={{ fontSize: '9px' }}>
               CONTROL MODE
             </span>
             <div 
-              className="flex items-center gap-2 bg-slate-900 rounded-lg p-1"
+              className="flex items-center gap-1.5 bg-slate-900 rounded-lg p-0.5"
               role="radiogroup"
               aria-labelledby="control-mode-label"
             >
               <button
                 onClick={() => setControlMode('human')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md font-medium transition-all focus:outline-none focus:ring-1 focus:ring-blue-500 ${
                   controlMode === 'human'
                     ? 'bg-blue-600 text-white shadow-lg'
                     : 'text-slate-400 hover:text-slate-300'
                 }`}
+                style={{ fontSize: '10px' }}
                 role="radio"
                 aria-checked={controlMode === 'human'}
                 aria-label="Human control mode - Manual workflow building"
                 tabIndex={controlMode === 'human' ? 0 : -1}
               >
-                <span className="text-base" aria-hidden="true">👤</span>
+                <span style={{ fontSize: '11px' }} aria-hidden="true">👤</span>
                 <span>HUMAN</span>
               </button>
               <button
                 onClick={() => setControlMode('ai')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all focus:outline-none focus:ring-2 focus:ring-red-500 ${
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md font-medium transition-all focus:outline-none focus:ring-1 focus:ring-red-500 ${
                   controlMode === 'ai'
                     ? 'bg-red-600 text-white shadow-lg'
                     : 'text-slate-400 hover:text-slate-300'
                 }`}
+                style={{ fontSize: '10px' }}
                 role="radio"
                 aria-checked={controlMode === 'ai'}
                 aria-label="AI control mode - AI-powered suggestions and analysis"
                 tabIndex={controlMode === 'ai' ? 0 : -1}
               >
-                <Brain className="w-4 h-4" aria-hidden="true" />
+                <Brain className="w-3 h-3" aria-hidden="true" />
                 <span>AI</span>
               </button>
             </div>
           </div>
           <div 
-            className="text-xs text-slate-500"
+            className="text-slate-500"
+            style={{ fontSize: '9px' }}
             role="status"
             aria-live="polite"
             aria-atomic="true"
