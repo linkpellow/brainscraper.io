@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { Pause, Play, Check, X, Download, Globe, Plus, MousePointer, Tag, Monitor, Rss, ChevronDown, ChevronRight, Copy, Code, Terminal, ArrowDown, Zap, Brain, Sparkles, Loader2, Lightbulb, TrendingUp, Filter, MessageSquare, BookOpen } from 'lucide-react';
+import { Pause, Play, Check, X, Download, Globe, Plus, MousePointer, Tag, Monitor, Rss, ChevronDown, ChevronUp, ChevronRight, Copy, Code, Terminal, ArrowDown, Zap, Brain, Sparkles, Loader2, Lightbulb, TrendingUp, Filter, MessageSquare, BookOpen } from 'lucide-react';
 import type { Neuromap, RawNetworkEvent } from '@/src/tools/api-signal-explorer/neuromap';
 import { addEventToNeuromap, toggleEndpointSelection, exportNeuromap } from '@/src/tools/api-signal-explorer/neuromap';
 import { createActionEvent, type ActionEvent, type ActionType } from '@/src/tools/api-signal-explorer/actions';
@@ -223,6 +223,7 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
   // Locked Pipeline state
   const [lockedSteps, setLockedSteps] = useState<LockedStep[]>([]);
   const [currentStepFocus, setCurrentStepFocus] = useState(1);
+  const [pipelineCollapsed, setPipelineCollapsed] = useState(false);
   
   // AI Agent state
   const [aiAgentActive, setAiAgentActive] = useState(false);
@@ -2231,10 +2232,10 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
         }}
       >
       {/* Header */}
-      <div className="shrink-0 bg-gradient-to-r from-slate-900 to-slate-800 border-b border-slate-700/50 p-2.5 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Zap className="w-4 h-4 text-red-500" />
-          <h2 className="text-sm font-bold text-red-500 font-mono tracking-wide">API SIGNAL PIPELINE</h2>
+      <div className="shrink-0 bg-gradient-to-r from-slate-900 to-slate-800 border-b border-slate-700/50 p-3 flex items-center justify-between">
+        <div className="flex items-center gap-2.5">
+          <Zap className="w-5 h-5 text-red-500" />
+          <h2 className="text-base font-bold text-red-500 font-mono tracking-wide">API SIGNAL PIPELINE</h2>
         </div>
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1 px-2 py-1 bg-purple-900/30 border border-purple-600/30 rounded" style={{ fontSize: '10px' }}>
@@ -2285,20 +2286,10 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
         </div>
       </div>
 
-      {/* Contextual Hints Banner */}
-      {contextualHints.length > 0 && (
-        <div className="shrink-0 bg-slate-800/50 border-b border-slate-700/30 px-4 py-2">
-          <div className="flex items-center gap-2">
-            <Lightbulb className="w-4 h-4 text-yellow-400" />
-            <div className="flex-1 text-xs text-slate-400">
-              {contextualHints[0]}
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Contextual Hints Banner - Hidden by default, show as tooltip */}
 
-      {/* AI Insights Panel (Collapsible) */}
-      {insightsPanelOpen && aiInsightsList.filter(i => !i.dismissed).length > 0 && (
+      {/* AI Insights Panel - Now shown in header badge only */}
+      {false && insightsPanelOpen && aiInsightsList.filter(i => !i.dismissed).length > 0 && (
         <div className="shrink-0 bg-amber-900/20 border-b border-amber-500/30 p-4">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
@@ -2343,172 +2334,116 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
         </div>
       )}
 
-      {/* Target URL Input */}
-      <div className="shrink-0 bg-gradient-to-r from-slate-900/50 to-transparent border-b border-slate-700/50 p-2.5">
-        <div className="flex gap-1.5">
+      {/* Compact Controls: URL + Mode Toggle */}
+      <div className="shrink-0 bg-gradient-to-r from-slate-900/50 to-transparent border-b border-slate-700/50 p-4">
+        <div className="flex gap-3 mb-3">
+          {/* Target URL */}
           <input
             type="url"
             value={launchBrowserUrl}
             onChange={(e) => setLaunchBrowserUrl(e.target.value)}
             placeholder="https://example.com"
-            className="flex-1 px-2.5 py-1.5 bg-slate-900 border border-slate-700/50 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-red-500/60"
-            style={{ fontSize: '11px' }}
+            className="flex-1 px-3 py-2 bg-slate-900 border border-slate-700/50 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:border-red-500/60"
           />
+          
+          {/* Launch Button */}
           <button
             onClick={handleLaunchBrowser}
             disabled={launchBrowserLoading || isProduction}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 hover:bg-red-700 disabled:opacity-50 rounded-lg text-white font-medium transition-all"
+            className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 disabled:opacity-50 rounded-lg text-sm text-white font-medium transition-all whitespace-nowrap"
             title={isProduction ? 'Browser automation only works locally' : 'Launch Chromium with mitmproxy'}
-            style={{ fontSize: '10px' }}
           >
-            <Monitor className="w-3 h-3" />
-            {launchBrowserLoading ? 'Launching...' : isProduction ? 'Launch Browser (Local Only)' : 'Launch Browser'}
+            <Monitor className="w-4 h-4" />
+            {launchBrowserLoading ? 'Launching...' : 'Launch'}
           </button>
-        </div>
-        {isProduction && (
-          <p className="mt-1.5 text-yellow-400" style={{ fontSize: '9px' }}>
-            ⚠️ Mode 1 auto-capture requires local setup (mitmproxy + Playwright). Use HAR import or manual mode instead.
-          </p>
-        )}
-        {launchBrowserError && (
-          <p className="mt-1.5 text-red-400" style={{ fontSize: '9px' }}>{launchBrowserError}</p>
-        )}
-      </div>
-
-      {/* HUMAN/AI CONTROL TOGGLE */}
-      <div 
-        className="shrink-0 bg-gradient-to-r from-slate-900/50 to-transparent border-b border-slate-700/50 p-2.5"
-        role="region"
-        aria-label="Control Mode Selection"
-      >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-slate-400 font-medium" id="control-mode-label" style={{ fontSize: '9px' }}>
-              CONTROL MODE
-            </span>
-            <div 
-              className="flex items-center gap-1.5 bg-slate-900 rounded-lg p-0.5"
-              role="radiogroup"
-              aria-labelledby="control-mode-label"
-            >
-              <button
-                onClick={() => setControlMode('human')}
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md font-medium transition-all focus:outline-none focus:ring-1 focus:ring-blue-500 ${
-                  controlMode === 'human'
-                    ? 'bg-blue-600 text-white shadow-lg'
-                    : 'text-slate-400 hover:text-slate-300'
-                }`}
-                style={{ fontSize: '10px' }}
-                role="radio"
-                aria-checked={controlMode === 'human'}
-                aria-label="Human control mode - Manual workflow building"
-                tabIndex={controlMode === 'human' ? 0 : -1}
-              >
-                <span style={{ fontSize: '11px' }} aria-hidden="true">👤</span>
-                <span>HUMAN</span>
-              </button>
-              <button
-                onClick={() => setControlMode('ai')}
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md font-medium transition-all focus:outline-none focus:ring-1 focus:ring-red-500 ${
-                  controlMode === 'ai'
-                    ? 'bg-red-600 text-white shadow-lg'
-                    : 'text-slate-400 hover:text-slate-300'
-                }`}
-                style={{ fontSize: '10px' }}
-                role="radio"
-                aria-checked={controlMode === 'ai'}
-                aria-label="AI control mode - AI-powered suggestions and analysis"
-                tabIndex={controlMode === 'ai' ? 0 : -1}
-              >
-                <Brain className="w-3 h-3" aria-hidden="true" />
-                <span>AI</span>
-              </button>
-            </div>
-          </div>
+          
+          {/* Control Mode Toggle */}
           <div 
-            className="text-slate-500"
-            style={{ fontSize: '9px' }}
-            role="status"
-            aria-live="polite"
-            aria-atomic="true"
+            className="flex items-center gap-2 bg-slate-900 rounded-lg p-1"
+            role="radiogroup"
+            aria-label="Control Mode"
           >
-            {controlMode === 'human' 
-              ? 'Manual workflow building - AI assistance disabled' 
-              : 'AI-powered suggestions and analysis enabled'}
+            <button
+              onClick={() => setControlMode('human')}
+              className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-all ${
+                controlMode === 'human'
+                  ? 'bg-blue-600 text-white'
+                  : 'text-slate-400 hover:text-slate-300'
+              }`}
+              title="Manual workflow building"
+            >
+              <span>👤</span>
+            </button>
+            <button
+              onClick={() => setControlMode('ai')}
+              className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-all ${
+                controlMode === 'ai'
+                  ? 'bg-red-600 text-white'
+                  : 'text-slate-400 hover:text-slate-300'
+              }`}
+              title="AI-powered analysis"
+            >
+              <Brain className="w-4 h-4" />
+            </button>
           </div>
         </div>
         
-        {/* AI MODE SELECTOR - Shows when AI is active */}
+        {/* Warnings/Errors (only when needed) */}
+        {isProduction && (
+          <p className="text-xs text-yellow-400">
+            ⚠️ Browser automation requires local setup. Use HAR import instead.
+          </p>
+        )}
+        {launchBrowserError && (
+          <p className="text-xs text-red-400">{launchBrowserError}</p>
+        )}
+        
+        {/* AI Mode Selector - Simplified */}
         {controlMode === 'ai' && (
-          <div 
-            className="mt-4 pt-4 border-t border-slate-700/50"
-            role="region"
-            aria-label="AI Mode Configuration"
-          >
-            <div className="flex items-center gap-3">
-              <label 
-                htmlFor="ai-mode-select" 
-                className="text-xs text-slate-400 font-medium"
-              >
-                AI MODE
-              </label>
-              <select
-                id="ai-mode-select"
-                value={aiMode}
-                onChange={(e) => setAiMode(e.target.value as AIMode)}
-                className="flex-1 px-3 py-2 bg-slate-900 border border-slate-700/50 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-red-500"
-                aria-describedby="ai-mode-description"
-              >
-                <option value="fullMap">Mode #1: Full Map (Legacy Forms - No Bot Detection)</option>
-                <option value="apiOnly">Mode #2: API-Only (Current)</option>
-                <option value="mobileReverse">Mode #3: Mobile App Reverse Engineering</option>
-              </select>
-            </div>
-            <div id="ai-mode-description" className="mt-2 text-xs text-slate-500" role="status" aria-live="polite">
-              {aiMode === 'fullMap' && (
-                <div className="flex items-start gap-2">
-                  <span className="text-green-400">✓</span>
-                  <div>
-                    <div className="font-medium text-slate-400">Full Map Mode Active</div>
-                    <div className="mt-1">
-                      • Maps every button/form element → API endpoint<br/>
-                      • Extracts form state (VIEWSTATE, EVENTVALIDATION)<br/>
-                      • Sequential validation (2x success required)<br/>
-                      • Perpetual cookie/session management<br/>
-                      • Best for: Legacy .ASPX, PHP, or simple form-based apps
-                    </div>
-                  </div>
-                </div>
-              )}
-              {aiMode === 'apiOnly' && 'Focus on API endpoints and network traffic only'}
-              {aiMode === 'mobileReverse' && 'Reverse engineer mobile app API patterns'}
-            </div>
+          <div className="mt-3">
+            <select
+              value={aiMode}
+              onChange={(e) => setAiMode(e.target.value as AIMode)}
+              className="w-full px-3 py-2 bg-slate-900 border border-slate-700/50 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-red-500"
+            >
+              <option value="fullMap">Mode #1: Full Map</option>
+              <option value="apiOnly">Mode #2: API-Only</option>
+              <option value="mobileReverse">Mode #3: Mobile Reverse Engineering</option>
+            </select>
           </div>
         )}
       </div>
 
-      {/* LOCKED PIPELINE - MOVED TO TOP */}
-      <div className="shrink-0 bg-gradient-to-r from-green-900/10 to-transparent border-b border-green-600/20 p-2.5">
-        <div className="flex items-center gap-2 mb-2">
-          <h3 className="font-bold text-green-400 tracking-wide" style={{ fontSize: '11px' }}>LOCKED PIPELINE • {lockedSteps.length} STEPS</h3>
-          {lockedSteps.length > 0 && (
-            <button 
-              onClick={exportWorkflow}
-              className="ml-auto flex items-center gap-1 px-2 py-1 bg-red-600 hover:bg-red-700 rounded text-white font-medium"
-              style={{ fontSize: '9px' }}
-            >
-              <Download className="w-2.5 h-2.5" />
-              Export Workflow
-            </button>
-          )}
-        </div>
+      {/* LOCKED PIPELINE - Collapsible, hidden when empty */}
+      {lockedSteps.length > 0 && (
+        <div className="shrink-0 bg-gradient-to-r from-green-900/10 to-transparent border-b border-green-600/20">
+          <button 
+            onClick={() => setPipelineCollapsed(!pipelineCollapsed)}
+            className="w-full flex items-center justify-between p-3 hover:bg-slate-900/30 transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-bold text-green-400 tracking-wide">
+                LOCKED PIPELINE • {lockedSteps.length} STEPS
+              </h3>
+            </div>
+            <div className="flex items-center gap-2">
+              {lockedSteps.length > 0 && (
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    exportWorkflow();
+                  }}
+                  className="flex items-center gap-1 px-2 py-1 bg-red-600 hover:bg-red-700 rounded text-xs text-white font-medium"
+                >
+                  <Download className="w-3 h-3" />
+                  Export
+                </button>
+              )}
+              {pipelineCollapsed ? <ChevronDown className="w-4 h-4 text-slate-400" /> : <ChevronUp className="w-4 h-4 text-slate-400" />}
+            </div>
+          </button>
 
-        {lockedSteps.length === 0 ? (
-          <div className="text-center py-2 text-slate-500" style={{ fontSize: '10px' }}>
-            <div className="text-slate-600 mb-1">No steps locked yet</div>
-            <div className="text-slate-700" style={{ fontSize: '9px' }}>Test and lock your first step below to start building your workflow</div>
-          </div>
-        ) : (
+          {!pipelineCollapsed && (
           <div className="space-y-1.5 max-h-32 overflow-y-auto">
             {lockedSteps.map(step => (
               <div key={step.id} className="p-2 bg-slate-900 border border-green-600/30 rounded-lg">
@@ -2543,54 +2478,38 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
               </div>
             ))}
             
-            <div className="p-3 bg-slate-900/50 border border-slate-700 border-dashed rounded-lg">
+            <div className="p-2 bg-slate-900/50 border border-slate-700 border-dashed rounded-lg">
               <div className="flex items-center gap-2 text-slate-500">
                 <span className="text-sm">→ Step {currentStepFocus}:</span>
                 <span className="text-xs">{aiAgentStatus === 'analyzing' ? 'AI mapping...' : 'Ready to test'}</span>
               </div>
             </div>
           </div>
-        )}
+          )}
+        </div>
+      )}
 
-        {/* MODE #1: FULL MAP CONTROLS */}
+        {/* MODE #1: FULL MAP CONTROLS - Simplified */}
         {aiMode === 'fullMap' && controlMode === 'ai' && (
-          <div 
-            className="mt-4 pt-4 border-t border-slate-700/50"
-            role="region"
-            aria-label="Full Map Mode Controls"
-          >
-            {/* PRIORITY 1: API DISCOVERY */}
-            <div className="mb-4 p-4 bg-gradient-to-r from-red-900/20 to-purple-900/20 border border-red-600/30 rounded-lg">
-              <div className="flex items-center gap-2 mb-3">
-                <span className="px-2 py-1 bg-red-600 text-white text-xs font-bold rounded">PRIORITY 1</span>
-                <span className="text-xs text-red-400 font-medium">API DISCOVERY</span>
-                <span className="text-xs text-slate-600">• Find direct backend APIs (no form needed)</span>
-              </div>
-              
-              <div className="text-xs text-slate-400 mb-3">
-                First, check if the system has direct API calls you can use. If found, you won't need form automation!
-              </div>
-
-              <button
-                onClick={discoverBackendAPIs}
-                disabled={discoveringAPIs || endpoints.length === 0}
-                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-red-600 hover:bg-red-700 disabled:opacity-50 rounded-lg text-sm text-white font-medium transition-all focus:outline-none focus:ring-2 focus:ring-red-500"
-                aria-label="Discover backend APIs from network traffic"
-                aria-busy={discoveringAPIs}
-                title={endpoints.length === 0 ? 'Launch browser first to capture API calls' : 'Analyze network traffic to find direct API endpoints'}
-              >
-                {discoveringAPIs ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
-                    <span>Discovering APIs...</span>
-                  </>
-                ) : (
-                  <>
-                    <Zap className="w-4 h-4" aria-hidden="true" />
-                    <span>Discover Backend APIs</span>
-                  </>
-                )}
-              </button>
+          <div className="shrink-0 bg-gradient-to-r from-slate-900/50 to-transparent border-b border-slate-700/50 p-4">
+            <button
+              onClick={discoverBackendAPIs}
+              disabled={discoveringAPIs || endpoints.length === 0}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-red-600 hover:bg-red-700 disabled:opacity-50 rounded-lg text-sm text-white font-medium transition-all"
+              title={endpoints.length === 0 ? 'Launch browser first' : 'Discover backend APIs'}
+            >
+              {discoveringAPIs ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Discovering APIs...</span>
+                </>
+              ) : (
+                <>
+                  <Zap className="w-4 h-4" />
+                  <span>Discover Backend APIs</span>
+                </>
+              )}
+            </button>
 
               {/* API Discovery Results */}
               {apiDiscovery && (
