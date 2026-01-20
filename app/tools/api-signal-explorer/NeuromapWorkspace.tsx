@@ -12,7 +12,6 @@ import { extractSmartVariables, detectAuthMethod, generateUsageExamples } from '
 import { validateResponse, suggestImprovedTarget } from '@/utils/ai/success-validator';
 import { findMatchingScenarios, getContextualHints, type Scenario } from '@/utils/ai/auto-suggestions';
 import { getInitialAgentState, updateAgentState, shouldLoop, getNextObjective, type AgentState } from '@/utils/ai/agent-rules';
-import { getInitialOrchestratorState, updateOrchestratorState, shouldStopOrchestrator, formatOrchestratorStatus, type OrchestratorState, type AgentDecision } from '@/utils/ai/autonomous-orchestrator';
 import AIChatPanel, { type ChatMessage } from './AIChatPanel';
 
 type EndpointData = {
@@ -250,11 +249,6 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
   const [flipbookSessionId, setFlipbookSessionId] = useState<string | null>(null);
   const [flipbookAnalysis, setFlipbookAnalysis] = useState<any>(null);
   const [analyzingFlipbook, setAnalyzingFlipbook] = useState(false);
-
-  // Autonomous Agent state
-  const [autonomousMode, setAutonomousMode] = useState(false);
-  const [orchestratorState, setOrchestratorState] = useState<OrchestratorState>(getInitialOrchestratorState());
-  const autonomousLoopRef = useRef<NodeJS.Timeout | null>(null);
   
   const endpointMapRef = useRef<Map<string, EndpointData>>(new Map());
   const wsRef = useRef<WebSocket | null>(null);
@@ -653,378 +647,6 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
     };
     setChatMessages(prev => [...prev, message]);
   };
-
-  // ═══════════════════════════════════════════════════════════════
-  // AUTONOMOUS AGENT ORCHESTRATION
-  // ═══════════════════════════════════════════════════════════════
-
-  /**
-   * Start autonomous agent mode
-   */
-  const startAutonomousMode = () => {
-    if (autonomousMode) return;
-
-    setAutonomousMode(true);
-    const newState = { ...orchestratorState, isRunning: true, startTime: Date.now() };
-    setOrchestratorState(newState);
-
-    addChatMessage('assistant',
-      `🤖 **Autonomous Mode Activated**\n\n` +
-      `I will now:\n` +
-      `1. Analyze all available intelligence\n` +
-      `2. Determine optimal next action\n` +
-      `3. Execute tests automatically\n` +
-      `4. Lock successful steps\n` +
-      `5. Repeat until complete\n\n` +
-      `Click "Stop & Save" when ready to finish.`,
-      { type: 'success' }
-    );
-
-    // Start the autonomous loop
-    runAutonomousLoop();
-  };
-
-  /**
-   * Stop autonomous agent mode
-   */
-  const stopAutonomousMode = () => {
-    if (!autonomousMode) return;
-
-    if (autonomousLoopRef.current) {
-      clearTimeout(autonomousLoopRef.current);
-      autonomousLoopRef.current = null;
-    }
-
-    setAutonomousMode(false);
-    const newState = { ...orchestratorState, isRunning: false };
-    setOrchestratorState(newState);
-
-    const stats = {
-      iterations: newState.iterationCount,
-      successes: newState.successCount,
-      failures: newState.failureCount,
-      stepsLocked: lockedSteps.length,
-    };
-
-    addChatMessage('assistant',
-      `⚪ **Autonomous Mode Stopped**\n\n` +
-      `Session Summary:\n` +
-      `• Iterations: ${stats.iterations}\n` +
-      `• Successes: ${stats.successes}\n` +
-      `• Failures: ${stats.failures}\n` +
-      `• Steps Locked: ${stats.stepsLocked}\n\n` +
-      `Workflow has been auto-saved.`,
-      { type: 'success' }
-    );
-
-    // Auto-save
-    autoSaveWorkflow();
-  };
-
-  /**
-   * Main autonomous execution loop
-   */
-  const runAutonomousLoop = async () => {
-    if (!autonomousMode) return;
-
-    try {
-      // Check if should stop
-      const stopCheck = shouldStopOrchestrator(orchestratorState);
-      if (stopCheck.should) {
-        addChatMessage('assistant',
-          `⚠️ **Autonomous mode stopped**: ${stopCheck.reason}`,
-          { type: 'warning' }
-        );
-        stopAutonomousMode();
-        return;
-      }
-
-      // Consult AI for next action
-      const decision = await consultAutonomousAgent();
-
-      if (!decision) {
-        // Error occurred, retry after delay
-        autonomousLoopRef.current = setTimeout(runAutonomousLoop, 3000);
-        return;
-      }
-
-      // Execute the decision
-      await executeAgentDecision(decision);
-
-      // Schedule next iteration
-      autonomousLoopRef.current = setTimeout(runAutonomousLoop, 2000);
-    } catch (err) {
-      console.error('[Autonomous Loop] Error:', err);
-      const newState = updateOrchestratorState(
-        orchestratorState,
-        'test_endpoint',
-        'failed',
-        'Loop error',
-        err instanceof Error ? err.message : String(err)
-      );
-      setOrchestratorState(newState);
-
-      // Retry after delay
-      autonomousLoopRef.current = setTimeout(runAutonomousLoop, 5000);
-    }
-  };
-
-  /**
-   * Consult AI for next action
-   */
-  const consultAutonomousAgent = async (): Promise<AgentDecision | null> => {
-    try {
-      const response = await fetch('/api/ai/autonomous-agent', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          goal: userGoal,
-          constraints: userConstraints,
-          targetData: targetData,
-          endpoints: endpoints.map(ep => ({
-            method: ep.method,
-            host: ep.host,
-            path: ep.path,
-            hasAuth: ep.hasAuth,
-            count: ep.count,
-          })),
-          lockedSteps: lockedSteps.map(step => ({
-            stepNumber: step.stepNumber,
-            method: step.method,
-            endpoint: step.endpoint,
-            extractedVars: step.extractedVars,
-            dependencies: step.dependencies,
-          })),
-          flipbookAnalysis,
-          flipbookSnapshots: flipbookSnapshots.length,
-          lastTestResult: testResult,
-          conversationHistory: orchestratorState.history,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (data.ok && data.decision) {
-        console.log('[Autonomous Agent] Decision:', data.decision.action);
-        return data.decision;
-      }
-
-      return null;
-    } catch (err) {
-      console.error('[Autonomous Agent] Consult error:', err);
-      return null;
-    }
-  };
-
-  /**
-   * Execute AI agent decision
-   */
-  const executeAgentDecision = async (decision: AgentDecision) => {
-    const { action, reasoning, endpoint: endpointData } = decision;
-
-    addChatMessage('assistant',
-      `🎯 **Decision**: ${action}\n\n` +
-      `${reasoning}\n\n` +
-      `Confidence: ${decision.confidence}%`,
-      { type: 'suggestion' }
-    );
-
-    try {
-      switch (action) {
-        case 'wait_for_data':
-          addChatMessage('assistant',
-            `⏸️ Waiting for more data...\n\n` +
-            `Please browse the target site to capture more endpoints or DOM snapshots.`,
-            { type: 'suggestion' }
-          );
-          // Update state as success (not a failure, just waiting)
-          const waitState = updateOrchestratorState(
-            orchestratorState,
-            action,
-            'success',
-            reasoning
-          );
-          setOrchestratorState(waitState);
-          // Pause for longer when waiting for data
-          autonomousLoopRef.current = setTimeout(runAutonomousLoop, 10000);
-          break;
-
-        case 'analyze_flipbook':
-          if (flipbookSnapshots.length > 0 && !flipbookAnalysis) {
-            await analyzeFlipbook();
-            const analyzeState = updateOrchestratorState(
-              orchestratorState,
-              action,
-              'success',
-              reasoning
-            );
-            setOrchestratorState(analyzeState);
-          }
-          break;
-
-        case 'test_endpoint':
-          if (endpointData) {
-            // Find matching endpoint
-            const ep = endpoints.find(e => 
-              e.method === endpointData.method && 
-              e.path === endpointData.path
-            );
-
-            if (ep) {
-              setSelectedEndpoint(ep);
-              // Auto-generate and execute code
-              await new Promise(resolve => setTimeout(resolve, 500));
-              await executeCode();
-              
-              // Check if test succeeded
-              if (testResult?.success) {
-                const testState = updateOrchestratorState(
-                  orchestratorState,
-                  action,
-                  'success',
-                  reasoning
-                );
-                setOrchestratorState(testState);
-              } else {
-                const testState = updateOrchestratorState(
-                  orchestratorState,
-                  action,
-                  'failed',
-                  reasoning,
-                  testResult?.error || `${testResult?.status || 'error'}`
-                );
-                setOrchestratorState(testState);
-              }
-            }
-          }
-          break;
-
-        case 'lock_step':
-          if (testResult?.success && selectedEndpoint) {
-            lockCurrentStep();
-            const lockState = updateOrchestratorState(
-              orchestratorState,
-              action,
-              'success',
-              reasoning
-            );
-            setOrchestratorState(lockState);
-            // Auto-save after locking
-            autoSaveWorkflow();
-          }
-          break;
-
-        case 'navigate_page':
-          addChatMessage('assistant',
-            `🌐 Navigation needed:\n\n` +
-            (decision.playwrightAction?.url || decision.nextStepSuggestion || 'Please navigate to the next page manually.'),
-            { type: 'suggestion' }
-          );
-          const navState = updateOrchestratorState(
-            orchestratorState,
-            action,
-            'success',
-            reasoning
-          );
-          setOrchestratorState(navState);
-          break;
-
-        case 'complete':
-          addChatMessage('assistant',
-            `✅ **Workflow Complete!**\n\n` +
-            `All steps have been successfully locked.\n\n` +
-            `Estimated steps remaining: 0\n\n` +
-            `Click "Save & Finish" to export your workflow.`,
-            { type: 'success' }
-          );
-          stopAutonomousMode();
-          break;
-      }
-    } catch (err) {
-      console.error('[Execute Decision] Error:', err);
-      const errorState = updateOrchestratorState(
-        orchestratorState,
-        action,
-        'failed',
-        reasoning,
-        err instanceof Error ? err.message : String(err)
-      );
-      setOrchestratorState(errorState);
-    }
-  };
-
-  /**
-   * Auto-save workflow to localStorage and optionally to file
-   */
-  const autoSaveWorkflow = () => {
-    const workflow = {
-      goal: userGoal,
-      constraints: userConstraints,
-      targetData: targetData,
-      steps: lockedSteps,
-      flipbook: {
-        snapshotCount: flipbookSnapshots.length,
-        sessionId: flipbookSessionId,
-        analysis: flipbookAnalysis,
-      },
-      orchestratorStats: {
-        iterations: orchestratorState.iterationCount,
-        successes: orchestratorState.successCount,
-        failures: orchestratorState.failureCount,
-      },
-      savedAt: Date.now(),
-    };
-
-    // Save to localStorage
-    try {
-      localStorage.setItem('brainscraper_workflow_autosave', JSON.stringify(workflow));
-      console.log('[Auto-save] Workflow saved to localStorage');
-    } catch (err) {
-      console.error('[Auto-save] Error:', err);
-    }
-  };
-
-  /**
-   * Save and finish - export workflow
-   */
-  const saveAndFinish = () => {
-    // Stop autonomous mode if running
-    if (autonomousMode) {
-      stopAutonomousMode();
-    }
-
-    // Export workflow
-    exportWorkflow();
-
-    addChatMessage('assistant',
-      `💾 **Workflow Saved & Exported**\n\n` +
-      `Your complete workflow has been downloaded.\n\n` +
-      `Steps locked: ${lockedSteps.length}\n` +
-      `Snapshots captured: ${flipbookSnapshots.length}\n\n` +
-      `You can now:\n` +
-      `• Import this workflow later\n` +
-      `• Use the Playwright code\n` +
-      `• Share with your team`,
-      { type: 'success' }
-    );
-  };
-
-  // Cleanup autonomous loop on unmount
-  useEffect(() => {
-    return () => {
-      if (autonomousLoopRef.current) {
-        clearTimeout(autonomousLoopRef.current);
-      }
-    };
-  }, []);
-
-  // Auto-save every 30 seconds when steps are locked
-  useEffect(() => {
-    if (lockedSteps.length > 0) {
-      const interval = setInterval(autoSaveWorkflow, 30000);
-      return () => clearInterval(interval);
-    }
-  }, [lockedSteps.length]);
 
   // Handle chat messages
   const handleChatMessage = async (userMessage: string) => {
@@ -1903,7 +1525,90 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
         </div>
         
         <div className="space-y-3">
-          {/* Target URL */}
+          {/* Goal */}
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="text-xs text-slate-500">Goal (Set via AI chat →)</label>
+              {suggestedScenarios.length > 0 && !showScenarios && (
+                <button
+                  onClick={() => setShowScenarios(true)}
+                  className="flex items-center gap-1 px-2 py-0.5 bg-slate-700 hover:bg-slate-600 rounded text-xs text-slate-300"
+                >
+                  <TrendingUp className="w-3 h-3" />
+                  {suggestedScenarios.length} templates
+                </button>
+              )}
+            </div>
+            <div
+              className="w-full px-4 py-2 bg-slate-900/50 border border-slate-700/50 rounded-lg text-sm text-white min-h-[40px] flex items-center"
+            >
+              {userGoal || <span className="text-slate-600 italic">Ask the AI assistant to get started...</span>}
+            </div>
+            
+            {/* Keyword Analysis Indicators */}
+            {keywordAnalysis && keywordAnalysis.intent.confidence > 0.7 && (
+              <div className="mt-2 flex items-center gap-2 flex-wrap">
+                <span className="px-2 py-0.5 bg-green-900/30 text-green-400 text-xs rounded">
+                  ✓ Detected: {keywordAnalysis.intent.action}
+                </span>
+                {keywordAnalysis.entities.map(entity => (
+                  <span key={entity.name} className="px-2 py-0.5 bg-blue-900/30 text-blue-400 text-xs rounded">
+                    {entity.name}
+                  </span>
+                ))}
+              </div>
+            )}
+            
+            {/* Scenario Suggestions */}
+            {showScenarios && suggestedScenarios.length > 0 && (
+              <div className="mt-2 p-3 bg-slate-900 border border-slate-700 rounded-lg space-y-2">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs text-slate-400 font-medium">Quick Start Templates</span>
+                  <button
+                    onClick={() => setShowScenarios(false)}
+                    className="text-xs text-slate-500 hover:text-slate-300"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+                {suggestedScenarios.map(scenario => (
+                  <button
+                    key={scenario.id}
+                    onClick={() => applyScenario(scenario)}
+                    className="w-full text-left p-2 bg-slate-800 hover:bg-slate-700 rounded border border-slate-700 transition-all"
+                  >
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-base">{scenario.icon}</span>
+                      <span className="text-xs text-white font-medium">{scenario.name}</span>
+                    </div>
+                    <div className="text-xs text-slate-500">{scenario.description}</div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Constraints */}
+          <div>
+            <label className="block text-xs text-slate-500 mb-1.5">Constraints</label>
+            <div
+              className="w-full px-4 py-2 bg-slate-900/50 border border-slate-700/50 rounded-lg text-sm text-white min-h-[40px] flex items-center"
+            >
+              {userConstraints || <span className="text-slate-600 italic">None</span>}
+            </div>
+          </div>
+
+          {/* Target Data */}
+          <div>
+            <label className="block text-xs text-slate-500 mb-1.5">Target Data Structure</label>
+            <div
+              className="w-full px-4 py-2 bg-slate-900/50 border border-slate-700/50 rounded-lg text-sm text-white min-h-[40px] flex items-center"
+            >
+              {targetData || <span className="text-slate-600 italic">Not specified</span>}
+            </div>
+          </div>
+
+          {/* URL */}
           <div>
             <label className="block text-xs text-slate-500 mb-1.5">Target URL</label>
             <div className="flex gap-2">
