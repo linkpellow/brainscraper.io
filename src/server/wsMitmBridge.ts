@@ -16,7 +16,7 @@ import { WebSocketServer, WebSocket } from 'ws';
 import { createServer } from 'http';
 import type { IncomingMessage } from 'http';
 
-const PORT = 8787;
+const PORT = (typeof process !== 'undefined' && process.env && process.env.BRIDGE_PORT) ? (parseInt(process.env.BRIDGE_PORT, 10) || 8787) : 8787;
 const MAX_EVENTS_HISTORY = 10000;
 
 type MitmFlowEvent = {
@@ -32,13 +32,16 @@ type MitmFlowEvent = {
   client?: { ip?: string; port?: number };
   server?: { ip?: string; port?: number };
   durationMs?: number;
+  /** Gap 7: path to saved .wasm when resMime is application/wasm */
+  wasmPath?: string;
 };
 
 type ClientMessage = 
   | { type: 'ping' }
   | { type: 'get_history' }
   | { type: 'clear_session' }
-  | { type: 'action'; action: any };
+  | { type: 'action'; action: any }
+  | { type: 'target-action'; eventType: string; selector: string; xpath: string; timestamp: number };
 
 type ServerMessage =
   | { type: 'pong' }
@@ -46,7 +49,9 @@ type ServerMessage =
   | { type: 'events_batch'; data: MitmFlowEvent[] }
   | { type: 'history'; data: MitmFlowEvent[] }
   | { type: 'status'; connected: boolean; eventCount: number }
-  | { type: 'action'; action: any } // ActionEvent from client
+  | { type: 'action'; action: any }
+  | { type: 'target-action'; eventType: string; selector: string; xpath: string; timestamp: number }
+  | { type: 'wss_frame'; flow_id?: string; from_client?: boolean; content?: string; is_text?: boolean; ts?: number }
   | { type: 'error'; message: string };
 
 class MitmBridge {
@@ -89,28 +94,32 @@ class MitmBridge {
 
     ws.on('message', (data: Buffer) => {
       try {
-        const events = JSON.parse(data.toString()) as MitmFlowEvent[];
-        
-        // Final safety check: redact any tokens that slipped through
+        const parsed = JSON.parse(data.toString());
+
+        // WSS frame (Gap 6: WebSocket sniffing) — from stream_ws websocket_message
+        if (parsed && typeof parsed === 'object' && (parsed as { _wss?: boolean })._wss === true) {
+          const p = parsed as { flow_id?: string; from_client?: boolean; content?: string; is_text?: boolean; ts?: number };
+          this.broadcastToExplorers({
+            type: 'wss_frame',
+            flow_id: p.flow_id,
+            from_client: p.from_client,
+            content: p.content,
+            is_text: p.is_text,
+            ts: p.ts,
+          });
+          return;
+        }
+
+        const events = Array.isArray(parsed) ? (parsed as MitmFlowEvent[]) : [];
+        if (events.length === 0) return;
+
         const sanitized = events.map(event => this.sanitizeEvent(event));
-        
-        // Add to history
         for (const event of sanitized) {
           this.eventHistory.push(event);
           this.eventCount++;
-          
-          // Maintain history size
-          if (this.eventHistory.length > MAX_EVENTS_HISTORY) {
-            this.eventHistory.shift();
-          }
+          if (this.eventHistory.length > MAX_EVENTS_HISTORY) this.eventHistory.shift();
         }
-        
-        // Broadcast to all explorer clients
-        this.broadcastToExplorers({
-          type: 'events_batch',
-          data: sanitized,
-        });
-        
+        this.broadcastToExplorers({ type: 'events_batch', data: sanitized });
       } catch (error) {
         console.error('Error processing mitmproxy message:', error);
       }
@@ -162,6 +171,16 @@ class MitmBridge {
             type: 'status',
             connected: this.mitmClients.size > 0,
             eventCount: 0,
+          });
+        } else if (message.type === 'action' && message.action) {
+          this.broadcastToExplorers({ type: 'action', action: message.action });
+        } else if (message.type === 'target-action' && message.selector != null && message.xpath != null) {
+          this.broadcastToExplorers({
+            type: 'target-action',
+            eventType: message.eventType || 'click',
+            selector: message.selector,
+            xpath: message.xpath,
+            timestamp: message.timestamp,
           });
         }
       } catch (error) {

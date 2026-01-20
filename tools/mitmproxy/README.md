@@ -2,12 +2,15 @@
 
 Tools for exporting and streaming mitmproxy flows into a clean, normalized format for analysis in the API Signal Explorer.
 
+For a full checklist of manual steps (bridge, mitmproxy, proxy config, mobile proxy/CA, screen share), see **docs/API_SIGNAL_EXPLORER_SETUP.md**.
+
 ## Setup
 
-1. Install mitmproxy:
+1. Install mitmproxy and websockets (from project root or `tools/mitmproxy/`):
    ```bash
-   pip install mitmproxy websockets
+   pip install -r tools/mitmproxy/requirements.txt
    ```
+   Or: `pip install mitmproxy websockets`
 
 2. Install Node.js dependencies (for WebSocket bridge):
    ```bash
@@ -44,15 +47,12 @@ Tools for exporting and streaming mitmproxy flows into a clean, normalized forma
    npm run mitm:bridge
    ```
 
-2. **Start mitmproxy with streaming**:
+2. **Start mitmproxy with streaming** (from project root):
    ```bash
-   mitmproxy -s stream_ws.py
+   mitmproxy -s tools/mitmproxy/stream_ws.py
    ```
-
-   Or see the command:
-   ```bash
-   npm run mitm:stream
-   ```
+   Or from `tools/mitmproxy/`: `mitmproxy -s stream_ws.py`  
+   Or run: `npm run mitm:stream` to print the exact command.
 
 3. **Configure your device/browser** to use mitmproxy as a proxy
 4. **Open API Signal Explorer**:
@@ -133,3 +133,8 @@ See `export_schema.json` for the complete export format specification.
 ### Events Appearing Slowly
 - This is normal - events are batched for performance
 - Batch size: 25 events or 100ms, whichever comes first
+
+### Mobile: Phone Proxy and HTTPS
+- On the phone: Wi‑Fi → your network → Proxy: Manual → Host: your computer’s LAN IP, Port: 8080.
+- For HTTPS: install mitmproxy’s CA on the phone. Run `mitmproxy` once, visit http://mitm.it on the phone (with proxy set), download and install the cert for your OS.
+- Phone screen into the app: use AirPlay (iOS→Mac), Cast (Android→Chrome), or similar, then in the app choose “Share” and pick that window/screen when prompted.

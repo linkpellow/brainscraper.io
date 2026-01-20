@@ -35,9 +35,22 @@ export type NetworkSignal = {
   duration?: number;
 };
 
+function extractAuthSignalsFromHeaders(
+  headers: Record<string, string>,
+  cookies: Record<string, string>
+): { hasSession: boolean; hasAuth: boolean; hasCsrf: boolean } {
+  const h = (k: string) => Object.keys(headers).find(key => key.toLowerCase() === k.toLowerCase());
+  const hasSession = Object.keys(cookies).some(k =>
+    /^(jsessionid|sessionid|connect\.sid|phpsessid|session|sess|_session|sid|auth)$/i.test(k)
+  );
+  const hasAuth = !!(h('authorization') || h('x-auth-token') || h('x-api-key') || h('x-access-token'));
+  const hasCsrf = !!(h('x-csrf-token') || h('x-xsrf-token') || h('csrf-token') || h('xsrf-token'));
+  return { hasSession, hasAuth, hasCsrf };
+}
+
 /**
  * Identity & Session Management Signals
- * 
+ *
  * Detects: Cookies, session tokens, access/refresh tokens, CSRF tokens
  */
 function detectIdentitySignals(
@@ -46,7 +59,6 @@ function detectIdentitySignals(
   postData: string | Record<string, string> | null,
   responseHeaders: Record<string, string>
 ): boolean {
-  // Use helper function
   const authSignals = extractAuthSignalsFromHeaders(headers, cookies);
   const hasSessionCookie = authSignals.hasSession;
   const hasAuthHeader = authSignals.hasAuth;

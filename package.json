@@ -17,7 +17,11 @@
     "test:scraperapi": "tsx scripts/test-scraperapi-skip-tracing.ts",
     "network-inspector": "tsx src/network-inspector/cli.ts",
     "mitm:bridge": "tsx src/server/wsMitmBridge.ts",
-    "mitm:stream": "echo 'Run: mitmproxy -s tools/mitmproxy/stream_ws.py'"
+    "mitm:stream": "echo 'Run: mitmproxy -s tools/mitmproxy/stream_ws.py'",
+    "explorer:desktop": "npm start --prefix electron-explorer",
+    "explorer:desktop:install": "npm install --prefix electron-explorer",
+    "desktop": "npm start --prefix desktop",
+    "desktop:install": "npm install --prefix desktop"
   },
   "keywords": [
     "spreadsheet",
@@ -37,7 +41,7 @@
     "@types/ws": "^8.18.1",
     "autoprefixer": "^10.4.22",
     "cheerio": "^1.1.2",
-    "eslint": "^9.39.1",
+    "eslint": "^9.39.2",
     "eslint-config-next": "^16.0.10",
     "inngest": "^3.48.0",
     "lucide-react": "^0.561.0",
@@ -49,7 +53,6 @@
     "react-dom": "^19.2.0",
     "tailwindcss": "^4.1.17",
     "three": "^0.182.0",
-    "typescript": "^5.9.3",
     "ws": "^8.19.0",
     "xlsx": "^0.18.5"
   },
@@ -60,6 +63,7 @@
     "dotenv": "^17.2.3",
     "jsdom": "^27.2.0",
     "tsx": "^4.21.0",
+    "typescript": "5.9.3",
     "vitest": "^4.0.14"
   }
 }

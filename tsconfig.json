@@ -39,6 +39,8 @@
     "node_modules",
     "data/rapidapi-endpoints-code.ts",
     "scripts/**/*",
-    "test-*.ts"
+    "test-*.ts",
+    "desktop",
+    "dist"
   ]
 }

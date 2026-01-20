@@ -13,7 +13,7 @@ export type CorrelationResult = {
 };
 
 export type CorrelationOptions = {
-  windowMs?: number;       // default 1200
+  windowMs?: number;       // default 2000 (Δt ≤ 2000ms for target-action ↔ network)
   maxLinks?: number;      // default 12
 };
 
@@ -25,11 +25,12 @@ export function correlateActionToNetwork(
   events: RawNetworkEvent[],
   options: CorrelationOptions = {}
 ): CorrelationResult[] {
-  const windowMs = options.windowMs || 1200;
+  const windowMs = options.windowMs ?? 2000;
   const maxLinks = options.maxLinks || 12;
 
-  // Find candidate events within time window
-  const windowStart = action.ts - 150; // Allow 150ms before action (anticipation)
+  // Find candidate events within time window. Network-to-Action delay: requests typically
+  // fire after the click; allow 150ms before (anticipation/clock skew) and windowMs after.
+  const windowStart = action.ts - 150;
   const windowEnd = action.ts + windowMs;
 
   const candidates = events.filter(event => {
@@ -210,9 +211,10 @@ export function linkActionToEvents(
         return currentDiff < closestDiff ? current : closest;
       }, undefined as RawNetworkEvent | undefined);
 
-      if (targetEvent && confidence > 0.3) { // Only link if confidence > 30%
+      if (targetEvent && confidence > 0.3) {
         targetEvent.actionId = action.id;
         targetEvent.actionConfidence = confidence;
+        if (action.meta?.xpath) targetEvent.actionXpath = action.meta.xpath;
       }
     }
   }

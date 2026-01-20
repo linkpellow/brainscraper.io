@@ -1,0 +1,14 @@
+{
+  "name": "mac-fonts-native",
+  "version": "0.1.0",
+  "description": "macOS NSScreen/CoreText addon for font and rendering parity",
+  "main": "index.js",
+  "scripts": {
+    "rebuild": "node-gyp configure build"
+  },
+  "dependencies": {
+    "node-addon-api": "^8.0.0"
+  },
+  "gypfile": true,
+  "os": [ "darwin" ]
+}

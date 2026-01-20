@@ -15,9 +15,12 @@ Configuration:
 """
 
 import json
+import os
+import base64
+import hashlib
+import threading
 import time
 import asyncio
-import os
 import websockets
 from mitmproxy import http
 from typing import List, Dict, Any, Optional
@@ -110,24 +113,32 @@ def get_mime_type(headers: http.Headers) -> str:
 class StreamWS:
     """
     mitmproxy addon that streams events to a WebSocket server.
+    Gap 6: WebSocket sniffing — websocket_message pushes WSS frames to wss_queue;
+    the async loop sends them as { _wss: true, ... } for the bridge to broadcast.
     """
     
     def __init__(self):
         self.queue: List[Dict[str, Any]] = []
+        self.wss_queue: List[Dict[str, Any]] = []
         self.ws = None
         self.connected = False
         self.last_send_time = time.time()
-        self.loop = None
-        self.pump_task = None
-        
-    def load(self, loader):
+
+    def _run_pump_loop(self) -> None:
+        """Run asyncio loop in a dedicated thread (mitmproxy addons run sync; the loop must be run elsewhere)."""
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            loop.run_until_complete(self.connect_and_pump())
+        finally:
+            loop.close()
+
+    def load(self, loader) -> None:
         """
-        Called when addon is loaded.
+        Called when addon is loaded. Start the WebSocket pump in a daemon thread.
         """
-        # Start async event loop
-        self.loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(self.loop)
-        self.pump_task = self.loop.create_task(self.connect_and_pump())
+        t = threading.Thread(target=self._run_pump_loop, daemon=True)
+        t.start()
         
     def response(self, flow: http.HTTPFlow) -> None:
         """
@@ -199,7 +210,22 @@ class StreamWS:
             
             if duration_ms is not None:
                 flow_event["durationMs"] = duration_ms
-            
+
+            # Gap 7: Wasm capture — when response is application/wasm, write to wasm-captures/
+            if res_mime and "wasm" in res_mime.lower():
+                raw = flow.response.raw_content or b""
+                if raw:
+                    try:
+                        os.makedirs("wasm-captures", exist_ok=True)
+                        h = hashlib.sha256(raw).hexdigest()[:8]
+                        ts = flow_event["ts"]
+                        fname = f"wasm-captures/{ts}_{h}.wasm"
+                        with open(fname, "wb") as f:
+                            f.write(raw)
+                        flow_event["wasmPath"] = fname
+                    except Exception as ex:
+                        print(f"Error writing wasm: {ex}")
+
             # Use request timestamp if available (more accurate)
             if hasattr(flow.request, 'timestamp_start'):
                 flow_event["ts"] = int(flow.request.timestamp_start * 1000)
@@ -214,6 +240,28 @@ class StreamWS:
         except Exception as e:
             # Log errors but don't crash
             print(f"Error processing flow: {e}")
+
+    def websocket_message(self, flow: http.HTTPFlow) -> None:
+        """Gap 6: WSS sniffing. Push each frame to wss_queue for the async loop to send."""
+        if not flow.websocket or not flow.websocket.messages:
+            return
+        try:
+            msg = flow.websocket.messages[-1]
+            raw = msg.content or b""
+            is_text = getattr(msg, "is_text", False)
+            content_str = getattr(msg, "text", None) if is_text else base64.b64encode(raw).decode("ascii")
+            if content_str is None:
+                content_str = raw.decode("utf-8", errors="replace") if isinstance(raw, bytes) else str(raw)
+            self.wss_queue.append({
+                "_wss": True,
+                "flow_id": str(id(flow)),
+                "from_client": bool(msg.from_client),
+                "content": content_str[:10000],  # cap for huge frames
+                "is_text": bool(is_text),
+                "ts": int((getattr(msg, "timestamp", None) or time.time()) * 1000),
+            })
+        except Exception as e:
+            print(f"Error in websocket_message: {e}")
     
     async def connect_and_pump(self):
         """
@@ -234,6 +282,15 @@ class StreamWS:
                     # Pump events
                     while True:
                         await asyncio.sleep(BATCH_INTERVAL_MS / 1000.0)
+
+                        # Drain WSS queue (Gap 6)
+                        while self.wss_queue:
+                            try:
+                                w = self.wss_queue.pop(0)
+                                await ws.send(json.dumps(w))
+                            except Exception as ex:
+                                print(f"Error sending wss_frame: {ex}")
+                                break
                         
                         # Send if we have events and either:
                         # - Queue is full (BATCH_SIZE)

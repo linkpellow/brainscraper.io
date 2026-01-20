@@ -1,13 +1,13 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { Pause, Play, Check, X, Download, Smartphone, Globe, Plus, MousePointer, Tag, Monitor, Rss, ChevronDown, ChevronRight } from 'lucide-react';
-import type { Neuromap, RawNetworkEvent, NeuromapMode } from '@/src/tools/api-signal-explorer/neuromap';
+import { Pause, Play, Check, X, Download, Globe, Plus, MousePointer, Tag, Monitor, Rss, ChevronDown, ChevronRight } from 'lucide-react';
+import type { Neuromap, RawNetworkEvent } from '@/src/tools/api-signal-explorer/neuromap';
+import { addEventToNeuromap, toggleEndpointSelection, exportNeuromap } from '@/src/tools/api-signal-explorer/neuromap';
 import { createActionEvent, type ActionEvent, type ActionType } from '@/src/tools/api-signal-explorer/actions';
 import { linkActionToEvents } from '@/src/tools/api-signal-explorer/correlate';
 import { convertToNetworkSignal, getCategoryDescription, type CategoryTag } from '@/src/tools/api-signal-explorer/signals';
 import DiagnosticsLayout from './DiagnosticsLayout';
-import MobilePreviewPanel from './MobilePreviewPanel';
 import LogsScreenPanel from './LogsScreenPanel';
 import DeepReconPanel from './DeepReconPanel';
 
@@ -45,11 +45,9 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
   const [isPaused, setIsPaused] = useState(false);
   const [showSelectedOnly, setShowSelectedOnly] = useState(false);
   const [isMarkingInteraction, setIsMarkingInteraction] = useState(false);
-  const [screenStream, setScreenStream] = useState<MediaStream | null>(null);
   const [endpoints, setEndpoints] = useState<Array<EndpointData & { selected?: boolean; actionLinked?: boolean; actionConfidence?: number; categoryTags?: CategoryTag[] }>>([]);
   const [selectedCategoryTag, setSelectedCategoryTag] = useState<CategoryTag | null>(null);
   const [wsStatus, setWsStatus] = useState<'connecting' | 'connected' | 'disconnected' | 'error'>('connecting');
-  const [screenShareError, setScreenShareError] = useState<string | null>(null);
   const [launchBrowserLoading, setLaunchBrowserLoading] = useState(false);
   const [launchBrowserError, setLaunchBrowserError] = useState<string | null>(null);
   const [launchBrowserUrl, setLaunchBrowserUrl] = useState('');
@@ -73,31 +71,11 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
     try { const u = new URL(last.url); return `${last.method || 'GET'} ${u.hostname}${u.pathname}`; } catch { return null; }
   }, [domActionFeed]);
   const wsRef = useRef<WebSocket | null>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
   const interactionStartRef = useRef<number | null>(null);
   const onUpdateRef = useRef(onUpdate);
   const neuromapRef = useRef(neuromap);
   onUpdateRef.current = onUpdate;
   neuromapRef.current = neuromap;
-
-  const requestScreenShare = useCallback(() => {
-    setScreenShareError(null);
-    navigator.mediaDevices.getDisplayMedia({ video: true, audio: false })
-      .then(stream => {
-        setScreenStream(stream);
-        if (videoRef.current) videoRef.current.srcObject = stream;
-      })
-      .catch(err => {
-        setScreenShareError(err?.message || 'Share denied or unavailable');
-        console.error('Screen share error:', err);
-      });
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      if (screenStream) screenStream.getTracks().forEach(t => t.stop());
-    };
-  }, [screenStream]);
 
   // Action events are handled in the main WebSocket message handler below
 
@@ -535,15 +513,11 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
   }, [launchBrowserUrl]);
 
   return (
-    <div className="fixed inset-0 bg-black z-50 flex flex-col">
+    <div className="w-full flex flex-col bg-black rounded-lg border border-slate-800 overflow-hidden" style={{ minHeight: '600px', maxHeight: '90vh' }}>
       {/* Header — Chromium-style; accent #ff5757, font-orbitron */}
       <div className="shrink-0 bg-slate-900 border-b border-white/15 p-4 flex items-center justify-between">
         <div className="flex items-center gap-4">
-          {neuromap.mode === 'mobile' ? (
-            <Smartphone className="w-5 h-5 text-blue-400" aria-hidden />
-          ) : (
-            <Globe className="w-5 h-5 text-green-400" aria-hidden />
-          )}
+          <Globe className="w-5 h-5 text-green-400" aria-hidden />
           <div>
             <h2 className="text-lg font-semibold font-futuristic terminal-glow-sm" style={{ color: '#ff5757' }}>{neuromap.name}</h2>
             <div className="text-xs text-slate-400" style={{ color: 'rgba(255,255,255,0.7)' }}>
@@ -586,73 +560,58 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
         </div>
       </div>
 
-      {/* Diagnostics split: Mobile View (25%) | Logs Screen (75%) */}
+      {/* Diagnostics split: Browser View (25%) | Logs Screen (75%) */}
       <DiagnosticsLayout
-        hideLeft={isElectron && neuromap.mode === 'browser'}
+        hideLeft={isElectron}
         left={
-          <MobilePreviewPanel compactForElectron={isElectron && neuromap.mode === 'browser'}>
-          {neuromap.mode === 'mobile' ? (
-            screenStream ? (
-              <video
-                ref={videoRef}
-                autoPlay
-                playsInline
-                className="max-w-full max-h-full object-contain"
-                aria-label="Mobile screen share"
-              />
-            ) : (
-              <div className="terminal-border text-center p-6 max-w-md mx-4">
-                <Smartphone className="w-12 h-12 mx-auto mb-3 text-slate-500" aria-hidden />
-                <h3 className="text-base font-semibold font-futuristic text-white mb-2 terminal-glow-sm">Share your phone screen</h3>
-                <p className="text-slate-400 text-sm mb-3">
-                  Use AirPlay (iOS→Mac), Cast (Android→Chrome), or similar to show the phone on this computer, then click below and pick that window.
-                </p>
-                <p className="text-slate-500 text-xs mb-4">
-                  Phone traffic: set Wi‑Fi proxy to this computer (port 8080) and install mitmproxy’s CA for HTTPS. See <code className="bg-slate-800 px-1 rounded border border-white/15">tools/mitmproxy/README.md</code>.
-                </p>
-                {screenShareError && <p className="text-amber-400 text-sm mb-3">{screenShareError}</p>}
-                <button
-                  onClick={requestScreenShare}
-                  className="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded text-sm text-white border border-white/15 transition-colors"
-                >
-                  {screenShareError ? 'Retry share screen' : 'Share screen'}
-                </button>
-              </div>
-            )
-          ) : (
-            <div className="terminal-border text-center p-8 mx-4 max-w-md">
-                <Globe className="w-16 h-16 mx-auto mb-4 text-green-400" aria-hidden />
-                <h3 className="text-xl font-semibold font-futuristic mb-2 text-white terminal-glow-sm">Browser Mode</h3>
-                <p className="text-slate-400 mb-4 text-sm">
-                  Launch Chromium with the proxy pre-configured, or set your own browser’s proxy to 127.0.0.1:8080. Click and browse; API calls appear in the logs on the right.
-                </p>
-                <div className="space-y-3 text-left">
-                  <label className="block text-xs text-slate-500">Open URL (optional)</label>
-                  <input
-                    type="url"
-                    value={launchBrowserUrl}
-                    onChange={(e) => setLaunchBrowserUrl(e.target.value)}
-                    placeholder="https://example.com"
-                    className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded text-sm text-white placeholder-slate-500"
-                  />
-                  <button
-                    onClick={handleLaunchBrowser}
-                    disabled={launchBrowserLoading}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 disabled:opacity-50 rounded text-sm text-white font-medium transition-colors"
-                  >
-                    <Monitor className="w-4 h-4" />
-                    {launchBrowserLoading ? 'Launching…' : 'Launch Chromium'}
-                  </button>
+          <div className="h-full flex flex-col bg-black" style={{ color: 'rgba(255,255,255,0.9)' }} role="region" aria-label="Browser view">
+            <div className="shrink-0 px-3 py-2 border-b border-white/15 flex items-center gap-2">
+              <Globe className="w-4 h-4 text-green-400" aria-hidden />
+              <span className="text-xs font-medium text-slate-300 font-data">
+                {isElectron ? 'Browser (native)' : 'Browser View (25%)'}
+              </span>
+            </div>
+            <div className="flex-1 min-h-0 overflow-hidden flex items-center justify-center">
+              {isElectron ? (
+                <div className="terminal-border text-center p-6 max-w-sm mx-4">
+                  <p className="text-slate-300 text-sm mb-1">Native browser in the left 25%.</p>
+                  <p className="text-slate-500 text-xs">Hover to highlight, click to capture XPath + CSS and correlate to network events (3s window).</p>
                 </div>
-                {launchBrowserError && (
-                  <p className="mt-3 text-amber-400 text-sm">{launchBrowserError}</p>
-                )}
-                <p className="text-slate-500 text-xs mt-4">
-                  Requires mitmproxy on :8080 and the bridge. Run <code className="bg-slate-800 px-1 rounded">npm run mitm:bridge</code> and <code className="bg-slate-800 px-1 rounded">mitmproxy -s tools/mitmproxy/stream_ws.py</code>.
-                </p>
-              </div>
-          )}
-          </MobilePreviewPanel>
+              ) : (
+                <div className="terminal-border text-center p-8 mx-4 max-w-md">
+                  <Globe className="w-16 h-16 mx-auto mb-4 text-green-400" aria-hidden />
+                  <h3 className="text-xl font-semibold font-futuristic mb-2 text-white terminal-glow-sm">Browser Mode</h3>
+                  <p className="text-slate-400 mb-4 text-sm">
+                    Launch Chromium with the proxy pre-configured, or set your own browser's proxy to 127.0.0.1:8080. Click and browse; API calls appear in the logs on the right.
+                  </p>
+                  <div className="space-y-3 text-left">
+                    <label className="block text-xs text-slate-500">Open URL (optional)</label>
+                    <input
+                      type="url"
+                      value={launchBrowserUrl}
+                      onChange={(e) => setLaunchBrowserUrl(e.target.value)}
+                      placeholder="https://example.com"
+                      className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded text-sm text-white placeholder-slate-500"
+                    />
+                    <button
+                      onClick={handleLaunchBrowser}
+                      disabled={launchBrowserLoading}
+                      className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 disabled:opacity-50 rounded text-sm text-white font-medium transition-colors"
+                    >
+                      <Monitor className="w-4 h-4" />
+                      {launchBrowserLoading ? 'Launching…' : 'Launch Chromium'}
+                    </button>
+                  </div>
+                  {launchBrowserError && (
+                    <p className="mt-3 text-amber-400 text-sm">{launchBrowserError}</p>
+                  )}
+                  <p className="text-slate-500 text-xs mt-4">
+                    Requires mitmproxy on :8080 and the bridge. Run <code className="bg-slate-800 px-1 rounded">npm run mitm:bridge</code> and <code className="bg-slate-800 px-1 rounded">mitmproxy -s tools/mitmproxy/stream_ws.py</code>.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
         }
         right={
           <LogsScreenPanel>
@@ -803,7 +762,7 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
             </table>
             {endpoints.length === 0 && (
               <div className="p-8 text-center text-slate-500 text-sm space-y-1">
-                <p>No endpoints captured yet. {neuromap.mode === 'mobile' ? 'Share your screen and interact.' : 'Interact with the browser.'}</p>
+                <p>No endpoints captured yet. Interact with the browser.</p>
                 {(wsStatus === 'disconnected' || wsStatus === 'error') && (
                   <div className="text-amber-500/80 text-xs space-y-1">
                     <p>Bridge not connected.</p>
@@ -879,5 +838,3 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
   );
 }
 
-// Re-export functions for use in component
-import { addEventToNeuromap, toggleEndpointSelection, exportNeuromap } from '@/src/tools/api-signal-explorer/neuromap';

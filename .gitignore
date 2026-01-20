@@ -52,3 +52,23 @@ next-env.d.ts
 harvested-*.json
 extracted-tokens.json
 
+# stub for Cursor context script (avoids "no such file: #!/usr/bin/env")
+/#!/
+
+# Electron Explorer desktop
+/electron-explorer/node_modules/
+/electron-explorer/main.js
+
+# Desktop (Octoparse-style API Signal Explorer)
+/desktop/node_modules/
+/desktop/main.js
+/desktop/preload-browser.js
+/desktop/native-mac/build/
+/desktop/native-mac/node_modules/
+
+# Neural bridge (src/main) build
+/dist/
+
+# Wasm captures (Gap 7)
+/wasm-captures/
+

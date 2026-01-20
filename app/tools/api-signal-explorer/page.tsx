@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
-import { Upload, Download, Filter, X, FileJson, Activity, Server, Clock, Wifi, WifiOff, Play, Square, Tag, AlertTriangle, Zap, Plus, Smartphone, Globe, Pause, Check } from 'lucide-react';
+import { Download, Filter, X, Activity, Server, Clock, Wifi, WifiOff, Play, Square, Tag, AlertTriangle, Zap, Plus, Globe, Pause, Check, Monitor, Copy, Code, ChevronDown, ChevronRight, Terminal, FileCode } from 'lucide-react';
 import { buildDependencyGraph, simulateFailure, type CriticalNode, type GraphEdge } from '@/src/tools/api-signal-explorer/criticalPath';
 import { createNeuromap, addEventToNeuromap, toggleEndpointSelection, exportNeuromap, type Neuromap, type NeuromapMode } from '@/src/tools/api-signal-explorer/neuromap';
 import NeuromapWorkspace from './NeuromapWorkspace';
@@ -47,7 +47,62 @@ type EndpointData = {
   isMutation: boolean;
   sampleUrl: string;
   lastSeen: number;
+  sampleHeaders?: Record<string, string>;
+  sampleReqBody?: string;
+  sampleResBody?: string;
 };
+
+type CodeSnippetLang = 'curl' | 'fetch' | 'axios' | 'python';
+
+// Generate code snippets for API endpoints
+function generateCurl(endpoint: EndpointData): string {
+  const headers = endpoint.sampleHeaders || {};
+  const headerFlags = Object.entries(headers)
+    .map(([k, v]) => `  -H '${k}: ${v}'`)
+    .join(' \\\n');
+  
+  const dataFlag = endpoint.sampleReqBody 
+    ? `  -d '${endpoint.sampleReqBody.substring(0, 100)}${endpoint.sampleReqBody.length > 100 ? '...' : ''}'`
+    : '';
+  
+  return `curl -X ${endpoint.method} '${endpoint.sampleUrl}'${headerFlags ? ' \\\n' + headerFlags : ''}${dataFlag ? ' \\\n' + dataFlag : ''}`;
+}
+
+function generateFetch(endpoint: EndpointData): string {
+  const headers = endpoint.sampleHeaders || {};
+  const headersStr = Object.keys(headers).length > 0 
+    ? ',\n  headers: ' + JSON.stringify(headers, null, 2).split('\n').join('\n  ')
+    : '';
+  
+  const body = endpoint.sampleReqBody 
+    ? `,\n  body: JSON.stringify(${endpoint.sampleReqBody.substring(0, 50)}...)`
+    : '';
+  
+  return `fetch('${endpoint.sampleUrl}', {\n  method: '${endpoint.method}'${headersStr}${body}\n})\n  .then(res => res.json())\n  .then(data => console.log(data));`;
+}
+
+function generateAxios(endpoint: EndpointData): string {
+  const headers = endpoint.sampleHeaders || {};
+  const config = `{\n  headers: ${JSON.stringify(headers, null, 2).split('\n').join('\n  ')}\n}`;
+  
+  if (endpoint.method === 'GET') {
+    return `axios.get('${endpoint.sampleUrl}', ${config});`;
+  }
+  return `axios.${endpoint.method.toLowerCase()}('${endpoint.sampleUrl}', data, ${config});`;
+}
+
+function generatePython(endpoint: EndpointData): string {
+  const headers = endpoint.sampleHeaders || {};
+  const headersStr = Object.entries(headers).map(([k, v]) => `    '${k}': '${v}'`).join(',\n');
+  
+  return `import requests\n\nresponse = requests.${endpoint.method.toLowerCase()}(\n  '${endpoint.sampleUrl}',\n  headers={\n${headersStr}\n  }\n)\nprint(response.json())`;
+}
+
+function copyToClipboard(text: string, key: string, setCopied: (key: string | null) => void) {
+  navigator.clipboard.writeText(text);
+  setCopied(key);
+  setTimeout(() => setCopied(null), 2000);
+}
 
 export default function APISignalExplorerPage() {
   const [flows, setFlows] = useState<MitmFlowEvent[]>([]);
@@ -55,6 +110,9 @@ export default function APISignalExplorerPage() {
   const [preset, setPreset] = useState<NoisePreset>('default');
   const [selectedEndpoints, setSelectedEndpoints] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
+  const [expandedEndpoint, setExpandedEndpoint] = useState<string | null>(null);
+  const [snippetLang, setSnippetLang] = useState<CodeSnippetLang>('curl');
+  const [copiedSnippet, setCopiedSnippet] = useState<string | null>(null);
   
   // Live streaming state
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('disconnected');
@@ -67,33 +125,36 @@ export default function APISignalExplorerPage() {
   const [disabledEndpoints, setDisabledEndpoints] = useState<Set<string>>(new Set());
   const [neuromaps, setNeuromaps] = useState<Neuromap[]>([]);
   const [activeNeuromapId, setActiveNeuromapId] = useState<string | null>(null);
-  const [showNeuromapModal, setShowNeuromapModal] = useState(false);
-  const [neuromapMode, setNeuromapMode] = useState<NeuromapMode | null>(null);
+  const [launchBrowserLoading, setLaunchBrowserLoading] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
   const endpointMapRef = useRef<Map<string, EndpointData>>(new Map());
   const sessionStartRef = useRef<number | null>(null);
 
   // Convert mitmproxy flows to network events (for analysis)
   const networkEvents = useMemo(() => {
-    return flows.map((flow) => {
-      const url = new URL(flow.url);
-      return {
-        ts: flow.ts,
-        method: flow.method,
-        url: flow.url,
-        path: url.pathname,
-        host: url.hostname,
-        query: Object.fromEntries(url.searchParams.entries()),
-        reqHeaders: flow.reqHeaders || {},
-        reqCookies: {},
-        reqBodyText: undefined,
-        reqBodyMime: undefined,
-        status: flow.status,
-        resHeaders: flow.resHeaders || {},
-        resMime: flow.resMime,
-        resSize: flow.resBodySize,
-        durationMs: flow.durationMs,
-      };
+    return flows.flatMap((flow) => {
+      try {
+        const url = new URL(flow.url);
+        return [{
+          ts: flow.ts,
+          method: flow.method,
+          url: flow.url,
+          path: url.pathname,
+          host: url.hostname,
+          query: Object.fromEntries(url.searchParams.entries()),
+          reqHeaders: flow.reqHeaders || {},
+          reqCookies: {},
+          reqBodyText: undefined,
+          reqBodyMime: undefined,
+          status: flow.status,
+          resHeaders: flow.resHeaders || {},
+          resMime: flow.resMime,
+          resSize: flow.resBodySize,
+          durationMs: flow.durationMs,
+        }];
+      } catch {
+        return [];
+      }
     });
   }, [flows]);
 
@@ -112,6 +173,9 @@ export default function APISignalExplorerPage() {
         isMutation: false,
         sampleUrl: event.url,
         lastSeen: event.ts,
+        sampleHeaders: event.reqHeaders,
+        sampleReqBody: event.reqBodyText,
+        sampleResBody: undefined,
       });
     }
 
@@ -169,6 +233,9 @@ export default function APISignalExplorerPage() {
             isMutation: false,
             sampleUrl: event.url,
             lastSeen: event.ts,
+            sampleHeaders: event.reqHeaders,
+            sampleReqBody: event.reqBodyText,
+            sampleResBody: undefined,
           });
         }
 
@@ -476,6 +543,24 @@ export default function APISignalExplorerPage() {
     setIsLive(false);
   }, []);
 
+  const handleLaunchBrowser = useCallback(async () => {
+    setLaunchBrowserLoading(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/explorer/launch-browser', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Launch failed');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Launch failed');
+    } finally {
+      setLaunchBrowserLoading(false);
+    }
+  }, []);
+
   // Interaction tagging
   const startInteractionTagging = useCallback(() => {
     setIsMarkingInteraction(true);
@@ -515,48 +600,6 @@ export default function APISignalExplorerPage() {
     }
   }, [filteredEndpoints.length, autoScroll, isLive]);
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    // Disconnect WebSocket if connected
-    if (isLive) {
-      disconnectWebSocket();
-    }
-
-    setError(null);
-    const reader = new FileReader();
-
-    reader.onload = (e) => {
-      try {
-        const data = JSON.parse(e.target?.result as string) as MitmExport;
-        
-        // Validate schema
-        if (!data.flows || !Array.isArray(data.flows)) {
-          throw new Error('Invalid export: missing flows array');
-        }
-
-        if (data.flows.length === 0) {
-          throw new Error('Export contains no flows');
-        }
-
-        setFlows(data.flows);
-        setSession(data.session || null);
-        if (data.flows.length > 0) {
-          sessionStartRef.current = data.session?.startTs || data.flows[0].ts;
-        }
-        endpointMapRef.current.clear();
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to parse export file');
-      }
-    };
-
-    reader.onerror = () => {
-      setError('Failed to read file');
-    };
-
-    reader.readAsText(file);
-  };
 
   const handleExportSelected = () => {
     const selected = filteredEndpoints
@@ -613,7 +656,7 @@ export default function APISignalExplorerPage() {
     sessionStartRef.current = null;
     setInteractionWindow(null);
     setHostFilter(new Set());
-    if (wsRef.current) {
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify({ type: 'clear_session' }));
     }
   };
@@ -624,9 +667,15 @@ export default function APISignalExplorerPage() {
     return Array.from(hosts).sort();
   }, [endpoints]);
 
+  // Check if running in Electron
+  const isElectron = typeof window !== 'undefined' && (
+    !!(window as { electronBridge?: { isElectron?: boolean } }).electronBridge?.isElectron ||
+    (typeof process !== 'undefined' && !!(process as { versions?: { electron?: string } }).versions?.electron)
+  );
+
   return (
     <div className="min-h-screen p-6 sm:p-8" style={{ backgroundColor: '#0a0a0a' }}>
-      <div className="max-w-7xl mx-auto">
+      <div className={`mx-auto ${activeNeuromapId ? 'max-w-full' : 'max-w-7xl'}`}>
         {/* Header */}
         <div className="mb-8 flex items-center justify-between">
           <div>
@@ -634,72 +683,41 @@ export default function APISignalExplorerPage() {
               API Signal Explorer
             </h1>
             <p className="text-slate-400 text-sm sm:text-base">
-              Analyze mitmproxy captures to identify important API endpoints
+              {activeNeuromapId ? 'Live API signal capture with mitmproxy' : 'Create a neuromap to start capturing API signals'}
             </p>
           </div>
-          <button
-            onClick={() => setShowNeuromapModal(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-white text-sm font-medium transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            Add Neuromap
-          </button>
+          {!activeNeuromapId && (
+            <button
+              onClick={() => {
+                const newNeuromap = createNeuromap(`Browser Capture ${new Date().toLocaleTimeString()}`, 'browser');
+                setNeuromaps(prev => [...prev, newNeuromap]);
+                setActiveNeuromapId(newNeuromap.id);
+                newNeuromap.isActive = true;
+              }}
+              className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-white text-sm font-medium transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              Create Neuromap
+            </button>
+          )}
+          {activeNeuromapId && (
+            <button
+              onClick={() => {
+                const activeNeuromap = neuromaps.find(n => n.id === activeNeuromapId);
+                if (activeNeuromap) activeNeuromap.isActive = false;
+                setActiveNeuromapId(null);
+              }}
+              className="flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-white text-sm font-medium transition-colors"
+            >
+              <X className="w-4 h-4" />
+              Close Neuromap
+            </button>
+          )}
         </div>
 
-        {/* Neuromap Mode Selection Modal */}
-        {showNeuromapModal && (
-          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50" onClick={() => setShowNeuromapModal(false)}>
-            <div className="bg-slate-900 rounded-lg border border-slate-800 p-6 max-w-md w-full mx-4" onClick={(e) => e.stopPropagation()}>
-              <h2 className="text-2xl font-bold mb-4" style={{ color: '#ff5757' }}>Create Neuromap</h2>
-              <p className="text-slate-400 mb-6 text-sm">Choose capture mode:</p>
-              <div className="space-y-3">
-                <button
-                  onClick={() => {
-                    setNeuromapMode('mobile');
-                    setShowNeuromapModal(false);
-                    const newNeuromap = createNeuromap(`Mobile Capture ${new Date().toLocaleTimeString()}`, 'mobile');
-                    setNeuromaps(prev => [...prev, newNeuromap]);
-                    setActiveNeuromapId(newNeuromap.id);
-                    newNeuromap.isActive = true;
-                  }}
-                  className="w-full flex items-center gap-3 p-4 bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-700 transition-colors"
-                >
-                  <Smartphone className="w-6 h-6 text-blue-400" />
-                  <div className="text-left">
-                    <div className="font-semibold text-white">Mobile Capture</div>
-                    <div className="text-xs text-slate-400">Screen share + live API stream</div>
-                  </div>
-                </button>
-                <button
-                  onClick={() => {
-                    setNeuromapMode('browser');
-                    setShowNeuromapModal(false);
-                    const newNeuromap = createNeuromap(`Browser Capture ${new Date().toLocaleTimeString()}`, 'browser');
-                    setNeuromaps(prev => [...prev, newNeuromap]);
-                    setActiveNeuromapId(newNeuromap.id);
-                    newNeuromap.isActive = true;
-                  }}
-                  className="w-full flex items-center gap-3 p-4 bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-700 transition-colors"
-                >
-                  <Globe className="w-6 h-6 text-green-400" />
-                  <div className="text-left">
-                    <div className="font-semibold text-white">Browser Capture</div>
-                    <div className="text-xs text-slate-400">Embedded Chromium + live API stream</div>
-                  </div>
-                </button>
-              </div>
-              <button
-                onClick={() => setShowNeuromapModal(false)}
-                className="mt-4 w-full px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-white text-sm transition-colors"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Live Mode Controls */}
-        <div className="mb-6 p-4 bg-slate-900/50 rounded-lg border border-slate-800">
+        {/* Live Mode Controls - Only show when no active neuromap */}
+        {!activeNeuromapId && (
+          <div className="mb-6 p-4 bg-slate-900/50 rounded-lg border border-slate-800">
           <div className="flex flex-wrap items-center gap-4">
             <div className="flex items-center gap-2">
               {connectionStatus === 'connected' ? (
@@ -729,6 +747,19 @@ export default function APISignalExplorerPage() {
               >
                 <Square className="w-4 h-4" />
                 Disconnect
+              </button>
+            )}
+
+            {/* Only show launch browser button when no active neuromap (browser launch is in NeuromapWorkspace) */}
+            {!activeNeuromapId && (
+              <button
+                onClick={handleLaunchBrowser}
+                disabled={launchBrowserLoading}
+                className="flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 disabled:opacity-50 rounded-lg text-white text-sm font-medium transition-colors"
+                title="Open Chromium with proxy 127.0.0.1:8080. Requires mitmproxy and bridge. Use the browser to click and browse; API calls appear below."
+              >
+                <Monitor className="w-4 h-4" />
+                {launchBrowserLoading ? 'Launching…' : 'Launch Chromium'}
               </button>
             )}
 
@@ -809,36 +840,12 @@ export default function APISignalExplorerPage() {
               </div>
             </div>
           )}
-        </div>
-
-        {/* Upload Section (only show when not in live mode) */}
-        {flows.length === 0 && !isLive && (
-          <div className="mb-8 p-8 border-2 border-dashed border-slate-700 rounded-lg text-center">
-            <FileJson className="w-12 h-12 mx-auto mb-4 text-slate-500" />
-            <h2 className="text-xl font-semibold mb-2 text-slate-300">Upload mitmproxy Export</h2>
-            <p className="text-slate-500 mb-4 text-sm">
-              Export flows from mitmproxy using <code className="bg-slate-800 px-2 py-1 rounded">export_flows.py</code>
-            </p>
-            <label className="inline-flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg cursor-pointer transition-colors">
-              <Upload className="w-4 h-4" />
-              <span>Choose JSON file</span>
-              <input
-                type="file"
-                accept=".json"
-                onChange={handleFileUpload}
-                className="hidden"
-              />
-            </label>
-            {error && (
-              <div className="mt-4 p-3 bg-red-900/30 border border-red-700 rounded text-red-300 text-sm">
-                {error}
-              </div>
-            )}
           </div>
         )}
 
-        {/* Session Stats */}
-        {stats && (
+
+        {/* Session Stats - Only show when no active neuromap */}
+        {!activeNeuromapId && stats && (
           <div className="mb-6 grid grid-cols-2 sm:grid-cols-4 gap-4">
             <div className="bg-slate-900/50 p-4 rounded-lg border border-slate-800">
               <div className="flex items-center gap-2 mb-1">
@@ -871,8 +878,31 @@ export default function APISignalExplorerPage() {
           </div>
         )}
 
-        {/* Controls */}
-        {flows.length > 0 && (
+        {/* Tabs: All / Critical / Auth / Polling - Only show when no active neuromap */}
+        {!activeNeuromapId && flows.length > 0 && (
+          <div className="mb-4 flex gap-2 border-b border-slate-800 pb-2">
+            {(['all', 'critical', 'auth', 'polling'] as ExplorerTab[]).map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`px-4 py-2 rounded-t text-sm font-medium transition-colors ${
+                  activeTab === tab
+                    ? 'bg-slate-800 text-white border-b-2'
+                    : 'bg-transparent text-slate-400 hover:text-slate-300 hover:bg-slate-800/50'
+                }`}
+                style={activeTab === tab ? { borderBottomColor: '#ff5757' } : {}}
+              >
+                {tab === 'all' && 'All'}
+                {tab === 'critical' && `Critical (${criticalPathEndpoints.length})`}
+                {tab === 'auth' && `Auth (${authEndpoints.length})`}
+                {tab === 'polling' && `Polling (${pollingEndpoints.length})`}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Controls - Only show when no active neuromap */}
+        {!activeNeuromapId && flows.length > 0 && (
           <div className="mb-6 flex flex-wrap items-center gap-4">
             <div className="flex items-center gap-2">
               <Filter className="w-4 h-4 text-slate-400" />
@@ -955,6 +985,12 @@ export default function APISignalExplorerPage() {
                 setSession(null);
                 setSelectedEndpoints(new Set());
                 setError(null);
+                endpointMapRef.current.clear();
+                sessionStartRef.current = null;
+                setInteractionWindow(null);
+                if (wsRef.current?.readyState === WebSocket.OPEN) {
+                  wsRef.current.send(JSON.stringify({ type: 'clear_session' }));
+                }
               }}
               className="flex items-center gap-2 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded text-sm text-white transition-colors ml-auto"
             >
@@ -964,174 +1000,203 @@ export default function APISignalExplorerPage() {
           </div>
         )}
 
-        {/* Endpoints Table */}
-        {filteredEndpoints.length > 0 && (
-          <div className="bg-slate-900/50 rounded-lg border border-slate-800 overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-slate-800/50">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-400 w-8">
-                      <input
-                        type="checkbox"
-                        checked={selectedEndpoints.size === filteredEndpoints.length && filteredEndpoints.length > 0}
-                        onChange={(e) => e.target.checked ? selectAll() : clearSelection()}
-                        className="rounded"
-                      />
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-400">Method</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-400">Host</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-400">Path</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-400">Count</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-400">Status</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-400">Type</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-400">Auth</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-800">
-                  {filteredEndpoints.map((ep) => {
-                    const key = `${ep.method} ${ep.host}${ep.path}`;
-                    const isSelected = selectedEndpoints.has(key);
-                    const isDisabled = disabledEndpoints.has(key);
-                    const criticalNode = ep.criticalNode;
-                    
-                    // Simulate failure impact if disabled
-                    const failureImpact = isDisabled && criticalNode && criticalNodes.size > 0
-                      ? simulateFailure(criticalNodes, criticalEdges, key)
-                      : null;
+        {/* API Routes Grid - Modern card-based layout with code snippets */}
+        {!activeNeuromapId && filteredEndpoints.length > 0 && (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between px-4 py-2 bg-gradient-to-r from-cyan-900/20 to-purple-900/20 rounded-lg border border-cyan-500/30">
+              <div className="flex items-center gap-3">
+                <Terminal className="w-5 h-5 text-cyan-400" />
+                <h3 className="text-lg font-bold text-cyan-400 font-mono tracking-wider">
+                  API ROUTES <span className="text-slate-500">///</span> <span className="text-purple-400">{filteredEndpoints.length}</span>
+                </h3>
+              </div>
+              <div className="flex items-center gap-2">
+                {['curl', 'fetch', 'axios', 'python'].map((lang) => (
+                  <button
+                    key={lang}
+                    onClick={() => setSnippetLang(lang as CodeSnippetLang)}
+                    className={`px-3 py-1 text-xs font-mono rounded transition-all ${
+                      snippetLang === lang
+                        ? 'bg-cyan-500 text-black font-bold shadow-lg shadow-cyan-500/50'
+                        : 'bg-slate-800/50 text-slate-400 hover:text-cyan-400 hover:bg-slate-700/50'
+                    }`}
+                  >
+                    {lang.toUpperCase()}
+                  </button>
+                ))}
+              </div>
+            </div>
+            
+            <div id="endpoints-grid" className="space-y-2 max-h-[70vh] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-cyan-500/30 scrollbar-track-transparent">
+              {filteredEndpoints.map((ep) => {
+                const key = `${ep.method} ${ep.host}${ep.path}`;
+                const isSelected = selectedEndpoints.has(key);
+                const isExpanded = expandedEndpoint === key;
+                const criticalNode = ep.criticalNode;
+                
+                // Get code snippet
+                const snippet = 
+                  snippetLang === 'curl' ? generateCurl(ep) :
+                  snippetLang === 'fetch' ? generateFetch(ep) :
+                  snippetLang === 'axios' ? generateAxios(ep) :
+                  generatePython(ep);
+                
+                const copyKey = `${key}-${snippetLang}`;
 
-                    return (
-                      <tr
-                        key={key}
-                        className={`hover:bg-slate-800/30 transition-colors ${
-                          isSelected ? 'bg-slate-800/50' : ''
-                        } ${isDisabled ? 'opacity-50' : ''}`}
-                      >
+                return (
+                  <div
+                    key={key}
+                    className={`group relative overflow-hidden rounded-lg border transition-all duration-300 ${
+                      isSelected 
+                        ? 'border-cyan-500 bg-gradient-to-br from-cyan-900/30 to-purple-900/20 shadow-lg shadow-cyan-500/20' 
+                        : 'border-slate-700/50 bg-slate-900/70 hover:border-cyan-500/50 hover:shadow-md hover:shadow-cyan-500/10'
+                    }`}
+                  >
+                    {/* Main endpoint card */}
+                    <div className="p-4">
+                      <div className="flex items-start gap-4">
+                        {/* Checkbox */}
                         {activeTab !== 'critical' && (
-                          <td className="px-4 py-3">
-                            <input
-                              type="checkbox"
-                              checked={isSelected}
-                              onChange={() => toggleEndpointSelection(key)}
-                              className="rounded"
-                            />
-                          </td>
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => toggleEndpointSelection(key)}
+                            className="mt-1 rounded border-slate-600 bg-slate-800 text-cyan-500 focus:ring-cyan-500"
+                          />
                         )}
-                        {activeTab === 'critical' && (
-                          <td className="px-4 py-3">
+                        
+                        {/* Endpoint Info */}
+                        <div className="flex-1 min-w-0">
+                          {/* Route header */}
+                          <div className="flex items-center gap-3 mb-3">
+                            <span className={`px-3 py-1 rounded-md text-sm font-bold font-mono shadow-lg ${
+                              ep.method === 'GET' ? 'bg-blue-500 text-white shadow-blue-500/50' :
+                              ep.method === 'POST' ? 'bg-green-500 text-white shadow-green-500/50' :
+                              ep.method === 'PUT' ? 'bg-yellow-500 text-black shadow-yellow-500/50' :
+                              ep.method === 'DELETE' ? 'bg-red-500 text-white shadow-red-500/50' :
+                              'bg-purple-500 text-white shadow-purple-500/50'
+                            }`}>
+                              {ep.method}
+                            </span>
+                            <div className="flex-1 min-w-0">
+                              <div className="text-xs text-slate-500 font-mono mb-0.5">{ep.host}</div>
+                              <div className="text-lg font-mono font-bold text-cyan-300 truncate">{ep.path}</div>
+                            </div>
                             <button
-                              onClick={() => {
-                                const newDisabled = new Set(disabledEndpoints);
-                                if (newDisabled.has(key)) {
-                                  newDisabled.delete(key);
-                                } else {
-                                  newDisabled.add(key);
-                                }
-                                setDisabledEndpoints(newDisabled);
-                              }}
-                              className={`p-1 rounded transition-colors ${
-                                isDisabled
-                                  ? 'bg-red-600 hover:bg-red-700 text-white'
-                                  : 'bg-slate-700 hover:bg-slate-600 text-slate-300'
-                              }`}
-                              title={isDisabled ? 'Enable endpoint' : 'Simulate failure'}
+                              onClick={() => setExpandedEndpoint(isExpanded ? null : key)}
+                              className="p-2 rounded-lg bg-slate-800 hover:bg-cyan-900/50 border border-slate-700 hover:border-cyan-500/50 transition-all"
+                              title={isExpanded ? 'Hide code' : 'Show code'}
                             >
-                              <AlertTriangle className="w-4 h-4" />
+                              {isExpanded ? (
+                                <ChevronDown className="w-5 h-5 text-cyan-400" />
+                              ) : (
+                                <ChevronRight className="w-5 h-5 text-slate-400" />
+                              )}
                             </button>
-                          </td>
-                        )}
-                        <td className="px-4 py-3">
-                          <span className={`px-2 py-1 rounded text-xs font-mono ${
-                            ep.method === 'GET' ? 'bg-blue-900/30 text-blue-300' :
-                            ep.method === 'POST' ? 'bg-green-900/30 text-green-300' :
-                            ep.method === 'PUT' ? 'bg-yellow-900/30 text-yellow-300' :
-                            ep.method === 'DELETE' ? 'bg-red-900/30 text-red-300' :
-                            'bg-slate-800 text-slate-300'
-                          }`}>
-                            {ep.method}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-sm text-slate-300 font-mono">{ep.host}</td>
-                        <td className="px-4 py-3 text-sm text-slate-300 font-mono">{ep.path}</td>
-                        {activeTab === 'critical' && criticalNode && (
-                          <>
-                            <td className="px-4 py-3">
-                              <div className="flex items-center gap-2">
-                                <span className="text-sm font-semibold text-white">{criticalNode.score}</span>
-                                <div className="w-16 h-2 bg-slate-700 rounded-full overflow-hidden">
-                                  <div
-                                    className="h-full bg-green-500 transition-all"
-                                    style={{ width: `${criticalNode.score}%` }}
-                                  />
-                                </div>
+                          </div>
+                          
+                          {/* Metadata badges */}
+                          <div className="flex flex-wrap items-center gap-2 text-xs">
+                            <div className="flex items-center gap-1.5 px-2 py-1 bg-slate-800/50 rounded border border-slate-700">
+                              <Activity className="w-3 h-3 text-purple-400" />
+                              <span className="text-slate-400">Count:</span>
+                              <span className="text-white font-mono">{ep.count}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5 px-2 py-1 bg-slate-800/50 rounded border border-slate-700">
+                              <Server className="w-3 h-3 text-green-400" />
+                              <span className="text-slate-400">Status:</span>
+                              <span className="text-green-300 font-mono">
+                                {Object.entries(ep.statuses).sort(([a], [b]) => Number(b) - Number(a)).slice(0, 2).map(([s, c]) => `${s}(${c})`).join(', ')}
+                              </span>
+                            </div>
+                            {ep.hasAuth && (
+                              <div className="flex items-center gap-1 px-2 py-1 bg-green-900/30 border border-green-500/50 rounded">
+                                <Check className="w-3 h-3 text-green-400" />
+                                <span className="text-green-300 font-semibold">Authenticated</span>
                               </div>
-                            </td>
-                            <td className="px-4 py-3">
-                              <span className="text-xs text-slate-400">{criticalNode.confidence}%</span>
-                            </td>
-                            <td className="px-4 py-3">
-                              <div className="max-w-xs">
-                                <div className="text-xs text-slate-300 space-y-1">
+                            )}
+                            {ep.isMutation && (
+                              <div className="px-2 py-1 bg-purple-900/30 border border-purple-500/50 rounded text-purple-300 font-semibold">
+                                Mutation
+                              </div>
+                            )}
+                            {criticalNode && (
+                              <div className="flex items-center gap-1.5 px-2 py-1 bg-amber-900/30 border border-amber-500/50 rounded">
+                                <Zap className="w-3 h-3 text-amber-400" />
+                                <span className="text-amber-300 font-semibold">Critical: {criticalNode.score}%</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Expandable Code Snippet Section */}
+                    {isExpanded && (
+                      <div className="border-t border-cyan-500/30 bg-black/40 backdrop-blur-sm">
+                        <div className="p-4">
+                          {/* Code header */}
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-2">
+                              <FileCode className="w-4 h-4 text-cyan-400" />
+                              <span className="text-sm font-mono font-bold text-cyan-400 uppercase tracking-wider">
+                                {snippetLang} Code Snippet
+                              </span>
+                            </div>
+                            <button
+                              onClick={() => copyToClipboard(snippet, copyKey, setCopiedSnippet)}
+                              className="flex items-center gap-2 px-3 py-1.5 bg-slate-800 hover:bg-cyan-900/50 border border-slate-700 hover:border-cyan-500 rounded text-xs font-mono text-slate-300 hover:text-cyan-300 transition-all"
+                            >
+                              {copiedSnippet === copyKey ? (
+                                <>
+                                  <Check className="w-4 h-4 text-green-400" />
+                                  <span className="text-green-400">Copied!</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Copy className="w-4 h-4" />
+                                  <span>Copy</span>
+                                </>
+                              )}
+                            </button>
+                          </div>
+                          
+                          {/* Code block with terminal styling */}
+                          <div className="relative">
+                            <div className="absolute top-0 left-0 right-0 h-6 bg-gradient-to-b from-cyan-500/10 to-transparent pointer-events-none" />
+                            <pre className="relative bg-slate-950 border border-cyan-500/30 rounded-lg p-4 overflow-x-auto text-sm font-mono leading-relaxed shadow-inner shadow-cyan-500/10">
+                              <code className="text-cyan-300">
+                                {snippet.split('\n').map((line, i) => (
+                                  <div key={i} className="hover:bg-cyan-900/20 px-2 -mx-2 rounded transition-colors">
+                                    <span className="text-slate-600 select-none mr-4">{String(i + 1).padStart(2, '0')}</span>
+                                    <span className="text-cyan-300">{line}</span>
+                                  </div>
+                                ))}
+                              </code>
+                            </pre>
+                            <div className="absolute bottom-0 left-0 right-0 h-6 bg-gradient-to-t from-cyan-500/10 to-transparent pointer-events-none" />
+                          </div>
+                          
+                          {/* Additional info */}
+                          {criticalNode && (
+                            <div className="mt-4 p-3 bg-amber-900/20 border border-amber-500/30 rounded-lg">
+                              <div className="flex items-start gap-2">
+                                <AlertTriangle className="w-4 h-4 text-amber-400 mt-0.5" />
+                                <div className="flex-1 text-xs text-amber-200 space-y-1">
+                                  <div className="font-semibold text-amber-400">Critical Path Analysis:</div>
                                   {criticalNode.reasons.slice(0, 3).map((reason, idx) => (
-                                    <div key={idx} className="flex items-start gap-1">
-                                      <span className="text-green-400">•</span>
-                                      <span>{reason}</span>
-                                    </div>
+                                    <div key={idx}>• {reason}</div>
                                   ))}
                                 </div>
                               </div>
-                            </td>
-                          </>
-                        )}
-                        <td className="px-4 py-3 text-sm text-slate-400">{ep.count}</td>
-                        <td className="px-4 py-3 text-sm text-slate-400">
-                          {Object.entries(ep.statuses)
-                            .sort(([a], [b]) => Number(b) - Number(a))
-                            .slice(0, 2)
-                            .map(([s, c]) => `${s}(${c})`)
-                            .join(', ')}
-                        </td>
-                        <td className="px-4 py-3">
-                          {ep.isMutation && (
-                            <span className="px-2 py-1 rounded text-xs bg-purple-900/30 text-purple-300">
-                              Mutation
-                            </span>
-                          )}
-                          {!ep.isMutation && (
-                            <span className="px-2 py-1 rounded text-xs bg-blue-900/30 text-blue-300">
-                              Query
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-4 py-3">
-                          {ep.hasAuth ? (
-                            <span className="px-2 py-1 rounded text-xs bg-green-900/30 text-green-300">
-                              ✓
-                            </span>
-                          ) : (
-                            <span className="px-2 py-1 rounded text-xs bg-slate-800 text-slate-500">
-                              —
-                            </span>
-                          )}
-                        </td>
-                        {failureImpact && failureImpact.impact.length > 0 && (
-                          <td colSpan={activeTab === 'critical' ? 8 : 7} className="px-4 py-2 bg-red-900/20 border-t border-red-800">
-                            <div className="text-xs text-red-300">
-                              <span className="font-semibold">Impact:</span>{' '}
-                              {failureImpact.impact.join('; ')}
-                              {failureImpact.unreachable.size > 0 && (
-                                <span className="ml-2">
-                                  ({failureImpact.unreachable.size} endpoints unreachable)
-                                </span>
-                              )}
                             </div>
-                          </td>
-                        )}
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
@@ -1141,27 +1206,29 @@ export default function APISignalExplorerPage() {
             No endpoints match the current preset filter.
           </div>
         )}
-      </div>
 
-      {/* Neuromap Workspace */}
-      {activeNeuromapId && (() => {
-        const activeNeuromap = neuromaps.find(n => n.id === activeNeuromapId);
-        if (!activeNeuromap) return null;
-        return (
-          <NeuromapWorkspace
-            neuromap={activeNeuromap}
-            onUpdate={(updated) => {
-              setNeuromaps(prev => prev.map(n => n.id === updated.id ? updated : n));
-            }}
-            onClose={() => {
-              setActiveNeuromapId(null);
-              if (activeNeuromap) {
-                activeNeuromap.isActive = false;
-              }
-            }}
-          />
-        );
-      })()}
+        {/* Unified Neuromap View - Single source of truth */}
+        {activeNeuromapId ? (() => {
+          const activeNeuromap = neuromaps.find(n => n.id === activeNeuromapId);
+          if (!activeNeuromap) return null;
+          return (
+            <div className="mt-8">
+              <NeuromapWorkspace
+                neuromap={activeNeuromap}
+                onUpdate={(updated) => {
+                  setNeuromaps(prev => prev.map(n => n.id === updated.id ? updated : n));
+                }}
+                onClose={() => {
+                  setActiveNeuromapId(null);
+                  if (activeNeuromap) {
+                    activeNeuromap.isActive = false;
+                  }
+                }}
+              />
+            </div>
+          );
+        })() : null}
+      </div>
     </div>
   );
 }

@@ -6,6 +6,7 @@
 
 export type ActionType =
   | "click"
+  | "mouseover"
   | "type"
   | "navigate"
   | "submit"
@@ -19,6 +20,7 @@ export type ActionEvent = {
   meta?: {
     url?: string;
     selector?: string;     // for browser mode if available
+    xpath?: string;       // from target-action (DOM Eye)
     textLen?: number;     // for type (length only, not content)
     key?: string;         // key pressed, optional
     durationMs?: number;  // for mark_window
@@ -58,6 +60,12 @@ export function generateActionLabel(action: ActionEvent): string {
         return `Clicked ${shortSelector}`;
       }
       return 'Click';
+    case 'mouseover':
+      if (action.meta?.selector) {
+        const short = (action.meta.selector as string).length > 40 ? (action.meta.selector as string).substring(0, 40) + '...' : action.meta.selector;
+        return `Hover ${short}`;
+      }
+      return 'Hover';
     case 'type':
       if (action.meta?.textLen) {
         return `Typed ${action.meta.textLen} characters`;

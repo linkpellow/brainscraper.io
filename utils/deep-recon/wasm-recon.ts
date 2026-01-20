@@ -1,0 +1,231 @@
+/**
+ * Wasm Decompiler Bridge — Deep Recon
+ *
+ * Intercepts .wasm via mitmproxy wasmPath; decompiles with wasm2wat (wabt);
+ * scans for encryption logic, embedded keys, endpoint strings; outputs
+ * JavaScript stubs for offline token emulation.
+ *
+ * Edge cases: wasm2wat missing, corrupt wasm, empty WAT, binary-only strings,
+ * malformed exports. All errors are caught and surfaced; no silent failures.
+ */
+
+import { spawn } from 'child_process';
+import { access } from 'fs/promises';
+import path from 'path';
+
+const WASM2WAT_TIMEOUT_MS = 30_000;
+const WAT_SCAN_MAX_CHARS = 2_000_000;
+
+export type WasmReconResult = {
+  ok: boolean;
+  path: string;
+  url?: string;
+  error?: string;
+  wat?: string;
+  watLength?: number;
+  endpoints: string[];
+  keys: string[];
+  crypto: string[];
+  exportedFuncs: string[];
+  jsStubs: string;
+};
+
+/** Endpoint/URL patterns: full URLs, path-like, /api/..., wss://, /v1/... */
+const ENDPOINT_REGEX = /https?:\/\/[a-zA-Z0-9][-a-zA-Z0-9.]*(?::[0-9]+)?(?:\/[^\s"']*)?|wss?:\/\/[^\s"']+|(?:"|')\/(?:api|v[0-9]+|graphql|ws|auth|oauth)[^\s"']*(?:"|')|(?:\/[\w.-]+){2,}/g;
+
+/** Key-like: base64 (A–Za–z0–9+/=), hex 32+, Bearer, sk_/pk_, generic "key"/"secret" strings */
+const KEY_REGEX = /(?:Bearer\s+)[A-Za-z0-9_.-]{20,}|(?:sk_|pk_)[a-zA-Z0-9]{20,}|[A-Za-z0-9+/]{32,}={0,2}|[a-fA-F0-9]{32,}|"(?:api[_-]?key|secret|token|auth|password)"\s*:\s*"[^"]{16,}"/g;
+
+/** Crypto-related: opcodes, import names, global names */
+const CRYPTO_REGEX = /(?:i32|i64|f32|f64)\.(?:xor|rotl|rotr|and|or|shl|shr)|(?:import\s+[^"']*"(?:crypto|Crypto|getRandomValues|subtle|encrypt|decrypt|sign|verify|digest|hash|hmac|aes|sha|md5)[^"']*")|(?:^\s*[;(].*?(?:encrypt|decrypt|sign|hash|key|nonce|iv)\b)/gim;
+
+/** (export "name" (func ...)) */
+const EXPORT_FUNC_REGEX = /\(export\s+"([^"]+)"\s*\(\s*func\s+/g;
+
+function uniq(arr: string[]): string[] {
+  return [...new Set(arr)];
+}
+
+function truncate(s: string, max: number): string {
+  if (s.length <= max) return s;
+  return s.slice(0, max) + '...[truncated]';
+}
+
+/**
+ * Resolve wasm file path: try as-is, cwd, and project roots.
+ */
+export async function resolveWasmPath(wasmPath: string, projectRoot?: string): Promise<string | null> {
+  const candidates = [
+    wasmPath,
+    path.isAbsolute(wasmPath) ? wasmPath : path.join(process.cwd(), wasmPath),
+  ];
+  if (projectRoot) {
+    candidates.push(path.join(projectRoot, wasmPath));
+    candidates.push(path.join(projectRoot, 'wasm-captures', path.basename(wasmPath)));
+  }
+  for (const p of candidates) {
+    try {
+      await access(p);
+      return p;
+    } catch { /* skip */ }
+  }
+  return null;
+}
+
+/**
+ * Run wasm2wat (wabt) on a .wasm file. Returns raw WAT or error.
+ */
+export async function decompileToWat(wasmPath: string): Promise<{ wat: string } | { error: string }> {
+  return new Promise((resolve) => {
+    let stderr = '';
+    let stdout = '';
+    const proc = spawn('wasm2wat', [wasmPath], { stdio: ['ignore', 'pipe', 'pipe'] });
+    const to = setTimeout(() => {
+      try { proc.kill('SIGKILL'); } catch { /* ignore */ }
+      resolve({ error: `wasm2wat timed out after ${WASM2WAT_TIMEOUT_MS}ms` });
+    }, WASM2WAT_TIMEOUT_MS);
+
+    proc.stdout?.on('data', (d: Buffer) => { stdout += d.toString('utf-8', 'replace'); });
+    proc.stderr?.on('data', (d: Buffer) => { stderr += d.toString('utf-8', 'replace'); });
+    proc.on('error', (e) => {
+      clearTimeout(to);
+      resolve({ error: `wasm2wat not found or failed to start: ${e.message}. Install wabt: brew install wabt` });
+    });
+    proc.on('close', (code, sig) => {
+      clearTimeout(to);
+      if (code !== 0 && sig !== 'SIGKILL') {
+        resolve({ error: `wasm2wat exited ${code}: ${truncate(stderr || stdout, 500)}` });
+        return;
+      }
+      if (!stdout || stdout.trim().length === 0) {
+        resolve({ error: 'wasm2wat produced no output' });
+        return;
+      }
+      resolve({ wat: stdout });
+    });
+  });
+}
+
+/**
+ * Scan WAT for endpoints, keys, and crypto-related tokens.
+ */
+export function scanForSecrets(wat: string): { endpoints: string[]; keys: string[]; crypto: string[] } {
+  const s = wat.length > WAT_SCAN_MAX_CHARS ? wat.slice(0, WAT_SCAN_MAX_CHARS) : wat;
+  const endpoints = uniq((s.match(ENDPOINT_REGEX) || []).map((x) => x.replace(/^["']|["']$/g, '').trim()).filter(Boolean));
+  const keys = uniq((s.match(KEY_REGEX) || []).map((x) => truncate(x, 120)).filter(Boolean));
+  const crypto = uniq((s.match(CRYPTO_REGEX) || []).map((x) => x.trim()).filter(Boolean).slice(0, 100));
+  return { endpoints, keys, crypto };
+}
+
+/**
+ * Extract exported function names from WAT.
+ */
+export function extractExportedFuncs(wat: string): string[] {
+  const m = wat.matchAll(EXPORT_FUNC_REGEX);
+  return uniq(Array.from(m, (x) => x[1]));
+}
+
+/**
+ * Generate JavaScript stubs for exported functions for offline token emulation.
+ */
+export function toJavaScriptStubs(exportedFuncs: string[], endpoints: string[], keys: string[]): string {
+  const lines: string[] = [
+    '// Generated by wasm-recon for offline token emulation. Replace bodies with actual logic.',
+    '// Endpoints found:', ...endpoints.slice(0, 10).map((e) => `//   ${e}`),
+    '// Key-like strings (redact in production):', ...keys.slice(0, 5).map((k) => `//   ${truncate(k, 60)}`),
+    '',
+  ];
+  for (const name of exportedFuncs) {
+    const safe = /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(name) ? name : `['${name.replace(/'/g, "\\'")}']`;
+    lines.push(`export function ${safe}(...args) {`);
+    lines.push(`  // TODO: implement from wasm. Args: \`args\``);
+    lines.push(`  throw new Error('Stub: ${name}');`);
+    lines.push('}');
+    lines.push('');
+  }
+  if (exportedFuncs.length === 0) lines.push('// No exported functions found.');
+  return lines.join('\n');
+}
+
+/**
+ * Full pipeline: resolve path, decompile, scan, produce JS stubs.
+ */
+export async function runWasmRecon(
+  wasmPath: string,
+  opts?: { url?: string; projectRoot?: string }
+): Promise<WasmReconResult> {
+  const resolved = await resolveWasmPath(wasmPath, opts?.projectRoot);
+  if (!resolved) {
+    return {
+      ok: false,
+      path: wasmPath,
+      url: opts?.url,
+      error: `wasm file not found: ${wasmPath}`,
+      endpoints: [],
+      keys: [],
+      crypto: [],
+      exportedFuncs: [],
+      jsStubs: '',
+    };
+  }
+
+  const decomp = await decompileToWat(resolved);
+  if ('error' in decomp) {
+    return {
+      ok: false,
+      path: resolved,
+      url: opts?.url,
+      error: decomp.error,
+      endpoints: [],
+      keys: [],
+      crypto: [],
+      exportedFuncs: [],
+      jsStubs: '',
+    };
+  }
+
+  const wat = decomp.wat;
+  const { endpoints, keys, crypto } = scanForSecrets(wat);
+  const exportedFuncs = extractExportedFuncs(wat);
+  const jsStubs = toJavaScriptStubs(exportedFuncs, endpoints, keys);
+
+  return {
+    ok: true,
+    path: resolved,
+    url: opts?.url,
+    wat: wat.length > WAT_SCAN_MAX_CHARS ? wat.slice(0, WAT_SCAN_MAX_CHARS) + '\n...[truncated]' : wat,
+    watLength: wat.length,
+    endpoints,
+    keys,
+    crypto,
+    exportedFuncs,
+    jsStubs,
+  };
+}
+
+/**
+ * Process .wasm bytes (e.g. from interception). Writes to a temp path then runs recon.
+ */
+export async function runWasmReconFromBuffer(
+  buf: Buffer,
+  destPath: string,
+  opts?: { url?: string }
+): Promise<WasmReconResult> {
+  const { writeFile } = await import('fs/promises');
+  try {
+    await writeFile(destPath, buf);
+    return runWasmRecon(destPath, { ...opts, projectRoot: path.dirname(destPath) });
+  } catch (e) {
+    return {
+      ok: false,
+      path: destPath,
+      url: opts?.url,
+      error: `Failed to write wasm buffer: ${(e as Error).message}`,
+      endpoints: [],
+      keys: [],
+      crypto: [],
+      exportedFuncs: [],
+      jsStubs: '',
+    };
+  }
+}

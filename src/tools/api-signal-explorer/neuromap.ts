@@ -29,6 +29,7 @@ export type RawNetworkEvent = {
   source: "mobile" | "browser";
   actionId?: string;        // Linked action ID
   actionConfidence?: number; // 0-1 confidence score
+  actionXpath?: string;     // XPath of the DOM element that triggered this (from target-action)
   durationMs?: number;
 };
 

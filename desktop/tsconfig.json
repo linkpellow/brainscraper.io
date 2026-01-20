@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "outDir": ".",
+    "rootDir": ".",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true
+  },
+  "include": ["main.ts", "preload-browser.ts", "wasm-recon.ts", "heap-miner.ts", "native-net.ts", "integrity-shield.ts"],
+  "exclude": ["node_modules", "*.html", "toolbar*.js", "preload-explorer.js"]
+}

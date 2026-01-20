@@ -1,0 +1,12 @@
+// Stealth Connector: Mojo IPC for native element selector (Octoparse-style).
+// Renders in: components/stealth/public/mojom/stealth_connector.mojom
+
+module stealth.mojom;
+
+// Bridges the renderer (web page) and the browser process for
+// selector/element data. No page.evaluate — native Mojo bindings only.
+interface StealthConnector {
+  // Sends an XPath (or other selector) from the renderer to the browser.
+  // The browser can log it, store it, or drive a native selector engine.
+  ReportXpath(string xpath);
+};
