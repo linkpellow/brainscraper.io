@@ -21,7 +21,8 @@ let launchedBrowser: { close(): Promise<void> } | null = null;
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({}));
-    const url = typeof body?.url === 'string' && body.url.trim() ? body.url.trim() : 'about:blank';
+    const defaultStartUrl = `http://localhost:${process.env.PORT || 3000}/brainscraper-start`;
+    const url = typeof body?.url === 'string' && body.url.trim() ? body.url.trim() : defaultStartUrl;
 
     // First, ensure mitmproxy and bridge are running
     console.log('[launch-browser] Starting services...');
