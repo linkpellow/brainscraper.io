@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { Pause, Play, Check, X, Download, Globe, Plus, MousePointer, Tag, Monitor, Rss, ChevronDown, ChevronRight, Copy, Code, Terminal, ArrowDown, Zap } from 'lucide-react';
+import { Pause, Play, Check, X, Download, Globe, Plus, MousePointer, Tag, Monitor, Rss, ChevronDown, ChevronRight, Copy, Code, Terminal, ArrowDown, Zap, Brain, Sparkles, Loader2 } from 'lucide-react';
 import type { Neuromap, RawNetworkEvent } from '@/src/tools/api-signal-explorer/neuromap';
 import { addEventToNeuromap, toggleEndpointSelection, exportNeuromap } from '@/src/tools/api-signal-explorer/neuromap';
 import { createActionEvent, type ActionEvent, type ActionType } from '@/src/tools/api-signal-explorer/actions';
@@ -105,6 +105,12 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
   const [snippetLang, setSnippetLang] = useState<CodeSnippetLang>('curl');
   const [copiedEndpoint, setCopiedEndpoint] = useState<string | null>(null);
   const [selectedEndpoint, setSelectedEndpoint] = useState<EndpointData | null>(null);
+  
+  // AI Agent state
+  const [aiAgentActive, setAiAgentActive] = useState(false);
+  const [aiAgentStatus, setAiAgentStatus] = useState<'idle' | 'analyzing' | 'completed'>('idle');
+  const [aiInsights, setAiInsights] = useState<string[]>([]);
+  const [aiRecommendations, setAiRecommendations] = useState<Array<{ type: string; message: string }>>([]);
   
   const endpointMapRef = useRef<Map<string, EndpointData>>(new Map());
   const wsRef = useRef<WebSocket | null>(null);
@@ -280,6 +286,50 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
 
   const selectedEndpoints = endpoints.filter(ep => ep.selected);
 
+  // AI Agent skeletal functions (to be implemented)
+  const handleAiAgentToggle = () => {
+    setAiAgentActive(!aiAgentActive);
+    if (!aiAgentActive) {
+      setAiAgentStatus('idle');
+      setAiInsights([]);
+      setAiRecommendations([]);
+    }
+  };
+
+  const runAiAnalysis = async () => {
+    setAiAgentStatus('analyzing');
+    
+    // TODO: Implement AI analysis logic
+    // This is where we'll integrate with AI models to:
+    // - Analyze endpoint patterns
+    // - Detect authentication flows
+    // - Identify API versioning
+    // - Suggest optimal capture strategies
+    // - Detect rate limits
+    // - Map data dependencies
+    
+    // Skeletal placeholder
+    setTimeout(() => {
+      setAiInsights([
+        'Analyzing endpoint patterns...',
+        'Detecting authentication schemes...',
+        'Mapping API structure...',
+      ]);
+      setAiRecommendations([
+        { type: 'auth', message: 'OAuth 2.0 flow detected - capture access_token' },
+        { type: 'performance', message: 'Consider rate limiting - 100 req/min detected' },
+        { type: 'structure', message: 'REST API v2 - endpoints follow /api/v2/* pattern' },
+      ]);
+      setAiAgentStatus('completed');
+    }, 2000);
+  };
+
+  useEffect(() => {
+    if (aiAgentActive && endpoints.length > 0 && aiAgentStatus === 'idle') {
+      runAiAnalysis();
+    }
+  }, [aiAgentActive, endpoints.length, aiAgentStatus]);
+
   return (
     <div className="w-full flex flex-col bg-black rounded-lg border border-slate-800 overflow-hidden" style={{ height: '88vh' }}>
       {/* Header */}
@@ -352,10 +402,92 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
         )}
       </div>
 
-      {/* PIPELINE STAGE 2: NETWORK LOGS */}
+      {/* PIPELINE STAGE 2: AI AGENT */}
+      <div className="shrink-0 bg-gradient-to-r from-orange-900/20 to-transparent border-b border-orange-500/30 p-4">
+        <div className="flex items-center gap-3 mb-3">
+          <div className="flex items-center justify-center w-8 h-8 bg-orange-600 rounded-full text-white font-bold text-sm">2</div>
+          <h3 className="text-sm font-bold text-orange-400 tracking-wide">AI AGENT • INTELLIGENT ANALYSIS</h3>
+          <div className="ml-auto flex items-center gap-2">
+            <button
+              onClick={handleAiAgentToggle}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                aiAgentActive
+                  ? 'bg-orange-600 text-white shadow-lg'
+                  : 'bg-slate-700 text-slate-400 hover:bg-slate-600'
+              }`}
+            >
+              <Brain className="w-3.5 h-3.5" />
+              {aiAgentActive ? 'Active' : 'Activate'}
+            </button>
+            <ArrowDown className="w-4 h-4 text-slate-600" />
+          </div>
+        </div>
+        
+        {aiAgentActive ? (
+          <div className="space-y-3">
+            {/* AI Status */}
+            <div className="flex items-center gap-2 px-3 py-2 bg-slate-900/50 border border-orange-500/30 rounded-lg">
+              {aiAgentStatus === 'analyzing' ? (
+                <>
+                  <Loader2 className="w-4 h-4 text-orange-400 animate-spin" />
+                  <span className="text-xs text-orange-400">Analyzing traffic patterns...</span>
+                </>
+              ) : aiAgentStatus === 'completed' ? (
+                <>
+                  <Sparkles className="w-4 h-4 text-orange-400" />
+                  <span className="text-xs text-orange-400">Analysis complete</span>
+                </>
+              ) : (
+                <>
+                  <Brain className="w-4 h-4 text-slate-500" />
+                  <span className="text-xs text-slate-500">Waiting for traffic...</span>
+                </>
+              )}
+            </div>
+
+            {/* AI Insights */}
+            {aiInsights.length > 0 && (
+              <div className="space-y-1.5">
+                {aiInsights.map((insight, idx) => (
+                  <div key={idx} className="flex items-start gap-2 text-xs text-slate-400 px-2">
+                    <span className="text-orange-500 mt-0.5">•</span>
+                    <span>{insight}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* AI Recommendations */}
+            {aiRecommendations.length > 0 && (
+              <div className="grid grid-cols-1 gap-2">
+                {aiRecommendations.map((rec, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-start gap-2 px-3 py-2 bg-orange-900/20 border border-orange-500/20 rounded-lg"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-orange-400 mt-0.5 flex-shrink-0" />
+                    <div className="flex-1">
+                      <div className="text-xs font-medium text-orange-300 mb-0.5 capitalize">{rec.type}</div>
+                      <div className="text-xs text-slate-400">{rec.message}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="text-center py-4">
+            <Brain className="w-10 h-10 mx-auto mb-2 text-slate-700 opacity-50" />
+            <p className="text-xs text-slate-600">AI Agent disabled</p>
+            <p className="text-xs text-slate-700 mt-1">Click "Activate" to enable intelligent analysis</p>
+          </div>
+        )}
+      </div>
+
+      {/* PIPELINE STAGE 3: NETWORK LOGS */}
       <div className="flex-1 flex flex-col min-h-0 bg-gradient-to-r from-cyan-900/10 to-transparent border-b border-cyan-500/30">
         <div className="shrink-0 flex items-center gap-3 p-4 pb-3 border-b border-slate-800">
-          <div className="flex items-center justify-center w-8 h-8 bg-cyan-600 rounded-full text-white font-bold text-sm">2</div>
+          <div className="flex items-center justify-center w-8 h-8 bg-cyan-600 rounded-full text-white font-bold text-sm">3</div>
           <h3 className="text-sm font-bold text-cyan-400 tracking-wide">CAPTURE • NETWORK TRAFFIC</h3>
           <label className="ml-auto flex items-center gap-2 cursor-pointer text-xs text-slate-400">
             <input
@@ -422,11 +554,11 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
         </div>
       </div>
 
-      {/* PIPELINE STAGE 3: CODE SNIPPETS */}
+      {/* PIPELINE STAGE 4: CODE SNIPPETS */}
       <div className="shrink-0 bg-gradient-to-r from-green-900/20 to-transparent" style={{ height: '30%' }}>
         <div className="h-full flex flex-col">
           <div className="shrink-0 flex items-center gap-3 p-4 pb-3 border-b border-slate-800">
-            <div className="flex items-center justify-center w-8 h-8 bg-green-600 rounded-full text-white font-bold text-sm">3</div>
+            <div className="flex items-center justify-center w-8 h-8 bg-green-600 rounded-full text-white font-bold text-sm">4</div>
             <h3 className="text-sm font-bold text-green-400 tracking-wide">OUTPUT • CODE SNIPPETS</h3>
             <div className="ml-auto flex items-center gap-2">
               {(['curl', 'fetch', 'axios', 'python'] as CodeSnippetLang[]).map((lang) => (
