@@ -1373,47 +1373,6 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
           <h2 className="text-lg font-bold text-red-500 font-mono tracking-wide">API SIGNAL PIPELINE</h2>
         </div>
         <div className="flex items-center gap-2">
-          {/* Autonomous Mode Status */}
-          {autonomousMode && (
-            <div className="flex items-center gap-1.5 px-3 py-2 bg-green-900/30 border border-green-600/30 rounded text-xs text-green-400 animate-pulse">
-              <div className="w-2 h-2 bg-green-500 rounded-full" />
-              <span className="font-semibold">AUTONOMOUS</span>
-              <span className="text-green-300">{orchestratorState.iterationCount} iterations</span>
-            </div>
-          )}
-          
-          {/* Autonomous Mode Controls */}
-          {!autonomousMode ? (
-            <button
-              onClick={startAutonomousMode}
-              disabled={!userGoal || endpoints.length === 0}
-              className="flex items-center gap-1.5 px-3 py-2 bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed rounded text-xs text-white font-semibold"
-              title="Start autonomous mode - AI will automatically test and lock steps"
-            >
-              <Play className="w-3.5 h-3.5" />
-              Start Auto
-            </button>
-          ) : (
-            <button
-              onClick={stopAutonomousMode}
-              className="flex items-center gap-1.5 px-3 py-2 bg-red-600 hover:bg-red-700 rounded text-xs text-white font-semibold"
-            >
-              <Pause className="w-3.5 h-3.5" />
-              Stop
-            </button>
-          )}
-
-          {/* Save & Finish Button */}
-          {lockedSteps.length > 0 && (
-            <button
-              onClick={saveAndFinish}
-              className="flex items-center gap-1.5 px-3 py-2 bg-purple-600 hover:bg-purple-700 rounded text-xs text-white font-semibold"
-            >
-              <Download className="w-3.5 h-3.5" />
-              Save & Finish
-            </button>
-          )}
-
           <div className="flex items-center gap-1.5 px-3 py-2 bg-purple-900/30 border border-purple-600/30 rounded text-xs text-purple-400">
             <MessageSquare className="w-3.5 h-3.5" />
             <span>AI Assistant</span>
