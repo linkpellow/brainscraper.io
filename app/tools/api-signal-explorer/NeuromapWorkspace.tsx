@@ -11,6 +11,7 @@ import { analyzeKeywords, scoreEndpointRelevance, type KeywordAnalysis } from '@
 import { extractSmartVariables, detectAuthMethod, generateUsageExamples } from '@/utils/ai/smart-variables';
 import { validateResponse, suggestImprovedTarget } from '@/utils/ai/success-validator';
 import { findMatchingScenarios, getContextualHints, type Scenario } from '@/utils/ai/auto-suggestions';
+import { getInitialAgentState, updateAgentState, shouldLoop, getNextObjective, type AgentState } from '@/utils/ai/agent-rules';
 import AIChatPanel, { type ChatMessage } from './AIChatPanel';
 
 type EndpointData = {
@@ -241,6 +242,7 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatProcessing, setChatProcessing] = useState(false);
   const [conversationStep, setConversationStep] = useState<'goal' | 'constraints' | 'target' | 'complete' | null>('goal');
+  const [agentState, setAgentState] = useState<AgentState>(getInitialAgentState());
   
   const endpointMapRef = useRef<Map<string, EndpointData>>(new Map());
   const wsRef = useRef<WebSocket | null>(null);
@@ -498,9 +500,22 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
       // User is answering the goal question
       setUserGoal(msg);
       
+      // Update agent state
+      const newState = updateAgentState(agentState, {
+        phase: 'goal',
+        action: 'User defined goal',
+        outcome: 'success'
+      });
+      newState.currentPhase = 'constraints';
+      newState.goalsAchieved.push('Goal defined');
+      newState.currentObjective = getNextObjective(newState);
+      newState.nextAction = 'Get user to specify constraints';
+      newState.certaintyLevels.workflow += 20;
+      setAgentState(newState);
+      
       addChatMessage('assistant',
-        `✓ Goal set: **"${msg}"**\n\n` +
-        `**Any constraints?**`,
+        `✓ Goal locked: **"${msg}"**\n\n` +
+        `**What constraints should I know about?**`,
         { type: 'success' }
       );
       
@@ -512,7 +527,7 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
           `• Pagination: "Data is paginated" or "Returns 50 items per page"\n` +
           `• Filters: "Must filter by date range"\n` +
           `• Permissions: "Admin access only"\n\n` +
-          `Type "none" or "skip" if no constraints apply.`,
+          `Type "none" or "skip" if no constraints.`,
           { type: 'suggestion' }
         );
       }, 300);
@@ -521,13 +536,27 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
     } 
     else if (conversationStep === 'constraints') {
       // User is answering constraints question
-      if (msg.toLowerCase() !== 'none' && msg.toLowerCase() !== 'skip') {
+      const hasConstraints = msg.toLowerCase() !== 'none' && msg.toLowerCase() !== 'skip';
+      if (hasConstraints) {
         setUserConstraints(msg);
       }
       
+      // Update agent state
+      const newState = updateAgentState(agentState, {
+        phase: 'constraints',
+        action: hasConstraints ? 'Constraints identified' : 'No constraints',
+        outcome: 'success'
+      });
+      newState.currentPhase = 'target';
+      newState.goalsAchieved.push('Constraints defined');
+      newState.currentObjective = getNextObjective(newState);
+      newState.nextAction = 'Get user to define target data structure';
+      newState.certaintyLevels.workflow += 15;
+      setAgentState(newState);
+      
       addChatMessage('assistant',
-        `${msg.toLowerCase() === 'none' || msg.toLowerCase() === 'skip' ? '✓ No constraints.' : `✓ Constraints noted: **"${msg}"**`}\n\n` +
-        `**What data structure do you expect?**`,
+        `${hasConstraints ? `✓ Constraints locked: **"${msg}"**` : '✓ No constraints needed.'}\n\n` +
+        `**What's your target data structure?**`,
         { type: 'success' }
       );
       
@@ -542,7 +571,7 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
           `• "{ id, name, price, stock }"\n` +
           `• "Array of { product_id, title, quantity }"\n` +
           `• "user.id, user.email, user.profile.bio"\n\n` +
-          `This helps me auto-validate API responses!`,
+          `I'll use this to auto-validate responses!`,
           { type: 'suggestion' }
         );
       }, 300);
@@ -557,27 +586,43 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
       const analysis = analyzeKeywords(userGoal, userConstraints, msg);
       const matches = findMatchingScenarios(userGoal, msg);
       
-      let response = `Excellent! I've got everything I need:\n\n`;
-      response += `✓ **Goal**: ${userGoal}\n`;
-      response += `✓ **Constraints**: ${userConstraints || 'None'}\n`;
-      response += `✓ **Target Data**: ${msg}\n\n`;
+      // Update agent state - SETUP COMPLETE
+      const newState = updateAgentState(agentState, {
+        phase: 'target',
+        action: 'Target data defined',
+        outcome: 'success'
+      });
+      newState.currentPhase = 'capture';
+      newState.goalsAchieved.push('Target data defined', 'Setup complete');
+      newState.currentObjective = getNextObjective(newState);
+      newState.nextAction = 'Get user to launch browser and capture traffic';
+      newState.certaintyLevels.workflow = 80;
+      newState.certaintyLevels.messenger = 90;
+      newState.userConfidence = 80;
+      setAgentState(newState);
+      
+      // STRAIGHT LINE: Control the frame, show certainty, direct next action
+      let response = `✅ **Setup Complete**\n\n`;
+      response += `I've locked in your workflow requirements:\n\n`;
+      response += `✓ Goal: ${userGoal}\n`;
+      response += `✓ Constraints: ${userConstraints || 'None'}\n`;
+      response += `✓ Target: ${msg}\n\n`;
       
       if (analysis.intent.confidence > 0.7) {
-        response += `🎯 **Detected Intent**: ${analysis.intent.action}\n`;
+        response += `🎯 Intent detected: **${analysis.intent.action}** (${Math.round(analysis.intent.confidence * 100)}% confidence)\n`;
         if (analysis.entities.length > 0) {
-          response += `📦 **Entities**: ${analysis.entities.map(e => e.name).join(', ')}\n`;
+          response += `📦 Looking for: ${analysis.entities.map(e => e.name).join(', ')}\n`;
         }
+        response += `\n`;
       }
       
-      response += `\n🚀 **Next Steps**:\n`;
-      response += `1. Launch the browser to capture API traffic\n`;
-      response += `2. I'll filter endpoints by relevance\n`;
-      response += `3. Select and test endpoints\n`;
-      response += `4. Lock successful steps\n\n`;
-      
-      if (matches.length > 0) {
-        response += `💡 I also found ${matches.length} similar template${matches.length > 1 ? 's' : ''} if you want to compare!`;
-      }
+      // ABC: Always Be Closing - direct to next action
+      response += `**🚀 Ready to capture API traffic.**\n\n`;
+      response += `**Next:** Click "Launch Browser" above and browse the target site normally. I'll:\n`;
+      response += `• Capture all API calls automatically\n`;
+      response += `• Filter to only relevant endpoints\n`;
+      response += `• Suggest the best step to test first\n\n`;
+      response += `Once you see endpoints appear, I'll guide you to test and lock your first step.`;
       
       addChatMessage('assistant', response, { type: 'success' });
       
@@ -770,6 +815,33 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
     setContextualHints(hints);
   }, [userGoal, userConstraints, targetData, endpoints.length, lockedSteps.length]);
 
+  // Track endpoints captured
+  useEffect(() => {
+    if (endpoints.length > 0 && agentState.currentPhase === 'capture') {
+      const newState = updateAgentState(agentState, {
+        phase: 'capture',
+        action: `Captured ${endpoints.length} endpoints`,
+        outcome: 'success'
+      });
+      newState.currentPhase = 'test';
+      newState.goalsAchieved.push(`${endpoints.length} endpoints captured`);
+      newState.currentObjective = getNextObjective(newState);
+      newState.nextAction = 'Get user to test suggested endpoint';
+      newState.certaintyLevels.system = 90;
+      setAgentState(newState);
+
+      // AUTO-MESSAGE: Traffic captured
+      if (endpoints.length >= 3) {
+        addChatMessage('assistant',
+          `✅ **Traffic captured!** ${endpoints.length} endpoints detected.\n\n` +
+          `${showOnlyRelevant ? `Smart filter active: Showing most relevant endpoints.\n\n` : `💡 Enable "Smart Filter" to see only relevant endpoints.\n\n`}` +
+          `**Next:** Select an endpoint from the list and I'll generate test code automatically.`,
+          { type: 'success' }
+        );
+      }
+    }
+  }, [endpoints.length]);
+
   // Send welcome message on mount
   useEffect(() => {
     if (chatMessages.length === 0) {
@@ -812,20 +884,69 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
   useEffect(() => {
     if (testResult) {
       if (testResult.success) {
+        // Update agent state - TEST SUCCESS
+        const newState = updateAgentState(agentState, {
+          phase: 'test',
+          action: 'Test succeeded',
+          outcome: 'success'
+        });
+        newState.currentPhase = 'lock';
+        newState.currentObjective = getNextObjective(newState);
+        newState.nextAction = 'Get user to lock this successful step';
+        newState.certaintyLevels.workflow = Math.min(100, newState.certaintyLevels.workflow + 15);
+        setAgentState(newState);
+
+        // STRAIGHT LINE: Show certainty, make locking the obvious next action
+        const matchScore = successValidation ? Math.round(successValidation.score * 100) : null;
         addChatMessage('assistant',
-          `✅ **Test Successful!**\n\n` +
-          `Status: ${testResult.status} ${testResult.statusText}\n\n` +
-          `${successValidation ? `Match score: ${Math.round(successValidation.score * 100)}%\n\n` : ''}` +
-          `Ready to lock this as Step ${currentStepFocus}?`,
+          `✅ **Test Successful!** (${testResult.status} ${testResult.statusText})\n\n` +
+          `${matchScore ? `📊 Match score: **${matchScore}%** ${matchScore >= 80 ? '🎯' : ''}\n` : ''}` +
+          `${successValidation?.matches ? `✓ Found: ${successValidation.matches.join(', ')}\n` : ''}` +
+          `\n**Ready to lock Step ${currentStepFocus}?**\n\n` +
+          `Locking this step will:\n` +
+          `• Save it to your workflow\n` +
+          `• Extract variables automatically\n` +
+          `• Let me suggest the next step`,
           { type: 'success' }
         );
       } else {
-        addChatMessage('assistant',
-          `⚠️ **Test Failed**\n\n` +
-          `${testResult.error || `Status: ${testResult.status}`}\n\n` +
-          `Try a different endpoint or check the request parameters.`,
-          { type: 'warning' }
-        );
+        // Update agent state - TEST FAILED (but this is learning!)
+        const newState = updateAgentState(agentState, {
+          phase: 'test',
+          action: `Test failed: ${testResult.status || 'error'}`,
+          outcome: 'failed'
+        });
+        newState.blockers.push(`Test failed: ${testResult.error || testResult.status}`);
+        setAgentState(newState);
+
+        // STRAIGHT LINE: Failed test is a learning opportunity
+        let response = `⚠️ **Test returned ${testResult.status || 'error'}**\n\n`;
+        
+        // Handle common failures
+        if (testResult.status === 401 || testResult.status === 403) {
+          response += `This means **authentication is required**.\n\n`;
+          response += `I'm looking at the captured traffic for auth endpoints...\n\n`;
+          const authEndpoints = endpoints.filter(ep => 
+            ep.path.toLowerCase().includes('auth') || 
+            ep.path.toLowerCase().includes('login') ||
+            ep.method === 'POST' && ep.path.includes('token')
+          );
+          if (authEndpoints.length > 0) {
+            response += `✓ Found ${authEndpoints.length} potential auth endpoint(s).\n\n`;
+            response += `**Suggestion:** Test "${authEndpoints[0].method} ${authEndpoints[0].path}" first to get credentials.`;
+          } else {
+            response += `Try browsing to the login page to capture the auth endpoint.`;
+          }
+        } else if (testResult.status === 404) {
+          response += `Endpoint not found. The URL might be incorrect or may require parameters.`;
+        } else if (testResult.status === 429) {
+          response += `**Rate limit hit.** Wait a moment and try again.`;
+        } else {
+          response += `${testResult.error || 'The request didn't succeed.'}\n\n`;
+          response += `Try a different endpoint or check the captured traffic for clues.`;
+        }
+
+        addChatMessage('assistant', response, { type: 'warning' });
       }
     }
   }, [testResult]);
@@ -930,9 +1051,6 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
     const extractedVars = extractSmartVariables(testResult.body);
     const dependencies = findDependencies(currentCode, lockedSteps);
     
-    // Detect auth method if this looks like a login step
-    const authMethod = detectAuthMethod(testResult.body);
-    
     const newStep: LockedStep = {
       id: `step-${currentStepFocus}`,
       stepNumber: currentStepFocus,
@@ -947,16 +1065,45 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
     };
     
     setLockedSteps(prev => [...prev, newStep]);
-    setCurrentStepFocus(prev => prev + 1);
-    setAiAgentStatus('idle'); // Trigger re-analysis for next step
+    const nextStepNum = currentStepFocus + 1;
+    setCurrentStepFocus(nextStepNum);
     
-    // Show usage examples for extracted variables
-    if (Object.keys(extractedVars).length > 0) {
-      const examples = generateUsageExamples(extractedVars);
-      if (examples.length > 0) {
-        console.log('[Smart Lock] Variable usage examples:', examples);
-      }
+    // Update agent state - STEP LOCKED!
+    const newState = updateAgentState(agentState, {
+      phase: 'lock',
+      action: `Step ${currentStepFocus} locked`,
+      outcome: 'success'
+    });
+    newState.currentPhase = 'test';
+    newState.goalsAchieved.push(`Step ${currentStepFocus} locked`);
+    newState.currentObjective = `Lock Step ${nextStepNum}`;
+    newState.nextAction = 'Suggest and test next endpoint';
+    newState.certaintyLevels.workflow = Math.min(100, newState.certaintyLevels.workflow + 10);
+    newState.userConfidence = Math.min(100, newState.userConfidence + 10);
+    newState.blockers = []; // Clear blockers on success
+    setAgentState(newState);
+
+    // STRAIGHT LINE: Celebrate progress, show value, direct to next action
+    const varCount = Object.keys(extractedVars).length;
+    let response = `🎉 **Step ${currentStepFocus} Locked!**\n\n`;
+    response += `✓ ${selectedEndpoint.method} ${selectedEndpoint.path}\n`;
+    if (varCount > 0) {
+      response += `✓ Extracted ${varCount} variable${varCount > 1 ? 's' : ''}: ${Object.keys(extractedVars).join(', ')}\n`;
     }
+    if (dependencies.length > 0) {
+      response += `✓ Uses: ${dependencies.join(', ')}\n`;
+    }
+    response += `\n📊 **Progress:** ${lockedSteps.length + 1} step${lockedSteps.length + 1 > 1 ? 's' : ''} in your workflow\n\n`;
+    
+    // ABC: Always suggest next action
+    if (aiAgentActive) {
+      response += `**Analyzing next step...**\n\nI'll suggest the best endpoint to test next.`;
+      setAiAgentStatus('idle'); // Trigger AI re-analysis
+    } else {
+      response += `**Next:** Select another endpoint to test, or activate the AI Agent for smart suggestions.`;
+    }
+
+    addChatMessage('assistant', response, { type: 'success' });
     
     // Clear current test
     setTestResult(null);
@@ -1704,6 +1851,7 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
         isProcessing={chatProcessing}
         isExpanded={chatExpanded}
         onToggleExpand={() => setChatExpanded(!chatExpanded)}
+        agentState={agentState}
       />
     </div>
   );
