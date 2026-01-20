@@ -1,0 +1,141 @@
+{
+  "version": "1.0",
+  "session": {
+    "startTs": 1705701600000,
+    "endTs": 1705701900000,
+    "durationMs": 300000
+  },
+  "flows": [
+    {
+      "ts": 1705701610000,
+      "method": "GET",
+      "url": "https://api.example.com/users?page=1&limit=20",
+      "status": 200,
+      "reqHeaders": {
+        "authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+        "content-type": "application/json",
+        "user-agent": "Mozilla/5.0"
+      },
+      "resHeaders": {
+        "content-type": "application/json",
+        "x-rate-limit-remaining": "99"
+      },
+      "reqBodySize": 0,
+      "resBodySize": 4521,
+      "resMime": "application/json",
+      "durationMs": 142
+    },
+    {
+      "ts": 1705701620000,
+      "method": "POST",
+      "url": "https://api.example.com/auth/login",
+      "status": 200,
+      "reqHeaders": {
+        "content-type": "application/json"
+      },
+      "resHeaders": {
+        "content-type": "application/json"
+      },
+      "reqBodySize": 78,
+      "resBodySize": 256,
+      "resMime": "application/json",
+      "durationMs": 89
+    },
+    {
+      "ts": 1705701625000,
+      "method": "GET",
+      "url": "https://api.example.com/products/12345",
+      "status": 200,
+      "reqHeaders": {
+        "authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+      },
+      "resHeaders": {
+        "content-type": "application/json"
+      },
+      "resBodySize": 1024,
+      "resMime": "application/json",
+      "durationMs": 56
+    },
+    {
+      "ts": 1705701630000,
+      "method": "PUT",
+      "url": "https://api.example.com/users/profile",
+      "status": 200,
+      "reqHeaders": {
+        "authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+        "content-type": "application/json"
+      },
+      "resHeaders": {
+        "content-type": "application/json"
+      },
+      "reqBodySize": 345,
+      "resBodySize": 412,
+      "resMime": "application/json",
+      "durationMs": 123
+    },
+    {
+      "ts": 1705701635000,
+      "method": "DELETE",
+      "url": "https://api.example.com/cart/items/789",
+      "status": 204,
+      "reqHeaders": {
+        "authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+      },
+      "resHeaders": {},
+      "reqBodySize": 0,
+      "resBodySize": 0,
+      "durationMs": 45
+    },
+    {
+      "ts": 1705701640000,
+      "method": "POST",
+      "url": "https://api.stripe.com/v1/payment_intents",
+      "status": 200,
+      "reqHeaders": {
+        "authorization": "Bearer sk_test_...",
+        "content-type": "application/x-www-form-urlencoded"
+      },
+      "resHeaders": {
+        "content-type": "application/json"
+      },
+      "reqBodySize": 234,
+      "resBodySize": 1567,
+      "resMime": "application/json",
+      "durationMs": 234
+    },
+    {
+      "ts": 1705701645000,
+      "method": "GET",
+      "url": "https://api.github.com/repos/user/repo/commits",
+      "status": 200,
+      "reqHeaders": {
+        "authorization": "token ghp_...",
+        "accept": "application/vnd.github.v3+json"
+      },
+      "resHeaders": {
+        "content-type": "application/json",
+        "x-ratelimit-remaining": "4999"
+      },
+      "resBodySize": 8934,
+      "resMime": "application/json",
+      "durationMs": 178
+    },
+    {
+      "ts": 1705701650000,
+      "method": "POST",
+      "url": "https://api.openai.com/v1/chat/completions",
+      "status": 200,
+      "reqHeaders": {
+        "authorization": "Bearer sk-...",
+        "content-type": "application/json"
+      },
+      "resHeaders": {
+        "content-type": "application/json"
+      },
+      "reqBodySize": 456,
+      "resBodySize": 2345,
+      "resMime": "application/json",
+      "durationMs": 1234
+    }
+  ]
+}
