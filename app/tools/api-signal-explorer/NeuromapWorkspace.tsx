@@ -499,15 +499,23 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
       setUserGoal(msg);
       
       addChatMessage('assistant',
-        `Perfect! Your goal: **"${msg}"**\n\n` +
-        `Now, are there any **constraints** I should know about?\n\n` +
-        `For example:\n` +
-        `• "Must be authenticated"\n` +
-        `• "Rate limited to 100 requests/min"\n` +
-        `• "Requires pagination"\n\n` +
-        `Or just say "none" or "skip" if there are no special constraints.`,
-        { type: 'suggestion' }
+        `✓ Goal set: **"${msg}"**\n\n` +
+        `**Any constraints?**`,
+        { type: 'success' }
       );
+      
+      setTimeout(() => {
+        addChatMessage('assistant',
+          `💡 **Constraint Examples:**\n\n` +
+          `• Authentication: "Requires login" or "Needs API key"\n` +
+          `• Rate limits: "Max 100 requests per minute"\n` +
+          `• Pagination: "Data is paginated" or "Returns 50 items per page"\n` +
+          `• Filters: "Must filter by date range"\n` +
+          `• Permissions: "Admin access only"\n\n` +
+          `Type "none" or "skip" if no constraints apply.`,
+          { type: 'suggestion' }
+        );
+      }, 300);
       
       setConversationStep('constraints');
     } 
@@ -518,15 +526,26 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
       }
       
       addChatMessage('assistant',
-        `${msg.toLowerCase() === 'none' || msg.toLowerCase() === 'skip' ? 'Got it, no special constraints.' : `Noted! Constraints: **"${msg}"**`}\n\n` +
-        `Finally, what **data structure** are you expecting in the response?\n\n` +
-        `Examples:\n` +
-        `• "{ id, name, price, stock }"\n` +
-        `• "Array of { product_id, title, quantity }"\n` +
-        `• "id, email, username, created_at"\n\n` +
-        `This helps me validate responses automatically!`,
-        { type: 'suggestion' }
+        `${msg.toLowerCase() === 'none' || msg.toLowerCase() === 'skip' ? '✓ No constraints.' : `✓ Constraints noted: **"${msg}"**`}\n\n` +
+        `**What data structure do you expect?**`,
+        { type: 'success' }
       );
+      
+      setTimeout(() => {
+        addChatMessage('assistant',
+          `💡 **Data Structure Tips:**\n\n` +
+          `✓ List the key fields you need\n` +
+          `✓ Use JSON-like syntax: { field1, field2, field3 }\n` +
+          `✓ For arrays, prefix with "Array of"\n` +
+          `✓ Use actual field names if you know them\n\n` +
+          `**Examples:**\n` +
+          `• "{ id, name, price, stock }"\n` +
+          `• "Array of { product_id, title, quantity }"\n` +
+          `• "user.id, user.email, user.profile.bio"\n\n` +
+          `This helps me auto-validate API responses!`,
+          { type: 'suggestion' }
+        );
+      }, 300);
       
       setConversationStep('target');
     }
@@ -756,15 +775,25 @@ export default function NeuromapWorkspace({ neuromap, onUpdate, onClose, wsUrl =
     if (chatMessages.length === 0) {
       // Initial welcome message
       addChatMessage('assistant',
-        `👋 Hi! I'm your AI assistant. Let's build your API workflow together!\n\n` +
-        `**First, what's your goal?**\n\n` +
-        `Tell me what data you want to extract. For example:\n` +
-        `• "Get all products with prices"\n` +
-        `• "Fetch user profile data"\n` +
-        `• "Search for orders by date"\n\n` +
-        `What would you like to do?`,
+        `**Specify your goal.**`,
         { type: 'suggestion' }
       );
+      
+      // Add best practices note
+      setTimeout(() => {
+        addChatMessage('assistant',
+          `💡 **Best Practices:**\n\n` +
+          `✓ Be specific: "Get all products" → "Get all products with prices and stock"\n` +
+          `✓ Use action verbs: "Get", "Fetch", "Search", "List", "Create"\n` +
+          `✓ Mention key data: Include what fields you need\n` +
+          `✓ Keep it simple: One sentence is enough\n\n` +
+          `**Examples:**\n` +
+          `• "Get all products with prices and inventory"\n` +
+          `• "Fetch user profile including email and bio"\n` +
+          `• "Search orders from the last 30 days"`,
+          { type: 'suggestion' }
+        );
+      }, 500);
     }
   }, []);
 
