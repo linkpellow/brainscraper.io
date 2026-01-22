@@ -15,6 +15,8 @@ export type CorrelationResult = {
 export type CorrelationOptions = {
   windowMs?: number;       // default 2000 (Δt ≤ 2000ms for target-action ↔ network)
   maxLinks?: number;      // default 12
+  baselineEvents?: Set<string>; // Event IDs to exclude (captured before interaction)
+  excludeBaseline?: boolean;    // Filter out baseline events (default: true)
 };
 
 /**
@@ -33,12 +35,58 @@ export function correlateActionToNetwork(
   const windowStart = action.ts - 150;
   const windowEnd = action.ts + windowMs;
 
+  // Generate body hash for deduplication
+  const getBodyHash = (event: RawNetworkEvent): string => {
+    const body = event.reqBodyText || '';
+    if (body.length === 0) return '';
+    // Simple hash (can be improved with crypto)
+    let hash = 0;
+    for (let i = 0; i < body.length; i++) {
+      const char = body.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32bit integer
+    }
+    return hash.toString(36);
+  };
+
+  // Track redirect chains
+  const redirectChains = new Map<string, RawNetworkEvent[]>();
+  for (const event of events) {
+    if (event.status && event.status >= 300 && event.status < 400) {
+      const location = event.resHeaders?.['location'] || event.resHeaders?.['Location'];
+      if (location) {
+        // Find the event that follows this redirect
+        const nextEvent = events.find(e => 
+          e.ts > event.ts && 
+          e.ts < event.ts + 1000 && // Within 1 second
+          e.url.includes(new URL(location, event.url).pathname)
+        );
+        if (nextEvent) {
+          const chain = redirectChains.get(event.url) || [event];
+          chain.push(nextEvent);
+          redirectChains.set(event.url, chain);
+        }
+      }
+    }
+  }
+
   const candidates = events.filter(event => {
     // Must be within time window
     if (event.ts < windowStart || event.ts > windowEnd) return false;
     
     // Skip OPTIONS requests (preflight)
     if (event.method === 'OPTIONS') return false;
+    
+    // Exclude baseline events if baseline is provided
+    if (options.excludeBaseline !== false && options.baselineEvents) {
+      const eventKey = `${event.ts}_${event.method}_${event.host}_${event.path}`;
+      const bodyHash = getBodyHash(event);
+      const hashKey = bodyHash ? `${eventKey}_${bodyHash}` : eventKey;
+      
+      if (options.baselineEvents.has(eventKey) || options.baselineEvents.has(hashKey)) {
+        return false; // This is a baseline event, exclude it
+      }
+    }
     
     return true;
   });
@@ -136,6 +184,25 @@ export function correlateActionToNetwork(
     // +0.10 if host matches dominant API host
     if (dominantHost && event.host === dominantHost) {
       confidence += 0.10;
+    }
+
+    // +0.15 if part of redirect chain (indicates important navigation)
+    for (const chain of redirectChains.values()) {
+      if (chain.some(e => e === event)) {
+        confidence += 0.15;
+        break;
+      }
+    }
+
+    // +0.10 if request body matches action context (e.g., form submission)
+    if (event.reqBodyText && action.type === 'submit') {
+      // Could enhance this to check if body contains form field names
+      confidence += 0.10;
+    }
+
+    // +0.05 if URL path matches action meta (e.g., selector contains path keyword)
+    if (action.meta?.url && event.url.includes(new URL(action.meta.url).pathname)) {
+      confidence += 0.05;
     }
 
     // Penalties

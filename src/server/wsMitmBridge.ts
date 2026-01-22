@@ -34,6 +34,16 @@ type MitmFlowEvent = {
   durationMs?: number;
   /** Gap 7: path to saved .wasm when resMime is application/wasm */
   wasmPath?: string;
+  /** Browser View: source of the event */
+  source?: 'mobile' | 'browser';
+  /** Browser View: request body text (if available) */
+  reqBodyText?: string;
+  /** Browser View: response body text (truncated, size limits apply) */
+  resBodyText?: string;
+  /** Browser View: action that triggered this event */
+  actionId?: string;
+  /** Browser View: phase indicator */
+  phase?: 'page_load' | 'interaction' | 'background';
 };
 
 type ClientMessage = 
@@ -41,7 +51,20 @@ type ClientMessage =
   | { type: 'get_history' }
   | { type: 'clear_session' }
   | { type: 'action'; action: any }
-  | { type: 'target-action'; eventType: string; selector: string; xpath: string; timestamp: number };
+  | { type: 'target-action'; eventType: string; selector: string; xpath: string; timestamp: number }
+  | { type: 'browser_events'; data: MitmFlowEvent[]; source: 'browser' }
+  | { type: 'browser_action'; action: ActionEvent }
+  | { type: 'browser_capture_start'; sessionId: string }
+  | { type: 'browser_capture_stop'; sessionId: string }
+  | { type: 'session_lifecycle_event'; event: SessionLifecycleEvent };
+
+type ActionEvent = {
+  id: string;
+  ts: number;
+  type: string;
+  label?: string;
+  meta?: Record<string, any>;
+};
 
 type ServerMessage =
   | { type: 'pong' }
@@ -52,13 +75,31 @@ type ServerMessage =
   | { type: 'action'; action: any }
   | { type: 'target-action'; eventType: string; selector: string; xpath: string; timestamp: number }
   | { type: 'wss_frame'; flow_id?: string; from_client?: boolean; content?: string; is_text?: boolean; ts?: number }
-  | { type: 'error'; message: string };
+  | { type: 'error'; message: string }
+  | { type: 'browser_action'; action: ActionEvent }
+  | { type: 'browser_capture_session'; sessionId: string; status: 'started' | 'stopped' }
+  | { type: 'session_lifecycle_event'; event: SessionLifecycleEvent };
+
+type SessionLifecycleEvent = {
+  type: 'session_started' | 'browser_opened' | 'browser_closed' | 'session_stopped' | 'har_exported' | 'error';
+  sessionId: string;
+  ts: number;
+  data?: {
+    url?: string;
+    message?: string;
+    code?: string;
+    details?: any;
+  };
+};
 
 class MitmBridge {
   private mitmClients: Set<WebSocket> = new Set();
   private explorerClients: Set<WebSocket> = new Set();
+  private browserClients: Set<WebSocket> = new Set(); // Browser capture service connections
   private eventHistory: MitmFlowEvent[] = [];
+  private actionHistory: ActionEvent[] = [];
   private eventCount = 0;
+  private activeBrowserSessions: Set<string> = new Set();
 
   constructor() {
     const server = createServer();
@@ -71,6 +112,8 @@ class MitmBridge {
         this.handleMitmConnection(ws);
       } else if (path === '/explorer') {
         this.handleExplorerConnection(ws);
+      } else if (path === '/browser') {
+        this.handleBrowserConnection(ws);
       } else {
         ws.close(1008, 'Invalid path');
       }
@@ -80,6 +123,7 @@ class MitmBridge {
       console.log(`🚀 WebSocket Bridge running on ws://localhost:${PORT}`);
       console.log(`   - mitmproxy endpoint: ws://localhost:${PORT}/mitm`);
       console.log(`   - explorer endpoint: ws://localhost:${PORT}/explorer`);
+      console.log(`   - browser endpoint: ws://localhost:${PORT}/browser`);
     });
 
     // Heartbeat to keep connections alive
@@ -114,11 +158,7 @@ class MitmBridge {
         if (events.length === 0) return;
 
         const sanitized = events.map(event => this.sanitizeEvent(event));
-        for (const event of sanitized) {
-          this.eventHistory.push(event);
-          this.eventCount++;
-          if (this.eventHistory.length > MAX_EVENTS_HISTORY) this.eventHistory.shift();
-        }
+        this.addEventsToHistory(sanitized);
         this.broadcastToExplorers({ type: 'events_batch', data: sanitized });
       } catch (error) {
         console.error('Error processing mitmproxy message:', error);
@@ -182,6 +222,32 @@ class MitmBridge {
             xpath: message.xpath,
             timestamp: message.timestamp,
           });
+        } else if (message.type === 'browser_events' && message.data) {
+          // Browser-source events: normalize and add to unified stream
+          const normalized = message.data.map(event => ({
+            ...event,
+            source: 'browser' as const,
+          }));
+          this.addEventsToHistory(normalized);
+          this.broadcastToExplorers({ type: 'events_batch', data: normalized });
+        } else if (message.type === 'browser_action' && message.action) {
+          // Browser action events: add to action history and broadcast
+          this.actionHistory.push(message.action);
+          this.broadcastToExplorers({ type: 'browser_action', action: message.action });
+        } else if (message.type === 'browser_capture_start' && message.sessionId) {
+          this.activeBrowserSessions.add(message.sessionId);
+          this.broadcastToExplorers({
+            type: 'browser_capture_session',
+            sessionId: message.sessionId,
+            status: 'started',
+          });
+        } else if (message.type === 'browser_capture_stop' && message.sessionId) {
+          this.activeBrowserSessions.delete(message.sessionId);
+          this.broadcastToExplorers({
+            type: 'browser_capture_session',
+            sessionId: message.sessionId,
+            status: 'stopped',
+          });
         }
       } catch (error) {
         console.error('Error processing explorer message:', error);
@@ -200,6 +266,74 @@ class MitmBridge {
     ws.on('error', (error) => {
       console.error('Explorer client error:', error);
       this.explorerClients.delete(ws);
+    });
+  }
+
+  private addEventsToHistory(events: MitmFlowEvent[]) {
+    for (const event of events) {
+      // Ensure default source
+      if (!event.source) {
+        event.source = 'mobile';
+      }
+      this.eventHistory.push(event);
+      this.eventCount++;
+      if (this.eventHistory.length > MAX_EVENTS_HISTORY) this.eventHistory.shift();
+    }
+  }
+
+  private handleBrowserConnection(ws: WebSocket) {
+    console.log('🌐 Browser capture client connected');
+    this.browserClients.add(ws);
+
+    ws.on('message', (data: Buffer) => {
+      try {
+        const message = JSON.parse(data.toString()) as ClientMessage;
+        
+        if (message.type === 'browser_events' && message.data) {
+          const normalized = message.data.map(event => ({
+            ...this.sanitizeEvent(event),
+            source: 'browser' as const,
+          }));
+          this.addEventsToHistory(normalized);
+          this.broadcastToExplorers({ type: 'events_batch', data: normalized });
+        } else if (message.type === 'browser_action' && message.action) {
+          this.actionHistory.push(message.action);
+          this.broadcastToExplorers({ type: 'browser_action', action: message.action });
+        } else if (message.type === 'browser_capture_start' && message.sessionId) {
+          this.activeBrowserSessions.add(message.sessionId);
+          this.broadcastToExplorers({
+            type: 'browser_capture_session',
+            sessionId: message.sessionId,
+            status: 'started',
+          });
+        } else if (message.type === 'browser_capture_stop' && message.sessionId) {
+          this.activeBrowserSessions.delete(message.sessionId);
+          this.broadcastToExplorers({
+            type: 'browser_capture_session',
+            sessionId: message.sessionId,
+            status: 'stopped',
+          });
+        } else if (message.type === 'session_lifecycle_event' && (message as any).event) {
+          // Broadcast lifecycle events from browser capture service
+          const lifecycleMessage = message as { type: 'session_lifecycle_event'; event: SessionLifecycleEvent };
+          this.broadcastToExplorers({
+            type: 'session_lifecycle_event',
+            event: lifecycleMessage.event,
+          });
+        }
+      } catch (error) {
+        console.error('Error processing browser message:', error);
+      }
+    });
+
+    ws.on('close', () => {
+      console.log('🌐 Browser capture client disconnected');
+      this.browserClients.delete(ws);
+    });
+
+    ws.on('error', (error) => {
+      console.error('Browser capture client error:', error);
+      this.browserClients.delete(ws);
     });
   }
 

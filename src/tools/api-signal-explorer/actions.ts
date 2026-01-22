@@ -8,6 +8,7 @@ export type ActionType =
   | "click"
   | "mouseover"
   | "type"
+  | "change"      // form field change (select, checkbox, radio, input change)
   | "navigate"
   | "submit"
   | "mark_window"; // mobile/manual
@@ -71,6 +72,14 @@ export function generateActionLabel(action: ActionEvent): string {
         return `Typed ${action.meta.textLen} characters`;
       }
       return 'Type';
+    case 'change':
+      if (action.meta?.selector) {
+        const shortSelector = action.meta.selector.length > 50
+          ? action.meta.selector.substring(0, 50) + '...'
+          : action.meta.selector;
+        return `Changed ${shortSelector}`;
+      }
+      return 'Change Field';
     case 'navigate':
       if (action.meta?.url) {
         try {

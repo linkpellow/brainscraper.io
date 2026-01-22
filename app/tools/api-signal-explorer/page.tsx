@@ -467,18 +467,21 @@ export default function APISignalExplorerPage() {
                   query: Object.fromEntries(url.searchParams.entries()),
                   reqHeaders: flow.reqHeaders || {},
                   reqCookies: {},
-                  reqBodyText: undefined,
+                  reqBodyText: flow.reqBodyText,
                   reqBodyMime: undefined,
                   status: flow.status,
                   resHeaders: flow.resHeaders || {},
                   resMime: flow.resMime,
-                  resSize: flow.resBodySize,
+                  resBodySize: flow.resBodySize,
+                  resBodyText: flow.resBodyText,
                   durationMs: flow.durationMs,
-                  phase: interactionWindow && flow.ts >= interactionWindow.start && (!interactionWindow.end || flow.ts <= interactionWindow.end)
+                  source: flow.source || 'mobile',
+                  phase: flow.phase || (interactionWindow && flow.ts >= interactionWindow.start && (!interactionWindow.end || flow.ts <= interactionWindow.end)
                     ? 'interaction' as const
                     : sessionStartRef.current && flow.ts <= (sessionStartRef.current + 4000)
                     ? 'page_load' as const
-                    : 'background' as const,
+                    : 'background' as const),
+                  actionId: flow.actionId,
                 };
                 updateEndpointIncremental(networkEvent);
               } catch (e) {
@@ -509,14 +512,17 @@ export default function APISignalExplorerPage() {
                   query: Object.fromEntries(url.searchParams.entries()),
                   reqHeaders: flow.reqHeaders || {},
                   reqCookies: {},
-                  reqBodyText: undefined,
+                  reqBodyText: flow.reqBodyText,
                   reqBodyMime: undefined,
                   status: flow.status,
                   resHeaders: flow.resHeaders || {},
                   resMime: flow.resMime,
-                  resSize: flow.resBodySize,
+                  resBodySize: flow.resBodySize,
+                  resBodyText: flow.resBodyText,
                   durationMs: flow.durationMs,
-                  phase: 'background' as const,
+                  source: flow.source || 'mobile',
+                  phase: flow.phase || 'background' as const,
+                  actionId: flow.actionId,
                 };
                 updateEndpointIncremental(networkEvent);
               } catch (e) {
@@ -524,6 +530,15 @@ export default function APISignalExplorerPage() {
               }
             }
           }
+        } else if (message.type === 'browser_action' && (message as any).action) {
+          // Handle browser action events (DOM interactions)
+          // These will be correlated with network events by the correlation engine
+          // For now, just log them - they'll be used when we build the pipeline UI
+          console.log('[Browser Action]', (message as any).action);
+        } else if (message.type === 'browser_capture_session') {
+          // Handle capture session start/stop
+          const session = message as { sessionId: string; status: 'started' | 'stopped' };
+          console.log(`[Capture Session] ${session.status}: ${session.sessionId}`);
         } else if (message.type === 'status') {
           setConnectionStatus(message.connected ? 'connected' : 'disconnected');
         } else if (message.type === 'pong') {
