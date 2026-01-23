@@ -309,48 +309,67 @@ function extractTokensFromObject(
   }
 }
 
+/** Cookie names that indicate session/auth (including ASP.NET) */
+const SESSION_COOKIE_PATTERNS = [
+  'session',
+  'auth',
+  'token',
+  'jwt',
+  'sid',
+  'jsessionid',
+  'asp.net_sessionid',
+  'asp_net_sessionid',
+  'phpsessid',
+  'connect.sid',
+];
+
+function isSessionOrAuthCookie(name: string): boolean {
+  const n = name.toLowerCase();
+  return SESSION_COOKIE_PATTERNS.some((p) => n.includes(p) || n === p);
+}
+
 /**
- * Extract auth artifacts from cookies
+ * Extract auth artifacts from cookies (response Set-Cookie and request Cookie)
  */
 function extractFromCookies(
   event: RequestEvent,
   artifacts: AuthArtifact[],
   artifactMap: Map<string, AuthArtifact>
 ) {
-  // Check response cookies (Set-Cookie) for session/auth cookies
-  for (const cookie of event.responseCookies) {
+  const addCookieArtifact = (
+    cookie: { name: string; value: string; domain?: string; path?: string; secure?: boolean; httpOnly?: boolean; expires?: number }
+  ) => {
+    if (!isSessionOrAuthCookie(cookie.name)) return;
+    const key = `cookie:${cookie.name}:${event.id}`;
+    if (artifactMap.has(key)) return;
     const cookieName = cookie.name.toLowerCase();
-    
-    // Common session/auth cookie names
-    if (
-      cookieName.includes('session') ||
-      cookieName.includes('auth') ||
-      cookieName.includes('token') ||
-      cookieName.includes('jwt') ||
-      cookieName === 'sid' ||
-      cookieName === 'jsessionid'
-    ) {
-      const key = `cookie:${cookie.name}:${event.id}`;
-      if (!artifactMap.has(key)) {
-        const artifact: AuthArtifact = {
-          type: cookieName.includes('session') ? 'session_token' : 'cookie_auth',
-          name: cookie.name,
-          value: cookie.value,
-          location: 'cookie',
-          firstSeenAtEventId: event.id,
-          createdByUrl: event.url,
-          usedInEventIds: [],
-          metadata: {
-            domain: cookie.domain,
-            path: cookie.path,
-            secure: cookie.secure,
-            httpOnly: cookie.httpOnly,
-            expires: cookie.expires,
-          },
-        };
-        artifacts.push(artifact);
-        artifactMap.set(key, artifact);
-      }
-    }
+    const artifact: AuthArtifact = {
+      type: cookieName.includes('session') ? 'session_token' : 'cookie_auth',
+      name: cookie.name,
+      value: cookie.value,
+      location: 'cookie',
+      firstSeenAtEventId: event.id,
+      createdByUrl: event.url,
+      usedInEventIds: [],
+      metadata: {
+        domain: cookie.domain,
+        path: cookie.path,
+        secure: cookie.secure,
+        httpOnly: cookie.httpOnly,
+        expires: cookie.expires,
+      },
+    };
+    artifacts.push(artifact);
+    artifactMap.set(key, artifact);
+  };
+
+  // Response cookies (Set-Cookie)
+  for (const cookie of event.responseCookies) {
+    addCookieArtifact(cookie);
+  }
+
+  // Request cookies (Cookie header or request.cookies) – often only place cookies appear in HAR
+  for (const cookie of event.requestCookies) {
+    addCookieArtifact(cookie);
   }
 }

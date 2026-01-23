@@ -15,10 +15,11 @@ import * as cheerio from 'cheerio';
 interface QuoteRequest {
   zipCode: string | number;
   state: string;
-  applicationTypeID?: number;
+  applicationTypeID?: number; // Optional: if not provided, will try to auto-detect from state
   mktChannelID?: number;
   appDate?: string;
   productSelections?: Record<string, any>;
+  autoDetectApplicationType?: boolean; // If true and applicationTypeID not provided, will discover it
 }
 
 interface QuoteResponse {
@@ -519,7 +520,37 @@ export async function POST(request: NextRequest) {
   
   try {
     const body: QuoteRequest = await request.json();
-    const { zipCode, state, applicationTypeID, mktChannelID, appDate, productSelections } = body;
+    const { zipCode, state, applicationTypeID, mktChannelID, appDate, productSelections, autoDetectApplicationType } = body;
+    
+    // Auto-detect applicationTypeID if not provided and auto-detect is enabled
+    let finalApplicationTypeID = applicationTypeID;
+    if (!finalApplicationTypeID && autoDetectApplicationType) {
+      console.log('[USHEALTH Quote] Auto-detecting applicationTypeID for state:', state);
+      // Try to load cached mapping from data directory
+      try {
+        const { getDataDirectory } = await import('@/utils/dataDirectory');
+        const { promises: fs } = await import('fs');
+        const path = await import('path');
+        
+        const dataDir = getDataDirectory();
+        const mappingPath = path.join(dataDir, 'ushealth-application-type-mapping.json');
+        
+        try {
+          const mappingContent = await fs.readFile(mappingPath, 'utf-8');
+          const mapping = JSON.parse(mappingContent);
+          if (mapping[state]) {
+            finalApplicationTypeID = mapping[state];
+            console.log('[USHEALTH Quote] Found cached mapping:', state, '->', finalApplicationTypeID);
+          }
+        } catch (fileError: any) {
+          if (fileError.code !== 'ENOENT') {
+            console.warn('[USHEALTH Quote] Could not load mapping file:', fileError);
+          }
+        }
+      } catch (error) {
+        console.warn('[USHEALTH Quote] Could not auto-detect applicationTypeID:', error);
+      }
+    }
     
     // Step 0: Get session
     const session = await getUSHealthSession();
@@ -564,7 +595,7 @@ export async function POST(request: NextRequest) {
     
     // Step 2: Fetch product data
     const productDataResult = await fetchProductData(session, {
-      applicationTypeID,
+      applicationTypeID: finalApplicationTypeID,
       zipCode,
       state,
       mktChannelID,

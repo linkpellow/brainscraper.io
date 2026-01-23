@@ -308,10 +308,33 @@ function extractSessionCookies(
   );
   
   // Get the most recent values
+  // Include cookies that look like session/auth cookies OR any cookie for ASP.NET sites
+  const isASPNETSite = targetDomain.includes('.aspx') || 
+                       targetDomain.includes('ushealthgroup') ||
+                       bundle.events.some(e => e.path.includes('.aspx') || e.url.includes('.aspx'));
+  
   for (const cookie of relevantCookies) {
-    if (cookie.cookieName.toLowerCase().includes('session') ||
-        cookie.cookieName.toLowerCase().includes('auth') ||
-        cookie.cookieName.toLowerCase().includes('token')) {
+    const cookieNameLower = cookie.cookieName.toLowerCase();
+    const isSessionCookie = 
+      cookieNameLower.includes('session') ||
+      cookieNameLower.includes('auth') ||
+      cookieNameLower.includes('token') ||
+      cookieNameLower.includes('asp.net_sessionid') ||
+      cookieNameLower.includes('asp_net_sessionid') ||
+      cookieNameLower === 'asp.net_sessionid';
+    
+    // For ASP.NET sites, include ALL cookies (they often use session cookies)
+    if (isSessionCookie || (isASPNETSite && relevantCookies.length > 0)) {
+      sessionCookies.push({
+        name: cookie.cookieName,
+        value: cookie.value,
+      });
+    }
+  }
+  
+  // If no session cookies found but we have cookies for ASP.NET site, use all cookies
+  if (sessionCookies.length === 0 && isASPNETSite && relevantCookies.length > 0) {
+    for (const cookie of relevantCookies) {
       sessionCookies.push({
         name: cookie.cookieName,
         value: cookie.value,
@@ -465,17 +488,58 @@ export function createAuthWorkerFromHAR(
     );
   }
   
-  // No auth method found
+  // No auth method found - check if we have cookies that weren't detected
+  const allCookies = bundle.cookieJar.timeline.filter(c => 
+    c.domain.includes(targetDomain) || 
+    bundle.hosts.firstParty.some(h => c.domain.includes(h))
+  );
+  
   console.warn('[HARToAuthWorker] No authentication method found in HAR:', {
     availableEvents: bundle.events.length,
     targetDomain,
     authArtifacts: bundle.authArtifacts.length,
-    cookies: bundle.cookieJar.timeline.length,
+    totalCookies: bundle.cookieJar.timeline.length,
+    domainCookies: allCookies.length,
+    cookieNames: allCookies.map(c => c.cookieName),
     bearerTokens: bundle.authArtifacts.filter(a => a.type === 'bearer_token').length,
     apiKeys: bundle.authArtifacts.filter(a => a.type === 'api_key').length,
   });
   
-  return null;
+  // If we have cookies for the domain, use them (any domain – user can add another HAR later to enrich)
+  if (allCookies.length > 0) {
+    const fallbackCookies = allCookies.map(c => ({
+      name: c.cookieName,
+      value: c.value,
+    }));
+    const event =
+      bundle.events.find((e) => e.host.includes(targetDomain) && e.requestCookies.length > 0) ||
+      bundle.events.find((e) => e.host.includes(targetDomain)) ||
+      null;
+    console.log('[HARToAuthWorker] Using domain cookies (no explicit auth):', {
+      cookieCount: fallbackCookies.length,
+      cookieNames: fallbackCookies.map((c) => c.name),
+    });
+    return createAuthWorkerFromCookies(
+      sessionId,
+      targetDomain,
+      fallbackCookies,
+      event
+    );
+  }
+
+  // No auth found – create minimal worker anyway. User can upload another HAR later to add auth / map endpoints.
+  const firstEvent = bundle.events.find((e) =>
+    e.host.includes(targetDomain) || bundle.hosts.firstParty.some((h) => e.host.includes(h))
+  );
+  return createAuthWorkerState(
+    sessionId,
+    targetDomain,
+    firstEvent?.path || '/',
+    firstEvent?.method || 'GET',
+    { auth_method: 'none', har_imported: 'true' },
+    firstEvent?.responseBody?.parsed ?? firstEvent?.responseBody?.text ?? null,
+    { note: 'Upload another HAR with authenticated requests to add credentials or map endpoints.' }
+  );
 }
 
 /**

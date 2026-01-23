@@ -19,6 +19,7 @@
 
 import { getDataFilePath, safeReadFile, safeWriteFile, ensureDataDirectory } from './dataDirectory';
 import { withLock } from './fileLock';
+import { getUshaJwtFromAuthWorker } from './ushaAuthWorkerToken';
 
 interface CachedToken {
   token: string;
@@ -180,11 +181,12 @@ async function refreshUshaToken(existingToken: string): Promise<string | null> {
  * 
  * Priority order:
  * 1. Provided token (request parameter)
- * 2. Environment variable (USHA_JWT_TOKEN - user explicitly set, takes precedence over cache and file)
- * 3. Cached token (in-memory, if still valid, auto-refreshes when expired)
- * 4. Persistent file storage (survives restarts, auto-refreshes when expired)
- * 5. Cognito authentication (uses COGNITO_REFRESH_TOKEN or COGNITO_USERNAME/PASSWORD) - RECOMMENDED
- * 6. Direct OAuth authentication (USHA_USERNAME/USHA_PASSWORD or USHA_CLIENT_ID/USHA_CLIENT_SECRET)
+ * 2. Auth Worker (agent.ushadvisors.com) token (auto-refreshes via refresh_url; preferred)
+ * 3. Environment variable (USHA_JWT_TOKEN - user explicitly set, takes precedence over cache and file)
+ * 4. Cached token (in-memory, if still valid, auto-refreshes when expired)
+ * 5. Persistent file storage (survives restarts, auto-refreshes when expired)
+ * 6. Cognito authentication (uses COGNITO_REFRESH_TOKEN or COGNITO_USERNAME/PASSWORD) - RECOMMENDED
+ * 7. Direct OAuth authentication (USHA_USERNAME/USHA_PASSWORD or USHA_CLIENT_ID/USHA_CLIENT_SECRET)
  * 
  * Once a token is obtained, it will automatically refresh via the refresh endpoint and persist to disk.
  * Refreshed tokens survive server restarts. When USHA_JWT_TOKEN is set in environment variables,
@@ -207,8 +209,17 @@ export async function getUshaToken(providedToken?: string | null, forceRefresh: 
     }
   }
 
-  // Priority 2: Check environment variable FIRST (user explicitly set it, takes precedence over cache and file)
-  // This ensures that when USHA_JWT_TOKEN is configured, it's always used even if stale tokens exist in cache or file
+  // Priority 2: Auth worker (preferred) - continuous valid JWT without manual env updates
+  // If forceRefresh=true, tokenRefreshService will refresh when needed based on expires_at/refresh_url.
+  // We still allow env var override later if desired, but auth worker is the default.
+  const authWorkerToken = await getUshaJwtFromAuthWorker('agent.ushadvisors.com');
+  if (authWorkerToken && isValidJWTFormat(authWorkerToken)) {
+    console.log('🔑 [USHA_TOKEN] Using token from auth worker (agent.ushadvisors.com)');
+    return authWorkerToken;
+  }
+
+  // Priority 3: Check environment variable (user explicitly set it; useful as an override/fallback)
+  // This ensures that when USHA_JWT_TOKEN is configured, it's used even if stale tokens exist in cache or file
   const envToken = process.env.USHA_JWT_TOKEN;
   
   // Diagnostic logging to troubleshoot environment variable access

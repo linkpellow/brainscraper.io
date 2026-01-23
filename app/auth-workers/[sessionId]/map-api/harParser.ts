@@ -132,7 +132,7 @@ function extractResponseCookies(
 }
 
 /**
- * Parse request cookies from HAR entry
+ * Parse request cookies from HAR entry (request.cookies array)
  */
 function parseRequestCookies(
   cookies: Array<{
@@ -156,6 +156,31 @@ function parseRequestCookies(
     secure: c.secure,
     sameSite: c.sameSite as 'Strict' | 'Lax' | 'None' | undefined,
   }));
+}
+
+/**
+ * Parse Cookie header string (e.g. "name=value; name2=value2") into CookieRecord[].
+ * Many HAR exports put cookies only in the Cookie header, not in request.cookies.
+ */
+function parseCookieHeader(cookieHeader: string, host?: string): CookieRecord[] {
+  if (!cookieHeader || typeof cookieHeader !== 'string') return [];
+  const cookies: CookieRecord[] = [];
+  const pairs = cookieHeader.split(';');
+  for (const pair of pairs) {
+    const eq = pair.indexOf('=');
+    if (eq <= 0) continue;
+    const name = pair.slice(0, eq).trim();
+    const value = pair.slice(eq + 1).trim();
+    if (name && value) {
+      cookies.push({
+        name,
+        value,
+        domain: host,
+        path: '/',
+      });
+    }
+  }
+  return cookies;
 }
 
 /**
@@ -263,8 +288,21 @@ export function parseHAR(harContent: string | HAR): RequestEvent[] {
       // Extract response cookies
       const responseCookies = extractResponseCookies(entry.response.headers, entry.request.url);
       
-      // Parse request cookies
-      const requestCookies = parseRequestCookies(entry.request.cookies || []);
+      // Parse request cookies: use request.cookies array if present, else parse Cookie header
+      let requestCookies = parseRequestCookies(entry.request.cookies || []);
+      if (requestCookies.length === 0) {
+        const cookieHeader = (entry.request.headers || []).find(
+          (h: { name: string }) => h.name.toLowerCase() === 'cookie'
+        )?.value;
+      if (cookieHeader) {
+        try {
+          const reqUrl = new URL(entry.request.url);
+          requestCookies = parseCookieHeader(cookieHeader, reqUrl.hostname);
+        } catch {
+          requestCookies = parseCookieHeader(cookieHeader);
+        }
+      }
+      }
       
       // Parse query string
       const query = parseQueryString(entry.request.queryString);
