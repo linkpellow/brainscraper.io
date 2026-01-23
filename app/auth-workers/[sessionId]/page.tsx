@@ -65,6 +65,29 @@ export default function AuthWorkerDetailPage() {
     loadData();
   }, [sessionId, router]);
 
+  // Auto-refresh expired tokens on mount
+  useEffect(() => {
+    if (!session || loading || refreshing) return;
+
+    const checkAndRefresh = async () => {
+      const { needsTokenRefresh } = await import('../utils/tokenRefreshService');
+      const expiresAt = session.step2.extractedVars.expires_at 
+        ? parseInt(session.step2.extractedVars.expires_at, 10)
+        : null;
+      
+      // Check if token is expired or about to expire
+      const isExpired = expiresAt ? expiresAt <= Date.now() : false;
+      const needsRefresh = needsTokenRefresh(session);
+
+      if (isExpired || needsRefresh) {
+        console.log('[AuthWorkerDetail] Token expired or needs refresh, auto-refreshing...');
+        await handleRefreshToken();
+      }
+    };
+
+    checkAndRefresh();
+  }, [session, loading, refreshing]);
+
   const loadData = async () => {
     setLoading(true);
     try {
@@ -110,11 +133,23 @@ export default function AuthWorkerDetailPage() {
     try {
       const { refreshAuthWorkerToken } = await import('../utils/tokenRefreshService');
       const result = await refreshAuthWorkerToken(session.sessionId);
-      if (result.success) {
-        await loadData(); // Reload to show updated token
+      
+      if (result.success && result.newToken) {
+        // Reload data to show updated token and expiration
+        await loadData();
+        
+        // Show success message
+        console.log('[AuthWorkerDetail] ✅ Token refreshed successfully', {
+          expiresAt: result.expiresAt ? new Date(result.expiresAt).toISOString() : 'unknown',
+        });
+      } else {
+        // Show error message
+        console.error('[AuthWorkerDetail] ❌ Token refresh failed:', result.error);
+        alert(`Token refresh failed: ${result.error || 'Unknown error'}`);
       }
     } catch (error) {
       console.error('[AuthWorkerDetail] Refresh error:', error);
+      alert(`Token refresh error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setRefreshing(false);
     }

@@ -278,17 +278,79 @@ async function handleRefreshResponse(
 
   // Success: parse response and update session
   const data = await response.json();
-  const newAccessToken = data.access_token || data.accessToken;
-  const newRefreshToken = data.refresh_token || data.refreshToken || refreshToken;
-  const expiresIn = data.expires_in || data.expiresIn;
+  const tokenSource = data.tokenResult || data.data || data;
+  const newAccessToken = tokenSource.access_token || data.access_token || data.accessToken;
+  const newRefreshToken = tokenSource.refresh_token || data.refresh_token || data.refreshToken || refreshToken;
+  const expiresIn = tokenSource.expires_in || data.expires_in || data.expiresIn;
 
-  await updateSessionTokensOnServer(sessionId, newAccessToken, newRefreshToken);
+  // Extract expiration time
+  let expiresAt: number | undefined;
+  if (expiresIn) {
+    if (expiresIn > 1000000000) {
+      // Unix timestamp (seconds) - convert to milliseconds
+      expiresAt = expiresIn * 1000;
+    } else {
+      // Seconds until expiration - add to current time
+      expiresAt = Date.now() + (expiresIn * 1000);
+    }
+  } else if (newAccessToken) {
+    // Try to extract from JWT
+    try {
+      const parts = newAccessToken.split('.');
+      if (parts.length === 3) {
+        const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString());
+        if (payload.exp) {
+          expiresAt = payload.exp * 1000;
+        }
+      }
+    } catch {
+      // JWT parsing failed
+    }
+  }
+
+  // Update session with new token and expiration
+  const session = getSessionFromServer(sessionId);
+  if (session) {
+    const updatedExtractedVars = {
+      ...session.step2.extractedVars,
+      access_token: newAccessToken,
+    };
+    
+    if (newRefreshToken && newRefreshToken !== refreshToken) {
+      updatedExtractedVars.refresh_token = newRefreshToken;
+    }
+    
+    if (expiresAt) {
+      updatedExtractedVars.expires_at = expiresAt.toString();
+    }
+    if (expiresIn) {
+      updatedExtractedVars.expires_in = expiresIn.toString();
+    } else if (expiresAt) {
+      // Calculate expires_in from expires_at if not provided
+      const expiresInSeconds = Math.floor((expiresAt - Date.now()) / 1000);
+      if (expiresInSeconds > 0) {
+        updatedExtractedVars.expires_in = expiresInSeconds.toString();
+      }
+    }
+
+    // Update verification timestamp
+    session.step2.extractedVars = updatedExtractedVars;
+    session.step2.verificationStatus.verifiedAt = Date.now();
+    
+    // Save updated session
+    const { saveSessionToServer } = require('../../../auth-workers/utils/authWorkerServerStorage');
+    await saveSessionToServer(session);
+  } else {
+    // Fallback to updateSessionTokensOnServer if session not found
+    await updateSessionTokensOnServer(sessionId, newAccessToken, newRefreshToken);
+  }
 
   return NextResponse.json({
     success: true,
     sessionId,
     newAccessToken: newAccessToken ? `${newAccessToken.substring(0, 20)}...` : null,
     expiresIn,
+    expiresAt,
   });
 }
 
@@ -328,11 +390,121 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Check if refresh token exists
+  // Check if we have refresh capability
   const refreshToken = session.step2.extractedVars.refresh_token;
+  const refreshUrl = session.step2.extractedVars.refresh_url;
+  const accessToken = session.step2.extractedVars.access_token;
+
+  // If no refresh_token but we have refresh_url and access_token, try Bearer token refresh
+  if (!refreshToken && refreshUrl && accessToken) {
+    try {
+      console.log('[AuthWorker] Attempting Bearer token refresh (no refresh_token available)');
+      
+      const response = await fetch(refreshUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({}),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        return NextResponse.json(
+          {
+            error: `Bearer token refresh failed: ${response.status} ${response.statusText}`,
+            details: errorText.substring(0, 500),
+            url: refreshUrl,
+          },
+          { status: response.status }
+        );
+      }
+
+      const data = await response.json();
+      const tokenSource = data.tokenResult || data.data || data;
+      const newAccessToken = tokenSource.access_token || data.access_token;
+
+      if (!newAccessToken) {
+        return NextResponse.json(
+          { error: 'Bearer token refresh response missing access_token' },
+          { status: 400 }
+        );
+      }
+
+      // Extract expiration
+      let expiresAt: number | undefined;
+      const expiresIn = tokenSource.expires_in || data.expires_in;
+      
+      if (expiresIn) {
+        if (expiresIn > 1000000000) {
+          expiresAt = expiresIn * 1000;
+        } else {
+          expiresAt = Date.now() + (expiresIn * 1000);
+        }
+      } else {
+        // Try to extract from JWT
+        try {
+          const parts = newAccessToken.split('.');
+          if (parts.length === 3) {
+            const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString());
+            if (payload.exp) {
+              expiresAt = payload.exp * 1000;
+            }
+          }
+        } catch {
+          // JWT parsing failed
+        }
+      }
+
+      // Update session
+      const updatedExtractedVars = {
+        ...session.step2.extractedVars,
+        access_token: newAccessToken,
+      };
+
+      if (expiresAt) {
+        updatedExtractedVars.expires_at = expiresAt.toString();
+      }
+      if (expiresIn) {
+        updatedExtractedVars.expires_in = expiresIn.toString();
+      }
+
+      await updateSessionTokensOnServer(
+        sessionId,
+        newAccessToken,
+        undefined, // No new refresh token for Bearer refresh
+      );
+
+      return NextResponse.json({
+        success: true,
+        sessionId,
+        newAccessToken: newAccessToken ? `${newAccessToken.substring(0, 20)}...` : null,
+        expiresIn,
+        expiresAt,
+      });
+    } catch (error: any) {
+      console.error('[AuthWorker] Bearer token refresh error:', error);
+      return NextResponse.json(
+        {
+          error: `Bearer token refresh failed: ${error.message || 'Unknown error'}`,
+          url: refreshUrl,
+        },
+        { status: 500 }
+      );
+    }
+  }
+
+  // OAuth refresh_token flow requires refresh_token
   if (!refreshToken) {
     return NextResponse.json(
-      { error: 'No refresh token available for this session' },
+      { 
+        error: 'No refresh token available for this session',
+        suggestion: refreshUrl 
+          ? 'This session uses Bearer token refresh. The refresh should be handled client-side.'
+          : 'No refresh mechanism available. You may need to recreate the auth worker.',
+      },
       { status: 400 }
     );
   }

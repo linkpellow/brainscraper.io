@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "postbuild": "tsx scripts/initialize-auth-workers.ts || true",
     "start": "node server.js",
     "start:next": "next start",
     "lint": "next lint",
@@ -15,7 +16,9 @@
     "dnc-scrub": "tsx scripts/dnc-scrub-leads-one-by-one.ts",
     "test:single-lead": "tsx scripts/test-single-lead-production.ts",
     "test:scraperapi": "tsx scripts/test-scraperapi-skip-tracing.ts",
-    "network-inspector": "tsx src/network-inspector/cli.ts"
+    "network-inspector": "tsx src/network-inspector/cli.ts",
+    "sync-auth-worker": "tsx scripts/sync-auth-worker-to-production.ts",
+    "sync-all-auth-workers": "tsx scripts/sync-all-auth-workers.ts"
   },
   "keywords": [
     "spreadsheet",

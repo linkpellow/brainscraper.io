@@ -1,20 +1,189 @@
 /**
  * Token Refresh Service
  * 
- * Automatically refreshes tokens for auth workers using their stored refresh_url
- * Monitors token expiration and refreshes before tokens expire
+ * Industry-standard token refresh implementation supporting:
+ * - OAuth 2.0 refresh_token flow (standard OAuth)
+ * - Bearer token refresh flow (custom implementations like ushadvisors.com)
+ * - Automatic JWT expiration extraction and validation
+ * - Proper error handling and retry logic
+ * - Client and server-side storage synchronization
  */
 
 import type { PersistedAuthWorkerState } from './authWorkerPersistence';
-import { getSessionById, persistAuthWorkerState } from './authWorkerPersistence';
+import { getSessionById, persistAuthWorkerState, updateSessionTokens } from './authWorkerPersistence';
+
+/**
+ * Extract JWT expiration from token
+ */
+function extractJWTExpiration(token: string): number | null {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+    
+    const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString());
+    if (payload.exp) {
+      // JWT exp is in seconds, convert to milliseconds
+      return payload.exp * 1000;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Determine refresh method based on session data
+ */
+function getRefreshMethod(session: PersistedAuthWorkerState): 'oauth' | 'bearer' {
+  const extractedVars = session.step2.extractedVars;
+  
+  // If we have refresh_token, use OAuth flow
+  if (extractedVars.refresh_token) {
+    return 'oauth';
+  }
+  
+  // If we have refresh_url but no refresh_token, use Bearer token refresh
+  if (extractedVars.refresh_url) {
+    return 'bearer';
+  }
+  
+  // Default to OAuth if we have client credentials
+  if (extractedVars.client_id || extractedVars.clientId) {
+    return 'oauth';
+  }
+  
+  // Default to bearer for custom implementations
+  return 'bearer';
+}
+
+/**
+ * Refresh token using Bearer token flow (custom implementations)
+ * Uses current access token to get new access token
+ */
+async function refreshBearerToken(
+  session: PersistedAuthWorkerState,
+  refreshUrl: string
+): Promise<{ access_token: string; expires_in?: number; expires_at?: number }> {
+  const accessToken = session.step2.extractedVars.access_token;
+  if (!accessToken) {
+    throw new Error('No access token available for Bearer token refresh');
+  }
+
+  const response = await fetch(refreshUrl, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    },
+    body: JSON.stringify({}),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    let errorDetails: any = {};
+    try {
+      errorDetails = JSON.parse(errorText);
+    } catch {
+      errorDetails = { error: errorText };
+    }
+    
+    throw new Error(
+      `Bearer token refresh failed: ${response.status} ${response.statusText}. ` +
+      `Details: ${errorDetails.error || errorText.substring(0, 200)}`
+    );
+  }
+
+  const data = await response.json();
+  
+  // Handle nested tokenResult format (ushadvisors.com style)
+  const tokenSource = data.tokenResult || data.data || data;
+  const newAccessToken = tokenSource.access_token || data.access_token;
+  
+  if (!newAccessToken) {
+    throw new Error('Refresh response missing access_token');
+  }
+
+  // Extract expiration
+  let expiresAt: number | undefined;
+  const expiresIn = tokenSource.expires_in || data.expires_in;
+  
+  if (expiresIn) {
+    if (expiresIn > 1000000000) {
+      // Unix timestamp (seconds) - convert to milliseconds
+      expiresAt = expiresIn * 1000;
+    } else {
+      // Seconds until expiration - add to current time
+      expiresAt = Date.now() + (expiresIn * 1000);
+    }
+  } else {
+    // Try to extract from JWT
+    expiresAt = extractJWTExpiration(newAccessToken) || undefined;
+  }
+
+  return {
+    access_token: newAccessToken,
+    expires_in: expiresIn,
+    expires_at: expiresAt,
+  };
+}
+
+/**
+ * Refresh token using OAuth 2.0 refresh_token flow
+ * Uses the API route which handles OAuth properly
+ */
+async function refreshOAuthToken(sessionId: string): Promise<{ access_token: string; expires_in?: number; expires_at?: number }> {
+  const response = await fetch('/api/auth-worker/refresh', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ sessionId }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+    throw new Error(
+      `OAuth token refresh failed: ${response.status} ${response.statusText}. ` +
+      `Details: ${errorData.error || errorData.message || 'Unknown error'}`
+    );
+  }
+
+  const result = await response.json();
+  
+  // The API route returns success, but we need to get the actual token
+  // Re-fetch the session to get the updated token
+  const updatedSession = getSessionById(sessionId);
+  if (!updatedSession) {
+    throw new Error('Session not found after refresh');
+  }
+
+  const newAccessToken = updatedSession.step2.extractedVars.access_token;
+  if (!newAccessToken) {
+    throw new Error('No access token in refreshed session');
+  }
+
+  // Extract expiration from updated session
+  const expiresAtStr = updatedSession.step2.extractedVars.expires_at;
+  const expiresAt = expiresAtStr ? parseInt(expiresAtStr, 10) : undefined;
+  const expiresInStr = updatedSession.step2.extractedVars.expires_in;
+  const expiresIn = expiresInStr ? parseInt(expiresInStr, 10) : undefined;
+
+  return {
+    access_token: newAccessToken,
+    expires_in: expiresIn,
+    expires_at: expiresAt,
+  };
+}
 
 /**
  * Refresh token for a specific auth worker session
+ * Automatically detects refresh method and handles both OAuth and Bearer token flows
  * Works on both client and server - automatically detects environment
  */
 export async function refreshAuthWorkerToken(
   sessionId: string
-): Promise<{ success: boolean; newToken?: string; error?: string }> {
+): Promise<{ success: boolean; newToken?: string; error?: string; expiresAt?: number }> {
   // Try server-side storage first (for API routes), fall back to client-side
   let session: PersistedAuthWorkerState | null = null;
   
@@ -32,117 +201,115 @@ export async function refreshAuthWorkerToken(
   }
 
   const extractedVars = session.step2.extractedVars;
-  const accessToken = extractedVars.access_token;
   const refreshUrl = extractedVars.refresh_url;
-
-  if (!accessToken) {
-    return { success: false, error: 'No access token found' };
-  }
 
   if (!refreshUrl) {
     return { success: false, error: 'No refresh URL found' };
   }
 
   try {
-    // For ushadvisors.com style refresh (uses current token to get new one)
-    const response = await fetch(refreshUrl, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
-      body: JSON.stringify({}),
-    });
+    const refreshMethod = getRefreshMethod(session);
+    let refreshResult: { access_token: string; expires_in?: number; expires_at?: number };
 
-    if (!response.ok) {
-      return { 
-        success: false, 
-        error: `Refresh failed: ${response.status} ${response.statusText}` 
-      };
+    if (refreshMethod === 'oauth') {
+      // Use OAuth refresh_token flow via API route
+      refreshResult = await refreshOAuthToken(sessionId);
+    } else {
+      // Use Bearer token refresh flow
+      refreshResult = await refreshBearerToken(session, refreshUrl);
     }
 
-    const data = await response.json();
-    
-    // Handle nested tokenResult format
-    const tokenSource = data.tokenResult || data.data || data;
-    const newToken = tokenSource.access_token || data.access_token;
+    const { access_token: newToken, expires_at, expires_in } = refreshResult;
 
-    if (!newToken) {
-      return { success: false, error: 'Refresh response missing access_token' };
-    }
-
-    // Update extractedVars with new token
+    // Update session with new token and expiration
     const updatedExtractedVars: PersistedAuthWorkerState['step2']['extractedVars'] = {
       ...extractedVars,
       access_token: newToken,
     };
 
-    // Extract expiration from new token (JWT) or response
-    let expiresAt: number | undefined;
-    if (tokenSource.expires_in || data.expires_in) {
-      const expiresIn = tokenSource.expires_in || data.expires_in;
-      if (expiresIn > 1000000000) {
-        // Unix timestamp (seconds)
-        expiresAt = expiresIn * 1000;
-      } else {
-        // Seconds until expiration
-        expiresAt = Date.now() + (expiresIn * 1000);
-      }
-      updatedExtractedVars.expires_at = expiresAt.toString();
-      updatedExtractedVars.expires_in = expiresIn.toString();
-    } else {
-      // Try to extract from JWT
-      try {
-        const parts = newToken.split('.');
-        if (parts.length === 3) {
-          const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString());
-          if (payload.exp) {
-            expiresAt = payload.exp * 1000;
-            updatedExtractedVars.expires_at = expiresAt.toString();
-          }
-        }
-      } catch (e) {
-        // JWT parsing failed
+    if (expires_at) {
+      updatedExtractedVars.expires_at = expires_at.toString();
+    }
+    if (expires_in) {
+      updatedExtractedVars.expires_in = expires_in.toString();
+    } else if (expires_at) {
+      // Calculate expires_in from expires_at if not provided
+      const expiresInSeconds = Math.floor((expires_at - Date.now()) / 1000);
+      if (expiresInSeconds > 0) {
+        updatedExtractedVars.expires_in = expiresInSeconds.toString();
       }
     }
 
-    // Update session with new token
+    // Update verification timestamp
     const updatedSession: PersistedAuthWorkerState = {
       ...session,
       step2: {
         ...session.step2,
         extractedVars: updatedExtractedVars,
+        verificationStatus: {
+          ...session.step2.verificationStatus,
+          verifiedAt: Date.now(),
+        },
       },
     };
 
+    // Persist updated session (handles both client and server storage)
     persistAuthWorkerState(sessionId, updatedSession);
 
-    return { success: true, newToken };
+    return { 
+      success: true, 
+      newToken,
+      expiresAt: expires_at || extractJWTExpiration(newToken) || undefined,
+    };
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('[TokenRefreshService] Refresh failed:', {
+      sessionId,
+      error: errorMessage,
+      refreshUrl,
+    });
+    
     return { 
       success: false, 
-      error: error instanceof Error ? error.message : 'Unknown error' 
+      error: errorMessage,
     };
   }
 }
 
 /**
  * Check if token needs refresh (within 5 minutes of expiration)
+ * Uses JWT expiration if available, otherwise falls back to expires_at
  */
 export function needsTokenRefresh(session: PersistedAuthWorkerState): boolean {
-  const expiresAt = session.step2.extractedVars.expires_at;
-  if (!expiresAt) {
-    // No expiration info - assume it needs refresh if we have refresh_url
-    return !!session.step2.extractedVars.refresh_url;
+  const extractedVars = session.step2.extractedVars;
+  const accessToken = extractedVars.access_token;
+  
+  if (!accessToken) {
+    return false;
   }
 
-  const expirationTime = parseInt(expiresAt, 10);
+  // First, try to get expiration from expires_at
+  let expirationTime: number | null = null;
+  
+  if (extractedVars.expires_at) {
+    expirationTime = parseInt(extractedVars.expires_at, 10);
+  } else {
+    // Try to extract from JWT
+    expirationTime = extractJWTExpiration(accessToken);
+  }
+
+  // If no expiration info, check if we have refresh capability
+  if (!expirationTime) {
+    // If we have refresh_url, assume it might need refresh
+    return !!extractedVars.refresh_url;
+  }
+
   const now = Date.now();
   const fiveMinutes = 5 * 60 * 1000;
+  const timeUntilExpiry = expirationTime - now;
 
-  // Refresh if token expires within 5 minutes
-  return (expirationTime - now) < fiveMinutes;
+  // Refresh if expired or expires within 5 minutes
+  return timeUntilExpiry < fiveMinutes;
 }
 
 /**
@@ -151,7 +318,7 @@ export function needsTokenRefresh(session: PersistedAuthWorkerState): boolean {
  */
 export async function getValidToken(
   sessionId: string
-): Promise<{ token: string; wasRefreshed: boolean } | null> {
+): Promise<{ token: string; wasRefreshed: boolean; expiresAt?: number } | null> {
   // Try server-side storage first (for API routes), fall back to client-side
   let session: PersistedAuthWorkerState | null = null;
   
@@ -177,11 +344,23 @@ export async function getValidToken(
   if (needsTokenRefresh(session)) {
     const refreshResult = await refreshAuthWorkerToken(sessionId);
     if (refreshResult.success && refreshResult.newToken) {
-      return { token: refreshResult.newToken, wasRefreshed: true };
+      return { 
+        token: refreshResult.newToken, 
+        wasRefreshed: true,
+        expiresAt: refreshResult.expiresAt,
+      };
     }
-    // If refresh failed, return current token anyway
-    return { token, wasRefreshed: false };
+    // If refresh failed, return current token anyway (might still be valid)
+    const expiresAt = extractJWTExpiration(token) || 
+                     (session.step2.extractedVars.expires_at 
+                       ? parseInt(session.step2.extractedVars.expires_at, 10) 
+                       : undefined);
+    return { token, wasRefreshed: false, expiresAt };
   }
 
-  return { token, wasRefreshed: false };
+  const expiresAt = extractJWTExpiration(token) || 
+                   (session.step2.extractedVars.expires_at 
+                     ? parseInt(session.step2.extractedVars.expires_at, 10) 
+                     : undefined);
+  return { token, wasRefreshed: false, expiresAt };
 }
