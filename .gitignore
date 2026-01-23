@@ -67,6 +67,5 @@ extracted-tokens.json
 # HAR files (may contain sensitive tokens)
 *.har
 data/har-data/
-data/auth-workers/*.json
 
 *.har

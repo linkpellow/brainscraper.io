@@ -1,0 +1,58 @@
+{
+  "version": "1.0.0",
+  "sessionId": "session_1769059539283_y0r4gi",
+  "targetDomain": "microsoftonline.com",
+  "stabilized": true,
+  "stabilizedAt": 1769059545473,
+  "step2": {
+    "id": "step-2",
+    "endpoint": "/cc7c826f-6444-4c0e-8314-83afb87c98ea/oauth2/v2.0/token",
+    "method": "POST",
+    "extractedVars": {
+      "access_token": "eyJ0eXAiOi...O_FK5RA-zQ",
+      "refresh_token": "1.AS4Ab4J8...uBZG80kWFS"
+    },
+    "verificationStatus": {
+      "tokenCaptured": true,
+      "tokenInjectionAttempted": true,
+      "tokenInjectionSucceeded": true,
+      "authenticatedRequestsDetected": true,
+      "authenticatedRequestCount": 1,
+      "verified": true,
+      "verifiedAt": 1769059545114,
+      "authenticatedEndpoints": [
+        "GET agent.ushadvisors.com/home"
+      ],
+      "issues": []
+    }
+  },
+  "authenticatedEndpoints": [
+    "GET agent.ushadvisors.com/home"
+  ],
+  "lockedSteps": [
+    {
+      "id": "step-1",
+      "stepNumber": 1,
+      "endpoint": "/oauth/v1/authorize",
+      "method": "POST",
+      "lockedAt": 1769059463591
+    },
+    {
+      "id": "step-2",
+      "stepNumber": 2,
+      "endpoint": "/cc7c826f-6444-4c0e-8314-83afb87c98ea/oauth2/v2.0/token",
+      "method": "POST",
+      "lockedAt": 1769059463591
+    },
+    {
+      "id": "step-3",
+      "stepNumber": 3,
+      "endpoint": "/account/refresh",
+      "method": "POST",
+      "lockedAt": 1769059463591
+    }
+  ],
+  "apiKey": "13045d429b5822481c39371f310ef89b",
+  "name": "USHA Agent Portal",
+  "savedAt": 1769115227833
+}

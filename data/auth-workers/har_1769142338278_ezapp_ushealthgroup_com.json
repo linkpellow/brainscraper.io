@@ -1,0 +1,60 @@
+{
+  "version": "1.0.0",
+  "sessionId": "har_1769142338278_ezapp_ushealthgroup_com",
+  "targetDomain": "ezapp.ushealthgroup.com",
+  "stabilized": true,
+  "stabilizedAt": 1769150731381,
+  "step2": {
+    "id": "har_har_1769142338278_ezapp_ushealthgroup_com",
+    "endpoint": "/home.aspx",
+    "method": "POST",
+    "extractedVars": {
+      "auth_method": "none",
+      "har_imported": "true",
+      "note": "Upload another HAR with authenticated requests to add credentials or map endpoints."
+    },
+    "verificationStatus": {
+      "tokenCaptured": true,
+      "tokenInjectionAttempted": false,
+      "tokenInjectionSucceeded": false,
+      "authenticatedRequestsDetected": false,
+      "authenticatedRequestCount": 0,
+      "verified": true,
+      "verifiedAt": 1769150731381,
+      "authenticatedEndpoints": [],
+      "issues": []
+    },
+    "response": null
+  },
+  "authenticatedEndpoints": [],
+  "lockedSteps": [
+    {
+      "id": "har_har_1769142338278_ezapp_ushealthgroup_com",
+      "stepNumber": 2,
+      "endpoint": "/home.aspx",
+      "method": "POST",
+      "code": "",
+      "response": {},
+      "extractedVars": {
+        "auth_method": "none",
+        "har_imported": "true",
+        "note": "Upload another HAR with authenticated requests to add credentials or map endpoints."
+      },
+      "dependencies": [],
+      "lockedAt": 1769150731381,
+      "status": "success",
+      "verificationStatus": {
+        "tokenCaptured": true,
+        "tokenInjectionAttempted": false,
+        "tokenInjectionSucceeded": false,
+        "authenticatedRequestsDetected": false,
+        "authenticatedRequestCount": 0,
+        "verified": true,
+        "verifiedAt": 1769150731381,
+        "authenticatedEndpoints": [],
+        "issues": []
+      }
+    }
+  ],
+  "savedAt": 1769150731557
+}
