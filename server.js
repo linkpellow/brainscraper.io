@@ -82,6 +82,13 @@ function initializeAuthWorkers() {
     }
 
     console.log(`[Server] Auth workers initialized: ${copiedCount} copied, ${skippedCount} skipped`);
+    
+    // Verify files were written correctly
+    if (copiedCount > 0) {
+      const verifyFiles = readdirSync(PRODUCTION_AUTH_WORKERS_DIR).filter(f => f.endsWith('.json'));
+      console.log(`[Server] Verification: ${verifyFiles.length} files in ${PRODUCTION_AUTH_WORKERS_DIR}`);
+      console.log(`[Server] Verification: Files: ${verifyFiles.join(', ')}`);
+    }
   } catch (error) {
     console.warn('[Server] Auth worker initialization failed (non-critical):', error.message);
   }
