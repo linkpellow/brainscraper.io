@@ -3,7 +3,8 @@
 
 const { createServer } = require('http');
 const { parse } = require('url');
-const { spawn } = require('child_process');
+const { existsSync, readdirSync, readFileSync, writeFileSync, mkdirSync } = require('fs');
+const { join } = require('path');
 const next = require('next');
 
 const dev = process.env.NODE_ENV !== 'production';
@@ -17,21 +18,72 @@ const isProduction = process.env.NODE_ENV === 'production' || process.env.RAILWA
  * Initialize auth workers on startup
  * Copies auth workers from build artifact to Railway persistent volume
  */
-async function initializeAuthWorkers() {
-  if (isProduction) {
-    try {
-      // Import and run initialization (runs async, doesn't block)
-      require('./scripts/initialize-auth-workers.ts');
-    } catch (error) {
-      // If tsx isn't available or script fails, try direct require
+function initializeAuthWorkers() {
+  if (!isProduction) return;
+
+  try {
+    const BUILD_DATA_DIR = join(process.cwd(), 'data', 'auth-workers');
+    const DATA_DIR = process.env.DATA_DIR || join(process.cwd(), 'data');
+    const PRODUCTION_AUTH_WORKERS_DIR = join(DATA_DIR, 'auth-workers');
+
+    // Check if build artifact has auth workers
+    if (!existsSync(BUILD_DATA_DIR)) {
+      console.log('[Server] No auth workers in build artifact');
+      return;
+    }
+
+    const buildFiles = readdirSync(BUILD_DATA_DIR).filter(f => f.endsWith('.json'));
+    
+    if (buildFiles.length === 0) {
+      console.log('[Server] No auth worker files in build artifact');
+      return;
+    }
+
+    console.log(`[Server] Found ${buildFiles.length} auth worker(s) in build artifact`);
+
+    // Ensure production auth workers directory exists
+    if (!existsSync(PRODUCTION_AUTH_WORKERS_DIR)) {
+      mkdirSync(PRODUCTION_AUTH_WORKERS_DIR, { recursive: true });
+      console.log(`[Server] Created production auth workers directory: ${PRODUCTION_AUTH_WORKERS_DIR}`);
+    }
+
+    let copiedCount = 0;
+    let skippedCount = 0;
+
+    // Copy each auth worker from build to production
+    for (const file of buildFiles) {
+      const buildPath = join(BUILD_DATA_DIR, file);
+      const productionPath = join(PRODUCTION_AUTH_WORKERS_DIR, file);
+
+      // Skip if already exists in production (don't overwrite)
+      if (existsSync(productionPath)) {
+        skippedCount++;
+        continue;
+      }
+
       try {
-        // In production build, the script might be compiled
-        const initPath = require.resolve('./scripts/initialize-auth-workers');
-        require(initPath);
-      } catch (e) {
-        console.warn('[Server] Auth worker initialization skipped (script not available):', error.message);
+        // Read and validate session data
+        const content = readFileSync(buildPath, 'utf-8');
+        const session = JSON.parse(content);
+
+        // Validate session structure
+        if (!session.sessionId || !session.stabilized) {
+          console.warn(`[Server] Skipping ${file} - invalid session data`);
+          continue;
+        }
+
+        // Copy to production
+        writeFileSync(productionPath, content, 'utf-8');
+        console.log(`[Server] ✅ Copied ${file} (${session.targetDomain || session.sessionId})`);
+        copiedCount++;
+      } catch (error) {
+        console.error(`[Server] ❌ Failed to copy ${file}:`, error.message);
       }
     }
+
+    console.log(`[Server] Auth workers initialized: ${copiedCount} copied, ${skippedCount} skipped`);
+  } catch (error) {
+    console.warn('[Server] Auth worker initialization failed (non-critical):', error.message);
   }
 }
 
