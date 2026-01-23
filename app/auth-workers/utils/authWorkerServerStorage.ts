@@ -132,7 +132,9 @@ export function listSessionsFromServer(): Array<{
       return [];
     }
     
-    const sessionsDir = getDataFilePath(SESSIONS_DIR);
+    // Use same path resolution as initialization in server.js
+    const DATA_DIR = process.env.DATA_DIR || path.join(process.cwd(), 'data');
+    const sessionsDir = path.join(DATA_DIR, SESSIONS_DIR);
     
     console.log('[AuthWorkerServerStorage] Reading sessions from:', sessionsDir);
     console.log('[AuthWorkerServerStorage] DATA_DIR:', process.env.DATA_DIR);
