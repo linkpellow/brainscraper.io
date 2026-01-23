@@ -10,7 +10,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { listAllSessions, getSessionById } from './utils/authWorkerPersistence';
+import { listAllSessions, getSessionById, persistAuthWorkerState } from './utils/authWorkerPersistence';
 import type { PersistedAuthWorkerState } from './utils/authWorkerPersistence';
 import { getStoredMappings } from './[sessionId]/map-api/endpointMapping';
 import type { EndpointMapping } from './[sessionId]/map-api/endpointMapping';
@@ -38,18 +38,55 @@ export default function AuthWorkersPage() {
   const loadData = async () => {
     setLoading(true);
     try {
-      // Load all sessions
-      const sessionList = listAllSessions();
-      const sessionObjects = sessionList
+      // Load sessions from both localStorage and server
+      const localSessionList = listAllSessions();
+      const localSessionObjects = localSessionList
         .map(s => getSessionById(s.sessionId))
         .filter((s): s is PersistedAuthWorkerState => s !== null);
-      setSessions(sessionObjects);
+      
+      // Load sessions from server
+      let serverSessions: PersistedAuthWorkerState[] = [];
+      try {
+        const serverResponse = await fetch('/api/auth-worker/sessions');
+        if (serverResponse.ok) {
+          const serverData = await serverResponse.json();
+          if (serverData.success && Array.isArray(serverData.sessions)) {
+            serverSessions = serverData.sessions;
+          }
+        }
+      } catch (serverError) {
+        console.warn('[AuthWorkersPage] Failed to load server sessions:', serverError);
+      }
+      
+      // Merge sessions: prefer server sessions, fallback to local
+      const sessionMap = new Map<string, PersistedAuthWorkerState>();
+      
+      // Add server sessions first (authoritative) and sync to localStorage
+      for (const session of serverSessions) {
+        sessionMap.set(session.sessionId, session);
+        // Sync server session to localStorage so it's available locally
+        try {
+          persistAuthWorkerState(session.sessionId, session);
+        } catch (syncError) {
+          console.warn('[AuthWorkersPage] Failed to sync server session to localStorage:', syncError);
+        }
+      }
+      
+      // Add local sessions that aren't on server
+      for (const session of localSessionObjects) {
+        if (!sessionMap.has(session.sessionId)) {
+          sessionMap.set(session.sessionId, session);
+        }
+      }
+      
+      const allSessions = Array.from(sessionMap.values());
+      setSessions(allSessions);
 
       // Load mappings for each session
       const allMappings = await getStoredMappings();
       const mappingsBySession = new Map<string, EndpointMapping[]>();
       
-      for (const session of sessionObjects) {
+      for (const session of allSessions) {
         const sessionMappings = allMappings.filter(m => 
           m.siteKey.includes(session.targetDomain) || 
           session.targetDomain.includes(m.siteKey.split('.')[0])

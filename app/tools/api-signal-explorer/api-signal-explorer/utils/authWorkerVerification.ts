@@ -11,8 +11,8 @@ import {
   hasPersistedState, 
   listAllSessions,
   type PersistedAuthWorkerState 
-} from './authWorkerPersistence';
-import { checkAuthWorkerHealth, type HealthStatus } from './authWorkerHealthMonitor';
+} from '@/app/auth-workers/utils/authWorkerPersistence';
+import { checkAuthWorkerHealth, type HealthStatus } from '@/app/auth-workers/utils/authWorkerHealthMonitor';
 
 export type VerificationResult = {
   criterion: number;

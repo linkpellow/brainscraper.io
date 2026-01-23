@@ -4,7 +4,7 @@
  * This allows API routes to access sessions stored in localStorage
  */
 
-import { listAllSessions, getSessionById } from './authWorkerPersistence';
+import { listAllSessions, getSessionById } from '@/app/auth-workers/utils/authWorkerPersistence';
 
 /**
  * Sync all sessions from localStorage to server storage

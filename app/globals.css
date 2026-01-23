@@ -248,20 +248,6 @@ body {
    MONOCHROME DARK MODE DESIGN SYSTEM
    ============================================ */
 
-/* DEPRECATED: Spherical Interior Background - Replaced by WebGL Neural Pin Field */
-/*
-.spherical-bg {
-  background: radial-gradient(ellipse at center, 
-    rgba(40, 40, 40, 0.95) 0%,
-    rgba(20, 20, 20, 0.98) 25%,
-    rgba(10, 10, 10, 1) 50%,
-    rgba(0, 0, 0, 1) 100%
-  );
-  background-attachment: fixed;
-}
-*/
-
-/* DEPRECATED: Spherical Grid - Replaced by WebGL Neural Pin Field */
 
 /* Flowing Energy Lines Animation */
 @keyframes energy-flow {
