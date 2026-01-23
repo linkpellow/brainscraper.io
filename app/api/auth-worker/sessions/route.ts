@@ -12,16 +12,26 @@ import type { PersistedAuthWorkerState } from '../../../auth-workers/utils/authW
 export async function GET() {
   try {
     const sessionList = listSessionsFromServer();
+    console.log('[AuthWorkerSessions] Found session metadata:', sessionList.length, sessionList.map(s => s.sessionId));
     
     // Load full session objects
     const sessions: PersistedAuthWorkerState[] = [];
     for (const sessionMeta of sessionList) {
       const fullSession = getSessionFromServer(sessionMeta.sessionId);
       if (fullSession) {
+        console.log('[AuthWorkerSessions] Loaded session:', {
+          sessionId: fullSession.sessionId,
+          targetDomain: fullSession.targetDomain,
+          stabilized: fullSession.stabilized,
+          version: fullSession.version,
+        });
         sessions.push(fullSession);
+      } else {
+        console.warn('[AuthWorkerSessions] Failed to load full session:', sessionMeta.sessionId);
       }
     }
     
+    console.log('[AuthWorkerSessions] Returning sessions:', sessions.length);
     return NextResponse.json({
       success: true,
       sessions,
