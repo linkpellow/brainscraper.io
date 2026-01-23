@@ -8,7 +8,6 @@
 import type { ArtifactBundle, OAuthCredentials, TokenData } from './harToAuthWorker';
 import { extractOAuthCredentials } from './harToAuthWorker';
 import type { PersistedAuthWorkerState } from '../../utils/authWorkerPersistence';
-import { getSessionFromServer, enrichSessionOnServer } from '../../utils/authWorkerServerStorage';
 
 /**
  * Enrich an existing auth worker session with OAuth credentials from HAR
@@ -20,6 +19,9 @@ export async function enrichSessionFromHAR(
   sessionId: string,
   bundle: ArtifactBundle
 ): Promise<{ enriched: boolean; missingFields: string[]; addedFields: string[] }> {
+  // Dynamic import to avoid bundling server-only code in client
+  const { getSessionFromServer, enrichSessionOnServer } = await import('../../utils/authWorkerServerStorage');
+  
   const session = getSessionFromServer(sessionId);
   if (!session) {
     return { enriched: false, missingFields: [], addedFields: [] };

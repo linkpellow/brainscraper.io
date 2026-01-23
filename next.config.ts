@@ -24,6 +24,21 @@ const nextConfig: NextConfig = {
     // Turbopack handles source maps automatically
     // No additional configuration needed for source maps
   },
+  
+  // Webpack configuration to handle server-only modules
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      // Mark Node.js modules as external for client builds to prevent bundling
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        path: false,
+        net: false,
+        tls: false,
+      };
+    }
+    return config;
+  },
 };
 
 export default nextConfig;
