@@ -82,6 +82,15 @@ function verifyTokenInjection(
   }
 
   const step2LockedAt = step2.lockedAt;
+  if (!step2LockedAt) {
+    return {
+      criterion: 2,
+      category: 'functional',
+      name: 'Token Injection',
+      passed: false,
+      message: 'Step-2 lockedAt timestamp not found',
+    };
+  }
   const downstreamEvents = events.filter(e => 
     e.ts > step2LockedAt &&
     !e.url?.includes('/token') &&

@@ -5,6 +5,8 @@
  * Re-exporting from new location for backward compatibility
  */
 
+import type { LockedStep } from '../types';
+
 export * from '../../../../auth-workers/utils/authWorkerPersistence';
 
 const STORAGE_KEY_PREFIX = 'authWorker_session_';
@@ -111,41 +113,10 @@ function extractDomainFromEndpoint(endpoint: string): string {
 }
 
 /**
- * Extract domain from step-2 endpoint or code
+ * Extract domain from step-2 endpoint
  */
 function extractDomainFromStep2(step2: LockedStep): string {
-  // Try code field first (may contain full URL in fetch call)
-  if (step2.code) {
-    // Match URLs in fetch('https://...') or fetch("https://...")
-    const urlMatches = step2.code.match(/https?:\/\/([^\/\s"')]+)/g);
-    if (urlMatches && urlMatches.length > 0) {
-      for (const urlStr of urlMatches) {
-        try {
-          const url = new URL(urlStr);
-          const hostname = url.hostname.replace('www.', '');
-          // Skip common auth domains that are just redirects
-          if (!hostname.includes('login.microsoftonline.com') && 
-              !hostname.includes('accounts.google.com') &&
-              !hostname.includes('auth0.com')) {
-            return hostname;
-          }
-          // For Microsoft, extract tenant domain
-          if (hostname.includes('microsoftonline.com')) {
-            // Try to extract tenant from path: /{tenant}/oauth2/...
-            const tenantMatch = step2.endpoint?.match(/\/([a-f0-9-]{36})\//);
-            if (tenantMatch) {
-              return 'microsoftonline.com';
-            }
-            return 'microsoftonline.com';
-          }
-        } catch {
-          // Invalid URL, continue
-        }
-      }
-    }
-  }
-  
-  // Try endpoint (may be full URL or path)
+  // Use endpoint field
   if (step2.endpoint) {
     const domain = extractDomainFromEndpoint(step2.endpoint);
     if (domain !== 'unknown-domain') {
@@ -269,25 +240,35 @@ export function persistAuthWorkerState(
       stabilized: true,
       stabilizedAt: Date.now(),
       step2: {
-        id: step2.id,
+        id: step2.id || `step2_${Date.now()}`,
         endpoint: step2.endpoint,
         method: step2.method,
         extractedVars: extractedVars,
         verificationStatus: {
-          ...verificationStatus,
-          verifiedAt: verificationStatus.verifiedAt || Date.now(),
-          authenticatedEndpoints: verificationStatus.authenticatedEndpoints || [],
+          tokenCaptured: verificationStatus?.tokenCaptured ?? false,
+          tokenInjectionAttempted: verificationStatus?.tokenInjectionAttempted ?? false,
+          tokenInjectionSucceeded: verificationStatus?.tokenInjectionSucceeded ?? false,
+          authenticatedRequestsDetected: verificationStatus?.authenticatedRequestsDetected ?? false,
+          authenticatedRequestCount: verificationStatus?.authenticatedRequestCount ?? 0,
+          verified: verificationStatus?.verified ?? false,
+          verifiedAt: Date.now(),
+          authenticatedEndpoints: verificationStatus?.authenticatedEndpoints || [],
+          issues: verificationStatus?.issues || [],
         },
         response: step2.response, // Store response to get expires_in
       },
       authenticatedEndpoints,
-      lockedSteps: lockedSteps.map(step => ({
-        id: step.id,
-        stepNumber: step.stepNumber,
-        endpoint: step.endpoint,
-        method: step.method,
-        lockedAt: step.lockedAt,
-      })),
+      lockedSteps: lockedSteps
+        .filter((step): step is LockedStep & { id: string; lockedAt: number } => 
+          !!step.id && step.lockedAt != null
+        )
+        .map(step => ({
+          id: step.id,
+          stepNumber: step.stepNumber,
+          endpoint: step.endpoint,
+          method: step.method,
+          lockedAt: step.lockedAt,
+        })),
       apiKey,
     };
 

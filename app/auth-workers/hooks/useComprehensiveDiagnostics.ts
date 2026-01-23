@@ -43,10 +43,11 @@ export function useComprehensiveDiagnostics(logs: CapturedLog[]) {
       const headers = new Headers(options.headers);
       const hasAuth = headers.has('authorization');
       const authHeader = headers.get('authorization') || '';
-      const authType = authHeader.startsWith('Bearer ') ? 'Bearer' :
-                      authHeader.startsWith('Basic ') ? 'Basic' :
-                      authHeader.startsWith('Cookie ') ? 'Cookie' :
-                      hasAuth ? 'Other' : 'None';
+      const authType: 'Bearer' | 'Cookie' | 'Basic' | 'Other' | 'None' = 
+        authHeader.startsWith('Bearer ') ? 'Bearer' :
+        authHeader.startsWith('Basic ') ? 'Basic' :
+        authHeader.startsWith('Cookie ') ? 'Cookie' :
+        hasAuth ? 'Other' : 'None';
       const hasCookie = headers.has('cookie') || document.cookie.length > 0;
       
       try {
@@ -256,6 +257,7 @@ export function useComprehensiveDiagnostics(logs: CapturedLog[]) {
     getDiagnostic,
     exportDiagnostic,
     exportAllDiagnostics,
+    networkHistory,
     setComponentState: useCallback((state: Record<string, any>) => {
       componentStateRef.current = state;
     }, []),

@@ -264,7 +264,7 @@ export default function BrainScraperStartPage() {
           Press <span className="brainscraper-shortcut-hint">Cmd+L</span> or <span className="brainscraper-shortcut-hint">Ctrl+L</span> to navigate
           <br />
           <br />
-          Powered by mitmproxy • Chromium • Next.js
+          Powered by Next.js
         </div>
       </div>
     </div>

@@ -7,8 +7,15 @@
 
 'use client';
 
-// Re-export enhanced version as default
-export { default } from './ConsoleLogsWidgetEnhanced';
+// Note: This file is deprecated - use ConsoleLogsWidget.tsx instead
+// Removed re-export because ConsoleLogsWidgetEnhanced doesn't exist
+
+import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import { X, Terminal, Trash2, Copy, ChevronDown, ChevronUp, Filter, Search, AlertCircle, AlertTriangle, Info, Bug, FileCode, ExternalLink, BookOpen, Brain, FileText, Download, FileDown } from 'lucide-react';
+import type { CapturedLog, LogLevel } from '../hooks/useConsoleCapture';
+import { generateFileReadInstruction } from '../utils/readFileContext';
+import { diagnoseError, groupSimilarErrors, generateDiagnosticReport } from '../utils/errorDiagnostics';
+import { useComprehensiveDiagnostics } from '../hooks/useComprehensiveDiagnostics';
 
 type ConsoleLogsWidgetProps = {
   logs: CapturedLog[];

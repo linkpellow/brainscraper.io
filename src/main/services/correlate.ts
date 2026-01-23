@@ -1,7 +1,7 @@
 /**
  * Neural Correlation Engine — "Brain" for DOM action ↔ API request mapping.
  *
- * - Listens for SIGNAL_DOM_ACTION (from preload) and for events_batch (from mitmproxy via bridge).
+ * - Listens for SIGNAL_DOM_ACTION (from preload) and for events_batch (from network bridge).
  * - 2000 ms window: any request that begins in [t, t+2000) is linked.
  * - If multiple: prioritize URL/payload containing keywords from the element's text/id.
  * - Persists links to data/neuromap-links.json.

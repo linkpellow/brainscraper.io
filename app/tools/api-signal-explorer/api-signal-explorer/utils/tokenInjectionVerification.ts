@@ -106,6 +106,13 @@ export function shouldMarkStep2AsSuccess(
     };
   }
 
+  if (!step2.lockedAt) {
+    return {
+      shouldMarkSuccess: false,
+      reason: 'Step-2 lockedAt timestamp not found',
+      verification: verifyTokenInjection(undefined, events, 0),
+    };
+  }
   const verification = verifyTokenInjection(step2, events, step2.lockedAt);
 
   // CRITICAL: Step-2 should only be marked "success" if:

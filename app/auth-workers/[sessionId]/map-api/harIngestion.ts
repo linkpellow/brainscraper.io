@@ -166,7 +166,7 @@ export function queryArtifactBundle(bundle: ArtifactBundle) {
         refreshToken.usedInEventIds.includes(e.id)
       );
       
-      if (refreshEvent && refreshEvent.url.includes('refresh') || refreshEvent.url.includes('token')) {
+      if (refreshEvent && (refreshEvent.url.includes('refresh') || refreshEvent.url.includes('token'))) {
         return {
           endpoint: refreshEvent,
           refreshToken,

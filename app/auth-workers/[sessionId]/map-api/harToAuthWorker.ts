@@ -241,7 +241,7 @@ function extractBearerTokenFromHeaders(
     
     event = firstPartyEvents.find(e => 
       bearerArtifact.usedInEventIds.includes(e.id)
-    ) || bundle.events.find(e => bearerArtifact.usedInEventIds.includes(e.id));
+    ) || bundle.events.find(e => bearerArtifact.usedInEventIds.includes(e.id)) || null;
     
     if (event) {
       token = bearerArtifact.value;
@@ -326,7 +326,7 @@ function extractSessionCookies(
     return sessionCookies.some(c => 
       e.requestCookies.some(rc => rc.name === c.name && rc.value === c.value)
     );
-  });
+  }) || null;
   
   return { cookies: sessionCookies, event };
 }
@@ -346,7 +346,7 @@ function extractAPIKeys(
   if (apiKeyArtifact) {
     const event = bundle.events.find(e => 
       apiKeyArtifact.usedInEventIds.includes(e.id)
-    );
+    ) || null;
     if (event) {
       return { apiKey: apiKeyArtifact.value, headerName: apiKeyArtifact.name, event };
     }

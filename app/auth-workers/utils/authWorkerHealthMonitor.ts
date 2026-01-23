@@ -83,6 +83,7 @@ function hasRecentAuthenticatedRequests(
   
   // Get events after step-2 locked and within the window
   const recentEvents = events.filter(e => 
+    e.ts != null &&
     e.ts >= step2LockedAt && 
     e.ts >= windowStart &&
     e.ts <= now
@@ -109,7 +110,7 @@ function hasRecentAuthenticatedRequests(
   });
   
   const lastRequestAge = authenticatedEvents.length > 0
-    ? now - Math.max(...authenticatedEvents.map(e => e.ts))
+    ? now - Math.max(...authenticatedEvents.map(e => e.ts ?? 0))
     : undefined;
   
   return {
@@ -153,7 +154,9 @@ export function checkAuthWorkerHealth(
       method: session.step2.method,
       code: '',
       response: {},
-      extractedVars: session.step2.extractedVars,
+      extractedVars: Object.fromEntries(
+        Object.entries(session.step2.extractedVars).filter(([_, v]) => v != null)
+      ) as Record<string, string>,
       dependencies: [],
       lockedAt: session.stabilizedAt,
       status: 'success',
@@ -184,7 +187,7 @@ export function checkAuthWorkerHealth(
   const hasRefreshToken = !!step2?.extractedVars?.refresh_token;
   
   // Check 3: Recent authenticated requests (only if we have events)
-  const recentRequests = events.length > 0 && step2
+  const recentRequests = events.length > 0 && step2 && step2.lockedAt != null
     ? hasRecentAuthenticatedRequests(events, step2.lockedAt)
     : { hasRequests: false, count: 0, lastRequestAge: undefined };
   

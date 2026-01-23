@@ -3,8 +3,7 @@
  * Main entry point - routes to method-specific patterns
  */
 
-import type { AuthMethod } from '../../components/CommandHeader';
-import type { AuthMethodPatterns } from '../../types';
+import type { AuthMethod, AuthMethodPatterns } from '../../types';
 import { oauthPatterns } from './oauth';
 import { samlPatterns } from './saml';
 import { cookiePatterns } from './cookie';

@@ -171,12 +171,14 @@ export default function ConsoleLogsWidget({
     
     // Apply noise reduction
     if (!rawMode) {
-      return filterNoise(toFilter, {
+      const result = filterNoise(toFilter, {
         hideAssets,
         hidePolling,
         collapseRepetitive,
         minRepeatCount: 3,
       });
+      // Type assertion: filteredLogs only contains CapturedLog (not StructuredEvent)
+      return { filtered: result.filtered as CapturedLog[], collapsed: result.collapsed };
     }
     
     return { filtered: toFilter, collapsed: new Map() };
@@ -871,18 +873,20 @@ export default function ConsoleLogsWidget({
                               {net.requestSize && <span>Req: {net.requestSize} bytes</span>}
                               {net.responseSize && <span>Res: {net.responseSize} bytes</span>}
                             </div>
-                            <div className="mt-1 text-gray-400 text-[9px] flex items-center gap-2">
-                              {net.headers.authorization && (
-                                <span className="px-1 py-0.5 bg-green-500/20 text-green-300 rounded">
-                                  Auth: {net.headers.authorizationType}
-                                </span>
-                              )}
-                              {net.headers.cookie && (
-                                <span className="px-1 py-0.5 bg-purple-500/20 text-purple-300 rounded">
-                                  Cookie
-                                </span>
-                              )}
-                            </div>
+                            {net.headers && (
+                              <div className="mt-1 text-gray-400 text-[9px] flex items-center gap-2">
+                                {net.headers.authorization && (
+                                  <span className="px-1 py-0.5 bg-green-500/20 text-green-300 rounded">
+                                    Auth: {net.headers.authorizationType}
+                                  </span>
+                                )}
+                                {net.headers.cookie && (
+                                  <span className="px-1 py-0.5 bg-purple-500/20 text-purple-300 rounded">
+                                    Cookie
+                                  </span>
+                                )}
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>

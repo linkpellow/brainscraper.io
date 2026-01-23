@@ -199,7 +199,7 @@ export function createEnhancedErrorFromReactError(
     message: error.message || 'React render error',
     stack: error.stack,
     context: {
-      reactComponentStack: errorInfo.componentStack,
+      reactComponentStack: errorInfo.componentStack ?? undefined,
       userAgent: typeof window !== 'undefined' ? navigator.userAgent : undefined,
       url: typeof window !== 'undefined' ? window.location.href : undefined,
     },

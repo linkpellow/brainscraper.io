@@ -505,7 +505,7 @@ export default function EndpointTestPage() {
                           </label>
                           <input
                             type="text"
-                            value={mockData[param] || ''}
+                            value={String(mockData[param] ?? '')}
                             onChange={(e) => {
                               setMockData({ ...mockData, [param]: e.target.value });
                             }}

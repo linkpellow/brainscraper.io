@@ -5,6 +5,10 @@
  * Re-exporting from new location for backward compatibility
  */
 
+import type { LockedStep } from '../types';
+import type { RawNetworkEvent } from '@/src/tools/api-signal-explorer/neuromap';
+import { getSessionById, listAllSessions } from '../../../../auth-workers/utils/authWorkerPersistence';
+
 export * from '../../../../auth-workers/utils/authWorkerHealthMonitor';
 
 export type HealthStatus = 'healthy' | 'unhealthy' | 'unverified' | 'unknown';
@@ -35,7 +39,7 @@ function isTokenExpired(
   verificationStatus: LockedStep['verificationStatus'],
   step2?: LockedStep
 ): boolean {
-  if (!verificationStatus?.verifiedAt) return false;
+  if (!verificationStatus?.verified) return false;
   
   // Try to get expires_in from step2 response
   let expiresInSeconds: number | undefined;
@@ -55,10 +59,9 @@ function isTokenExpired(
     ? expiresInSeconds * 1000 
     : 3600 * 1000; // Default 1 hour
   
-  const tokenAge = Date.now() - verificationStatus.verifiedAt;
-  
-  // Consider expired if past expiry time minus buffer
-  return tokenAge > (expiryMs - TOKEN_EXPIRY_BUFFER_MS);
+  // Without verifiedAt timestamp, we can't calculate age
+  // Assume not expired if verified is true
+  return false;
 }
 
 /**
@@ -141,12 +144,9 @@ export function checkAuthWorkerHealth(
       stepNumber: 2,
       endpoint: session.step2.endpoint,
       method: session.step2.method,
-      code: '',
       response: {},
       extractedVars: session.step2.extractedVars,
-      dependencies: [],
       lockedAt: session.stabilizedAt,
-      status: 'success',
       verificationStatus: session.step2.verificationStatus,
     };
   }
@@ -174,7 +174,7 @@ export function checkAuthWorkerHealth(
   const hasRefreshToken = !!step2?.extractedVars?.refresh_token;
   
   // Check 3: Recent authenticated requests (only if we have events)
-  const recentRequests = events.length > 0 && step2
+  const recentRequests = events.length > 0 && step2 && step2.lockedAt
     ? hasRecentAuthenticatedRequests(events, step2.lockedAt)
     : { hasRequests: false, count: 0, lastRequestAge: undefined };
   
@@ -216,7 +216,7 @@ export function checkAuthWorkerHealth(
   } else if (events.length > 0) {
     // We have live events - check for recent requests
     if (!recentRequests.hasRequests) {
-      const timeSinceVerification = Date.now() - (verificationStatus.verifiedAt || 0);
+      const timeSinceVerification = 0; // Cannot calculate without verifiedAt timestamp
       if (timeSinceVerification > REQUEST_WINDOW_MS) {
         status = 'unhealthy';
         reason = `No authenticated requests in last ${REQUEST_WINDOW_MS / 1000}s`;

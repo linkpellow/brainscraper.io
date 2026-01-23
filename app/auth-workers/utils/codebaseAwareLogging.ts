@@ -57,13 +57,20 @@ export function parseStackTrace(stack?: string): CodeLocation[] {
 
         if (pattern === patterns[0]) {
           // Standard format with function
-          [, functionName, filePath, lineNum, colNum] = match;
+          functionName = match[1];
+          filePath = match[2];
+          lineNum = parseInt(match[3] || '0', 10);
+          colNum = parseInt(match[4] || '0', 10);
         } else if (pattern === patterns[1]) {
           // Without function
-          [, filePath, lineNum, colNum] = match;
+          filePath = match[1];
+          lineNum = parseInt(match[2] || '0', 10);
+          colNum = parseInt(match[3] || '0', 10);
         } else {
           // Webpack format
-          [, filePath, lineNum, colNum] = match;
+          filePath = match[1];
+          lineNum = parseInt(match[2] || '0', 10);
+          colNum = parseInt(match[3] || '0', 10);
         }
 
         // Normalize file path to repo-relative
@@ -71,8 +78,8 @@ export function parseStackTrace(stack?: string): CodeLocation[] {
         if (normalizedPath) {
           locations.push({
             file: normalizedPath,
-            line: parseInt(lineNum, 10),
-            column: parseInt(colNum, 10),
+            line: lineNum,
+            column: colNum,
             function: functionName,
           });
         }

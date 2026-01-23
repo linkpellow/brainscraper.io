@@ -4,7 +4,7 @@
  * "Rosetta Stone" for tagging network events with high-signal categories
  * to support API curation and endpoint analysis.
  * 
- * Works with events from Chromium (Playwright) or mitmproxy.
+ * Works with events from network traffic capture.
  */
 
 export type CategoryTag =
@@ -334,7 +334,7 @@ export function classifyNetworkSignals(
 }
 
 /**
- * Convert RawNetworkEvent (from mitmproxy/Playwright) to NetworkSignal
+ * Convert RawNetworkEvent to NetworkSignal
  */
 export function convertToNetworkSignal(
   event: {

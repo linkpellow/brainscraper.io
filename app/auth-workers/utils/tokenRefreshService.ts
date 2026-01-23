@@ -73,7 +73,7 @@ export async function refreshAuthWorkerToken(
     }
 
     // Update extractedVars with new token
-    const updatedExtractedVars = {
+    const updatedExtractedVars: PersistedAuthWorkerState['step2']['extractedVars'] = {
       ...extractedVars,
       access_token: newToken,
     };

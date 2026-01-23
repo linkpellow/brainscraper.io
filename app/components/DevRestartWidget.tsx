@@ -77,7 +77,7 @@ export default function DevRestartWidget() {
         onClick={handleRestart}
         disabled={isRestarting}
         className="group relative flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 disabled:from-gray-700 disabled:to-gray-600 rounded-full shadow-2xl shadow-orange-500/50 text-white font-bold transition-all duration-300 hover:scale-105 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
-        title="Restart all dev servers (Next.js, mitmproxy, bridge)"
+        title="Restart dev server (Next.js)"
       >
         <Zap className={`w-5 h-5 ${isRestarting ? 'animate-pulse' : 'group-hover:rotate-12 transition-transform'}`} />
         <span className="text-sm">

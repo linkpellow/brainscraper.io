@@ -292,7 +292,7 @@ ${authentication.refreshEndpoint && tokens.refreshToken ? `    if (!this.tokens?
     }
 
     return {
-${tokens.accessToken.location === 'header' ? `      '${tokens.accessToken.header || 'Authorization'}': \`Bearer \${this.tokens.accessToken}\`,` : `      'Authorization': \`Bearer \${this.tokens.accessToken}\`,`}
+${tokens.accessToken?.location === 'header' ? `      '${tokens.accessToken.header || 'Authorization'}': \`Bearer \${this.tokens.accessToken}\`,` : `      'Authorization': \`Bearer \${this.tokens.accessToken}\`,`}
     };
   }
 
@@ -364,18 +364,18 @@ export function getSessionEvaluationSummary(step2: LockedStep | undefined): {
     };
   }
 
-  const isSuccess = verification.verified;
+  const isSuccess = !!verification.verified;
   const summary = isSuccess
     ? `✅ Success: Token captured, injected, and ${verification.authenticatedRequestCount} authenticated requests detected`
-    : `❌ Failed: ${verification.issues.join('; ')}`;
+    : `❌ Failed: ${verification.issues?.join('; ') || 'Unknown error'}`;
 
   return {
     isSuccess,
-    tokenCaptured: verification.tokenCaptured,
-    tokenInjected: verification.tokenInjectionSucceeded,
-    authenticatedRequestsDetected: verification.authenticatedRequestsDetected,
-    authenticatedRequestCount: verification.authenticatedRequestCount,
-    issues: verification.issues,
+    tokenCaptured: !!verification.tokenCaptured,
+    tokenInjected: !!verification.tokenInjectionSucceeded,
+    authenticatedRequestsDetected: !!verification.authenticatedRequestsDetected,
+    authenticatedRequestCount: verification.authenticatedRequestCount || 0,
+    issues: verification.issues || [],
     summary,
   };
 }

@@ -5,7 +5,8 @@
  * are missing client_id and other OAuth credentials needed for token refresh.
  */
 
-import type { ArtifactBundle, OAuthCredentials, TokenData } from './harToAuthWorker';
+import type { ArtifactBundle } from './types';
+import type { OAuthCredentials, TokenData } from './harToAuthWorker';
 import { extractOAuthCredentials } from './harToAuthWorker';
 import type { PersistedAuthWorkerState } from '../../utils/authWorkerPersistence';
 

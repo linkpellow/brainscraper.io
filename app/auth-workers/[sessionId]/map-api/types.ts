@@ -154,3 +154,10 @@ export type ArtifactBundle = {
     totalAuthArtifacts: number;
   };
 };
+
+// Re-export types from other modules for convenience
+export type { EndpointGroup } from './endpointGrouping';
+export type { MinimalAuthRequirements } from './authRequirements';
+export type { AuthFlowGraph, AuthSummary } from './authFlowGraph';
+export type { EndpointCatalog, EndpointCatalogEntry } from './endpointCatalog';
+export type { OAuthCredentials, TokenData } from './harToAuthWorker';

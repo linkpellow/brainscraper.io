@@ -56,7 +56,8 @@ export function buildCookieJarTimeline(events: RequestEvent[]): CookieTimelineEn
         }
         
         // Update metadata if this is a newer set
-        if (!entry.setByUrl || event.startedDateTime > events.find(e => e.id === entry.firstSeenAtEventId)?.startedDateTime || '') {
+        const firstSeenEvent = events.find(e => e.id === entry!.firstSeenAtEventId);
+        if (!entry.setByUrl || (firstSeenEvent && event.startedDateTime > firstSeenEvent.startedDateTime)) {
           entry.setByUrl = event.url;
         }
       }

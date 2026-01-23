@@ -29,7 +29,7 @@ export function useEnhancedErrorCapture(
   enabled: boolean,
   onError?: (error: EnhancedError) => void
 ) {
-  const errorHandlerRef = useRef<(error: EnhancedError) => void>();
+  const errorHandlerRef = useRef<((error: EnhancedError) => void) | undefined>(undefined);
 
   // Update error handler ref
   useEffect(() => {

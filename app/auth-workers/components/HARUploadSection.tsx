@@ -54,7 +54,7 @@ export default function HARUploadSection({ onWorkerCreated, existingSessions = [
       // Try to find existing session for this domain
       const existingSessionForDomain = existingSessions.find(s => s.targetDomain === targetDomain);
       
-      let sessionId: string;
+      let sessionId: string | undefined;
       let session: PersistedAuthWorkerState | null = null;
       
       // FIRST: Try to enrich existing session

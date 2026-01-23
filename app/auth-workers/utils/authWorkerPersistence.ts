@@ -52,6 +52,9 @@ export type PersistedAuthWorkerState = {
       access_token?: string; // Full token (unmasked)
       refresh_token?: string; // Full token (unmasked)
       id_token?: string; // Full token (unmasked)
+      // Expiration tracking (set by refresh service / JWT decode)
+      expires_at?: string; // epoch millis as string
+      expires_in?: string; // seconds as string
       // OAuth credentials (from HAR or manual capture)
       client_id?: string;
       clientId?: string;
@@ -402,13 +405,15 @@ function persistFromComponents(
         response: step2.response, // Store response to get expires_in
       },
       authenticatedEndpoints,
-      lockedSteps: (lockedSteps || []).map(step => ({
-        id: step.id,
-        stepNumber: step.stepNumber,
-        endpoint: step.endpoint,
-        method: step.method,
-        lockedAt: step.lockedAt,
-      })),
+      lockedSteps: (lockedSteps || [])
+        .filter(step => step.stepNumber != null && step.lockedAt != null)
+        .map(step => ({
+          id: step.id,
+          stepNumber: step.stepNumber!,
+          endpoint: step.endpoint,
+          method: step.method,
+          lockedAt: step.lockedAt!,
+        })),
       apiKey,
     };
 

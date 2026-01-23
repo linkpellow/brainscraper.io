@@ -91,14 +91,14 @@ export function getCurrentWorkerId(): string | null {
  * Get all current correlation IDs
  */
 export function getCorrelationIds(): {
-  runId: string | null;
-  stepId: string | null;
-  workerId: string | null;
+  runId?: string;
+  stepId?: string;
+  workerId?: string;
 } {
   return {
-    runId: currentRunId,
-    stepId: currentStepId,
-    workerId: currentWorkerId,
+    runId: currentRunId ?? undefined,
+    stepId: currentStepId ?? undefined,
+    workerId: currentWorkerId ?? undefined,
   };
 }
 

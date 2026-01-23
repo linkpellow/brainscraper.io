@@ -233,12 +233,13 @@ function identifyRootCause(
     evidence.push(`Error message indicates auth issue: "${log.message}"`);
     
     // Check if token is missing
-    if (context.localStorage) {
-      const hasToken = Object.keys(context.localStorage).some(key => 
+    const local = context.browser?.localStorage;
+    if (local) {
+      const hasToken = Object.keys(local).some((key) =>
         key.toLowerCase().includes('token') || key.toLowerCase().includes('auth')
       );
       if (!hasToken) {
-        evidence.push('No authentication token found in localStorage');
+        evidence.push('No authentication token found in browser localStorage');
         confidence = 'high';
       }
     }

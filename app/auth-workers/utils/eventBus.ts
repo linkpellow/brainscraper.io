@@ -11,9 +11,9 @@
 import { getCorrelationIds } from './correlationIds';
 
 export type CorrelationIds = {
-  runId: string | null;
-  stepId: string | null;
-  workerId: string | null;
+  runId?: string;
+  stepId?: string;
+  workerId?: string;
 };
 import type { CodeLocation } from './codebaseAwareLogging';
 
@@ -168,11 +168,12 @@ class EventBus {
       if (filters.component) {
         filtered = filtered.filter(e => e.component === filters.component);
       }
-      if (filters.startTime) {
-        filtered = filtered.filter(e => e.timestamp >= filters.startTime);
+      const { startTime, endTime } = filters;
+      if (startTime != null) {
+        filtered = filtered.filter(e => e.timestamp >= startTime);
       }
-      if (filters.endTime) {
-        filtered = filtered.filter(e => e.timestamp <= filters.endTime);
+      if (endTime != null) {
+        filtered = filtered.filter(e => e.timestamp <= endTime);
       }
     }
     
@@ -243,7 +244,7 @@ class EventBus {
    * Compute group key for collapsing similar events
    */
   private computeGroupKey(event: Omit<StructuredEvent, 'id' | 'timestamp' | 'fingerprint' | 'groupKey'>): string {
-    return `${event.fingerprint || this.computeFingerprint(event)}:${event.runId || 'global'}`;
+    return `${this.computeFingerprint(event)}:${event.runId || 'global'}`;
   }
   
   /**
