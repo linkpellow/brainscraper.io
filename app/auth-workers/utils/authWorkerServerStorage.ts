@@ -134,11 +134,17 @@ export function listSessionsFromServer(): Array<{
     
     const sessionsDir = getDataFilePath(SESSIONS_DIR);
     
+    console.log('[AuthWorkerServerStorage] Reading sessions from:', sessionsDir);
+    console.log('[AuthWorkerServerStorage] DATA_DIR:', process.env.DATA_DIR);
+    console.log('[AuthWorkerServerStorage] Directory exists:', fs.existsSync(sessionsDir));
+    
     if (!fs.existsSync(sessionsDir)) {
+      console.warn('[AuthWorkerServerStorage] Sessions directory does not exist:', sessionsDir);
       return [];
     }
     
     const files = fs.readdirSync(sessionsDir);
+    console.log('[AuthWorkerServerStorage] Found files:', files.length, files);
     const sessions: Array<{
       sessionId: string;
       targetDomain: string;
