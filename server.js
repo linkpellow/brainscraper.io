@@ -14,18 +14,24 @@ const port = process.env.PORT || 3000;
 const isProduction = process.env.NODE_ENV === 'production' || process.env.RAILWAY_ENVIRONMENT === 'production';
 
 /**
- * Initialize auth workers on startup (production only)
- * Note: Auth workers are gitignored, so they must be synced manually via:
- * npm run sync-auth-worker [sessionId] [productionUrl]
- * 
- * This function is kept for future use if we implement automatic syncing.
+ * Initialize auth workers on startup
+ * Copies auth workers from build artifact to Railway persistent volume
  */
-function initializeAuthWorkers() {
-  // Auth workers are gitignored and won't be in the build artifact
-  // They must be synced manually using the sync script
-  // This is intentional for security (tokens shouldn't be in git)
+async function initializeAuthWorkers() {
   if (isProduction) {
-    console.log('[Server] Auth workers must be synced manually using: npm run sync-auth-worker');
+    try {
+      // Import and run initialization (runs async, doesn't block)
+      require('./scripts/initialize-auth-workers.ts');
+    } catch (error) {
+      // If tsx isn't available or script fails, try direct require
+      try {
+        // In production build, the script might be compiled
+        const initPath = require.resolve('./scripts/initialize-auth-workers');
+        require(initPath);
+      } catch (e) {
+        console.warn('[Server] Auth worker initialization skipped (script not available):', error.message);
+      }
+    }
   }
 }
 
@@ -42,8 +48,8 @@ const app = next({
 });
 const handle = app.getRequestHandler();
 
-app.prepare().then(() => {
-  // Initialize auth workers before starting server
+app.prepare().then(async () => {
+  // Initialize auth workers before starting server (don't block startup)
   initializeAuthWorkers();
   
   createServer(async (req, res) => {

@@ -1,54 +1,72 @@
 /**
  * Initialize Auth Workers on Startup
  * 
- * This script runs during build/postbuild to ensure auth workers from local data/
- * are available in the build artifact, so they can be synced to production DATA_DIR.
- * 
- * NOTE: Since auth worker files are gitignored, they won't be in the repo.
- * This script is designed to run during local builds before deployment.
- * 
- * For Railway: Auth workers should be synced via the sync script or API endpoint.
+ * Copies auth workers from build artifact (data/auth-workers) to Railway persistent volume (DATA_DIR/auth-workers)
+ * Runs on server startup to ensure auth workers are available in production
  */
 
-import { existsSync, readdirSync, readFileSync, writeFileSync, mkdirSync, statSync } from 'fs';
+import { existsSync, readdirSync, readFileSync, writeFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
+import { getDataDirectory } from '../utils/dataDirectory';
 
-const LOCAL_DATA_DIR = join(process.cwd(), 'data', 'auth-workers');
-const BUILD_DATA_DIR = join(process.cwd(), '.next', 'auth-workers-seed');
+const BUILD_DATA_DIR = join(process.cwd(), 'data', 'auth-workers');
+const AUTH_WORKERS_SUBDIR = 'auth-workers';
 
 async function initializeAuthWorkers() {
+  // Only run on server
+  if (typeof window !== 'undefined') {
+    return;
+  }
+
   try {
-    // Check if local auth workers directory exists
-    if (!existsSync(LOCAL_DATA_DIR)) {
-      console.log('[AuthWorkersInit] No local auth workers directory found');
-      return;
-    }
+    // Get production data directory (DATA_DIR) or local data directory
+    const dataDir = getDataDirectory();
+    const productionAuthWorkersDir = join(dataDir, AUTH_WORKERS_SUBDIR);
 
-    // Get list of local auth worker files
-    const localFiles = readdirSync(LOCAL_DATA_DIR).filter(f => f.endsWith('.json'));
-    
-    if (localFiles.length === 0) {
-      console.log('[AuthWorkersInit] No local auth worker files found');
-      return;
-    }
-
-    console.log(`[AuthWorkersInit] Found ${localFiles.length} local auth worker(s)`);
-
-    // Create build seed directory (for reference, but won't be deployed)
+    // Check if build artifact has auth workers
     if (!existsSync(BUILD_DATA_DIR)) {
-      mkdirSync(BUILD_DATA_DIR, { recursive: true });
+      console.log('[AuthWorkersInit] No auth workers in build artifact');
+      return;
     }
 
-    let processedCount = 0;
+    const buildFiles = readdirSync(BUILD_DATA_DIR).filter(f => f.endsWith('.json'));
+    
+    if (buildFiles.length === 0) {
+      console.log('[AuthWorkersInit] No auth worker files in build artifact');
+      return;
+    }
 
-    // Process each auth worker
-    for (const file of localFiles) {
-      const localPath = join(LOCAL_DATA_DIR, file);
-      const seedPath = join(BUILD_DATA_DIR, file);
+    console.log(`[AuthWorkersInit] Found ${buildFiles.length} auth worker(s) in build artifact`);
+
+    // Ensure production auth workers directory exists
+    if (!existsSync(productionAuthWorkersDir)) {
+      mkdirSync(productionAuthWorkersDir, { recursive: true });
+      console.log(`[AuthWorkersInit] Created production auth workers directory: ${productionAuthWorkersDir}`);
+    }
+
+    // Get existing production files (don't overwrite)
+    const existingFiles = existsSync(productionAuthWorkersDir)
+      ? readdirSync(productionAuthWorkersDir).filter(f => f.endsWith('.json'))
+      : [];
+
+    let copiedCount = 0;
+    let skippedCount = 0;
+
+    // Copy each auth worker from build to production
+    for (const file of buildFiles) {
+      const buildPath = join(BUILD_DATA_DIR, file);
+      const productionPath = join(productionAuthWorkersDir, file);
+
+      // Skip if already exists in production (don't overwrite)
+      if (existsSync(productionPath)) {
+        console.log(`[AuthWorkersInit] Skipping ${file} - already exists in production`);
+        skippedCount++;
+        continue;
+      }
 
       try {
         // Read and validate session data
-        const content = readFileSync(localPath, 'utf-8');
+        const content = readFileSync(buildPath, 'utf-8');
         const session = JSON.parse(content);
 
         // Validate session structure
@@ -57,20 +75,19 @@ async function initializeAuthWorkers() {
           continue;
         }
 
-        // Write to seed directory (for build-time reference)
-        writeFileSync(seedPath, content, 'utf-8');
-        console.log(`[AuthWorkersInit] ✅ Processed ${file} (${session.targetDomain || session.sessionId})`);
-        processedCount++;
+        // Copy to production
+        writeFileSync(productionPath, content, 'utf-8');
+        console.log(`[AuthWorkersInit] ✅ Copied ${file} (${session.targetDomain || session.sessionId})`);
+        copiedCount++;
       } catch (error: any) {
-        console.error(`[AuthWorkersInit] ❌ Failed to process ${file}:`, error.message);
+        console.error(`[AuthWorkersInit] ❌ Failed to copy ${file}:`, error.message);
       }
     }
 
-    console.log(`[AuthWorkersInit] Complete: ${processedCount} processed`);
-    console.log(`[AuthWorkersInit] NOTE: Auth workers are gitignored. Use 'npm run sync-auth-worker' to sync to production.`);
+    console.log(`[AuthWorkersInit] Complete: ${copiedCount} copied, ${skippedCount} skipped`);
   } catch (error: any) {
     console.error('[AuthWorkersInit] ❌ Initialization error:', error.message);
-    // Don't throw - allow build to continue even if initialization fails
+    // Don't throw - allow server to start even if initialization fails
   }
 }
 
