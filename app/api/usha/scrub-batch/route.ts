@@ -1,5 +1,41 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getUshaToken, clearTokenCache } from '@/utils/getUshaToken';
+import { listSessionsFromServer, getSessionFromServer } from '@/app/auth-workers/utils/authWorkerServerStorage';
+import { getValidToken } from '@/app/auth-workers/utils/tokenRefreshService';
+
+/**
+ * Get USHA JWT token from auth worker (preferred) or fallback to getUshaToken
+ * 
+ * Priority:
+ * 1. Auth worker for agent.ushadvisors.com (auto-refreshes, 24/7)
+ * 2. Fallback to getUshaToken() (legacy method)
+ */
+async function getUshaTokenForDNC(): Promise<string | null> {
+  try {
+    // Try to get token from auth worker for agent.ushadvisors.com
+    const sessions = listSessionsFromServer();
+    const ushaSession = sessions
+      .filter(s => s.targetDomain === 'agent.ushadvisors.com')
+      .sort((a, b) => b.stabilizedAt - a.stabilizedAt)[0]; // Most recent
+    
+    if (ushaSession) {
+      const session = getSessionFromServer(ushaSession.sessionId);
+      if (session && session.apiKey) {
+        console.log('🔑 [DNC SCRUB] Using auth worker token (auto-refreshes, 24/7)');
+        const tokenResult = await getValidToken(session.sessionId);
+        if (tokenResult?.token) {
+          return tokenResult.token;
+        }
+      }
+    }
+  } catch (error) {
+    console.warn('⚠️ [DNC SCRUB] Auth worker token fetch failed, falling back to getUshaToken:', error instanceof Error ? error.message : 'Unknown error');
+  }
+  
+  // Fallback to legacy method
+  console.log('🔑 [DNC SCRUB] Using getUshaToken() fallback');
+  return await getUshaToken();
+}
 
 /**
  * USHA Batch Phone Number Scrub API endpoint
@@ -21,34 +57,26 @@ export async function POST(request: NextRequest) {
     console.log(`📞 [DNC SCRUB] Received ${phoneNumbers?.length || 0} phone numbers to scrub`);
     
     // Get USHA JWT token (required for USHA DNC API)
-    // NOTE: The USHA DNC API requires a valid USHA JWT token, NOT a Cognito token
-    let token: string;
+    // Priority: Auth worker (auto-refreshes) → getUshaToken (fallback)
+    let token: string | null = null;
     try {
-      token = await getUshaToken();
-      console.log('✅ [DNC SCRUB] Using USHA JWT token for DNC API');
+      token = await getUshaTokenForDNC();
+      if (token) {
+        console.log('✅ [DNC SCRUB] Using USHA JWT token for DNC API');
+      }
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Token fetch failed';
       console.error(`❌ [DNC SCRUB] USHA token fetch failed: ${errorMsg}`);
-      console.error(`❌ [DNC SCRUB] CRITICAL: The USHA DNC API requires a valid USHA JWT token.`);
-      console.error(`❌ [DNC SCRUB] Cognito tokens will NOT work for DNC scrubbing.`);
-      console.error(`❌ [DNC SCRUB] Please ensure USHA_JWT_TOKEN is set in environment variables with a fresh, valid token.`);
-      return NextResponse.json(
-        { 
-          success: false,
-          error: `Failed to obtain valid USHA JWT token. ${errorMsg}. Note: The USHA DNC API requires a valid USHA JWT token (not Cognito). Please update USHA_JWT_TOKEN in your environment variables.` 
-        },
-        { status: 500 }
-      );
     }
     
     if (!token) {
       console.error('❌ [DNC SCRUB] Token is null/undefined');
       console.error(`❌ [DNC SCRUB] CRITICAL: The USHA DNC API requires a valid USHA JWT token.`);
-      console.error(`❌ [DNC SCRUB] Please ensure USHA_JWT_TOKEN is set in environment variables with a fresh, valid token.`);
+      console.error(`❌ [DNC SCRUB] Please ensure you have an auth worker for agent.ushadvisors.com or USHA_JWT_TOKEN is set in environment variables.`);
       return NextResponse.json(
         { 
           success: false,
-          error: 'Token is required. Token fetch returned null. The USHA DNC API requires a valid USHA JWT token. Please update USHA_JWT_TOKEN in your environment variables.' 
+          error: 'Token is required. Failed to obtain USHA JWT token from auth worker or environment. Please create an auth worker for agent.ushadvisors.com or set USHA_JWT_TOKEN in environment variables.' 
         },
         { status: 401 }
       );
@@ -101,20 +129,10 @@ export async function POST(request: NextRequest) {
             : cleanedPhone;
 
           // Use USHA DNC API directly (requires USHA JWT token)
-          // Get USHA JWT token (token might be Cognito, so get USHA JWT)
-          let ushaJwtToken = token;
-          try {
-            // Try to get USHA JWT token directly
-            const { getUshaToken } = await import('@/utils/getUshaToken');
-            ushaJwtToken = await getUshaToken();
-          } catch (e) {
-            // If that fails, token might already be USHA JWT, use it
-            console.log(`  ⚠️ [DNC SCRUB] ${normalizedPhone}: Using provided token (may need to be USHA JWT)`);
-          }
-          
+          // Token is already from auth worker (auto-refreshes) or getUshaToken fallback
           const url = `https://api-business-agent.ushadvisors.com/Leads/api/leads/scrubphonenumber?currentContextAgentNumber=${encodeURIComponent(currentContextAgentNumber)}&phone=${encodeURIComponent(normalizedPhone)}`;
           let headers: Record<string, string> = {
-            'Authorization': `Bearer ${ushaJwtToken}`,
+            'Authorization': `Bearer ${token}`,
             'accept': 'application/json, text/plain, */*',
             'Referer': 'https://agent.ushadvisors.com/',
             'Content-Type': 'application/json',
@@ -126,22 +144,22 @@ export async function POST(request: NextRequest) {
             headers,
           });
 
-          // Retry once on auth failure (automatic USHA token refresh)
+          // Retry once on auth failure (automatic token refresh via auth worker or getUshaToken)
           if (response.status === 401 || response.status === 403) {
-            console.log(`  🔄 [DNC SCRUB] ${normalizedPhone}: Token expired (${response.status}), refreshing USHA token and retrying...`);
+            console.log(`  🔄 [DNC SCRUB] ${normalizedPhone}: Token expired (${response.status}), refreshing token and retrying...`);
             clearTokenCache();
             try {
-              const { getUshaToken } = await import('@/utils/getUshaToken');
-              const freshUshaToken = await getUshaToken(null, true);
-              if (freshUshaToken) {
-                headers = { ...headers, 'Authorization': `Bearer ${freshUshaToken}` };
+              const freshToken = await getUshaTokenForDNC();
+              if (freshToken) {
+                headers = { ...headers, 'Authorization': `Bearer ${freshToken}` };
+                token = freshToken; // Update token for subsequent requests
                 response = await fetch(url, {
                   method: 'GET',
                   headers,
                 });
               }
             } catch (e) {
-              console.log(`  ⚠️ [DNC SCRUB] ${normalizedPhone}: USHA token refresh failed:`, e);
+              console.log(`  ⚠️ [DNC SCRUB] ${normalizedPhone}: Token refresh failed:`, e);
             }
           }
           
@@ -240,7 +258,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       results: results,
-      stats: stats
+      stats: stats,
+      dncCount: stats.dnc, // For frontend compatibility
+      okCount: stats.ok    // For frontend compatibility
     });
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : 'Unknown error';

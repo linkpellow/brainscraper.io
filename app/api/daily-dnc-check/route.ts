@@ -4,6 +4,42 @@ import * as path from 'path';
 import { getUshaToken, clearTokenCache } from '@/utils/getUshaToken';
 import { getDataDirectory, getDataFilePath, safeWriteFile, safeReadFile, ensureDataDirectory } from '@/utils/dataDirectory';
 import { withLock } from '@/utils/fileLock';
+import { listSessionsFromServer, getSessionFromServer } from '@/app/auth-workers/utils/authWorkerServerStorage';
+import { getValidToken } from '@/app/auth-workers/utils/tokenRefreshService';
+
+/**
+ * Get USHA JWT token from auth worker (preferred) or fallback to getUshaToken
+ * 
+ * Priority:
+ * 1. Auth worker for agent.ushadvisors.com (auto-refreshes, 24/7)
+ * 2. Fallback to getUshaToken() (legacy method)
+ */
+async function getUshaTokenForDNC(): Promise<string | null> {
+  try {
+    // Try to get token from auth worker for agent.ushadvisors.com
+    const sessions = listSessionsFromServer();
+    const ushaSession = sessions
+      .filter(s => s.targetDomain === 'agent.ushadvisors.com')
+      .sort((a, b) => b.stabilizedAt - a.stabilizedAt)[0]; // Most recent
+    
+    if (ushaSession) {
+      const session = getSessionFromServer(ushaSession.sessionId);
+      if (session && session.apiKey) {
+        console.log('🔑 [DAILY_DNC] Using auth worker token (auto-refreshes, 24/7)');
+        const tokenResult = await getValidToken(session.sessionId);
+        if (tokenResult?.token) {
+          return tokenResult.token;
+        }
+      }
+    }
+  } catch (error) {
+    console.warn('⚠️ [DAILY_DNC] Auth worker token fetch failed, falling back to getUshaToken:', error instanceof Error ? error.message : 'Unknown error');
+  }
+  
+  // Fallback to legacy method
+  console.log('🔑 [DAILY_DNC] Using getUshaToken() fallback');
+  return await getUshaToken();
+}
 
 /**
  * Daily DNC Check Cron Job
@@ -102,11 +138,11 @@ export async function GET(request: NextRequest) {
       });
     }
     
-    // Step 3: Get USHA token
+    // Step 3: Get USHA token (Priority: Auth worker → getUshaToken fallback)
     console.log('🔑 [DAILY_DNC] Step 3: Getting USHA authentication token...');
-    const token = await getUshaToken();
+    const token = await getUshaTokenForDNC();
     if (!token) {
-      throw new Error('Failed to get USHA authentication token');
+      throw new Error('Failed to get USHA authentication token from auth worker or environment');
     }
     console.log('✅ [DAILY_DNC] Token obtained\n');
     
@@ -145,12 +181,14 @@ export async function GET(request: NextRequest) {
             
             let response = await fetch(url, { method: 'GET', headers });
             
-            // Retry once on auth failure (should be rare with backend validation)
+            // Retry once on auth failure (automatic token refresh via auth worker or getUshaToken)
             if (response.status === 401 || response.status === 403) {
+              console.log(`  🔄 [DAILY_DNC] ${phone}: Token expired (${response.status}), refreshing...`);
               clearTokenCache();
-              const freshToken = await getUshaToken(null, true);
+              const freshToken = await getUshaTokenForDNC();
               if (freshToken) {
-                response = await fetch(url, { method: 'GET', headers: { ...headers, 'Authorization': `Bearer ${freshToken}` } });
+                headers = { ...headers, 'Authorization': `Bearer ${freshToken}` };
+                response = await fetch(url, { method: 'GET', headers });
               }
             }
             

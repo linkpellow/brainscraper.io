@@ -322,8 +322,9 @@ export default function EnrichedLeadsPage() {
             if (response.ok) {
               const result = await response.json();
               if (result.success && result.results && Array.isArray(result.results)) {
-                const batchDncCount = result.dncCount || 0;
-                const batchOkCount = result.okCount || 0;
+                // Get counts from stats object (preferred) or top-level (for backward compatibility)
+                const batchDncCount = result.stats?.dnc || result.dncCount || 0;
+                const batchOkCount = result.stats?.ok || result.okCount || 0;
                 
                 console.log(`📥 [FRONTEND DNC] Batch ${batchNum} received: ${batchOkCount} OK, ${batchDncCount} DNC (${batchTime}ms)`);
                 
@@ -331,7 +332,9 @@ export default function EnrichedLeadsPage() {
                   // Normalize phone number for consistent matching
                   const normalizedPhone = String(r.phone || '').replace(/\D/g, '');
                   if (normalizedPhone && normalizedPhone.length >= 10) {
-                    dncResults.set(normalizedPhone, r.status === 'DNC' ? 'YES' : r.status === 'OK' ? 'NO' : 'UNKNOWN');
+                    // Map status: 'DNC' → 'YES', 'OK' → 'NO', anything else → 'UNKNOWN'
+                    const dncStatus = r.status === 'DNC' ? 'YES' : r.status === 'OK' ? 'NO' : 'UNKNOWN';
+                    dncResults.set(normalizedPhone, dncStatus);
                   }
                 });
                 setDncError(null); // Clear any previous errors

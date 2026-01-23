@@ -1,5 +1,41 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getUshaToken, clearTokenCache } from '@/utils/getUshaToken';
+import { listSessionsFromServer, getSessionFromServer } from '@/app/auth-workers/utils/authWorkerServerStorage';
+import { getValidToken } from '@/app/auth-workers/utils/tokenRefreshService';
+
+/**
+ * Get USHA JWT token from auth worker (preferred) or fallback to getUshaToken
+ * 
+ * Priority:
+ * 1. Auth worker for agent.ushadvisors.com (auto-refreshes, 24/7)
+ * 2. Fallback to getUshaToken() (legacy method)
+ */
+async function getUshaTokenForDNC(): Promise<string | null> {
+  try {
+    // Try to get token from auth worker for agent.ushadvisors.com
+    const sessions = listSessionsFromServer();
+    const ushaSession = sessions
+      .filter(s => s.targetDomain === 'agent.ushadvisors.com')
+      .sort((a, b) => b.stabilizedAt - a.stabilizedAt)[0]; // Most recent
+    
+    if (ushaSession) {
+      const session = getSessionFromServer(ushaSession.sessionId);
+      if (session && session.apiKey) {
+        console.log('🔑 [DNC CSV SCRUB] Using auth worker token (auto-refreshes, 24/7)');
+        const tokenResult = await getValidToken(session.sessionId);
+        if (tokenResult?.token) {
+          return tokenResult.token;
+        }
+      }
+    }
+  } catch (error) {
+    console.warn('⚠️ [DNC CSV SCRUB] Auth worker token fetch failed, falling back to getUshaToken:', error instanceof Error ? error.message : 'Unknown error');
+  }
+  
+  // Fallback to legacy method
+  console.log('🔑 [DNC CSV SCRUB] Using getUshaToken() fallback');
+  return await getUshaToken();
+}
 import Papa from 'papaparse';
 
 const USHA_API_URL = 'https://api-business-agent.ushadvisors.com/Leads/api/leads/scrubphonenumber';
@@ -169,27 +205,33 @@ export async function POST(request: NextRequest) {
 
     console.log(`📁 [DNC CSV SCRUB] File: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`);
 
-    // Get USHA token (will be refreshed automatically if expired)
+    // Get USHA token (Priority: Auth worker → getUshaToken fallback)
     console.log(`🔑 [DNC CSV SCRUB] Getting USHA JWT token...`);
-    let token: string;
+    let token: string | null = null;
     try {
-      token = await getUshaToken();
-      console.log(`✅ [DNC CSV SCRUB] Token obtained successfully\n`);
+      token = await getUshaTokenForDNC();
+      if (token) {
+        console.log(`✅ [DNC CSV SCRUB] Token obtained successfully\n`);
+      }
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Unknown error';
       console.error(`❌ [DNC CSV SCRUB] Failed to get USHA token: ${errorMsg}`);
+    }
+    
+    if (!token) {
+      console.error(`❌ [DNC CSV SCRUB] Token is null/undefined`);
       return NextResponse.json(
-        { error: `Failed to get USHA token: ${errorMsg}` },
+        { error: `Failed to get USHA token. Please ensure you have an auth worker for agent.ushadvisors.com or USHA_JWT_TOKEN is set in environment variables.` },
         { status: 500 }
       );
     }
 
     // Create a function to get fresh token (for retry on 401/403)
     // This will update the token variable for subsequent batches
-    const getFreshToken = async (): Promise<string> => {
+    const getFreshToken = async (): Promise<string | null> => {
       console.log(`🔄 [DNC CSV SCRUB] Refreshing token for subsequent requests...`);
       clearTokenCache();
-      const freshToken = await getUshaToken(null, true); // Force refresh
+      const freshToken = await getUshaTokenForDNC(); // Uses auth worker (auto-refreshes) or getUshaToken
       if (freshToken) {
         token = freshToken; // Update token for subsequent batches
         console.log(`✅ [DNC CSV SCRUB] Token refreshed, using for remaining requests`);

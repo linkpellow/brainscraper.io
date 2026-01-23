@@ -1,5 +1,46 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getUshaToken, clearTokenCache } from '@/utils/getUshaToken';
+import { listSessionsFromServer, getSessionFromServer } from '@/app/auth-workers/utils/authWorkerServerStorage';
+import { getValidToken } from '@/app/auth-workers/utils/tokenRefreshService';
+
+/**
+ * Get USHA JWT token from auth worker (preferred) or fallback to getUshaToken
+ * 
+ * Priority:
+ * 1. Auth worker for agent.ushadvisors.com (auto-refreshes, 24/7)
+ * 2. Fallback to getUshaToken() (legacy method)
+ */
+async function getUshaTokenForDNC(providedToken?: string | null): Promise<string | null> {
+  // If token provided, use it
+  if (providedToken) {
+    return await getUshaToken(providedToken);
+  }
+  
+  try {
+    // Try to get token from auth worker for agent.ushadvisors.com
+    const sessions = listSessionsFromServer();
+    const ushaSession = sessions
+      .filter(s => s.targetDomain === 'agent.ushadvisors.com')
+      .sort((a, b) => b.stabilizedAt - a.stabilizedAt)[0]; // Most recent
+    
+    if (ushaSession) {
+      const session = getSessionFromServer(ushaSession.sessionId);
+      if (session && session.apiKey) {
+        console.log('🔑 [SCRUB_PHONE] Using auth worker token (auto-refreshes, 24/7)');
+        const tokenResult = await getValidToken(session.sessionId);
+        if (tokenResult?.token) {
+          return tokenResult.token;
+        }
+      }
+    }
+  } catch (error) {
+    console.warn('⚠️ [SCRUB_PHONE] Auth worker token fetch failed, falling back to getUshaToken:', error instanceof Error ? error.message : 'Unknown error');
+  }
+  
+  // Fallback to legacy method
+  console.log('🔑 [SCRUB_PHONE] Using getUshaToken() fallback');
+  return await getUshaToken();
+}
 
 /**
  * USHA Single Phone Number Scrub API endpoint
@@ -18,13 +59,13 @@ export async function GET(request: NextRequest) {
     const phone = searchParams.get('phone');
     const currentContextAgentNumber = searchParams.get('currentContextAgentNumber') || '00044447';
     
-    // Get JWT token automatically (Cognito → OAuth → env var)
+    // Get JWT token (Priority: Auth worker → getUshaToken fallback)
     const providedToken = searchParams.get('token');
-    const token = await getUshaToken(providedToken);
+    const token = await getUshaTokenForDNC(providedToken);
     
     if (!token) {
       return NextResponse.json(
-        { error: 'USHA JWT token is required. Token fetch failed.' },
+        { error: 'USHA JWT token is required. Failed to obtain token from auth worker or environment.' },
         { status: 401 }
       );
     }
@@ -63,16 +104,16 @@ export async function GET(request: NextRequest) {
       headers,
     });
 
-    // Retry once on auth failure (automatic token refresh)
+    // Retry once on auth failure (automatic token refresh via auth worker or getUshaToken)
     if (response.status === 401 || response.status === 403) {
       console.log(`🔄 [SCRUB_PHONE] Token expired (${response.status}), refreshing and retrying...`);
       clearTokenCache();
-      const freshToken = await getUshaToken(null, true);
+      const freshToken = await getUshaTokenForDNC();
       if (freshToken) {
         response = await fetch(url, {
           method: 'GET',
           headers: { ...headers, 'Authorization': `Bearer ${freshToken}` },
-    });
+        });
       }
     }
 
