@@ -8,7 +8,6 @@ import { serve } from 'inngest/next';
 import { inngest } from '@/utils/inngest';
 import { enrichmentFunctions } from '@/utils/inngest/enrichment';
 import { scrapingFunctions } from '@/utils/inngest/scraping';
-import { sendCrokDocsDailyMMS } from '@/app/api/inngest/crokdocs-daily-mms';
 
 // Validate Inngest configuration (warn if missing in production)
 if (process.env.NODE_ENV === 'production') {
@@ -24,6 +23,5 @@ export const { GET, POST, PUT } = serve({
   functions: [
     ...enrichmentFunctions,
     ...scrapingFunctions,
-    sendCrokDocsDailyMMS,
   ],
 });

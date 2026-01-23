@@ -228,14 +228,15 @@ export async function POST(request: NextRequest) {
 
     // Create a function to get fresh token (for retry on 401/403)
     // This will update the token variable for subsequent batches
-    const getFreshToken = async (): Promise<string | null> => {
+    const getFreshToken = async (): Promise<string> => {
       console.log(`🔄 [DNC CSV SCRUB] Refreshing token for subsequent requests...`);
       clearTokenCache();
       const freshToken = await getUshaTokenForDNC(); // Uses auth worker (auto-refreshes) or getUshaToken
-      if (freshToken) {
-        token = freshToken; // Update token for subsequent batches
-        console.log(`✅ [DNC CSV SCRUB] Token refreshed, using for remaining requests`);
+      if (!freshToken) {
+        throw new Error('Failed to refresh USHA token');
       }
+      token = freshToken; // Update token for subsequent batches
+      console.log(`✅ [DNC CSV SCRUB] Token refreshed, using for remaining requests`);
       return freshToken;
     };
 
@@ -286,7 +287,12 @@ export async function POST(request: NextRequest) {
       // Process batch in parallel
       const batchPromises = batch.map(async ({ row, phone }) => {
         // Use current token, but allow refresh on 401/403
-        const dncResult = await scrubPhoneNumber(phone, token, DEFAULT_AGENT_NUMBER, getFreshToken);
+        if (!token) {
+          throw new Error('Token is required for DNC scrubbing');
+        }
+        // TypeScript: token is guaranteed to be string here due to check above
+        const currentToken: string = token;
+        const dncResult = await scrubPhoneNumber(phone, currentToken, DEFAULT_AGENT_NUMBER, getFreshToken);
         
         // Add DNC status to row
         (row as any).dncStatus = dncResult.isDoNotCall ? 'DNC' : 'OK';

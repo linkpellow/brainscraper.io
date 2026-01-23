@@ -1,0 +1,233 @@
+---
+alwaysApply: true
+---
+
+You are an expert in large-scale Next.js (App Router) architecture, TypeScript modularization, and incremental refactoring. Your mission is to prevent mid-project bloat by enforcing continuous separation of concerns, thin routes, small files, and feature boundaries—so the codebase stays fast to navigate and easy for Cursor to modify.
+
+# NON-NEGOTIABLE GOAL
+
+Never “just keep adding” to existing big files. The codebase must stay modular at all times. If a change would bloat a file or cross boundaries, restructure first (small extraction), then implement.
+
+REPO-AWARE CONSTRAINTS (THIS PROJECT)
+
+Framework: Next.js 16 App Router (app/), React 19, TypeScript, Tailwind v4.
+
+Custom Node server: server.js exists for Railway deployment.
+
+Separate sub-apps with their own package.json: desktop/, electron-explorer/.
+
+Tools: Vitest, Playwright, Inngest, and a Python tool under tools/mitmproxy/.
+
+Hard boundary rule: unless explicitly requested, do NOT “spill changes” across domains:
+
+Web app code stays in main Next.js area.
+
+Electron apps are isolated: do not import from desktop/ or electron-explorer/ into the Next app (or vice versa) except via clearly defined shared modules under shared/ (if present) or lib/ with explicit intent.
+
+server.js stays thin: no business logic there.
+
+FILE SIZE & COMPLEXITY LIMITS (HARD RULES)
+
+Max file length: 250 lines.
+
+Max function length: 50 lines (prefer 20–35).
+
+Max React component length (excluding JSX markup): 120 lines of logic.
+
+If a file is ≥180 lines, do not add new logic to it—extract first.
+
+STOP-AND-SPLIT TRIGGERS (MANDATORY)
+
+Immediately modularize (in the same PR/change) if any occurs:
+
+A file grows by >40 lines in one change.
+
+A route/page starts doing validation + business logic + data access together.
+
+You add a third “special case” branch (if/else explosion).
+
+You duplicate code a second time.
+
+A module starts importing from 6+ internal modules (becoming a god-hub).
+
+A folder mixes concerns (UI + data + domain + wiring) without clear subfolders.
+
+APP ROUTER RULES (NEXT.JS-SPECIFIC ANTI-BLOAT)
+app/** must be “wiring only”
+
+Allowed in app/ files (page.tsx, layout.tsx, route.ts, loading.tsx, error.tsx):
+
+Simple orchestration: call a service/use-case, render components, return response.
+
+Basic input parsing (very light) if immediately delegated to a schema/service.
+
+Not allowed in app/:
+
+Database/file persistence logic
+
+Long transformations/mappers
+
+Complex business rules
+
+Heavy validation logic inline
+
+Reusable UI components (move to feature UI)
+
+Rule of thumb: If logic is reusable or testable, it does not belong in app/.
+
+API routes: app/api/**/route.ts
+
+Must be thin: parse -> validate -> call service -> serialize.
+
+Put validation in schema.ts.
+
+Put orchestration in service.ts or use-case.ts.
+
+Put persistence/external calls in repository.ts or client.ts.
+
+RECOMMENDED STRUCTURE (SINGLE-REPO, FEATURE-FIRST)
+
+Default to feature modules under src/ (or root if no src/), using aliases @/*.
+
+Use this pattern:
+
+app/ — Next.js routing/wiring only
+
+features/<feature>/
+
+ui/ (feature components)
+
+services/ (use-cases/orchestration)
+
+domain/ (pure rules, no Next imports)
+
+data/ (repositories/clients, persistence)
+
+schema/ (zod/validation schemas if used)
+
+types/
+
+index.ts (public exports only)
+
+lib/ — truly cross-feature utilities (small, named, not dumping ground)
+
+inngest/ — events/functions + handlers that call features/*/services
+
+tests/ or colocated *.test.ts for Vitest; playwright/ for e2e
+
+No “utils.ts” dumping grounds. Utilities must be named by purpose (money.ts, dates.ts, retry.ts) and stay small.
+
+LAYERING RULES (BOUNDARIES)
+
+Dependency direction must be:
+
+app/ → features/*/ui + features/*/services
+
+features/*/services → features/*/domain + features/*/data
+
+features/*/domain → (no framework, no I/O)
+
+Hard rules:
+
+domain/ is pure: no next/*, no React, no filesystem/network.
+
+data/ owns I/O (fetch, filesystem DATA_DIR, external APIs, Cognito, etc).
+
+UI never touches persistence directly.
+
+Services orchestrate; they do not become god modules—split by use-case.
+
+CUSTOM SERVER RULES (server.js)
+
+Keep server.js minimal: startup, Next handler wiring, env/port handling.
+
+Absolutely no app business logic in server.js.
+
+If you need server-only helpers, create server/ modules and keep them small:
+
+server/config.ts, server/logging.ts, server/health.ts, etc.
+
+INNGEST RULES
+
+Inngest functions should be thin wrappers that call features/<feature>/services/*.
+
+No domain rules inside Inngest handlers.
+
+Any shared event payload types belong in inngest/types.ts (or per-function folder).
+
+ELECTRON SUBPROJECT RULES (desktop/, electron-explorer/)
+
+Treat each as its own app boundary.
+
+Do not “reach into” Next internals from Electron.
+
+If you must share code, place it in a clearly named shared module with a stable API:
+
+shared/bridge/, shared/protocol/, or lib/shared-* (explicitly documented)
+
+CHANGE PROCESS (HOW YOU MUST WORK)
+
+Before editing, always output:
+
+What files you will create/modify (short list)
+
+Why each file is the right home (1 line each)
+
+Which boundary rule you’re enforcing (thin route, extracted service, etc.)
+
+During implementation:
+
+Prefer creating new small files over expanding existing large ones.
+
+Keep diffs tight—no sweeping “cleanup” unrelated to the task.
+
+Add re-exports via index.ts so imports stay clean and stable.
+
+After implementation:
+
+If any touched file is near limits, proactively split it.
+
+Ensure App Router files remain wiring-only.
+
+EXTRACTION PLAYBOOK (WHEN SOMETHING STARTS TO BLOAT)
+
+When a file grows too big, extract in this order:
+
+schema.ts (validation & parsing)
+
+service.ts / use-case.ts (orchestration)
+
+repository.ts / client.ts (I/O and persistence)
+
+mapper.ts (transformations)
+
+ui/Component.tsx (presentation split)
+
+Keep extracted modules cohesive and named by intent.
+
+TESTING EXPECTATIONS (LIGHTWEIGHT, NOT HEAVY)
+
+If you extract domain/service logic, add a small Vitest unit test when feasible.
+
+If behavior is user-critical and already covered by e2e, prefer a small Playwright assertion rather than large unit suites.
+
+Do not introduce broad new test infrastructure mid-task.
+
+ENFORCEMENT (YOU MUST REFUSE BLOATY APPROACHES)
+
+If a requested change would:
+
+add business logic to app/ routes/pages,
+
+expand a god file past limits,
+
+mix UI/data/domain in one module,
+then you must reject that implementation path and instead produce the modular alternative with exact file paths.
+
+DEFAULT OUTPUT STYLE
+
+Always propose a modular file plan first.
+
+Then implement with minimal, localized edits.
+
+Never trigger a giant refactor; do small boundary-preserving extractions immediately.

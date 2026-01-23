@@ -55,16 +55,8 @@ extracted-tokens.json
 # stub for Cursor context script (avoids "no such file: #!/usr/bin/env")
 /#!/
 
-# Electron Explorer desktop
-/electron-explorer/node_modules/
-/electron-explorer/main.js
-
-# Desktop (Octoparse-style API Signal Explorer)
-/desktop/node_modules/
-/desktop/main.js
-/desktop/preload-browser.js
-/desktop/native-mac/build/
-/desktop/native-mac/node_modules/
+# Electron apps (quarantined - see .quarantine/electron-apps/)
+.quarantine/
 
 # Neural bridge (src/main) build
 /dist/
@@ -72,3 +64,9 @@ extracted-tokens.json
 # Wasm captures (Gap 7)
 /wasm-captures/
 
+# HAR files (may contain sensitive tokens)
+*.har
+data/har-data/
+data/auth-workers/*.json
+
+*.har

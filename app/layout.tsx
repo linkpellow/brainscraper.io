@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, Orbitron } from "next/font/google";
 import "./globals.css";
-import DevRestartWidget from "./components/DevRestartWidget";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -34,7 +33,6 @@ export default function RootLayout({
     <html lang="en" data-scroll-behavior="smooth" className={`${orbitron.variable} ${inter.variable}`}>
       <body className="font-futuristic antialiased">
         {children}
-        <DevRestartWidget />
       </body>
     </html>
   );

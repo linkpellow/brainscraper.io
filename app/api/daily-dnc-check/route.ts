@@ -170,10 +170,10 @@ export async function GET(request: NextRequest) {
           }
           
           // Helper function for DNC API call with retry
-          const callDNCAPI = async (phone: string, token: string): Promise<Response> => {
+          const callDNCAPI = async (phone: string, currentToken: string): Promise<Response> => {
             const url = `https://api-business-agent.ushadvisors.com/Leads/api/leads/scrubphonenumber?currentContextAgentNumber=${encodeURIComponent(currentContextAgentNumber)}&phone=${encodeURIComponent(phone)}`;
-            const headers = {
-              'Authorization': `Bearer ${token}`,
+            let headers: Record<string, string> = {
+              'Authorization': `Bearer ${currentToken}`,
               'Origin': 'https://agent.ushadvisors.com',
               'Referer': 'https://agent.ushadvisors.com',
               'Content-Type': 'application/json',

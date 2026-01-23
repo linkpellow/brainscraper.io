@@ -1,0 +1,15 @@
+[
+  {
+    "siteKey": "ushadvisors.com",
+    "automationKey": "DNC_SCRUB",
+    "endpointSignature": {
+      "method": "GET",
+      "host": "api-business-agent.ushadvisors.com",
+      "normalizedPathTemplate": "/Leads/api/leads/scrubphonenumber",
+      "bodyShapeHash": "none"
+    },
+    "requiredHeaders": [],
+    "contentType": "application/json",
+    "mappedAt": 1769111097605
+  }
+]
