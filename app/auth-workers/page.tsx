@@ -48,29 +48,55 @@ export default function AuthWorkersPage() {
           status: s.status,
         })),
       });
+      console.log('[AuthWorkersPage] Full local session list:', JSON.stringify(localSessionList, null, 2));
       
       // Try to load sessions, but also try direct localStorage access if getSessionById fails
       const localSessionObjects: PersistedAuthWorkerState[] = [];
-      for (const sessionMeta of localSessionList) {
-        let session = getSessionById(sessionMeta.sessionId);
-        if (!session) {
-          // Try direct localStorage access as fallback
+      
+      // First, try to get all sessions directly from localStorage
+      try {
+        const index = JSON.parse(localStorage.getItem('authWorker_sessions_index') || '[]');
+        console.log('[AuthWorkersPage] Sessions index from localStorage:', index);
+        
+        for (const sessionId of index) {
           try {
-            const storageKey = `authWorker_session_${sessionMeta.sessionId}`;
+            const storageKey = `authWorker_session_${sessionId}`;
             const stored = localStorage.getItem(storageKey);
             if (stored) {
               const parsed = JSON.parse(stored);
+              console.log('[AuthWorkersPage] Found session in localStorage:', {
+                sessionId: parsed.sessionId,
+                stabilized: parsed.stabilized,
+                version: parsed.version,
+                hasStep2: !!parsed.step2,
+                verified: parsed.step2?.verificationStatus?.verified,
+              });
+              
               // Only add if it has the basic required fields
               if (parsed.sessionId && parsed.stabilized && parsed.step2) {
-                session = parsed as PersistedAuthWorkerState;
-                console.log('[AuthWorkersPage] Loaded session via fallback:', sessionMeta.sessionId);
+                localSessionObjects.push(parsed as PersistedAuthWorkerState);
+                console.log('[AuthWorkersPage] Added session to list:', parsed.sessionId);
+              } else {
+                console.warn('[AuthWorkersPage] Session missing required fields:', {
+                  sessionId: parsed.sessionId,
+                  hasSessionId: !!parsed.sessionId,
+                  stabilized: parsed.stabilized,
+                  hasStep2: !!parsed.step2,
+                });
               }
             }
           } catch (e) {
-            console.warn('[AuthWorkersPage] Fallback load failed:', e);
+            console.warn('[AuthWorkersPage] Failed to parse session:', sessionId, e);
           }
         }
-        if (session) {
+      } catch (e) {
+        console.error('[AuthWorkersPage] Failed to read sessions index:', e);
+      }
+      
+      // Also try the listAllSessions/getSessionById path
+      for (const sessionMeta of localSessionList) {
+        const session = getSessionById(sessionMeta.sessionId);
+        if (session && !localSessionObjects.find(s => s.sessionId === session.sessionId)) {
           localSessionObjects.push(session);
         }
       }
@@ -83,12 +109,13 @@ export default function AuthWorkersPage() {
         const serverResponse = await fetch('/api/auth-worker/sessions');
         if (serverResponse.ok) {
           const serverData = await serverResponse.json();
-          console.log('[AuthWorkersPage] Server response:', {
-            success: serverData.success,
-            count: serverData.count,
-            sessionsCount: serverData.sessions?.length,
-            sessionIds: serverData.sessions?.map((s: PersistedAuthWorkerState) => s.sessionId),
-          });
+      console.log('[AuthWorkersPage] Server response:', {
+        success: serverData.success,
+        count: serverData.count,
+        sessionsCount: serverData.sessions?.length,
+        sessionIds: serverData.sessions?.map((s: PersistedAuthWorkerState) => s.sessionId),
+      });
+      console.log('[AuthWorkersPage] Full server response:', JSON.stringify(serverData, null, 2));
           if (serverData.success && Array.isArray(serverData.sessions)) {
             serverSessions = serverData.sessions;
           }
@@ -106,6 +133,12 @@ export default function AuthWorkersPage() {
         serverCount: serverSessions.length,
         serverIds: serverSessions.map(s => s.sessionId),
       });
+      console.log('[AuthWorkersPage] All local session objects:', JSON.stringify(localSessionObjects.map(s => ({
+        sessionId: s.sessionId,
+        targetDomain: s.targetDomain,
+        stabilized: s.stabilized,
+        verified: s.step2?.verificationStatus?.verified,
+      })), null, 2));
       
       // Merge sessions: prefer server sessions, fallback to local
       const sessionMap = new Map<string, PersistedAuthWorkerState>();
