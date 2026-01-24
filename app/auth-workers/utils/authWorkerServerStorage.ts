@@ -102,46 +102,28 @@ export function listSessionsFromServer(): Array<{
   }
 
   try {
-    // Load fs and path modules using Function constructor - completely hidden from static analysis
-    // This pattern prevents Next.js/Turbopack from analyzing the require calls
-    let fs: any = null;
-    let path: any = null;
-    
-    if (typeof window === 'undefined') {
-      // Build module names dynamically using character codes to prevent static analysis
-      const modules = {
-        fs: String.fromCharCode(102, 115), // 'fs'
-        path: String.fromCharCode(112, 97, 116, 104), // 'path'
-      };
-      
-      // Use Function constructor with webpack ignore - webpack cannot analyze this
-      // @ts-ignore - webpack will not analyze Function constructor
-      // eslint-disable-next-line no-new-func
-      const req = new Function('m', 'return typeof require !== "undefined" ? require(m) : null');
-      try {
-        fs = req(modules.fs);
-        path = req(modules.path);
-      } catch (e) {
-        // If require fails (shouldn't happen on server), return empty
-        console.warn('[AuthWorkerServerStorage] Failed to load fs/path:', e);
-        return [];
-      }
-    }
-    
-    if (!fs || !path) {
-      return [];
-    }
+    // Direct require - this is server-only code, Next.js won't bundle it for client
+    // @ts-ignore - server-only
+    const fs = require('fs');
+    // @ts-ignore - server-only
+    const path = require('path');
     
     // Use same path resolution as initialization in server.js
     const DATA_DIR = process.env.DATA_DIR || path.join(process.cwd(), 'data');
     const sessionsDir = path.join(DATA_DIR, SESSIONS_DIR);
     
     console.log('[AuthWorkerServerStorage] Reading sessions from:', sessionsDir);
-    console.log('[AuthWorkerServerStorage] DATA_DIR:', process.env.DATA_DIR);
+    console.log('[AuthWorkerServerStorage] DATA_DIR:', process.env.DATA_DIR || 'not set');
+    console.log('[AuthWorkerServerStorage] process.cwd():', process.cwd());
     console.log('[AuthWorkerServerStorage] Directory exists:', fs.existsSync(sessionsDir));
     
     if (!fs.existsSync(sessionsDir)) {
       console.warn('[AuthWorkerServerStorage] Sessions directory does not exist:', sessionsDir);
+      // List what directories DO exist
+      if (fs.existsSync(DATA_DIR)) {
+        const dataDirContents = fs.readdirSync(DATA_DIR);
+        console.log('[AuthWorkerServerStorage] DATA_DIR contents:', dataDirContents);
+      }
       return [];
     }
     
@@ -170,8 +152,9 @@ export function listSessionsFromServer(): Array<{
             authenticatedRequestCount: session.step2.verificationStatus.authenticatedRequestCount,
           });
         }
-      } catch (err) {
-        // Skip invalid files
+      } catch (err: any) {
+        // Log the error so we can see what's wrong
+        console.error(`[AuthWorkerServerStorage] Failed to read ${file}:`, err.message);
         continue;
       }
     }
