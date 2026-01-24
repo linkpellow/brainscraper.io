@@ -221,10 +221,12 @@ export async function refreshAuthWorkerToken(
   }
 
   const extractedVars = session.step2.extractedVars;
+  const refreshToken = extractedVars.refresh_token;
   const refreshUrl = extractedVars.refresh_url;
 
-  if (!refreshUrl) {
-    return { success: false, error: 'No refresh URL found' };
+  // Must have either refresh_token (OAuth) or refresh_url (Bearer)
+  if (!refreshToken && !refreshUrl) {
+    return { success: false, error: 'No refresh capability found (missing refresh_token and refresh_url)' };
   }
 
   try {
@@ -235,7 +237,10 @@ export async function refreshAuthWorkerToken(
       // Use OAuth refresh_token flow via API route
       refreshResult = await refreshOAuthToken(sessionId);
     } else {
-      // Use Bearer token refresh flow
+      // Use Bearer token refresh flow (requires refreshUrl)
+      if (!refreshUrl) {
+        return { success: false, error: 'Bearer token refresh requires refresh_url' };
+      }
       refreshResult = await refreshBearerToken(session, refreshUrl);
     }
 
