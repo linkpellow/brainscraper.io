@@ -11,6 +11,8 @@ import type { PersistedAuthWorkerState } from '../../../auth-workers/utils/authW
 
 export async function GET() {
   try {
+    // Force rebuild - add timestamp
+    console.log('[AuthWorkerSessions] API called at:', new Date().toISOString());
     const sessionList = listSessionsFromServer();
     console.log('[AuthWorkerSessions] Found session metadata:', sessionList.length, sessionList.map(s => s.sessionId));
     
