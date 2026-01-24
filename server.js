@@ -83,11 +83,30 @@ function initializeAuthWorkers() {
 
     console.log(`[Server] Auth workers initialized: ${copiedCount} copied, ${skippedCount} skipped`);
     
-    // Verify files were written correctly
-    if (copiedCount > 0) {
+    // Always verify files exist (even if skipped)
+    if (existsSync(PRODUCTION_AUTH_WORKERS_DIR)) {
       const verifyFiles = readdirSync(PRODUCTION_AUTH_WORKERS_DIR).filter(f => f.endsWith('.json'));
       console.log(`[Server] Verification: ${verifyFiles.length} files in ${PRODUCTION_AUTH_WORKERS_DIR}`);
+      console.log(`[Server] Verification: DATA_DIR=${DATA_DIR}`);
       console.log(`[Server] Verification: Files: ${verifyFiles.join(', ')}`);
+      
+      // Try to read one file to verify it's valid
+      if (verifyFiles.length > 0) {
+        try {
+          const testFile = join(PRODUCTION_AUTH_WORKERS_DIR, verifyFiles[0]);
+          const testContent = readFileSync(testFile, 'utf-8');
+          const testSession = JSON.parse(testContent);
+          console.log(`[Server] Verification: Test file ${verifyFiles[0]} is valid:`, {
+            sessionId: testSession.sessionId,
+            stabilized: testSession.stabilized,
+            version: testSession.version,
+          });
+        } catch (e) {
+          console.error(`[Server] Verification: Test file ${verifyFiles[0]} is invalid:`, e.message);
+        }
+      }
+    } else {
+      console.warn(`[Server] Verification: Directory does not exist: ${PRODUCTION_AUTH_WORKERS_DIR}`);
     }
   } catch (error) {
     console.warn('[Server] Auth worker initialization failed (non-critical):', error.message);
