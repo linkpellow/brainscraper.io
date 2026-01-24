@@ -56,7 +56,29 @@ export async function saveSessionToServer(session: PersistedAuthWorkerState): Pr
 }
 
 /**
+ * Extract JWT expiration from token
+ */
+function extractJWTExpiration(token: string): number | null {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+    
+    // @ts-ignore - server-only
+    const Buffer = require('buffer').Buffer;
+    const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString());
+    if (payload.exp) {
+      // JWT exp is in seconds, convert to milliseconds
+      return payload.exp * 1000;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Get session from server-side storage
+ * Automatically extracts and updates expires_at from JWT if missing
  */
 export function getSessionFromServer(sessionId: string): PersistedAuthWorkerState | null {
   // Server-side only - return null on client
@@ -77,6 +99,26 @@ export function getSessionFromServer(sessionId: string): PersistedAuthWorkerStat
     // Validate version
     if (session.version !== STORAGE_VERSION || !session.stabilized) {
       return null;
+    }
+    
+    // Extract and update expires_at from JWT if missing
+    const accessToken = session.step2.extractedVars.access_token;
+    if (accessToken && !session.step2.extractedVars.expires_at) {
+      const jwtExp = extractJWTExpiration(accessToken);
+      if (jwtExp) {
+        session.step2.extractedVars.expires_at = jwtExp.toString();
+        // Also update expires_in if missing
+        if (!session.step2.extractedVars.expires_in) {
+          const expiresInSeconds = Math.floor((jwtExp - Date.now()) / 1000);
+          if (expiresInSeconds > 0) {
+            session.step2.extractedVars.expires_in = expiresInSeconds.toString();
+          }
+        }
+        // Save updated session (async, don't block)
+        saveSessionToServer(session).catch(err => {
+          console.warn('[AuthWorkerServerStorage] Failed to save updated expires_at:', err);
+        });
+      }
     }
     
     return session;
@@ -168,11 +210,14 @@ export function listSessionsFromServer(): Array<{
 
 /**
  * Update session tokens on server
+ * Also updates expiration if provided
  */
 export async function updateSessionTokensOnServer(
   sessionId: string,
   newAccessToken?: string,
-  newRefreshToken?: string
+  newRefreshToken?: string,
+  expiresAt?: number,
+  expiresIn?: number
 ): Promise<boolean> {
   // Server-side only - return false on client
   if (typeof window !== 'undefined') {
@@ -188,9 +233,28 @@ export async function updateSessionTokensOnServer(
     
     if (newAccessToken) {
       session.step2.extractedVars.access_token = newAccessToken;
+      
+      // Extract expiration from JWT if not provided
+      if (!expiresAt) {
+        expiresAt = extractJWTExpiration(newAccessToken) || undefined;
+      }
     }
     if (newRefreshToken) {
       session.step2.extractedVars.refresh_token = newRefreshToken;
+    }
+    
+    // Update expiration
+    if (expiresAt) {
+      session.step2.extractedVars.expires_at = expiresAt.toString();
+    }
+    if (expiresIn) {
+      session.step2.extractedVars.expires_in = expiresIn.toString();
+    } else if (expiresAt) {
+      // Calculate expires_in from expires_at if not provided
+      const expiresInSeconds = Math.floor((expiresAt - Date.now()) / 1000);
+      if (expiresInSeconds > 0) {
+        session.step2.extractedVars.expires_in = expiresInSeconds.toString();
+      }
     }
     
     if (newAccessToken) {

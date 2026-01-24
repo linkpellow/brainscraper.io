@@ -342,7 +342,7 @@ async function handleRefreshResponse(
     await saveSessionToServer(session);
   } else {
     // Fallback to updateSessionTokensOnServer if session not found
-    await updateSessionTokensOnServer(sessionId, newAccessToken, newRefreshToken);
+    await updateSessionTokensOnServer(sessionId, newAccessToken, newRefreshToken, expiresAt, expiresIn);
   }
 
   return NextResponse.json({
@@ -398,7 +398,36 @@ export async function POST(request: NextRequest) {
   // If no refresh_token but we have refresh_url and access_token, try Bearer token refresh
   if (!refreshToken && refreshUrl && accessToken) {
     try {
-      console.log('[AuthWorker] Attempting Bearer token refresh (no refresh_token available)');
+      // Check if token is expired - extract from JWT if expires_at is missing
+      let expiresAt = session.step2.extractedVars.expires_at 
+        ? parseInt(session.step2.extractedVars.expires_at, 10) 
+        : null;
+      
+      // If expires_at is missing, try to extract from JWT
+      if (!expiresAt && accessToken) {
+        try {
+          const parts = accessToken.split('.');
+          if (parts.length === 3) {
+            const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString());
+            if (payload.exp) {
+              expiresAt = payload.exp * 1000;
+              // Update session with extracted expiration
+              session.step2.extractedVars.expires_at = expiresAt.toString();
+            }
+          }
+        } catch {
+          // JWT parsing failed
+        }
+      }
+      
+      const isExpired = expiresAt ? Date.now() > expiresAt : false;
+
+      console.log('[AuthWorker] Attempting Bearer token refresh (no refresh_token available)', {
+        isExpired,
+        expiresAt: expiresAt ? new Date(expiresAt).toISOString() : 'unknown',
+        tokenAge: expiresAt ? Math.round((Date.now() - expiresAt) / 1000 / 60) : 'unknown',
+        refreshUrl,
+      });
       
       const response = await fetch(refreshUrl, {
         method: 'POST',
@@ -412,11 +441,34 @@ export async function POST(request: NextRequest) {
 
       if (!response.ok) {
         const errorText = await response.text();
+        let errorDetails: any = {};
+        try {
+          errorDetails = JSON.parse(errorText);
+        } catch {
+          errorDetails = { error: errorText };
+        }
+
+        // Provide helpful error message for expired tokens
+        if (isExpired && (response.status === 401 || response.status === 403)) {
+          return NextResponse.json(
+            {
+              error: `Bearer token refresh failed: Token is expired and endpoint rejected it`,
+              status: response.status,
+              statusText: response.statusText,
+              details: errorText.substring(0, 500),
+              url: refreshUrl,
+              suggestion: 'The token has expired. Some endpoints require re-authentication when tokens expire. You may need to create a new auth worker from a fresh HAR file.',
+            },
+            { status: response.status }
+          );
+        }
+
         return NextResponse.json(
           {
             error: `Bearer token refresh failed: ${response.status} ${response.statusText}`,
             details: errorText.substring(0, 500),
             url: refreshUrl,
+            isExpired,
           },
           { status: response.status }
         );
@@ -475,6 +527,8 @@ export async function POST(request: NextRequest) {
         sessionId,
         newAccessToken,
         undefined, // No new refresh token for Bearer refresh
+        expiresAt,
+        expiresIn,
       );
 
       return NextResponse.json({

@@ -143,13 +143,25 @@ export default function AuthWorkerDetailPage() {
           expiresAt: result.expiresAt ? new Date(result.expiresAt).toISOString() : 'unknown',
         });
       } else {
-        // Show error message
-        console.error('[AuthWorkerDetail] ❌ Token refresh failed:', result.error);
-        alert(`Token refresh failed: ${result.error || 'Unknown error'}`);
+        // Show detailed error message
+        const errorMsg = result.error || 'Unknown error';
+        console.error('[AuthWorkerDetail] ❌ Token refresh failed:', errorMsg);
+        
+        // Check if it's an expired token error
+        if (errorMsg.includes('expired') || errorMsg.includes('401') || errorMsg.includes('403')) {
+          alert(
+            `Token refresh failed: The token has expired and the endpoint does not accept expired tokens for refresh.\n\n` +
+            `Error: ${errorMsg}\n\n` +
+            `Solution: Create a new auth worker from a fresh HAR file with a valid token.`
+          );
+        } else {
+          alert(`Token refresh failed: ${errorMsg}`);
+        }
       }
     } catch (error) {
       console.error('[AuthWorkerDetail] Refresh error:', error);
-      alert(`Token refresh error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+      alert(`Token refresh error: ${errorMsg}`);
     } finally {
       setRefreshing(false);
     }
@@ -243,18 +255,37 @@ export default function AuthWorkerDetailPage() {
     );
   }
 
-  const tokenNeedsRefresh = needsTokenRefresh(session);
-  const expiresAt = session.step2.extractedVars.expires_at 
+  // Extract expiration from JWT if expires_at is missing
+  let expiresAt = session.step2.extractedVars.expires_at 
     ? parseInt(session.step2.extractedVars.expires_at, 10)
     : null;
+  
+  // If expires_at is missing, try to extract from JWT
+  if (!expiresAt && session.step2.extractedVars.access_token) {
+    try {
+      const token = session.step2.extractedVars.access_token;
+      const parts = token.split('.');
+      if (parts.length === 3) {
+        const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+        if (payload.exp) {
+          expiresAt = payload.exp * 1000; // JWT exp is in seconds
+        }
+      }
+    } catch {
+      // JWT parsing failed
+    }
+  }
+  
+  const tokenNeedsRefresh = needsTokenRefresh(session);
   const createdDate = new Date(session.stabilizedAt);
   const authMethod = session.step2.extractedVars.auth_method;
   
   // Determine connection status
   const hasAccessToken = !!session.step2.extractedVars.access_token;
   const hasRefreshToken = !!session.step2.extractedVars.refresh_token;
-  const isConnected = hasAccessToken && (!expiresAt || expiresAt > Date.now());
-  const isStable = !tokenNeedsRefresh && isConnected;
+  const isExpired = expiresAt ? Date.now() > expiresAt : false;
+  const isConnected = hasAccessToken && !isExpired;
+  const isStable = !tokenNeedsRefresh && isConnected && !isExpired;
 
   return (
     <AppLayout>
@@ -354,7 +385,15 @@ export default function AuthWorkerDetailPage() {
                 </div>
                 <div className="space-y-2">
                   <div className="text-white/35 text-xs font-semibold uppercase tracking-[0.15em]">Status</div>
-                  <div className="text-white text-lg font-bold tracking-tight">{isStable ? 'Stable' : 'Unstable'}</div>
+                  <div className={`text-lg font-bold tracking-tight ${
+                    isExpired 
+                      ? 'text-red-400' 
+                      : isStable 
+                        ? 'text-emerald-400' 
+                        : 'text-yellow-400'
+                  }`}>
+                    {isExpired ? 'Expired' : isStable ? 'Stable' : 'Unstable'}
+                  </div>
                 </div>
               </div>
 
@@ -362,12 +401,31 @@ export default function AuthWorkerDetailPage() {
               {expiresAt && (
                 <div className="mt-6 pt-6 border-t border-white/10">
                   <div className="flex items-center gap-3">
-                    <Clock className="w-4 h-4 text-white/50" />
+                    <Clock className={`w-4 h-4 ${isExpired ? 'text-red-400' : 'text-white/50'}`} />
                     <div>
-                      <div className="text-white/35 uppercase tracking-[0.15em] text-[10px] font-semibold mb-0.5">Expires</div>
-                      <div className="text-white/95 font-bold tracking-tight text-sm">{new Date(expiresAt).toLocaleString()}</div>
+                      <div className="text-white/35 uppercase tracking-[0.15em] text-[10px] font-semibold mb-0.5">
+                        {isExpired ? 'Expired' : 'Expires'}
+                      </div>
+                      <div className={`font-bold tracking-tight text-sm ${
+                        isExpired ? 'text-red-400' : 'text-white/95'
+                      }`}>
+                        {new Date(expiresAt).toLocaleString()}
+                        {isExpired && (
+                          <span className="ml-2 text-xs text-red-300">
+                            ({Math.round((Date.now() - expiresAt) / 1000 / 60 / 60)} hours ago)
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
+                  {isExpired && (
+                    <div className="mt-3 p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
+                      <div className="text-red-300 text-sm">
+                        ⚠️ Token has expired. The refresh endpoint does not accept expired tokens.
+                        You need to create a new auth worker from a fresh HAR file.
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

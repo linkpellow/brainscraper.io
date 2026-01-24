@@ -59,6 +59,7 @@ function getRefreshMethod(session: PersistedAuthWorkerState): 'oauth' | 'bearer'
 /**
  * Refresh token using Bearer token flow (custom implementations)
  * Uses current access token to get new access token
+ * Handles expired tokens - some endpoints accept expired tokens for refresh
  */
 async function refreshBearerToken(
   session: PersistedAuthWorkerState,
@@ -67,6 +68,16 @@ async function refreshBearerToken(
   const accessToken = session.step2.extractedVars.access_token;
   if (!accessToken) {
     throw new Error('No access token available for Bearer token refresh');
+  }
+
+  // Check if token is expired
+  const expiresAt = session.step2.extractedVars.expires_at 
+    ? parseInt(session.step2.extractedVars.expires_at, 10) 
+    : null;
+  const isExpired = expiresAt ? Date.now() > expiresAt : false;
+
+  if (isExpired) {
+    console.log('[TokenRefresh] Token is expired, attempting refresh with expired token (some endpoints allow this)');
   }
 
   const response = await fetch(refreshUrl, {
@@ -86,6 +97,15 @@ async function refreshBearerToken(
       errorDetails = JSON.parse(errorText);
     } catch {
       errorDetails = { error: errorText };
+    }
+    
+    // If token is expired and we get 401/403, provide helpful error
+    if (isExpired && (response.status === 401 || response.status === 403)) {
+      throw new Error(
+        `Bearer token refresh failed: Token is expired and endpoint does not accept expired tokens for refresh. ` +
+        `Status: ${response.status} ${response.statusText}. ` +
+        `You may need to re-authenticate.`
+      );
     }
     
     throw new Error(
