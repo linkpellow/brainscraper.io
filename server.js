@@ -126,9 +126,152 @@ const app = next({
 });
 const handle = app.getRequestHandler();
 
+/**
+ * Server-side automatic token refresh
+ * Runs in background to refresh auth worker tokens before expiration
+ */
+function startTokenRefreshJob() {
+  if (!isProduction) {
+    console.log('[Server] Token refresh job disabled in development');
+    return;
+  }
+
+  const REFRESH_CHECK_INTERVAL_MS = 5 * 60 * 1000; // Check every 5 minutes
+  const PROACTIVE_REFRESH_BUFFER_MS = 10 * 60 * 1000; // Refresh 10 minutes before expiration
+
+  async function checkAndRefreshTokens() {
+    try {
+      const { listSessionsFromServer, getSessionFromServer } = require('./app/auth-workers/utils/authWorkerServerStorage');
+      const sessions = listSessionsFromServer();
+      
+      if (sessions.length === 0) {
+        return;
+      }
+
+      console.log(`[Server] Checking ${sessions.length} auth worker(s) for token refresh...`);
+
+      for (const sessionMeta of sessions) {
+        try {
+          const session = getSessionFromServer(sessionMeta.sessionId);
+          if (!session) continue;
+
+          const extractedVars = session.step2.extractedVars;
+          const accessToken = extractedVars.access_token;
+          
+          if (!accessToken) continue;
+          
+          // Must have refresh capability
+          const hasRefreshToken = !!extractedVars.refresh_token;
+          const hasRefreshUrl = !!extractedVars.refresh_url;
+          
+          if (!hasRefreshToken && !hasRefreshUrl) {
+            continue;
+          }
+
+          // Extract expiration time
+          let expirationTime = null;
+          
+          if (extractedVars.expires_at) {
+            expirationTime = parseInt(extractedVars.expires_at, 10);
+          } else {
+            // Try to extract from JWT
+            try {
+              const parts = accessToken.split('.');
+              if (parts.length === 3) {
+                const Buffer = require('buffer').Buffer;
+                const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString());
+                if (payload.exp) {
+                  expirationTime = payload.exp * 1000;
+                }
+              }
+            } catch {
+              // JWT parsing failed
+            }
+          }
+
+          if (!expirationTime) {
+            continue;
+          }
+
+          const now = Date.now();
+          const timeUntilExpiry = expirationTime - now;
+          const timeUntilExpiryWithBuffer = timeUntilExpiry - PROACTIVE_REFRESH_BUFFER_MS;
+
+          // Refresh if expired or within buffer window
+          const shouldRefresh = 
+            timeUntilExpiry <= 0 || // Already expired
+            (timeUntilExpiryWithBuffer <= 0 && timeUntilExpiry > 0); // Within buffer window
+
+          if (shouldRefresh) {
+            const minutesUntilExpiry = Math.floor(timeUntilExpiry / 1000 / 60);
+            console.log(`[Server] 🔄 Auto-refreshing token for ${sessionMeta.targetDomain || sessionMeta.sessionId} (expires in ${minutesUntilExpiry}min)`);
+            
+            // Call refresh API internally (server-side)
+            try {
+              // Use internal API route for refresh (handles both OAuth and Bearer flows)
+              const baseUrl = process.env.RAILWAY_PUBLIC_DOMAIN 
+                ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}` 
+                : `http://localhost:${port}`;
+              
+              const response = await fetch(`${baseUrl}/api/auth-worker/refresh`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ sessionId: sessionMeta.sessionId }),
+              });
+
+              if (response.ok) {
+                const result = await response.json();
+                console.log(`[Server] ✅ Token refreshed for ${sessionMeta.targetDomain || sessionMeta.sessionId}`, {
+                  expiresAt: result.expiresAt ? new Date(result.expiresAt).toISOString() : 'unknown',
+                });
+              } else {
+                const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+                console.error(`[Server] ❌ Token refresh failed for ${sessionMeta.targetDomain || sessionMeta.sessionId}:`, errorData.error || `HTTP ${response.status}`);
+              }
+            } catch (error) {
+              console.error(`[Server] ❌ Token refresh error for ${sessionMeta.targetDomain || sessionMeta.sessionId}:`, error.message);
+            }
+          }
+        } catch (error) {
+          console.error(`[Server] Error checking session ${sessionMeta.sessionId}:`, error.message);
+        }
+      }
+    } catch (error) {
+      console.error('[Server] Error in token refresh job:', error.message);
+    }
+  }
+
+  // Initial check after 30 seconds (give server time to start)
+  setTimeout(() => {
+    checkAndRefreshTokens();
+  }, 30000);
+
+  // Set up interval
+  const interval = setInterval(() => {
+    checkAndRefreshTokens();
+  }, REFRESH_CHECK_INTERVAL_MS);
+
+  console.log('[Server] ✅ Token refresh job started (checks every 5 minutes)');
+
+  // Cleanup on exit
+  if (process.on) {
+    process.on('SIGINT', () => {
+      clearInterval(interval);
+    });
+    process.on('SIGTERM', () => {
+      clearInterval(interval);
+    });
+  }
+}
+
 app.prepare().then(async () => {
   // Initialize auth workers before starting server (don't block startup)
   initializeAuthWorkers();
+  
+  // Start automatic token refresh job
+  startTokenRefreshJob();
   
   createServer(async (req, res) => {
     try {

@@ -16,6 +16,7 @@ import { getStoredMappings } from './[sessionId]/map-api/endpointMapping';
 import type { EndpointMapping } from './[sessionId]/map-api/endpointMapping';
 import { Key, Network, ArrowRight, Clock, CheckCircle, AlertCircle, RefreshCw, Plus } from 'lucide-react';
 import { needsTokenRefresh } from './utils/tokenRefreshService';
+import { useTokenRefresh } from './hooks/useTokenRefresh';
 import AppLayout from '../components/AppLayout';
 import HARUploadSection from './components/HARUploadSection';
 
@@ -28,6 +29,9 @@ export default function AuthWorkersPage() {
   const [mappings, setMappings] = useState<Map<string, EndpointMapping[]>>(new Map());
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState<Set<string>>(new Set());
+  
+  // Enable automatic token refresh
+  useTokenRefresh(true);
 
   useEffect(() => {
     if (activeTab === 'workers') {

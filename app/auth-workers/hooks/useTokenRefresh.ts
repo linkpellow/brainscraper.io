@@ -263,51 +263,63 @@ export function useTokenRefresh(enabled: boolean = true) {
         const fullSession = getSessionById(session.sessionId);
         if (!fullSession) continue;
 
-        const verificationStatus = fullSession.step2.verificationStatus;
-        const refreshToken = fullSession.step2.extractedVars.refresh_token;
+        const extractedVars = fullSession.step2.extractedVars;
+        const accessToken = extractedVars.access_token;
         
-        // Skip if no refresh token
-        if (!refreshToken) continue;
+        // Must have access token
+        if (!accessToken) continue;
+        
+        // Must have refresh capability (either refresh_token OR refresh_url)
+        const hasRefreshToken = !!extractedVars.refresh_token;
+        const hasRefreshUrl = !!extractedVars.refresh_url;
+        
+        if (!hasRefreshToken && !hasRefreshUrl) {
+          // No refresh capability, skip
+          continue;
+        }
 
-        // Check if token is expired or about to expire
-        if (!verificationStatus?.verifiedAt) continue;
-
-        // Calculate time until expiration
-        let expiresInSeconds: number | undefined;
-        try {
-          // Try to get expires_in from step2 response
-          if (fullSession.step2.response) {
-            const response = typeof fullSession.step2.response === 'string' 
-              ? JSON.parse(fullSession.step2.response) 
-              : fullSession.step2.response;
-            expiresInSeconds = response?.expires_in || response?.expiresIn;
+        // Extract expiration time from expires_at or JWT
+        let expirationTime: number | null = null;
+        
+        if (extractedVars.expires_at) {
+          expirationTime = parseInt(extractedVars.expires_at, 10);
+        } else {
+          // Try to extract from JWT
+          try {
+            const parts = accessToken.split('.');
+            if (parts.length === 3) {
+              const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+              if (payload.exp) {
+                expirationTime = payload.exp * 1000; // JWT exp is in seconds
+              }
+            }
+          } catch {
+            // JWT parsing failed
           }
-        } catch {
-          // Response parsing failed
-        }
-        
-        // Default to 1 hour if not found
-        if (!expiresInSeconds) {
-          expiresInSeconds = 3600;
         }
 
-        const expiryMs = expiresInSeconds * 1000;
-        const tokenAge = Date.now() - verificationStatus.verifiedAt;
-        const timeUntilExpiry = expiryMs - tokenAge;
+        // If no expiration info, skip (can't determine if refresh needed)
+        if (!expirationTime) {
+          continue;
+        }
+
+        const now = Date.now();
+        const timeUntilExpiry = expirationTime - now;
         const timeUntilExpiryWithBuffer = timeUntilExpiry - PROACTIVE_REFRESH_BUFFER_MS;
 
-        // Refresh if expired or within buffer window
+        // Refresh if expired or within buffer window (5 minutes before expiration)
         const shouldRefresh = 
-          tokenAge > expiryMs || // Already expired
+          timeUntilExpiry <= 0 || // Already expired
           (timeUntilExpiryWithBuffer <= 0 && timeUntilExpiry > 0); // Within buffer window
 
         if (shouldRefresh) {
           // Don't refresh too frequently (max once per 5 minutes per session)
           const lastRefresh = lastRefreshRef.current.get(session.sessionId) || 0;
-          const timeSinceLastRefresh = Date.now() - lastRefresh;
+          const timeSinceLastRefresh = now - lastRefresh;
           
           if (timeSinceLastRefresh > 5 * 60 * 1000) {
-            console.log(`[TokenRefresh] 🔄 Refreshing token for session ${session.sessionId} (expires in ${Math.floor(timeUntilExpiry / 1000 / 60)}min)`);
+            const minutesUntilExpiry = Math.floor(timeUntilExpiry / 1000 / 60);
+            console.log(`[TokenRefresh] 🔄 Refreshing token for session ${session.sessionId} (expires in ${minutesUntilExpiry}min, method: ${hasRefreshToken ? 'OAuth' : 'Bearer'})`);
             refreshTokenForSession(session.sessionId);
           }
         }
