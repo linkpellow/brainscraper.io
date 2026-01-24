@@ -578,7 +578,10 @@ function createAuthWorkerFromOAuth(
       expiresAt = Date.now() + (tokenData.expires_in * 1000);
     }
     extractedVars.expires_at = expiresAt.toString();
-    extractedVars.expires_in = tokenData.expires_in.toString();
+    // CRITICAL: expires_in must be a duration (seconds until expiration), not a timestamp
+    // Calculate duration from expiresAt
+    const expiresInDuration = Math.floor((expiresAt - Date.now()) / 1000);
+    extractedVars.expires_in = expiresInDuration.toString();
   } else if (tokenData.access_token) {
     // Try to extract expiration from JWT token
     try {
@@ -589,6 +592,9 @@ function createAuthWorkerFromOAuth(
           // JWT exp is in seconds, convert to milliseconds
           expiresAt = payload.exp * 1000;
           extractedVars.expires_at = expiresAt.toString();
+          // CRITICAL: Calculate expires_in as duration (seconds until expiration)
+          const expiresInDuration = Math.floor((expiresAt - Date.now()) / 1000);
+          extractedVars.expires_in = expiresInDuration.toString();
         }
       }
     } catch (e) {
@@ -652,6 +658,9 @@ function createAuthWorkerFromBearerToken(
         // JWT exp is in seconds, convert to milliseconds
         const expiresAt = payload.exp * 1000;
         extractedVars.expires_at = expiresAt.toString();
+        // CRITICAL: Calculate expires_in as duration (seconds until expiration)
+        const expiresInDuration = Math.floor((expiresAt - Date.now()) / 1000);
+        extractedVars.expires_in = expiresInDuration.toString();
       }
     }
   } catch (e) {

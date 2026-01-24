@@ -7,7 +7,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import { processHARComplete } from '../app/auth-workers/[sessionId]/map-api/harIngestion';
 import { createAuthWorkerFromHAR } from '../app/auth-workers/[sessionId]/map-api/harToAuthWorker';
-import { persistAuthWorkerState } from '../app/auth-workers/utils/authWorkerPersistence';
+import { saveSessionToServer } from '../app/auth-workers/utils/authWorkerServerStorage';
 
 async function main() {
   const harFilePath = process.argv[2];
@@ -53,8 +53,8 @@ async function main() {
       process.exit(1);
     }
     
-    // Persist auth worker
-    persistAuthWorkerState(harAuthWorker.sessionId, harAuthWorker);
+    // Persist auth worker to server-side storage
+    await saveSessionToServer(harAuthWorker);
     console.log(`[ProcessHAR] ✅ Auth worker created and persisted: ${harAuthWorker.sessionId}`);
     
     // Show auth details
