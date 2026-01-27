@@ -49,19 +49,25 @@ export async function POST(request: NextRequest) {
         }
       }
     
-      // Validation function for NEW leads: must have name AND phone AND age <= 59
+      // Validation function for NEW leads: must have name AND phone AND age between 19-59 (inclusive)
       // NOTE: This filter ONLY applies to NEW leads, NOT existing leads (existing leads are preserved)
       const isValidNewLead = (lead: LeadSummary): boolean => {
         const name = (lead.name || '').trim();
         const phone = (lead.phone || '').trim().replace(/\D/g, ''); // Remove non-digits for validation
         
         // Require phone number (10+ digits) - leads with only email are excluded
-        if (name.length === 0 || phone.length < 10) {
+        if (name.length === 0) {
+          console.log(`🚫 [AGGREGATE] Filtering out lead - no name`);
+          return false;
+        }
+        if (phone.length < 10) {
+          console.log(`🚫 [AGGREGATE] Filtering out lead "${name}" - phone "${lead.phone}" has only ${phone.length} digits (need 10+)`);
           return false;
         }
         
-        // Age filter: exclude NEW leads with age > 59 (if age is known)
-        // CRITICAL: This filter does NOT apply to existing leads - they are preserved
+        // Age filter: keep leads with age >= 19 AND age <= 59
+        // Filter out: age < 19 OR age > 59
+        // If age is unknown, allow lead through
         const dobOrAge = lead.dobOrAge || '';
         if (dobOrAge) {
           let ageNum: number | null = null;
@@ -90,10 +96,23 @@ export async function POST(request: NextRequest) {
             }
           }
           
-          // Filter out NEW leads if age > 59 (allow if age unknown)
-          if (ageNum !== null && ageNum > 59) {
-            return false;
+          // Filter out leads with age < 19 OR age > 59
+          // Keep leads with age >= 19 AND age <= 59
+          if (ageNum !== null) {
+            if (ageNum < 19) {
+              console.log(`🚫 [AGGREGATE] Filtering out lead "${name}" - age ${ageNum} < 19`);
+              return false;
+            }
+            if (ageNum > 59) {
+              console.log(`🚫 [AGGREGATE] Filtering out lead "${name}" - age ${ageNum} > 59`);
+              return false;
+            }
+            console.log(`✅ [AGGREGATE] Lead "${name}" passed age filter - age ${ageNum} is in range 19-59`);
+          } else {
+            console.log(`⚠️ [AGGREGATE] Lead "${name}" has unparseable age "${dobOrAge}" - allowing through (age unknown)`);
           }
+        } else {
+          console.log(`⚠️ [AGGREGATE] Lead "${name}" has no age data - allowing through (age unknown)`);
         }
         
         return true;
@@ -140,7 +159,9 @@ export async function POST(request: NextRequest) {
       }
       
       // Filter new leads before processing (WITH age filter - only new leads are filtered)
+      console.log(`📊 [AGGREGATE] Received ${newLeads.length} leads to validate`);
       validNewLeads = newLeads.filter(isValidNewLead);
+      console.log(`📊 [AGGREGATE] After validation: ${validNewLeads.length} valid leads, ${newLeads.length - validNewLeads.length} filtered out`);
       
       // Helper function to merge leads intelligently, preserving DNC status
       const mergeLeads = (existing: LeadSummary, incoming: LeadSummary): LeadSummary => {
@@ -202,7 +223,8 @@ export async function POST(request: NextRequest) {
         }
       }
       
-      // Save aggregated leads with consistent data structure: array of leads
+      // Save aggregated leads with consistent data structure: array of leads (not metadata wrapper)
+      console.log(`💾 [AGGREGATE] Saving ${aggregatedLeads.length} total leads (${existingLeads.length} existing + ${validNewLeads.length} new)`);
       safeWriteFile(existingPath, JSON.stringify(aggregatedLeads, null, 2));
     });
     

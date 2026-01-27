@@ -2688,27 +2688,30 @@ export async function enrichData(
         }
       }
       
-      // Filter: require phone number AND age <= threshold (if age is known)
-      // Uses dynamic threshold from decision engine
-      let ageMax = 59; // Default
-      try {
-        const { getThresholds } = await import('./enrichment/feedbackLoop');
-        const thresholds = getThresholds();
-        ageMax = thresholds.AGE_MAX || 59;
-      } catch {
-        // Use default if feedback loop not available
-      }
-      
+      // Filter: require phone number AND age between 19-59 (inclusive)
+      // Keep leads with age >= 19 AND age <= 59
+      // Filter out: age < 19 OR age > 59
+      // If age unknown, allow through (will be filtered at aggregation if needed)
       const hasValidPhone = phone.length >= 10;
-      const ageFilterPassed = ageNum === null || ageNum <= ageMax; // Allow if age unknown, filter if age > threshold
+      let ageFilterPassed = true; // Default to true if age unknown
+      
+      if (ageNum !== null) {
+        // Age is known - check if it's in valid range (19-59)
+        ageFilterPassed = ageNum >= 19 && ageNum <= 59;
+        if (!ageFilterPassed) {
+          if (ageNum < 19) {
+            console.log(`🚫 [ENRICH_DATA] Skipping lead "${leadName}" - age ${ageNum} < 19 (filtered out for cost savings)`);
+          } else {
+            console.log(`🚫 [ENRICH_DATA] Skipping lead "${leadName}" - age ${ageNum} > 59 (filtered out for cost savings)`);
+          }
+        }
+      }
       
       if (hasValidPhone && ageFilterPassed) {
         saveEnrichedLeadImmediate(enrichedRow, leadSummary);
-        console.log(`💾 [ENRICH_DATA] Saved lead immediately: ${leadName}`);
+        console.log(`💾 [ENRICH_DATA] Saved lead immediately: ${leadName}${ageNum !== null ? ` (age ${ageNum})` : ' (age unknown)'}`);
       } else if (!hasValidPhone) {
         console.log(`🚫 [ENRICH_DATA] Skipping lead "${leadName}" - no valid phone number (email-only leads excluded)`);
-      } else if (ageNum !== null && ageNum > 59) {
-        console.log(`🚫 [ENRICH_DATA] Skipping lead "${leadName}" - age ${ageNum} > ${ageMax} (filtered out for cost savings)`);
       }
     } catch (saveError) {
       console.error(`❌ [ENRICH_DATA] Failed to save lead ${leadName}:`, saveError);
