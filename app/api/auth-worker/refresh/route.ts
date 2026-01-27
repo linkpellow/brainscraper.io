@@ -297,7 +297,7 @@ async function handleRefreshResponse(
     } else {
       // Seconds until expiration - it's already a duration
       expiresInDuration = expiresIn;
-      expiresAt = Date.now() + (expiresInDuration * 1000);
+      expiresAt = Date.now() + (expiresIn * 1000);
     }
   } else if (newAccessToken) {
     // Try to extract from JWT
@@ -499,24 +499,21 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Extract expiration
-      let expiresAt: number | undefined = expiresAtFromRefresh || undefined;
+      // Extract expiration from refresh response (use distinct name; outer expiresAt is pre-refresh)
+      let newExpiresAt: number | undefined = typeof expiresAtFromRefresh === 'number' ? expiresAtFromRefresh : undefined;
       let expiresInSeconds: number | undefined;
       
       if (expiresInFromRefresh !== undefined && expiresInFromRefresh !== null) {
         if (expiresInFromRefresh > 1000000000) {
           // It's a Unix timestamp (seconds) - convert to milliseconds
-          expiresAt = expiresInFromRefresh * 1000;
-          // Calculate duration from timestamp
-          expiresInSeconds = Math.floor((expiresAt - Date.now()) / 1000);
+          newExpiresAt = expiresInFromRefresh * 1000;
+          expiresInSeconds = Math.floor((newExpiresAt - Date.now()) / 1000);
         } else {
-          // It's a duration in seconds
           expiresInSeconds = expiresInFromRefresh;
-          expiresAt = expiresAt || (Date.now() + (expiresInSeconds * 1000));
+          newExpiresAt = newExpiresAt ?? (Date.now() + expiresInSeconds * 1000);
         }
-      } else if (expiresAt) {
-        // Calculate duration from expires_at if not provided
-        expiresInSeconds = Math.floor((expiresAt - Date.now()) / 1000);
+      } else if (newExpiresAt) {
+        expiresInSeconds = Math.floor((newExpiresAt - Date.now()) / 1000);
       }
 
       // Update session
@@ -525,8 +522,8 @@ export async function POST(request: NextRequest) {
         access_token: newAccessToken,
       };
 
-      if (expiresAt) {
-        updatedExtractedVars.expires_at = expiresAt.toString();
+      if (newExpiresAt) {
+        updatedExtractedVars.expires_at = newExpiresAt.toString();
       }
       if (expiresInSeconds !== undefined && expiresInSeconds > 0) {
         updatedExtractedVars.expires_in = expiresInSeconds.toString();
@@ -535,25 +532,25 @@ export async function POST(request: NextRequest) {
       // Calculate expiresIn duration for storage (seconds until expiration)
       const expiresInDurationForStorage = expiresInSeconds !== undefined && expiresInSeconds > 0
         ? expiresInSeconds
-        : (expiresAt ? Math.floor((expiresAt - Date.now()) / 1000) : undefined);
+        : (newExpiresAt ? Math.floor((newExpiresAt - Date.now()) / 1000) : undefined);
 
       await updateSessionTokensOnServer(
         sessionId,
         newAccessToken,
         undefined, // No new refresh token for Bearer refresh
-        expiresAt,
+        newExpiresAt,
         expiresInDurationForStorage, // Duration in seconds, not timestamp
       );
 
       // Calculate expiresIn duration for response (seconds until expiration)
-      const expiresInDuration = expiresAt ? Math.floor((expiresAt - Date.now()) / 1000) : undefined;
+      const expiresInDuration = newExpiresAt ? Math.floor((newExpiresAt - Date.now()) / 1000) : undefined;
 
       return NextResponse.json({
         success: true,
         sessionId,
         newAccessToken: newAccessToken ? `${newAccessToken.substring(0, 20)}...` : null,
         expiresIn: expiresInDuration, // Duration in seconds, not timestamp
-        expiresAt,
+        expiresAt: newExpiresAt,
       });
     } catch (error: any) {
       console.error('[AuthWorker] Bearer token refresh error:', error);
