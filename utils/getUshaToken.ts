@@ -210,9 +210,17 @@ export async function getUshaToken(providedToken?: string | null, forceRefresh: 
   }
 
   // Priority 2: Auth worker (preferred) - continuous valid JWT without manual env updates
+  // Try api-business-agent first (most reliable for DNC API), then agent.ushadvisors.com
   // If forceRefresh=true, tokenRefreshService will refresh when needed based on expires_at/refresh_url.
   // We still allow env var override later if desired, but auth worker is the default.
-  const authWorkerToken = await getUshaJwtFromAuthWorker('agent.ushadvisors.com');
+  let authWorkerToken = await getUshaJwtFromAuthWorker('api-business-agent.ushadvisors.com');
+  if (authWorkerToken && isValidJWTFormat(authWorkerToken)) {
+    console.log('🔑 [USHA_TOKEN] Using token from auth worker (api-business-agent.ushadvisors.com)');
+    return authWorkerToken;
+  }
+  
+  // Fallback to agent.ushadvisors.com if api-business-agent fails
+  authWorkerToken = await getUshaJwtFromAuthWorker('agent.ushadvisors.com');
   if (authWorkerToken && isValidJWTFormat(authWorkerToken)) {
     console.log('🔑 [USHA_TOKEN] Using token from auth worker (agent.ushadvisors.com)');
     return authWorkerToken;

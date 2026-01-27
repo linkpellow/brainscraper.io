@@ -12,19 +12,43 @@ import { getValidToken } from '@/app/auth-workers/utils/tokenRefreshService';
  */
 async function getUshaTokenForDNC(): Promise<string | null> {
   try {
-    // Try to get token from auth worker for agent.ushadvisors.com
+    // Try to get token from auth worker for any USHA domain
+    // Priority: api-business-agent.ushadvisors.com > agent.ushadvisors.com > any ushadvisors.com
+    // (api-business-agent is preferred because it's more reliable for DNC API)
     const sessions = listSessionsFromServer();
-    const ushaSession = sessions
-      .filter(s => s.targetDomain === 'agent.ushadvisors.com')
-      .sort((a, b) => b.stabilizedAt - a.stabilizedAt)[0]; // Most recent
+    const ushaSessions = sessions
+      .filter(s => s.targetDomain.includes('ushadvisors.com'))
+      .sort((a, b) => {
+        // Prefer api-business-agent.ushadvisors.com (most reliable for DNC API)
+        const aIsApiBusiness = a.targetDomain === 'api-business-agent.ushadvisors.com';
+        const bIsApiBusiness = b.targetDomain === 'api-business-agent.ushadvisors.com';
+        if (aIsApiBusiness && !bIsApiBusiness) return -1;
+        if (!aIsApiBusiness && bIsApiBusiness) return 1;
+        
+        // Then prefer agent.ushadvisors.com
+        const aIsAgent = a.targetDomain === 'agent.ushadvisors.com';
+        const bIsAgent = b.targetDomain === 'agent.ushadvisors.com';
+        if (aIsAgent && !bIsAgent) return -1;
+        if (!aIsAgent && bIsAgent) return 1;
+        
+        // Finally, most recent
+        return b.stabilizedAt - a.stabilizedAt;
+      });
     
-    if (ushaSession) {
+    // Try sessions in priority order until we get a valid token
+    for (const ushaSession of ushaSessions) {
       const session = getSessionFromServer(ushaSession.sessionId);
-      if (session && session.apiKey) {
-        console.log('🔑 [DNC SCRUB] Using auth worker token (auto-refreshes, 24/7)');
-        const tokenResult = await getValidToken(session.sessionId);
-        if (tokenResult?.token) {
-          return tokenResult.token;
+      if (session) {
+        try {
+          const tokenResult = await getValidToken(session.sessionId);
+          if (tokenResult?.token) {
+            console.log(`🔑 [DNC SCRUB] Using auth worker token from ${session.targetDomain} (auto-refreshes, 24/7)`);
+            return tokenResult.token;
+          }
+        } catch (error) {
+          // This session failed, try next one
+          console.warn(`⚠️ [DNC SCRUB] Session ${ushaSession.sessionId} failed, trying next...`);
+          continue;
         }
       }
     }

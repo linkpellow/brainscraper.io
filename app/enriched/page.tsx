@@ -268,7 +268,7 @@ export default function EnrichedLeadsPage() {
         return false;
       }
       
-      // Skip if already checked today
+      // Skip if already checked today (one time daily pass)
       if (lead.dncLastChecked) {
         const lastCheckedDate = lead.dncLastChecked.split('T')[0];
         if (lastCheckedDate === today) {
@@ -276,8 +276,9 @@ export default function EnrichedLeadsPage() {
         }
       }
       
-      // Include if no DNC status or has UNKNOWN status
-      return !lead.dncStatus || lead.dncStatus === 'UNKNOWN';
+      // Include all leads that haven't been checked today (regardless of current status)
+      // This ensures every lead gets checked once per day
+      return true;
     });
     
     if (leadsToScrub.length === 0) return;

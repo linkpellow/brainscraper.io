@@ -14,7 +14,7 @@ import { listAllSessions, getSessionById, persistAuthWorkerState } from './utils
 import type { PersistedAuthWorkerState } from './utils/authWorkerPersistence';
 import { getStoredMappings } from './[sessionId]/map-api/endpointMapping';
 import type { EndpointMapping } from './[sessionId]/map-api/endpointMapping';
-import { Key, Network, ArrowRight, Clock, CheckCircle, AlertCircle, RefreshCw, Plus } from 'lucide-react';
+import { Key, Network, ArrowRight, Clock, CheckCircle, AlertCircle, RefreshCw, Plus, Trash2 } from 'lucide-react';
 import { needsTokenRefresh } from './utils/tokenRefreshService';
 import { useTokenRefresh } from './hooks/useTokenRefresh';
 import AppLayout from '../components/AppLayout';
@@ -37,6 +37,29 @@ export default function AuthWorkersPage() {
     if (activeTab === 'workers') {
       loadData();
     }
+  }, [activeTab]);
+
+  // Refresh data when page becomes visible (user returns to tab/window)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && activeTab === 'workers') {
+        loadData();
+      }
+    };
+
+    const handleFocus = () => {
+      if (activeTab === 'workers') {
+        loadData();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+    };
   }, [activeTab]);
 
   const loadData = async () => {
@@ -207,6 +230,40 @@ export default function AuthWorkersPage() {
     }
   };
 
+  const handleDeleteSession = async (sessionId: string, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent card click
+    
+    if (!confirm(`Are you sure you want to delete this auth worker?\n\nSession: ${sessionId}\n\nThis will delete it from both local storage and the server.`)) {
+      return;
+    }
+
+    try {
+      // Delete from localStorage
+      const { clearAuthWorkerState } = await import('./utils/authWorkerPersistence');
+      clearAuthWorkerState(sessionId);
+      
+      // Delete from server
+      const deleteResponse = await fetch('/api/auth-worker/sessions', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ sessionId }),
+      });
+
+      if (!deleteResponse.ok) {
+        const errorData = await deleteResponse.json();
+        throw new Error(errorData.error || 'Failed to delete from server');
+      }
+
+      // Reload data to update UI
+      await loadData();
+    } catch (error) {
+      console.error('[AuthWorkersPage] Delete error:', error);
+      alert(`Failed to delete session: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  };
+
   const handleWorkerClick = (sessionId: string) => {
     router.push(`/auth-workers/${sessionId}`);
   };
@@ -335,19 +392,28 @@ export default function AuthWorkersPage() {
                             )}
                           </div>
                         </div>
-                        {tokenNeedsRefresh && (
+                        <div className="flex items-center gap-1">
+                          {tokenNeedsRefresh && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleRefreshToken(session.sessionId);
+                              }}
+                              disabled={isRefreshing}
+                              className="p-2 hover:bg-white/10 rounded transition-colors disabled:opacity-50"
+                              title="Refresh Token"
+                            >
+                              <RefreshCw className={`w-4 h-4 text-emerald-400 ${isRefreshing ? 'animate-spin' : ''}`} />
+                            </button>
+                          )}
                           <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleRefreshToken(session.sessionId);
-                            }}
-                            disabled={isRefreshing}
-                            className="p-2 hover:bg-white/10 rounded transition-colors disabled:opacity-50"
-                            title="Refresh Token"
+                            onClick={(e) => handleDeleteSession(session.sessionId, e)}
+                            className="p-2 hover:bg-red-500/20 rounded transition-colors opacity-0 group-hover:opacity-100"
+                            title="Delete Auth Worker"
                           >
-                            <RefreshCw className={`w-4 h-4 text-emerald-400 ${isRefreshing ? 'animate-spin' : ''}`} />
+                            <Trash2 className="w-4 h-4 text-red-400" />
                           </button>
-                        )}
+                        </div>
                       </div>
 
                       {/* Mapped Endpoints Preview */}

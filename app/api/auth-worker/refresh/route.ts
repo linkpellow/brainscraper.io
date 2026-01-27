@@ -7,6 +7,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getSessionFromServer, updateSessionTokensOnServer } from '../../../auth-workers/utils/authWorkerServerStorage';
+import { refreshBearerToken } from '../../../auth-workers/utils/tokenRefreshService';
 
 /**
  * Fix common Microsoft OAuth URL issues
@@ -443,54 +444,53 @@ export async function POST(request: NextRequest) {
         refreshUrl,
       });
       
-      const response = await fetch(refreshUrl, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: JSON.stringify({}),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        let errorDetails: any = {};
-        try {
-          errorDetails = JSON.parse(errorText);
-        } catch {
-          errorDetails = { error: errorText };
-        }
-
-        // Provide helpful error message for expired tokens
-        if (isExpired && (response.status === 401 || response.status === 403)) {
+      // Use improved refreshBearerToken function with timeout, headers, and error handling
+      let refreshResult;
+      try {
+        refreshResult = await refreshBearerToken(session, refreshUrl);
+      } catch (refreshError: any) {
+        const errorMessage = refreshError instanceof Error ? refreshError.message : String(refreshError);
+        
+        // Handle expired token errors specifically
+        if (isExpired && (errorMessage.includes('401') || errorMessage.includes('403'))) {
           return NextResponse.json(
             {
               error: `Bearer token refresh failed: Token is expired and endpoint rejected it`,
-              status: response.status,
-              statusText: response.statusText,
-              details: errorText.substring(0, 500),
+              details: errorMessage,
               url: refreshUrl,
               suggestion: 'The token has expired. Some endpoints require re-authentication when tokens expire. You may need to create a new auth worker from a fresh HAR file.',
             },
-            { status: response.status }
+            { status: 401 }
           );
         }
-
+        
+        // Handle timeout errors
+        if (errorMessage.includes('timeout')) {
+          return NextResponse.json(
+            {
+              error: `Bearer token refresh failed: Request timeout`,
+              details: errorMessage,
+              url: refreshUrl,
+              suggestion: 'The refresh endpoint did not respond within 30 seconds. This may indicate network issues or endpoint unavailability.',
+            },
+            { status: 504 }
+          );
+        }
+        
+        // Generic error handling
         return NextResponse.json(
           {
-            error: `Bearer token refresh failed: ${response.status} ${response.statusText}`,
-            details: errorText.substring(0, 500),
+            error: `Bearer token refresh failed: ${errorMessage}`,
             url: refreshUrl,
             isExpired,
           },
-          { status: response.status }
+          { status: 500 }
         );
       }
-
-      const data = await response.json();
-      const tokenSource = data.tokenResult || data.data || data;
-      const newAccessToken = tokenSource.access_token || data.access_token;
+      
+      const newAccessToken = refreshResult.access_token;
+      const expiresAtFromRefresh = refreshResult.expires_at;
+      const expiresInFromRefresh = refreshResult.expires_in;
 
       if (!newAccessToken) {
         return NextResponse.json(
@@ -500,36 +500,23 @@ export async function POST(request: NextRequest) {
       }
 
       // Extract expiration
-      let expiresAt: number | undefined;
+      let expiresAt: number | undefined = expiresAtFromRefresh || undefined;
       let expiresInSeconds: number | undefined;
-      const expiresInRaw = tokenSource.expires_in || data.expires_in;
       
-      if (expiresInRaw) {
-        if (expiresInRaw > 1000000000) {
+      if (expiresInFromRefresh !== undefined && expiresInFromRefresh !== null) {
+        if (expiresInFromRefresh > 1000000000) {
           // It's a Unix timestamp (seconds) - convert to milliseconds
-          expiresAt = expiresInRaw * 1000;
+          expiresAt = expiresInFromRefresh * 1000;
           // Calculate duration from timestamp
           expiresInSeconds = Math.floor((expiresAt - Date.now()) / 1000);
         } else {
           // It's a duration in seconds
-          expiresInSeconds = expiresInRaw;
-          expiresAt = Date.now() + (expiresInSeconds * 1000);
+          expiresInSeconds = expiresInFromRefresh;
+          expiresAt = expiresAt || (Date.now() + (expiresInSeconds * 1000));
         }
-      } else {
-        // Try to extract from JWT
-        try {
-          const parts = newAccessToken.split('.');
-          if (parts.length === 3) {
-            const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString());
-            if (payload.exp) {
-              expiresAt = payload.exp * 1000;
-              // Calculate duration from JWT expiration
-              expiresInSeconds = Math.floor((expiresAt - Date.now()) / 1000);
-            }
-          }
-        } catch {
-          // JWT parsing failed
-        }
+      } else if (expiresAt) {
+        // Calculate duration from expires_at if not provided
+        expiresInSeconds = Math.floor((expiresAt - Date.now()) / 1000);
       }
 
       // Update session
@@ -546,7 +533,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Calculate expiresIn duration for storage (seconds until expiration)
-      const expiresInDuration = expiresInSeconds !== undefined && expiresInSeconds > 0
+      const expiresInDurationForStorage = expiresInSeconds !== undefined && expiresInSeconds > 0
         ? expiresInSeconds
         : (expiresAt ? Math.floor((expiresAt - Date.now()) / 1000) : undefined);
 
@@ -555,7 +542,7 @@ export async function POST(request: NextRequest) {
         newAccessToken,
         undefined, // No new refresh token for Bearer refresh
         expiresAt,
-        expiresInDuration, // Duration in seconds, not timestamp
+        expiresInDurationForStorage, // Duration in seconds, not timestamp
       );
 
       // Calculate expiresIn duration for response (seconds until expiration)

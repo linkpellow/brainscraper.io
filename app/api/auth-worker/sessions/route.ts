@@ -5,8 +5,8 @@
  * Returns all sessions stored on the server
  */
 
-import { NextResponse } from 'next/server';
-import { listSessionsFromServer, getSessionFromServer } from '../../../auth-workers/utils/authWorkerServerStorage';
+import { NextRequest, NextResponse } from 'next/server';
+import { listSessionsFromServer, getSessionFromServer, deleteSessionFromServer } from '../../../auth-workers/utils/authWorkerServerStorage';
 import type { PersistedAuthWorkerState } from '../../../auth-workers/utils/authWorkerPersistence';
 
 export async function GET() {
@@ -47,6 +47,49 @@ export async function GET() {
         error: error.message || 'Failed to list sessions',
         sessions: [],
         count: 0,
+      },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * API route: Delete auth worker session from server storage
+ * DELETE /api/auth-worker/sessions
+ * 
+ * Deletes a session from the server
+ */
+export async function DELETE(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { sessionId } = body;
+
+    if (!sessionId) {
+      return NextResponse.json(
+        { error: 'sessionId is required' },
+        { status: 400 }
+      );
+    }
+
+    const deleted = await deleteSessionFromServer(sessionId);
+    
+    if (deleted) {
+      return NextResponse.json({
+        success: true,
+        message: 'Session deleted successfully',
+      });
+    } else {
+      return NextResponse.json(
+        { error: 'Failed to delete session' },
+        { status: 500 }
+      );
+    }
+  } catch (error: any) {
+    console.error('[AuthWorker] Delete session error:', error);
+    return NextResponse.json(
+      { 
+        success: false,
+        error: error.message || 'Failed to delete session',
       },
       { status: 500 }
     );

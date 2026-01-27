@@ -48,7 +48,7 @@ export async function saveSessionToServer(session: PersistedAuthWorkerState): Pr
     };
     
     safeWriteFile(filePath, JSON.stringify(data, null, 2));
-    console.log('[AuthWorkerServerStorage] ✅ Session saved to server:', session.sessionId);
+    // Reduced logging - only log on first save or errors to avoid rate limits
   } catch (error) {
     console.error('[AuthWorkerServerStorage] ❌ Failed to save session:', error);
     throw error;
@@ -154,23 +154,13 @@ export function listSessionsFromServer(): Array<{
     const DATA_DIR = process.env.DATA_DIR || path.join(process.cwd(), 'data');
     const sessionsDir = path.join(DATA_DIR, SESSIONS_DIR);
     
-    console.log('[AuthWorkerServerStorage] Reading sessions from:', sessionsDir);
-    console.log('[AuthWorkerServerStorage] DATA_DIR:', process.env.DATA_DIR || 'not set');
-    console.log('[AuthWorkerServerStorage] process.cwd():', process.cwd());
-    console.log('[AuthWorkerServerStorage] Directory exists:', fs.existsSync(sessionsDir));
-    
+    // Reduced logging - only log errors to avoid rate limits
     if (!fs.existsSync(sessionsDir)) {
       console.warn('[AuthWorkerServerStorage] Sessions directory does not exist:', sessionsDir);
-      // List what directories DO exist
-      if (fs.existsSync(DATA_DIR)) {
-        const dataDirContents = fs.readdirSync(DATA_DIR);
-        console.log('[AuthWorkerServerStorage] DATA_DIR contents:', dataDirContents);
-      }
       return [];
     }
     
     const files = fs.readdirSync(sessionsDir);
-    console.log('[AuthWorkerServerStorage] Found files:', files.length, files);
     const sessions: Array<{
       sessionId: string;
       targetDomain: string;
@@ -297,10 +287,39 @@ export async function enrichSessionOnServer(
     session.step2.extractedVars = extractedVars;
     
     await saveSessionToServer(session);
-    console.log('[AuthWorkerServerStorage] ✅ Session enriched:', sessionId, Object.keys(enrichedExtractedVars));
+    // Reduced logging to avoid rate limits
     return true;
   } catch (error) {
     console.error('[AuthWorkerServerStorage] ❌ Failed to enrich session:', error);
+    return false;
+  }
+}
+
+/**
+ * Delete session from server-side storage
+ */
+export async function deleteSessionFromServer(sessionId: string): Promise<boolean> {
+  // Server-side only - return false on client
+  if (typeof window !== 'undefined') {
+    console.warn('[AuthWorkerServerStorage] deleteSessionFromServer called in client context');
+    return false;
+  }
+
+  try {
+    const filePath = getSessionFilePath(sessionId);
+    
+    // @ts-ignore - server-only
+    const fs = require('fs');
+    
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+      // Reduced logging to avoid rate limits
+      return true;
+    } else {
+      return true; // Consider it success if already deleted
+    }
+  } catch (error) {
+    console.error('[AuthWorkerServerStorage] ❌ Failed to delete session:', error);
     return false;
   }
 }

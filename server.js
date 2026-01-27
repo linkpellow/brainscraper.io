@@ -137,7 +137,10 @@ function startTokenRefreshJob() {
   }
 
   const REFRESH_CHECK_INTERVAL_MS = 5 * 60 * 1000; // Check every 5 minutes
-  const PROACTIVE_REFRESH_BUFFER_MS = 10 * 60 * 1000; // Refresh 10 minutes before expiration
+  // Refresh 30 minutes before expiration to ensure tokens are always valid
+  // This is critical for DNC scrub API calls which must never fail due to expired tokens
+  // Aligned with needsTokenRefresh() in tokenRefreshService.ts
+  const PROACTIVE_REFRESH_BUFFER_MS = 30 * 60 * 1000; // 30 minutes
 
   async function checkAndRefreshTokens() {
     try {
@@ -204,34 +207,55 @@ function startTokenRefreshJob() {
 
           if (shouldRefresh) {
             const minutesUntilExpiry = Math.floor(timeUntilExpiry / 1000 / 60);
-            console.log(`[Server] 🔄 Auto-refreshing token for ${sessionMeta.targetDomain || sessionMeta.sessionId} (expires in ${minutesUntilExpiry}min)`);
+            const isExpired = timeUntilExpiry <= 0;
+            const urgency = isExpired ? 'CRITICAL (expired)' : 
+                           timeUntilExpiry < 5 * 60 * 1000 ? 'URGENT (<5min)' :
+                           timeUntilExpiry < 15 * 60 * 1000 ? 'HIGH (<15min)' : 'NORMAL';
             
-            // Call refresh API internally (server-side)
+            console.log(`[Server] 🔄 Auto-refreshing token for ${sessionMeta.targetDomain || sessionMeta.sessionId} (${urgency}, expires in ${minutesUntilExpiry}min)`);
+            
+            // Use direct refresh function instead of API call for better error handling
             try {
-              // Use internal API route for refresh (handles both OAuth and Bearer flows)
-              const baseUrl = process.env.RAILWAY_PUBLIC_DOMAIN 
-                ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}` 
-                : `http://localhost:${port}`;
+              const { refreshAuthWorkerToken, getRefreshFailureStats } = require('./app/auth-workers/utils/tokenRefreshService');
               
-              const response = await fetch(`${baseUrl}/api/auth-worker/refresh`, {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ sessionId: sessionMeta.sessionId }),
-              });
-
-              if (response.ok) {
-                const result = await response.json();
+              // Check failure stats before refresh
+              const failureStats = getRefreshFailureStats(sessionMeta.sessionId);
+              if (failureStats.needsAttention) {
+                console.warn(`[Server] ⚠️ Session ${sessionMeta.sessionId.substring(0, 8)}... has ${failureStats.consecutiveFailures} consecutive failures`);
+                console.warn(`[Server] Last error: ${failureStats.lastFailureError}`);
+              }
+              
+              // Refresh with retry logic (built into refreshAuthWorkerToken)
+              const refreshResult = await refreshAuthWorkerToken(sessionMeta.sessionId);
+              
+              if (refreshResult.success && refreshResult.newToken) {
+                const newExpiresAt = refreshResult.expiresAt;
+                const newTimeUntilExpiry = newExpiresAt ? newExpiresAt - Date.now() : null;
+                const newMinutesUntilExpiry = newTimeUntilExpiry ? Math.floor(newTimeUntilExpiry / 1000 / 60) : null;
+                
                 console.log(`[Server] ✅ Token refreshed for ${sessionMeta.targetDomain || sessionMeta.sessionId}`, {
-                  expiresAt: result.expiresAt ? new Date(result.expiresAt).toISOString() : 'unknown',
+                  expiresAt: newExpiresAt ? new Date(newExpiresAt).toISOString() : 'unknown',
+                  expiresIn: newMinutesUntilExpiry ? `${newMinutesUntilExpiry}min` : 'unknown',
+                  retried: refreshResult.retried ? 'yes' : 'no',
                 });
               } else {
-                const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-                console.error(`[Server] ❌ Token refresh failed for ${sessionMeta.targetDomain || sessionMeta.sessionId}:`, errorData.error || `HTTP ${response.status}`);
+                const errorMsg = refreshResult.error || 'Unknown error';
+                console.error(`[Server] ❌ Token refresh failed for ${sessionMeta.targetDomain || sessionMeta.sessionId}:`, errorMsg);
+                
+                // If token is expired and refresh failed, this is critical
+                if (isExpired) {
+                  console.error(`[Server] 🚨 CRITICAL: Token is EXPIRED and refresh FAILED for ${sessionMeta.targetDomain || sessionMeta.sessionId}`);
+                  console.error(`[Server] 🚨 DNC scrub API calls will fail until token is refreshed`);
+                }
               }
             } catch (error) {
               console.error(`[Server] ❌ Token refresh error for ${sessionMeta.targetDomain || sessionMeta.sessionId}:`, error.message);
+              console.error(`[Server] Stack:`, error.stack);
+              
+              // If token is expired, this is critical
+              if (timeUntilExpiry <= 0) {
+                console.error(`[Server] 🚨 CRITICAL: Token is EXPIRED and refresh threw exception`);
+              }
             }
           }
         } catch (error) {

@@ -3,6 +3,21 @@ import { getUshaToken, clearTokenCache } from '@/utils/getUshaToken';
 import { listSessionsFromServer, getSessionFromServer } from '@/app/auth-workers/utils/authWorkerServerStorage';
 import { getValidToken } from '@/app/auth-workers/utils/tokenRefreshService';
 
+// CORS headers helper - allows requests from any origin
+function getCorsHeaders(origin: string | null) {
+  return {
+    'Access-Control-Allow-Origin': origin || '*',
+    'Access-Control-Allow-Methods': 'GET, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Access-Control-Max-Age': '86400',
+  };
+}
+
+export async function OPTIONS(request: NextRequest) {
+  const origin = request.headers.get('origin');
+  return NextResponse.json({}, { headers: getCorsHeaders(origin) });
+}
+
 /**
  * Get USHA JWT token from auth worker (preferred) or fallback to getUshaToken
  * 
@@ -17,19 +32,41 @@ async function getUshaTokenForDNC(providedToken?: string | null): Promise<string
   }
   
   try {
-    // Try to get token from auth worker for agent.ushadvisors.com
+    // Try to get token from auth worker for any USHA domain
+    // Priority: api-business-agent.ushadvisors.com > agent.ushadvisors.com > any ushadvisors.com
     const sessions = listSessionsFromServer();
-    const ushaSession = sessions
-      .filter(s => s.targetDomain === 'agent.ushadvisors.com')
-      .sort((a, b) => b.stabilizedAt - a.stabilizedAt)[0]; // Most recent
+    const ushaSessions = sessions
+      .filter(s => s.targetDomain.includes('ushadvisors.com'))
+      .sort((a, b) => {
+        // Prefer api-business-agent.ushadvisors.com (most reliable for DNC API)
+        const aIsApiBusiness = a.targetDomain === 'api-business-agent.ushadvisors.com';
+        const bIsApiBusiness = b.targetDomain === 'api-business-agent.ushadvisors.com';
+        if (aIsApiBusiness && !bIsApiBusiness) return -1;
+        if (!aIsApiBusiness && bIsApiBusiness) return 1;
+        
+        // Then prefer agent.ushadvisors.com
+        const aIsAgent = a.targetDomain === 'agent.ushadvisors.com';
+        const bIsAgent = b.targetDomain === 'agent.ushadvisors.com';
+        if (aIsAgent && !bIsAgent) return -1;
+        if (!aIsAgent && bIsAgent) return 1;
+        
+        // Finally, most recent
+        return b.stabilizedAt - a.stabilizedAt;
+      });
     
-    if (ushaSession) {
+    // Try sessions in priority order until we get a valid token
+    for (const ushaSession of ushaSessions) {
       const session = getSessionFromServer(ushaSession.sessionId);
-      if (session && session.apiKey) {
-        console.log('🔑 [SCRUB_PHONE] Using auth worker token (auto-refreshes, 24/7)');
-        const tokenResult = await getValidToken(session.sessionId);
-        if (tokenResult?.token) {
-          return tokenResult.token;
+      if (session) {
+        try {
+          const tokenResult = await getValidToken(session.sessionId);
+          if (tokenResult?.token) {
+            console.log(`🔑 [SCRUB_PHONE] Using auth worker token from ${session.targetDomain} (auto-refreshes, 24/7)`);
+            return tokenResult.token;
+          }
+        } catch (error) {
+          // This session failed, try next one
+          continue;
         }
       }
     }
@@ -63,17 +100,19 @@ export async function GET(request: NextRequest) {
     const providedToken = searchParams.get('token');
     const token = await getUshaTokenForDNC(providedToken);
     
+    const origin = request.headers.get('origin');
+    
     if (!token) {
       return NextResponse.json(
         { error: 'USHA JWT token is required. Failed to obtain token from auth worker or environment.' },
-        { status: 401 }
+        { status: 401, headers: getCorsHeaders(origin) }
       );
     }
 
     if (!phone) {
       return NextResponse.json(
         { error: 'Phone number parameter is required' },
-        { status: 400 }
+        { status: 400, headers: getCorsHeaders(origin) }
       );
     }
 
@@ -83,7 +122,7 @@ export async function GET(request: NextRequest) {
     if (cleanedPhone.length < 10) {
       return NextResponse.json(
         { error: 'Invalid phone number format' },
-        { status: 400 }
+        { status: 400, headers: getCorsHeaders(origin) }
       );
     }
 
@@ -121,7 +160,7 @@ export async function GET(request: NextRequest) {
       const errorText = await response.text();
       return NextResponse.json(
         { error: `USHA API error: ${response.statusText}`, details: errorText, status: response.status },
-        { status: response.status }
+        { status: response.status, headers: getCorsHeaders(origin) }
       );
     }
 
@@ -146,12 +185,13 @@ export async function GET(request: NextRequest) {
       status: isDNC ? 'DNC' : 'OK',
       reason: reason,
       data: result,
-    });
+    }, { headers: getCorsHeaders(origin) });
   } catch (error) {
     console.error('USHA scrub phone API error:', error);
+    const origin = request.headers.get('origin');
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Unknown error occurred' },
-      { status: 500 }
+      { status: 500, headers: getCorsHeaders(origin) }
     );
   }
 }
