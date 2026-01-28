@@ -643,11 +643,16 @@ export default function EnrichedLeadsPage() {
   const canEnrichField = (lead: LeadSummary, field: 'phone' | 'email' | 'zipcode' | 'income'): boolean => {
     // Field must be empty
     const fieldValue = field === 'phone' ? lead.phone : field === 'email' ? lead.email : field === 'zipcode' ? lead.zipcode : lead.income;
-    if (fieldValue && fieldValue !== 'N/A' && fieldValue !== 0 && (typeof fieldValue !== 'number' || fieldValue > 0)) {
-      if (field === 'income' && typeof fieldValue === 'number' && fieldValue > 0) {
+    
+    // Check if field already has a value
+    if (field === 'income') {
+      // Income is a number - check if it exists and is > 0
+      if (typeof fieldValue === 'number' && fieldValue > 0) {
         return false; // Income already has a value
       }
-      if (field !== 'income' && fieldValue.trim() !== '') {
+    } else {
+      // Other fields are strings - check if they exist and are not empty
+      if (fieldValue && typeof fieldValue === 'string' && fieldValue !== 'N/A' && fieldValue.trim() !== '') {
         return false;
       }
     }
