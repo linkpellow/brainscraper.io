@@ -39,8 +39,7 @@ yarn-error.log*
 data/*.csv
 
 # API results (large files, auto-saved for cost efficiency)
-# TEMPORARILY UN-IGNORED FOR RAILWAY DEPLOYMENT - RE-ENABLE AFTER DEPLOYMENT
-# data/api-results/
+data/api-results/
 
 # vercel
 .vercel
