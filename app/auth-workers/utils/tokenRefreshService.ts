@@ -571,16 +571,29 @@ export async function refreshAuthWorkerToken(
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         
         // Retry on network errors or transient failures
-        const isRetryable = errorMessage.includes('fetch') || 
-                           errorMessage.includes('network') ||
-                           errorMessage.includes('timeout') ||
-                           errorMessage.includes('ECONNREFUSED') ||
-                           errorMessage.includes('ETIMEDOUT') ||
-                           errorMessage.includes('AbortError');
+        const isNetworkError = errorMessage.includes('fetch') || 
+                              errorMessage.includes('network') ||
+                              errorMessage.includes('timeout') ||
+                              errorMessage.includes('ECONNREFUSED') ||
+                              errorMessage.includes('ETIMEDOUT') ||
+                              errorMessage.includes('AbortError');
+        
+        // Also retry on 401/403 - sometimes these are transient (rate limits, temporary API issues)
+        // BUT only if the error message doesn't indicate the token is definitively expired
+        const is401or403 = errorMessage.includes('401') || errorMessage.includes('403');
+        const isDefinitelyExpired = errorMessage.includes('expired') && 
+                                   errorMessage.includes('does not accept expired tokens');
+        
+        // Retry 401/403 only if not definitively expired (transient auth issues can be retried)
+        const isAuthRetryable = is401or403 && !isDefinitelyExpired;
+        
+        const isRetryable = isNetworkError || isAuthRetryable;
 
         if (isRetryable && retryAttempt < maxRetries) {
-          const delay = Math.min(BASE_RETRY_DELAY_MS * Math.pow(2, retryAttempt), MAX_RETRY_DELAY_MS);
-          console.log(`[TokenRefreshService] Retrying refresh after error in ${delay}ms (attempt ${retryAttempt + 1}/${maxRetries}):`, errorMessage);
+          // Use longer delay for auth errors (5s base instead of normal base)
+          const authRetryDelayMultiplier = isAuthRetryable ? 2 : 1;
+          const delay = Math.min(BASE_RETRY_DELAY_MS * authRetryDelayMultiplier * Math.pow(2, retryAttempt), MAX_RETRY_DELAY_MS);
+          console.log(`[TokenRefreshService] Retrying refresh after ${isAuthRetryable ? 'auth' : 'network'} error in ${delay}ms (attempt ${retryAttempt + 1}/${maxRetries}):`, errorMessage);
           await new Promise(resolve => setTimeout(resolve, delay));
           return refreshAuthWorkerToken(sessionId, retryAttempt + 1, maxRetries);
         }

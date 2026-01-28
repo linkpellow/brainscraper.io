@@ -136,19 +136,24 @@ function startTokenRefreshJob() {
     return;
   }
 
-  const REFRESH_CHECK_INTERVAL_MS = 5 * 60 * 1000; // Check every 5 minutes
-  // Refresh 30 minutes before expiration to ensure tokens are always valid
-  // This is critical for DNC scrub API calls which must never fail due to expired tokens
-  // Aligned with needsTokenRefresh() in tokenRefreshService.ts
-  const PROACTIVE_REFRESH_BUFFER_MS = 30 * 60 * 1000; // 30 minutes
+  const REFRESH_CHECK_INTERVAL_MS = 5 * 60 * 1000; // Check every 5 minutes (normal)
+  const URGENT_CHECK_INTERVAL_MS = 1 * 60 * 1000; // Check every 1 minute when urgent
+  // Refresh 2 HOURS before expiration to ensure tokens are always valid
+  // This aggressive buffer accounts for: Railway deployments, network issues, retry delays
+  // Critical for DNC scrub API calls which must never fail due to expired tokens
+  const PROACTIVE_REFRESH_BUFFER_MS = 2 * 60 * 60 * 1000; // 2 hours
+  const URGENT_REFRESH_THRESHOLD_MS = 1 * 60 * 60 * 1000; // 1 hour - triggers frequent checks
 
   async function checkAndRefreshTokens() {
+    // Reset urgent mode at start of each check - will be set to true if any token is urgent
+    urgentModeActive = false;
+    
     try {
       const { listSessionsFromServer, getSessionFromServer } = require('./app/auth-workers/utils/authWorkerServerStorage');
       const sessions = listSessionsFromServer();
       
       if (sessions.length === 0) {
-        return;
+        return { urgentModeActive: false };
       }
 
       console.log(`[Server] Checking ${sessions.length} auth worker(s) for token refresh...`);
@@ -199,18 +204,25 @@ function startTokenRefreshJob() {
           const now = Date.now();
           const timeUntilExpiry = expirationTime - now;
           const timeUntilExpiryWithBuffer = timeUntilExpiry - PROACTIVE_REFRESH_BUFFER_MS;
+          const minutesUntilExpiry = Math.floor(timeUntilExpiry / 1000 / 60);
+          const isExpired = timeUntilExpiry <= 0;
+          const isUrgent = timeUntilExpiry <= URGENT_REFRESH_THRESHOLD_MS; // Within 1 hour
 
-          // Refresh if expired or within buffer window
+          // Track if ANY token is in urgent state (for interval adjustment)
+          if (isUrgent && !isExpired) {
+            urgentModeActive = true;
+          }
+
+          // Refresh if expired or within buffer window (2 hours)
           const shouldRefresh = 
             timeUntilExpiry <= 0 || // Already expired
             (timeUntilExpiryWithBuffer <= 0 && timeUntilExpiry > 0); // Within buffer window
 
           if (shouldRefresh) {
-            const minutesUntilExpiry = Math.floor(timeUntilExpiry / 1000 / 60);
-            const isExpired = timeUntilExpiry <= 0;
             const urgency = isExpired ? 'CRITICAL (expired)' : 
                            timeUntilExpiry < 5 * 60 * 1000 ? 'URGENT (<5min)' :
-                           timeUntilExpiry < 15 * 60 * 1000 ? 'HIGH (<15min)' : 'NORMAL';
+                           timeUntilExpiry < 15 * 60 * 1000 ? 'HIGH (<15min)' :
+                           timeUntilExpiry < 60 * 60 * 1000 ? 'ELEVATED (<1hr)' : 'NORMAL';
             
             console.log(`[Server] 🔄 Auto-refreshing token for ${sessionMeta.targetDomain || sessionMeta.sessionId} (${urgency}, expires in ${minutesUntilExpiry}min)`);
             
@@ -238,46 +250,105 @@ function startTokenRefreshJob() {
                   expiresIn: newMinutesUntilExpiry ? `${newMinutesUntilExpiry}min` : 'unknown',
                   retried: refreshResult.retried ? 'yes' : 'no',
                 });
+                
+                // Check if new token is still in urgent zone
+                if (newTimeUntilExpiry && newTimeUntilExpiry > URGENT_REFRESH_THRESHOLD_MS) {
+                  // Token is now safe, no longer urgent
+                } else if (newTimeUntilExpiry) {
+                  urgentModeActive = true; // Still urgent
+                }
               } else {
                 const errorMsg = refreshResult.error || 'Unknown error';
                 console.error(`[Server] ❌ Token refresh failed for ${sessionMeta.targetDomain || sessionMeta.sessionId}:`, errorMsg);
                 
-                // If token is expired and refresh failed, this is critical
+                // CRITICAL ALERTS based on urgency level
                 if (isExpired) {
-                  console.error(`[Server] 🚨 CRITICAL: Token is EXPIRED and refresh FAILED for ${sessionMeta.targetDomain || sessionMeta.sessionId}`);
-                  console.error(`[Server] 🚨 DNC scrub API calls will fail until token is refreshed`);
+                  console.error(`[Server] 🚨🚨🚨 CRITICAL ALERT 🚨🚨🚨`);
+                  console.error(`[Server] 🚨 Token is EXPIRED and refresh FAILED`);
+                  console.error(`[Server] 🚨 Session: ${sessionMeta.targetDomain || sessionMeta.sessionId}`);
+                  console.error(`[Server] 🚨 Error: ${errorMsg}`);
+                  console.error(`[Server] 🚨 DNC scrub API calls will fail until re-authenticated`);
+                  console.error(`[Server] 🚨 ACTION REQUIRED: Create new auth worker from fresh HAR file`);
+                  console.error(`[Server] 🚨🚨🚨 END CRITICAL ALERT 🚨🚨🚨`);
+                } else if (timeUntilExpiry < 30 * 60 * 1000) {
+                  // Less than 30 minutes - very high urgency
+                  console.error(`[Server] ⚠️⚠️ HIGH URGENCY ALERT ⚠️⚠️`);
+                  console.error(`[Server] ⚠️ Token expires in ${minutesUntilExpiry} minutes and refresh FAILED`);
+                  console.error(`[Server] ⚠️ Session: ${sessionMeta.targetDomain || sessionMeta.sessionId}`);
+                  console.error(`[Server] ⚠️ Error: ${errorMsg}`);
+                  console.error(`[Server] ⚠️ Will retry in 1 minute (urgent mode active)`);
+                  urgentModeActive = true;
+                } else if (isUrgent) {
+                  // 30-60 minutes - elevated urgency
+                  console.warn(`[Server] ⚠️ ELEVATED ALERT: Token expires in ${minutesUntilExpiry} minutes and refresh failed`);
+                  console.warn(`[Server] ⚠️ Session: ${sessionMeta.targetDomain || sessionMeta.sessionId}`);
+                  urgentModeActive = true;
                 }
               }
             } catch (error) {
               console.error(`[Server] ❌ Token refresh error for ${sessionMeta.targetDomain || sessionMeta.sessionId}:`, error.message);
               console.error(`[Server] Stack:`, error.stack);
               
-              // If token is expired, this is critical
-              if (timeUntilExpiry <= 0) {
+              // Critical alerts for exceptions too
+              if (isExpired) {
                 console.error(`[Server] 🚨 CRITICAL: Token is EXPIRED and refresh threw exception`);
+                console.error(`[Server] 🚨 ACTION REQUIRED: Create new auth worker from fresh HAR file`);
+              } else if (isUrgent) {
+                console.error(`[Server] ⚠️ URGENT: Token expires in ${minutesUntilExpiry}min and refresh threw exception`);
+                urgentModeActive = true;
               }
+            }
+          } else {
+            // Token not in refresh window yet, but check if it's approaching urgent
+            if (isUrgent) {
+              console.log(`[Server] 📊 Token for ${sessionMeta.targetDomain || sessionMeta.sessionId} expires in ${minutesUntilExpiry}min (monitoring)`);
             }
           }
         } catch (error) {
           console.error(`[Server] Error checking session ${sessionMeta.sessionId}:`, error.message);
         }
       }
+      
+      // Reset urgent mode if no tokens are urgent
+      // (will be set to true above if any token is urgent)
     } catch (error) {
       console.error('[Server] Error in token refresh job:', error.message);
     }
+    
+    return { urgentModeActive };
   }
 
-  // Initial check after 30 seconds (give server time to start)
-  setTimeout(() => {
-    checkAndRefreshTokens();
-  }, 30000);
+  // Track if any tokens need urgent attention
+  let urgentModeActive = false;
+  let urgentInterval = null;
 
-  // Set up interval
+  // Wrapper that also checks for urgent tokens
+  async function checkTokensAndAdjustInterval() {
+    const result = await checkAndRefreshTokens();
+    
+    // checkAndRefreshTokens will set urgentModeActive if any tokens are within 1 hour
+    if (urgentModeActive && !urgentInterval) {
+      console.log('[Server] ⚠️ URGENT MODE: Switching to 1-minute checks due to near-expiry tokens');
+      urgentInterval = setInterval(checkAndRefreshTokens, URGENT_CHECK_INTERVAL_MS);
+    } else if (!urgentModeActive && urgentInterval) {
+      console.log('[Server] ✅ NORMAL MODE: Switching back to 5-minute checks');
+      clearInterval(urgentInterval);
+      urgentInterval = null;
+    }
+  }
+
+  // IMMEDIATE check on startup - no delay! Token expiration is critical.
+  console.log('[Server] 🚀 Running IMMEDIATE token refresh check on startup...');
+  checkTokensAndAdjustInterval().catch(err => {
+    console.error('[Server] Startup token check failed:', err.message);
+  });
+
+  // Set up regular interval (5 minutes)
   const interval = setInterval(() => {
-    checkAndRefreshTokens();
+    checkTokensAndAdjustInterval();
   }, REFRESH_CHECK_INTERVAL_MS);
 
-  console.log('[Server] ✅ Token refresh job started (checks every 5 minutes)');
+  console.log('[Server] ✅ Token refresh job started (checks every 5 minutes, 1 minute when urgent)');
 
   // Cleanup on exit
   if (process.on) {
