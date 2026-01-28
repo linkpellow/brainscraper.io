@@ -41,6 +41,10 @@ data/*.csv
 # API results (large files, auto-saved for cost efficiency)
 data/api-results/
 
+# TEMPORARILY UN-IGNORED FOR RAILWAY DEPLOYMENT - RE-ENABLE AFTER DEPLOYMENT
+# Ensure data/auth-workers/ is included in Railway build context
+!data/auth-workers/
+
 # vercel
 .vercel
 
