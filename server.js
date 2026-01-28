@@ -244,7 +244,22 @@ function startTokenRefreshJob() {
             
             // Use direct refresh function instead of API call for better error handling
             try {
-              const { refreshAuthWorkerToken, getRefreshFailureStats } = require('./app/auth-workers/utils/tokenRefreshService');
+              // Use dynamic import with absolute paths to handle TypeScript modules correctly
+              // Next.js compiles TypeScript to .next/server/app/ in production
+              const { join } = require('path');
+              let tokenRefreshService;
+              const cwd = process.cwd();
+              
+              // Try production compiled path first (.next/server/app/...)
+              const prodPath = join(cwd, '.next', 'server', 'app', 'auth-workers', 'utils', 'tokenRefreshService');
+              try {
+                tokenRefreshService = await import(prodPath);
+              } catch (prodError) {
+                // Fallback to source path (for development or if .next doesn't exist yet)
+                const sourcePath = join(cwd, 'app', 'auth-workers', 'utils', 'tokenRefreshService');
+                tokenRefreshService = await import(sourcePath);
+              }
+              const { refreshAuthWorkerToken, getRefreshFailureStats } = tokenRefreshService;
               
               // Check failure stats before refresh
               const failureStats = getRefreshFailureStats(sessionMeta.sessionId);
