@@ -5,6 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { geocodeCityStateToZip } from '@/utils/geocoding';
+import { fetchIncomeByZipWithFallback } from '@/utils/censusAPI';
 
 /**
  * Extract domain from email (if available)
@@ -221,7 +222,7 @@ export async function POST(request: NextRequest) {
         zipcode?: string;
         linkedinUrl?: string;
       };
-      field: 'phone' | 'email' | 'zipcode';
+      field: 'phone' | 'email' | 'zipcode' | 'income';
     } = body;
 
     if (!lead || !lead.name) {
@@ -231,9 +232,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!field || (field !== 'phone' && field !== 'email' && field !== 'zipcode')) {
+    if (!field || (field !== 'phone' && field !== 'email' && field !== 'zipcode' && field !== 'income')) {
       return NextResponse.json(
-        { success: false, error: 'Field must be "phone", "email", or "zipcode"' },
+        { success: false, error: 'Field must be "phone", "email", "zipcode", or "income"' },
         { status: 400 }
       );
     }
@@ -264,6 +265,85 @@ export async function POST(request: NextRequest) {
         value: zipcode,
         field: 'zipcode',
       });
+    }
+
+    // Handle income enrichment
+    if (field === 'income') {
+      // Minimum requirement: city+state OR zipcode
+      const hasLocation = (lead.city && lead.state) || lead.zipcode;
+      
+      if (!hasLocation) {
+        return NextResponse.json(
+          { success: false, error: 'City/state or zipcode is required for income enrichment' },
+          { status: 400 }
+        );
+      }
+
+      try {
+        // Fetch ZIP median income if ZIP code is available
+        let zipMedianIncome: number | undefined = undefined;
+        if (lead.zipcode) {
+          try {
+            const zip5 = String(lead.zipcode).match(/\d{5}/)?.[0];
+            if (zip5) {
+              const US_CENSUS_API_KEY = process.env.US_CENSUS_API_KEY;
+              const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY;
+              
+              if (US_CENSUS_API_KEY) {
+                const incomeData = await fetchIncomeByZipWithFallback(
+                  zip5,
+                  US_CENSUS_API_KEY,
+                  RAPIDAPI_KEY
+                );
+                
+                if (incomeData && incomeData.medianIncome) {
+                  zipMedianIncome = incomeData.medianIncome;
+                }
+              }
+            }
+          } catch (zipError) {
+            // Non-fatal: continue without ZIP income data
+            console.log(`[ENRICH_SINGLE_FIELD] Could not fetch ZIP income (non-fatal):`, zipError);
+          }
+        }
+
+        // Import and call income pre-qualification
+        const { preQualifyIncome } = await import('@/utils/enrichment/incomePreQualifier');
+        
+        // Extract job title and company from sourceDetails if available (optional)
+        // Note: These are not stored in LeadSummary, so we'll work without them
+        // The system can still estimate income based on location data
+        const jobTitle = undefined; // Not available in LeadSummary
+        const company = undefined; // Not available in LeadSummary
+
+        // Run pre-qualification
+        const preQualResult = preQualifyIncome({
+          jobTitle: jobTitle || undefined,
+          company: company || undefined,
+          city: lead.city || undefined,
+          state: lead.state || undefined,
+          zipCode: lead.zipcode || undefined,
+          zipMedianIncome: zipMedianIncome,
+        });
+
+        // Return the income estimate (p50)
+        const incomeEstimate = preQualResult.estimate.p50;
+
+        return NextResponse.json({
+          success: true,
+          value: incomeEstimate,
+          field: 'income',
+        });
+      } catch (error) {
+        console.error('[ENRICH_SINGLE_FIELD] Income enrichment error:', error);
+        return NextResponse.json(
+          {
+            success: false,
+            error: error instanceof Error ? error.message : 'Failed to estimate income',
+          },
+          { status: 500 }
+        );
+      }
     }
 
     // Parse name

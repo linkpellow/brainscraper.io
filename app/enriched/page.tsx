@@ -640,11 +640,21 @@ export default function EnrichedLeadsPage() {
   /**
    * Check if a field can be enriched
    */
-  const canEnrichField = (lead: LeadSummary, field: 'phone' | 'email' | 'zipcode'): boolean => {
+  const canEnrichField = (lead: LeadSummary, field: 'phone' | 'email' | 'zipcode' | 'income'): boolean => {
     // Field must be empty
-    const fieldValue = field === 'phone' ? lead.phone : field === 'email' ? lead.email : lead.zipcode;
-    if (fieldValue && fieldValue !== 'N/A' && fieldValue.trim() !== '') {
-      return false;
+    const fieldValue = field === 'phone' ? lead.phone : field === 'email' ? lead.email : field === 'zipcode' ? lead.zipcode : lead.income;
+    if (fieldValue && fieldValue !== 'N/A' && fieldValue !== 0 && (typeof fieldValue !== 'number' || fieldValue > 0)) {
+      if (field === 'income' && typeof fieldValue === 'number' && fieldValue > 0) {
+        return false; // Income already has a value
+      }
+      if (field !== 'income' && fieldValue.trim() !== '') {
+        return false;
+      }
+    }
+
+    // Income enrichment needs city+state OR zipcode
+    if (field === 'income') {
+      return !!((lead.city && lead.state) || lead.zipcode);
     }
 
     // Zipcode enrichment only needs city + state (free, local lookup)
@@ -674,7 +684,7 @@ export default function EnrichedLeadsPage() {
   /**
    * Handle single field enrichment
    */
-  const handleEnrichField = async (lead: LeadSummary, field: 'phone' | 'email' | 'zipcode', index: number) => {
+  const handleEnrichField = async (lead: LeadSummary, field: 'phone' | 'email' | 'zipcode' | 'income', index: number) => {
     const fieldKey = `${field}-${index}`;
     
     // Check if already enriching
@@ -724,6 +734,8 @@ export default function EnrichedLeadsPage() {
           // Also update bonus field if provided
           ...(result.bonus && field === 'phone' ? { email: result.bonus } : {}),
           ...(result.bonus && field === 'email' ? { phone: result.bonus } : {}),
+          // Handle income as number
+          ...(field === 'income' && typeof result.value === 'number' ? { income: result.value } : {}),
         };
 
         setLeads(prevLeads => {
@@ -756,8 +768,10 @@ export default function EnrichedLeadsPage() {
             // Preserve other fields if they exist
             ...(updatedLead.lineType ? { 'Line Type': updatedLead.lineType } : {}),
             ...(updatedLead.carrier ? { 'Carrier': updatedLead.carrier } : {}),
+            ...(updatedLead.income ? { 'Income': updatedLead.income } : {}),
           };
 
+          // Save via save-enriched-lead endpoint
           await fetch('/api/save-enriched-lead', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -766,13 +780,27 @@ export default function EnrichedLeadsPage() {
               leadSummary: updatedLead,
             }),
           });
+
+          // Also save via aggregate endpoint to ensure it's in the main database
+          await fetch('/api/aggregate-enriched-leads', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              newLeads: [updatedLead],
+            }),
+          });
         } catch (saveError) {
           console.error('Failed to save enriched lead to disk:', saveError);
           // Don't fail the enrichment if save fails
         }
       } else {
         console.error('Enrichment failed:', result.error);
-        // Could show a toast/notification here
+        // Store error message for display
+        setEnrichmentErrors(prev => {
+          const next = new Map(prev);
+          next.set(fieldKey, result.error || 'Enrichment failed');
+          return next;
+        });
       }
     } catch (error) {
       console.error('Error enriching field:', error);
@@ -815,6 +843,102 @@ export default function EnrichedLeadsPage() {
           )}
         </span>
         {canCopy && (
+          <div className="absolute inset-0 bg-white/0 group-hover:bg-white/5 rounded-lg transition-all duration-500 -z-0" />
+        )}
+      </td>
+    );
+  };
+
+  /**
+   * Enrichable income cell component
+   */
+  const EnrichableIncomeCell = ({ 
+    value, 
+    fieldId, 
+    lead, 
+    index,
+    className = '' 
+  }: { 
+    value: number | undefined; 
+    fieldId: string;
+    lead: LeadSummary;
+    index: number;
+    className?: string;
+  }) => {
+    const displayValue = value ? `$${Math.round(value / 1000)}k` : 'N/A';
+    const isEmpty = !value || value === 0;
+    const canEnrich = canEnrichField(lead, 'income');
+    const isEnriching = enrichingFields.has(`income-${index}`);
+    const canCopy = value && value > 0;
+    const isCopied = copiedField === fieldId;
+    const errorMessage = enrichmentErrors.get(`income-${index}`);
+
+    const handleClick = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (isEmpty && canEnrich && !isEnriching) {
+        handleEnrichField(lead, 'income', index);
+      } else if (canCopy) {
+        copyToClipboard(displayValue, fieldId);
+      }
+    };
+
+    return (
+      <td 
+        className={`px-2 py-2 ${className} ${canCopy || (isEmpty && canEnrich) ? 'cursor-pointer transition-all duration-300 ease-out hover:scale-[1.02] hover:shadow-lg hover:shadow-blue-500/20' : ''} relative group`}
+        onClick={handleClick}
+        title={
+          isEnriching 
+            ? 'Enriching...' 
+            : isEmpty && canEnrich 
+            ? 'Click to enrich' 
+            : canCopy 
+            ? 'Click to copy' 
+            : ''
+        }
+      >
+        <span className="flex items-center gap-1 relative z-10 min-w-0">
+          {isEnriching ? (
+            <>
+              <Loader2 className="w-3 h-3 animate-spin text-white" />
+              <span className="text-xs text-white">Enriching...</span>
+            </>
+          ) : errorMessage ? (
+            <>
+              <AlertCircle className="w-3 h-3 text-gray-300 flex-shrink-0" />
+              <span className="text-xs text-gray-300 truncate max-w-[200px]" title={errorMessage}>
+                {errorMessage.length > 30 ? `${errorMessage.substring(0, 30)}...` : errorMessage}
+              </span>
+            </>
+          ) : (
+            <>
+              <span className={`transition-all duration-300 ${canCopy ? 'group-hover:text-white' : isEmpty && canEnrich ? 'group-hover:text-white' : ''}`}>
+                {isEmpty && canEnrich ? (
+                  <span className="flex items-center gap-1">
+                    <span>{displayValue}</span>
+                    <span className="opacity-0 group-hover:opacity-100 transition-all duration-300 text-xs text-blue-400">enrich</span>
+                  </span>
+                ) : (
+                  displayValue
+                )}
+              </span>
+              {isEmpty && canEnrich && (
+                <span className="opacity-0 group-hover:opacity-100 transition-all duration-300 transform group-hover:scale-110 flex-shrink-0">
+                  <Sparkles className="w-3 h-3 text-white drop-shadow-lg" />
+                </span>
+              )}
+              {canCopy && (
+                <span className="opacity-0 group-hover:opacity-100 transition-all duration-300 transform group-hover:scale-110 flex-shrink-0">
+                  {isCopied ? (
+                    <Check className="w-3 h-3 text-emerald-400 drop-shadow-lg" />
+                  ) : (
+                    <Copy className="w-3 h-3 text-white drop-shadow-lg" />
+                  )}
+                </span>
+              )}
+            </>
+          )}
+        </span>
+        {(canCopy || (isEmpty && canEnrich)) && (
           <div className="absolute inset-0 bg-white/0 group-hover:bg-white/5 rounded-lg transition-all duration-500 -z-0" />
         )}
       </td>
@@ -1569,10 +1693,20 @@ export default function EnrichedLeadsPage() {
                     ? 'text-gray-300 font-semibold drop-shadow-[0_0_8px_rgba(248,113,113,0.5)]'
                     : 'text-slate-400';
 
+                  // Determine row background color based on DNC status
+                  const getRowBackgroundClass = () => {
+                    if (lead.dncStatus === 'YES') {
+                      return 'bg-red-500/10 hover:bg-red-500/15 border-l-4 border-red-500';
+                    } else if (lead.dncStatus === 'NO') {
+                      return 'bg-green-500/10 hover:bg-green-500/15 border-l-4 border-green-500';
+                    }
+                    return 'table-row-inactive';
+                  };
+
                   return (
                     <tr 
                       key={globalIndex} 
-                      className="group relative table-row-inactive"
+                      className={`group relative ${getRowBackgroundClass()}`}
                       style={{ animationDelay: `${index * 20}ms` }}
                     >
                       <td 
@@ -1652,11 +1786,12 @@ export default function EnrichedLeadsPage() {
                           <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 via-purple-500/0 to-pink-500/0 group-hover/age:from-blue-500/5 group-hover/age:via-purple-500/5 group-hover/age:to-pink-500/5 rounded-lg transition-all duration-500 -z-0" />
                         )}
                       </td>
-                      <CopyableCell 
-                        value={lead.income ? `$${Math.round(lead.income / 1000)}k` : 'N/A'} 
+                      <EnrichableIncomeCell
+                        value={lead.income}
                         fieldId={`income-${globalIndex}`}
+                        lead={lead}
+                        index={globalIndex}
                         className="text-slate-300 relative z-10"
-                        truncate={false}
                       />
                       <td 
                         className={`px-2 py-2 ${lineTypeColor} cursor-pointer transition-all duration-300 ease-out group/line relative z-10 hover:scale-[1.05] hover:drop-shadow-lg`}
