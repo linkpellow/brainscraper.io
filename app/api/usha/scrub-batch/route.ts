@@ -3,6 +3,20 @@ import { getUshaToken, clearTokenCache } from '@/utils/getUshaToken';
 import { listSessionsFromServer, getSessionFromServer } from '@/app/auth-workers/utils/authWorkerServerStorage';
 import { getValidToken } from '@/app/auth-workers/utils/tokenRefreshService';
 
+function getCorsHeaders(origin: string | null) {
+  return {
+    'Access-Control-Allow-Origin': origin || '*',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Access-Control-Max-Age': '86400',
+  };
+}
+
+export async function OPTIONS(request: NextRequest) {
+  const origin = request.headers.get('origin');
+  return NextResponse.json({}, { headers: getCorsHeaders(origin) });
+}
+
 /**
  * Retry a function with exponential backoff
  * @param fn - The async function to retry
@@ -101,6 +115,7 @@ async function getUshaTokenForDNC(): Promise<string | null> {
  */
 
 export async function POST(request: NextRequest) {
+  const origin = request.headers.get('origin');
   const startTime = Date.now();
   console.log('\n🔍 [DNC SCRUB] ============================================');
   console.log('🔍 [DNC SCRUB] Batch DNC Scrubbing Request Received');
@@ -134,7 +149,7 @@ export async function POST(request: NextRequest) {
           success: false,
           error: 'Token is required. Failed to obtain USHA JWT token from auth worker or environment. Please create an auth worker for agent.ushadvisors.com or set USHA_JWT_TOKEN in environment variables.' 
         },
-        { status: 401 }
+        { status: 401, headers: getCorsHeaders(origin) }
       );
     }
 
@@ -142,7 +157,7 @@ export async function POST(request: NextRequest) {
       console.error('❌ [DNC SCRUB] Invalid phoneNumbers array');
       return NextResponse.json(
         { error: 'phoneNumbers array is required and must not be empty' },
-        { status: 400 }
+        { status: 400, headers: getCorsHeaders(origin) }
       );
     }
 
@@ -327,7 +342,7 @@ export async function POST(request: NextRequest) {
       stats: stats,
       dncCount: stats.dnc, // For frontend compatibility
       okCount: stats.ok    // For frontend compatibility
-    });
+    }, { headers: getCorsHeaders(origin) });
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : 'Unknown error';
     console.error(`❌ [DNC SCRUB] Request error: ${errorMsg}`);
@@ -336,7 +351,7 @@ export async function POST(request: NextRequest) {
         success: false,
         error: errorMsg 
       },
-      { status: 500 }
+      { status: 500, headers: getCorsHeaders(origin) }
     );
   }
 }
