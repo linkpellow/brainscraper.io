@@ -150,8 +150,21 @@ function startTokenRefreshJob() {
     
     try {
       // Use dynamic import to handle TypeScript modules correctly
-      // Next.js compiles TypeScript to .next/server/, so require() doesn't work
-      const authWorkerStorage = await import('./app/auth-workers/utils/authWorkerServerStorage');
+      // Next.js compiles TypeScript to .next/server/app/ in production
+      // Build absolute path to avoid double /app/app/ issue
+      const { join } = require('path');
+      let authWorkerStorage;
+      const cwd = process.cwd();
+      
+      // Try production compiled path first (.next/server/app/...)
+      const prodPath = join(cwd, '.next', 'server', 'app', 'auth-workers', 'utils', 'authWorkerServerStorage');
+      try {
+        authWorkerStorage = await import(prodPath);
+      } catch (prodError) {
+        // Fallback to source path (for development or if .next doesn't exist yet)
+        const sourcePath = join(cwd, 'app', 'auth-workers', 'utils', 'authWorkerServerStorage');
+        authWorkerStorage = await import(sourcePath);
+      }
       const { listSessionsFromServer, getSessionFromServer } = authWorkerStorage;
       const sessions = listSessionsFromServer();
       
