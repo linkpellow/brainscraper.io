@@ -1249,7 +1249,8 @@ async function callDNCAPI(phone: string, token: string): Promise<Response> {
 
 /**
  * Check DNC status for a phone number using USHA API
- * STEP 5.5: DNC Check (FREE - saves money by avoiding age enrichment on DNC numbers)
+ * NOTE: This function is kept for backward compatibility but is no longer used in the main pipeline.
+ * DNC checks now happen via /api/usha/scrub-batch in STEP 3.5 (LinkedIn phones) and STEP 4 (skip-tracing phones).
  * 
  * @param phone - Phone number to check (10+ digits)
  * @returns DNC status result
@@ -1350,19 +1351,22 @@ async function checkDNCStatus(
  * 1. LinkedIn (Sales Nav) → First name, last name, city, state
  * 2. Local geo DB → Zipcode (free)
  * 3. Skip trace (phones only) → Get a phone number (address only if bundled)
- * 4. Telnyx Number Lookup → Linetype + carrier
+ * 3.5. Early DNC + Line Type Check → When LinkedIn phone exists, check DNC + line type immediately
+ * 4. DNC Scrub + Minimal Telnyx → DNC check + line type only (replaces full Telnyx lookup)
  * 5. Gatekeep → Filter VoIP/fixed-line/junk carriers (cost saver - only enrich mobile numbers)
- * 5.5. DNC Check → Check DNC status (FREE - only on valid mobile numbers)
- * 6. Skip trace (conditional) → Age only if the number is valid AND not DNC
+ * 6. Skip trace (conditional) → Age only if the number is valid AND not skipped
  * 
  * API CALLS PER LEAD:
- * - STEP 3: 1 skip-tracing search call (phones only)
+ * - STEP 3: 1 skip-tracing search call (phones only) - only if no phone from LinkedIn
  * - STEP 3: 0-1 person details call (only if search doesn't have phone)
- * - STEP 4: 1 Telnyx call (only if we have phone)
- * - STEP 5.5: 1 DNC check (FREE - only if gatekeep passes)
- * - STEP 6: 0-1 skip-tracing age call (only if Telnyx validates AND not DNC AND age not in STEP 3 results)
- * MAX: 3-4 calls per lead (typically 2-3, DNC check is FREE)
- * COST SAVINGS: Age enrichment skipped on DNC numbers (saves 1 API call per DNC lead)
+ * - STEP 3.5: 1 DNC check + 1 minimal Telnyx call (line type only) - only if LinkedIn phone exists
+ * - STEP 4: 1 DNC check + 1 minimal Telnyx call (line type only) - only if phone from skip-tracing
+ * - STEP 6: 0-1 skip-tracing age call (only if not skipped AND age not in STEP 3 results)
+ * MAX: 3-4 calls per lead (typically 2-3, DNC checks are FREE)
+ * COST SAVINGS: 
+ * - Age enrichment skipped on DNC/non-mobile numbers (saves 1 API call per skipped lead)
+ * - Minimal Telnyx calls (line type only, no carrier lookup) reduce Telnyx costs
+ * - Early DNC check for LinkedIn phones prevents wasted enrichment
  */
 export async function enrichRow(
   row: Record<string, string | number>,
@@ -1652,6 +1656,177 @@ export async function enrichRow(
     initialPhone: initialPhone || 'NONE',
     initialEmail: initialEmail || 'NONE',
   });
+
+  // EARLY AGE CHECK FROM INPUT ROW (before expensive API calls)
+  // Extract age from input row to prevent wasted DNC/Telnyx calls for age > 59 leads
+  // Declare ageOver59 early so it's available throughout the function
+  let ageOver59 = false;
+  if (hasDOBOrAge(row, headers)) {
+    // Extract age or DOB from row
+    let ageValue: string | number | null = null;
+    let dobValue: string | null = null;
+    
+    // Check for age column
+    for (const header of headers) {
+      const lower = header.toLowerCase();
+      if (lower === 'age') {
+        const value = String(row[header] || '').trim();
+        if (value && value !== 'N/A' && value !== '') {
+          const parsed = parseInt(value, 10);
+          if (!isNaN(parsed) && parsed > 0 && parsed < 150) {
+            ageValue = parsed;
+            break;
+          }
+        }
+      }
+    }
+    
+    // If no age, check for DOB and calculate age
+    if (!ageValue) {
+      const dobKeywords = ['dob', 'date of birth', 'birthdate', 'birth date', 'dateofbirth'];
+      for (const header of headers) {
+        const lower = header.toLowerCase();
+        if (dobKeywords.some(keyword => lower.includes(keyword))) {
+          const value = String(row[header] || '').trim();
+          if (value && value !== 'N/A' && value !== '') {
+            dobValue = value;
+            break;
+          }
+        }
+      }
+      
+      // Calculate age from DOB
+      if (dobValue) {
+        try {
+          const dob = new Date(dobValue);
+          if (!isNaN(dob.getTime())) {
+            const today = new Date();
+            let calculatedAge = today.getFullYear() - dob.getFullYear();
+            const monthDiff = today.getMonth() - dob.getMonth();
+            if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
+              calculatedAge--;
+            }
+            if (calculatedAge > 0 && calculatedAge < 150) {
+              ageValue = calculatedAge;
+            }
+          }
+        } catch {
+          // Invalid date format, skip
+        }
+      }
+    }
+    
+    // Check if age > 59
+    if (ageValue !== null) {
+      const ageNum = typeof ageValue === 'number' ? ageValue : parseInt(String(ageValue), 10);
+      if (!isNaN(ageNum) && ageNum > 59) {
+        ageOver59 = true;
+        result.age = String(ageValue);
+        if (dobValue) {
+          result.dob = dobValue;
+        }
+        console.log(`[ENRICH_ROW] 🚫 EARLY AGE FILTER: Age ${ageNum} > 59 detected in input row - skipping DNC/Telnyx (cost savings)`);
+        onProgress?.('gatekeep', {
+          phone: phone || undefined,
+        }, [`Age ${ageNum} > 59 (from input row) - filtered out (cost savings)`]);
+      }
+    }
+  }
+
+  // STEP 3.5: Early DNC + Line Type Check (when LinkedIn phone exists)
+  // If phone was provided from LinkedIn scraping, check DNC status immediately
+  // This prevents wasted enrichment on DNC or non-mobile numbers
+  // Skip if age > 59 (already filtered from input row)
+  let leadSkipped = false;
+  if (phone && !ageOver59 && stations.has('dnc-check')) {
+    console.log(`[ENRICH_ROW] STEP 3.5: Early DNC check for LinkedIn phone: ${phone.substring(0, 5)}...`);
+    
+    try {
+      // Call DNC scrub batch API
+      const { data: dncData, error: dncError } = await callAPIWithConfig(
+        '/api/usha/scrub-batch',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phoneNumbers: [phone.replace(/\D/g, '')] }),
+        },
+        'DNC Scrub (Early Check)',
+        callAPIImpl
+      );
+
+      if (dncData && dncData.success && dncData.results && dncData.results.length > 0) {
+        const dncResult = dncData.results[0];
+        result.dncStatus = dncResult.isDNC ? 'YES' : 'NO';
+        result.canContact = dncResult.canContact;
+        result.dncReason = dncResult.reason;
+        result.dncLastChecked = new Date().toISOString();
+
+        console.log(`[ENRICH_ROW] STEP 3.5: DNC result:`, {
+          isDNC: dncResult.isDNC,
+          canContact: dncResult.canContact,
+          reason: dncResult.reason,
+        });
+
+        // If DNC, mark as skipped and skip Telnyx to save money
+        if (dncResult.isDNC) {
+          leadSkipped = true;
+          console.log(`[ENRICH_ROW] STEP 3.5: ⚠️  DNC detected - ${dncResult.reason || 'Do Not Call'}`);
+          console.log(`[ENRICH_ROW] STEP 3.5: 💰 Skipping Telnyx call (DNC detected - saves money)`);
+        }
+      } else if (dncError) {
+        console.log(`[ENRICH_ROW] STEP 3.5: ⚠️  DNC check error: ${dncError}`);
+        // On error, assume not DNC to avoid blocking enrichment
+        result.dncStatus = 'UNKNOWN';
+        result.canContact = true;
+      }
+
+      // Call minimal Telnyx API for line type only (ONLY if not DNC - skip to save money)
+      if (!dncError && !leadSkipped && result.dncStatus !== 'YES') {
+        const { data: telnyxData, error: telnyxError } = await callAPIWithConfig(
+          `/api/telnyx/lookup?phone=${encodeURIComponent(phone)}`,
+          {},
+          'Telnyx (Line Type Only)',
+          callAPIImpl
+        );
+
+        if (telnyxData) {
+          result.telnyxLookupData = telnyxData;
+          const telnyxResponse = telnyxData.data?.data || telnyxData.data || telnyxData;
+          
+          if (telnyxResponse?.portability?.line_type) {
+            result.lineType = telnyxResponse.portability.line_type;
+            console.log(`[ENRICH_ROW] STEP 3.5: Extracted line_type: ${result.lineType}`);
+
+            // Check if non-mobile line type
+            if (result.lineType) {
+              const lineTypeLower = result.lineType.toLowerCase();
+              if (lineTypeLower === 'voip' || lineTypeLower === 'fixed line' || lineTypeLower === 'landline' || lineTypeLower === 'fixed-line') {
+                leadSkipped = true;
+                console.log(`[ENRICH_ROW] STEP 3.5: ⚠️  Non-mobile line type detected: ${result.lineType}`);
+              }
+            }
+          }
+        } else if (telnyxError) {
+          console.log(`[ENRICH_ROW] STEP 3.5: ⚠️  Telnyx line type check error: ${telnyxError}`);
+        }
+      }
+
+      if (leadSkipped) {
+        console.log(`[ENRICH_ROW] STEP 3.5: 🚫 Lead marked as skipped (DNC or non-mobile) - will skip age enrichment`);
+        onProgress?.('gatekeep', {
+          phone: phone || undefined,
+          lineType: result.lineType,
+        }, [`Skipped: ${result.dncStatus === 'YES' ? 'DNC' : 'Non-mobile line type'}`]);
+      } else {
+        console.log(`[ENRICH_ROW] STEP 3.5: ✅ Lead passed early validation (not DNC, mobile line type)`);
+      }
+    } catch (error) {
+      console.error(`[ENRICH_ROW] STEP 3.5: Error during early DNC check:`, error);
+      // On error, assume not skipped to avoid blocking enrichment
+      result.dncStatus = 'UNKNOWN';
+      result.canContact = true;
+    }
+  }
 
   // STEP 3: Phone Discovery (Skip-tracing - PHONE ONLY, not age yet)
   // CRITICAL: Only run if income pre-qual passed (income >= $60k)
@@ -2033,6 +2208,7 @@ export async function enrichRow(
       if (error) {
         console.error(`[ENRICH_ROW] ❌ STEP 3: Skip-tracing API error:`, error);
         addError(result, error);
+      }
     }
   } else {
     // We already have phone/email from row - ensure they're in result
@@ -2049,18 +2225,47 @@ export async function enrichRow(
   
   // AGE FILTER CHECK (COST SAVER - Filter age > 59 immediately after STEP 3)
   // Check if age is available from STEP 3 results and filter before expensive API calls
-  let ageOver59 = false;
-  const skipTracingDataForAge = result.skipTracingData as any;
-  
-  // Check for age in STEP 3 search results (PeopleDetails)
-  if (skipTracingDataForAge?.PeopleDetails && Array.isArray(skipTracingDataForAge.PeopleDetails) && skipTracingDataForAge.PeopleDetails.length > 0) {
-    const step3Age = skipTracingDataForAge.PeopleDetails[0]?.Age;
-    if (step3Age) {
-      const ageNum = parseInt(String(step3Age), 10);
+  // Note: ageOver59 may already be set from early age check (input row)
+  // Only check skip-tracing data if ageOver59 wasn't already set from input row
+  if (!ageOver59) {
+    const skipTracingDataForAge = result.skipTracingData as any;
+    
+    // Check for age in STEP 3 search results (PeopleDetails)
+    if (skipTracingDataForAge?.PeopleDetails && Array.isArray(skipTracingDataForAge.PeopleDetails) && skipTracingDataForAge.PeopleDetails.length > 0) {
+      const step3Age = skipTracingDataForAge.PeopleDetails[0]?.Age;
+      if (step3Age) {
+        const ageNum = parseInt(String(step3Age), 10);
+        if (!isNaN(ageNum) && ageNum > 59) {
+          ageOver59 = true;
+          result.age = String(step3Age); // Store age for reference
+          console.log(`[ENRICH_ROW] 🚫 AGE FILTER: Age ${ageNum} > 59 detected in STEP 3 - skipping Telnyx and age enrichment (cost savings)`);
+          onProgress?.('gatekeep', {
+            phone: phone || undefined,
+          }, [`Age ${ageNum} > 59 - filtered out (cost savings)`]);
+        }
+      }
+    }
+    
+    // Check for age in ageFromPersonDetails (stored during person details call)
+    if (!ageOver59 && skipTracingDataForAge?.ageFromPersonDetails) {
+      const ageNum = parseInt(String(skipTracingDataForAge.ageFromPersonDetails), 10);
       if (!isNaN(ageNum) && ageNum > 59) {
         ageOver59 = true;
-        result.age = String(step3Age); // Store age for reference
-        console.log(`[ENRICH_ROW] 🚫 AGE FILTER: Age ${ageNum} > 59 detected in STEP 3 - skipping Telnyx and age enrichment (cost savings)`);
+        result.age = String(skipTracingDataForAge.ageFromPersonDetails);
+        console.log(`[ENRICH_ROW] 🚫 AGE FILTER: Age ${ageNum} > 59 detected from person details - skipping Telnyx and age enrichment (cost savings)`);
+        onProgress?.('gatekeep', {
+          phone: phone || undefined,
+        }, [`Age ${ageNum} > 59 - filtered out (cost savings)`]);
+      }
+    }
+    
+    // Check for age in direct skipTracingData.Age field
+    if (!ageOver59 && skipTracingDataForAge?.Age) {
+      const ageNum = parseInt(String(skipTracingDataForAge.Age), 10);
+      if (!isNaN(ageNum) && ageNum > 59) {
+        ageOver59 = true;
+        result.age = String(skipTracingDataForAge.Age);
+        console.log(`[ENRICH_ROW] 🚫 AGE FILTER: Age ${ageNum} > 59 detected in skip-tracing data - skipping Telnyx and age enrichment (cost savings)`);
         onProgress?.('gatekeep', {
           phone: phone || undefined,
         }, [`Age ${ageNum} > 59 - filtered out (cost savings)`]);
@@ -2068,77 +2273,103 @@ export async function enrichRow(
     }
   }
   
-  // Check for age in ageFromPersonDetails (stored during person details call)
-  if (!ageOver59 && skipTracingDataForAge?.ageFromPersonDetails) {
-    const ageNum = parseInt(String(skipTracingDataForAge.ageFromPersonDetails), 10);
-    if (!isNaN(ageNum) && ageNum > 59) {
-      ageOver59 = true;
-      result.age = String(skipTracingDataForAge.ageFromPersonDetails);
-      console.log(`[ENRICH_ROW] 🚫 AGE FILTER: Age ${ageNum} > 59 detected from person details - skipping Telnyx and age enrichment (cost savings)`);
-      onProgress?.('gatekeep', {
-        phone: phone || undefined,
-      }, [`Age ${ageNum} > 59 - filtered out (cost savings)`]);
-    }
-  }
-  
-  // Check for age in direct skipTracingData.Age field
-  if (!ageOver59 && skipTracingDataForAge?.Age) {
-    const ageNum = parseInt(String(skipTracingDataForAge.Age), 10);
-    if (!isNaN(ageNum) && ageNum > 59) {
-      ageOver59 = true;
-      result.age = String(skipTracingDataForAge.Age);
-      console.log(`[ENRICH_ROW] 🚫 AGE FILTER: Age ${ageNum} > 59 detected in skip-tracing data - skipping Telnyx and age enrichment (cost savings)`);
-      onProgress?.('gatekeep', {
-        phone: phone || undefined,
-      }, [`Age ${ageNum} > 59 - filtered out (cost savings)`]);
-    }
-  }
-  
-  // STEP 4: Telnyx Phone Intelligence (CRITICAL)
+  // STEP 4: DNC Scrub + Minimal Telnyx Line Type Check (REPLACES full Telnyx lookup)
+  // Only run if phone exists and wasn't already checked in STEP 3.5 (LinkedIn phone)
   // SKIP if age > 59 (cost savings - no need to check line type for leads we're filtering out)
   // SKIP if station is disabled
-  if (stations.has('telnyx') && phone && !ageOver59) {
-    console.log(`[ENRICH_ROW] Calling Telnyx for phone: ${phone.substring(0, 5)}...`);
-    const { data, error } = await callAPIWithConfig(
-      `/api/telnyx/lookup?phone=${encodeURIComponent(phone)}`,
-      {},
-      'Telnyx',
-      callAPIImpl
-    );
+  if (phone && !ageOver59 && !result.dncStatus) {
+    console.log(`[ENRICH_ROW] STEP 4: DNC scrub + line type check for phone: ${phone.substring(0, 5)}...`);
     
-    if (data) {
-      result.telnyxLookupData = data;
-      // Handle nested response structure: data.data.portability or data.portability
-      const telnyxData = data.data?.data || data.data || data;
-      
-      console.log(`[ENRICH_ROW] STEP 4: Telnyx data structure:`, {
-        hasData: !!data.data,
-        hasNestedData: !!data.data?.data,
-        portabilityKeys: telnyxData?.portability ? Object.keys(telnyxData.portability) : [],
-        carrierKeys: telnyxData?.carrier ? Object.keys(telnyxData.carrier) : [],
-      });
-      
-      if (telnyxData?.portability?.line_type) {
-        result.lineType = telnyxData.portability.line_type;
-        console.log(`[ENRICH_ROW] ✅ STEP 4: Extracted line_type: ${result.lineType}`);
+    try {
+      // Call DNC scrub batch API
+      const { data: dncData, error: dncError } = await callAPIWithConfig(
+        '/api/usha/scrub-batch',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phoneNumbers: [phone.replace(/\D/g, '')] }),
+        },
+        'DNC Scrub',
+        callAPIImpl
+      );
+
+      if (dncData && dncData.success && dncData.results && dncData.results.length > 0) {
+        const dncResult = dncData.results[0];
+        result.dncStatus = dncResult.isDNC ? 'YES' : 'NO';
+        result.canContact = dncResult.canContact;
+        result.dncReason = dncResult.reason;
+        result.dncLastChecked = new Date().toISOString();
+
+        console.log(`[ENRICH_ROW] STEP 4: DNC result:`, {
+          isDNC: dncResult.isDNC,
+          canContact: dncResult.canContact,
+          reason: dncResult.reason,
+        });
+
+        // If DNC, mark as skipped and skip Telnyx to save money
+        if (dncResult.isDNC) {
+          leadSkipped = true;
+          console.log(`[ENRICH_ROW] STEP 4: ⚠️  DNC detected - ${dncResult.reason || 'Do Not Call'}`);
+          console.log(`[ENRICH_ROW] STEP 4: 💰 Skipping Telnyx call (DNC detected - saves money)`);
+        }
+      } else if (dncError) {
+        console.log(`[ENRICH_ROW] STEP 4: ⚠️  DNC check error: ${dncError}`);
+        // On error, assume not DNC to avoid blocking enrichment
+        result.dncStatus = 'UNKNOWN';
+        result.canContact = true;
       }
-      if (telnyxData?.carrier) {
-        result.carrierName = telnyxData.carrier.name;
-        result.carrierType = telnyxData.carrier.type;
-        result.normalizedCarrier = telnyxData.carrier.normalized_carrier;
-        console.log(`[ENRICH_ROW] ✅ STEP 4: Extracted carrier: ${result.carrierName} (${result.carrierType})`);
+
+      // Call minimal Telnyx API for line type only (ONLY if not DNC - skip to save money)
+      if (!dncError && !leadSkipped && result.dncStatus !== 'YES' && stations.has('telnyx')) {
+        const { data: telnyxData, error: telnyxError } = await callAPIWithConfig(
+          `/api/telnyx/lookup?phone=${encodeURIComponent(phone)}`,
+          {},
+          'Telnyx (Line Type Only)',
+          callAPIImpl
+        );
+
+        if (telnyxData) {
+          result.telnyxLookupData = telnyxData;
+          const telnyxResponse = telnyxData.data?.data || telnyxData.data || telnyxData;
+          
+          console.log(`[ENRICH_ROW] STEP 4: Telnyx data structure:`, {
+            hasData: !!telnyxData.data,
+            hasNestedData: !!telnyxData.data?.data,
+            portabilityKeys: telnyxResponse?.portability ? Object.keys(telnyxResponse.portability) : [],
+          });
+          
+          if (telnyxResponse?.portability?.line_type) {
+            result.lineType = telnyxResponse.portability.line_type;
+            console.log(`[ENRICH_ROW] ✅ STEP 4: Extracted line_type: ${result.lineType}`);
+
+            // Check if non-mobile line type
+            if (result.lineType) {
+              const lineTypeLower = result.lineType.toLowerCase();
+              if (lineTypeLower === 'voip' || lineTypeLower === 'fixed line' || lineTypeLower === 'landline' || lineTypeLower === 'fixed-line') {
+                leadSkipped = true;
+                console.log(`[ENRICH_ROW] STEP 4: ⚠️  Non-mobile line type detected: ${result.lineType}`);
+              }
+            }
+          }
+
+          // Report Telnyx step progress (line type only)
+          onProgress?.('telnyx', {
+            phone: phone || undefined,
+            lineType: result.lineType,
+          });
+        }
+        if (telnyxError) {
+          addError(result, telnyxError);
+          onProgress?.('telnyx', undefined, [telnyxError]);
+        }
       }
-      
-      // Report Telnyx step progress
-      onProgress?.('telnyx', {
-        phone: phone || undefined,
-        lineType: result.lineType,
-        carrier: result.carrierName,
-      });
-    }
-    if (error) {
-      addError(result, error);
-      onProgress?.('telnyx', undefined, [error]);
+    } catch (error) {
+      console.error(`[ENRICH_ROW] STEP 4: Error during DNC scrub:`, error);
+      // On error, assume not skipped to avoid blocking enrichment
+      if (!result.dncStatus) {
+        result.dncStatus = 'UNKNOWN';
+        result.canContact = true;
+      }
     }
   }
   
@@ -2290,52 +2521,15 @@ export async function enrichRow(
     carrier: result.carrierName,
   }, gatekeepError);
   
-  // STEP 5.5: DNC CHECK (FREE - saves money by avoiding age enrichment on DNC numbers)
-  // Only check DNC on valid mobile numbers (after gatekeep passes) AND station is enabled
-  if (stations.has('dnc-check') && shouldContinue && phone) {
-    console.log(`[ENRICH_ROW] STEP 5.5: Checking DNC status for ${phone}...`);
-    try {
-      const dncResult = await checkDNCStatus(phone);
-      result.dncStatus = dncResult.isDNC ? 'YES' : 'NO';
-      result.canContact = dncResult.canContact;
-      result.dncReason = dncResult.reason;
-      result.dncLastChecked = new Date().toISOString();
-      
-      if (dncResult.isDNC) {
-        console.log(`[ENRICH_ROW] STEP 5.5: ⚠️  DNC detected - ${dncResult.reason || 'Do Not Call'}`);
-        console.log(`[ENRICH_ROW] STEP 5.5: Skipping age enrichment (cost savings)`);
-        // Skip age enrichment for DNC numbers
-        shouldContinue = false;
-        onProgress?.('gatekeep', {
-          phone: phone || undefined,
-        }, [`DNC: ${dncResult.reason || 'Do Not Call'} - skipping age enrichment`]);
-      } else {
-        console.log(`[ENRICH_ROW] STEP 5.5: ✅ Not DNC - proceeding to age enrichment`);
-      }
-    } catch (error) {
-      console.error(`[ENRICH_ROW] STEP 5.5: ❌ DNC check error:`, error);
-      // On error, assume not DNC to avoid blocking enrichment
-      result.dncStatus = 'UNKNOWN';
-      result.canContact = true;
-      // Continue with enrichment
-    }
-  } else if (phone) {
-    const lineTypeLower = result.lineType?.toLowerCase();
-    let reason = 'unknown reason';
-    if (lineTypeLower === 'voip') {
-      reason = 'VoIP';
-    } else if (lineTypeLower === 'fixed line' || lineTypeLower === 'landline' || lineTypeLower === 'fixed-line') {
-      reason = 'fixed/landline';
-    } else if (result.carrierName) {
-      reason = 'junk carrier';
-    }
-    console.log(`[ENRICH_ROW] STEP 5.5: DNC check skipped - gatekeep failed (${reason})`);
-    // Set DNC status to UNKNOWN for consistency
-    result.dncStatus = 'UNKNOWN';
-    result.canContact = true;
+  // STEP 5.5: REMOVED - DNC check now happens earlier (STEP 3.5 for LinkedIn phones, STEP 4 for skip-tracing phones)
+  
+  // STEP 6: Age (CONDITIONAL - Only if gatekeep passed AND not skipped AND age not > 59)
+  // Skip age enrichment if lead was marked as skipped (DNC or non-mobile)
+  if (leadSkipped) {
+    shouldContinue = false;
+    console.log(`[ENRICH_ROW] STEP 6: 🚫 Skipping age enrichment - lead marked as skipped (DNC or non-mobile)`);
   }
   
-  // STEP 6: Age (CONDITIONAL - Only if Telnyx confirms valid number AND age not > 59)
   // Age enrichment ONLY runs on high-quality leads (not VoIP/junk) AND age <= 59
   // CRITICAL OPTIMIZATION: Reuse STEP 3 search results to avoid duplicate API calls
   // SKIP if age > 59 (already filtered above, but double-check here)
