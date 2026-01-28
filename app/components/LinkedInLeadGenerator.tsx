@@ -820,10 +820,12 @@ export default function LinkedInLeadGenerator() {
         requestBody = { endpoint, url: searchParams.url };
       } else {
         endpoint = searchType === 'person' ? 'premium_search_person' : 'premium_search_company';
-        const params: Record<string, unknown> = { ...searchParams };
+        // CRITICAL: Remove 'limit' from searchParams - it's for TOTAL results, not per-page
+        // Per-page limit should always be 100 for optimal API usage
+        const { limit: totalResultsLimit, ...paramsWithoutLimit } = searchParams;
+        const params: Record<string, unknown> = { ...paramsWithoutLimit };
         if (!params.page) params.page = 1;
-        // Set limit to 100 per page if not specified (API defaults to 25, but we want more)
-        if (!params.limit) params.limit = 100;
+        params.limit = 100; // Always use 100 per page
         requestBody = { endpoint, ...params };
         console.log('🔍 [SEARCH] Built request body:', JSON.stringify(requestBody, null, 2));
       }
@@ -1320,9 +1322,10 @@ export default function LinkedInLeadGenerator() {
     console.log(`📄 [FETCH_PAGE] Search params:`, JSON.stringify(searchParams, null, 2));
     
     const endpoint = searchType === 'person' ? 'premium_search_person' : 'premium_search_company';
-    const params: Record<string, unknown> = { ...searchParams, page: pageNumber };
-    // Set limit to 100 per page if not specified (API defaults to 25, but we want more)
-    if (!params.limit) params.limit = 100;
+    // CRITICAL: Remove 'limit' from searchParams - it's for TOTAL results, not per-page
+    // Per-page limit should always be 100 for optimal API usage
+    const { limit: totalResultsLimit, ...paramsWithoutLimit } = searchParams;
+    const params: Record<string, unknown> = { ...paramsWithoutLimit, page: pageNumber, limit: 100 };
     const requestBody = { endpoint, ...params };
     
     console.log(`📄 [FETCH_PAGE] Request body:`, JSON.stringify(requestBody, null, 2));
