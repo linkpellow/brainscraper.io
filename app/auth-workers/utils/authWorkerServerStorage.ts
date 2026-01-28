@@ -150,14 +150,20 @@ export function listSessionsFromServer(): Array<{
     // @ts-ignore - server-only
     const path = require('path');
     
-    // Use same path resolution as initialization in server.js
-    const DATA_DIR = process.env.DATA_DIR || path.join(process.cwd(), 'data');
-    const sessionsDir = path.join(DATA_DIR, SESSIONS_DIR);
+    // Use getDataFilePath for consistent path resolution with other functions
+    // This ensures we use the same DATA_DIR logic and directory creation
+    const sessionsDir = getDataFilePath(SESSIONS_DIR);
     
     // Reduced logging - only log errors to avoid rate limits
     if (!fs.existsSync(sessionsDir)) {
-      console.warn('[AuthWorkerServerStorage] Sessions directory does not exist:', sessionsDir);
-      return [];
+      // Try to create the directory
+      try {
+        fs.mkdirSync(sessionsDir, { recursive: true });
+        console.log('[AuthWorkerServerStorage] Created sessions directory:', sessionsDir);
+      } catch {
+        console.warn('[AuthWorkerServerStorage] Sessions directory does not exist:', sessionsDir);
+        return [];
+      }
     }
     
     const files = fs.readdirSync(sessionsDir);

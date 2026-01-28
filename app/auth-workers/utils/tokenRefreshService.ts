@@ -544,7 +544,8 @@ export async function refreshAuthWorkerToken(
         };
 
         // Persist updated session (handles both client and server storage)
-        persistAuthWorkerState(sessionId, updatedSession);
+        // CRITICAL: Must await to ensure token is saved before returning success
+        await persistAuthWorkerState(sessionId, updatedSession);
 
         // Track success (reset failure counter)
         const tracker = refreshFailureTracker.get(sessionId);
@@ -578,6 +579,15 @@ export async function refreshAuthWorkerToken(
                               errorMessage.includes('ETIMEDOUT') ||
                               errorMessage.includes('AbortError');
         
+        // Retry on rate limit (429) - use Retry-After header if available
+        const is429 = errorMessage.includes('429');
+        
+        // Retry on server errors (5xx) - these are typically transient
+        const is5xx = errorMessage.includes('500') || 
+                     errorMessage.includes('502') || 
+                     errorMessage.includes('503') || 
+                     errorMessage.includes('504');
+        
         // Also retry on 401/403 - sometimes these are transient (rate limits, temporary API issues)
         // BUT only if the error message doesn't indicate the token is definitively expired
         const is401or403 = errorMessage.includes('401') || errorMessage.includes('403');
@@ -587,14 +597,35 @@ export async function refreshAuthWorkerToken(
         // Retry 401/403 only if not definitively expired (transient auth issues can be retried)
         const isAuthRetryable = is401or403 && !isDefinitelyExpired;
         
-        const isRetryable = isNetworkError || isAuthRetryable;
+        const isRetryable = isNetworkError || isAuthRetryable || is429 || is5xx;
 
         if (isRetryable && retryAttempt < maxRetries) {
-          // Use longer delay for auth errors (5s base instead of normal base)
-          const authRetryDelayMultiplier = isAuthRetryable ? 2 : 1;
-          const delay = Math.min(BASE_RETRY_DELAY_MS * authRetryDelayMultiplier * Math.pow(2, retryAttempt), MAX_RETRY_DELAY_MS);
-          console.log(`[TokenRefreshService] Retrying refresh after ${isAuthRetryable ? 'auth' : 'network'} error in ${delay}ms (attempt ${retryAttempt + 1}/${maxRetries}):`, errorMessage);
-          await new Promise(resolve => setTimeout(resolve, delay));
+          // Determine retry delay based on error type
+          let delayMs: number;
+          
+          if (is429) {
+            // Rate limit: use longer delay (10s base)
+            delayMs = Math.min(10000 * Math.pow(2, retryAttempt), MAX_RETRY_DELAY_MS);
+            console.log(`[TokenRefreshService] Rate limited (429), waiting ${delayMs}ms before retry...`);
+          } else if (is5xx) {
+            // Server error: moderate delay (5s base)
+            delayMs = Math.min(5000 * Math.pow(2, retryAttempt), MAX_RETRY_DELAY_MS);
+            console.log(`[TokenRefreshService] Server error (5xx), retrying in ${delayMs}ms...`);
+          } else if (isAuthRetryable) {
+            // Auth error: longer delay (4s base)
+            delayMs = Math.min(BASE_RETRY_DELAY_MS * 2 * Math.pow(2, retryAttempt), MAX_RETRY_DELAY_MS);
+          } else {
+            // Network error: standard exponential backoff
+            delayMs = Math.min(BASE_RETRY_DELAY_MS * Math.pow(2, retryAttempt), MAX_RETRY_DELAY_MS);
+          }
+          
+          // Add jitter (0-500ms) to prevent thundering herd
+          const jitter = Math.random() * 500;
+          delayMs += jitter;
+          
+          const errorType = is429 ? 'rate-limit' : is5xx ? 'server' : isAuthRetryable ? 'auth' : 'network';
+          console.log(`[TokenRefreshService] Retrying refresh after ${errorType} error in ${Math.round(delayMs)}ms (attempt ${retryAttempt + 1}/${maxRetries}):`, errorMessage);
+          await new Promise(resolve => setTimeout(resolve, delayMs));
           return refreshAuthWorkerToken(sessionId, retryAttempt + 1, maxRetries);
         }
 
@@ -684,8 +715,9 @@ export function needsTokenRefresh(session: PersistedAuthWorkerState): boolean {
   const clockSkew = detectClockSkew(session);
   const now = Date.now() + clockSkew; // Adjust for clock skew
   
-  // Base refresh buffer: 30 minutes before expiration
-  let PROACTIVE_REFRESH_BUFFER_MS = 30 * 60 * 1000; // 30 minutes
+  // Base refresh buffer: 2 HOURS before expiration (MUST match server.js)
+  // This aggressive buffer accounts for: Railway deployments, network issues, retry delays
+  let PROACTIVE_REFRESH_BUFFER_MS = 2 * 60 * 60 * 1000; // 2 hours
   
   // Add clock skew tolerance to buffer
   if (Math.abs(clockSkew) > CLOCK_SKEW_TOLERANCE_MS) {

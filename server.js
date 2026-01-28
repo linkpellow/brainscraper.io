@@ -337,28 +337,38 @@ function startTokenRefreshJob() {
     }
   }
 
-  // IMMEDIATE check on startup - no delay! Token expiration is critical.
+  // IMMEDIATE check on startup - MUST complete before starting intervals
+  // This ensures tokens are refreshed before any API calls can be made
   console.log('[Server] 🚀 Running IMMEDIATE token refresh check on startup...');
-  checkTokensAndAdjustInterval().catch(err => {
-    console.error('[Server] Startup token check failed:', err.message);
-  });
+  
+  (async () => {
+    try {
+      await checkTokensAndAdjustInterval();
+      console.log('[Server] ✅ Startup token check completed');
+    } catch (err) {
+      console.error('[Server] ⚠️ Startup token check failed:', err.message);
+      // Continue anyway - intervals will handle subsequent checks
+    }
+    
+    // Set up regular interval (5 minutes) AFTER startup check completes
+    const interval = setInterval(() => {
+      checkTokensAndAdjustInterval();
+    }, REFRESH_CHECK_INTERVAL_MS);
 
-  // Set up regular interval (5 minutes)
-  const interval = setInterval(() => {
-    checkTokensAndAdjustInterval();
-  }, REFRESH_CHECK_INTERVAL_MS);
+    console.log('[Server] ✅ Token refresh job started (checks every 5 minutes, 1 minute when urgent)');
 
-  console.log('[Server] ✅ Token refresh job started (checks every 5 minutes, 1 minute when urgent)');
-
-  // Cleanup on exit
-  if (process.on) {
-    process.on('SIGINT', () => {
-      clearInterval(interval);
-    });
-    process.on('SIGTERM', () => {
-      clearInterval(interval);
-    });
-  }
+    // Cleanup on exit - clear BOTH intervals
+    if (process.on) {
+      process.on('SIGINT', () => {
+        clearInterval(interval);
+        if (urgentInterval) clearInterval(urgentInterval);
+      });
+      process.on('SIGTERM', () => {
+        clearInterval(interval);
+        if (urgentInterval) clearInterval(urgentInterval);
+      });
+    }
+  })();
 }
 
 app.prepare().then(async () => {

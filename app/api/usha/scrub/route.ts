@@ -1,5 +1,49 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getUshaToken } from '@/utils/getUshaToken';
+import { getUshaToken, clearTokenCache } from '@/utils/getUshaToken';
+import { listSessionsFromServer, getSessionFromServer } from '@/app/auth-workers/utils/authWorkerServerStorage';
+import { getValidToken } from '@/app/auth-workers/utils/tokenRefreshService';
+
+/**
+ * Get USHA JWT token from auth worker (preferred) or fallback to getUshaToken
+ * Uses proactive refresh to ensure tokens are always valid
+ */
+async function getUshaTokenForDNC(providedToken?: string | null): Promise<string | null> {
+  if (providedToken) {
+    return await getUshaToken(providedToken);
+  }
+  
+  try {
+    const sessions = listSessionsFromServer();
+    const ushaSessions = sessions
+      .filter(s => s.targetDomain.includes('ushadvisors.com'))
+      .sort((a, b) => {
+        const aIsApiBusiness = a.targetDomain === 'api-business-agent.ushadvisors.com';
+        const bIsApiBusiness = b.targetDomain === 'api-business-agent.ushadvisors.com';
+        if (aIsApiBusiness && !bIsApiBusiness) return -1;
+        if (!aIsApiBusiness && bIsApiBusiness) return 1;
+        return b.stabilizedAt - a.stabilizedAt;
+      });
+    
+    for (const ushaSession of ushaSessions) {
+      const session = getSessionFromServer(ushaSession.sessionId);
+      if (session) {
+        try {
+          const tokenResult = await getValidToken(session.sessionId);
+          if (tokenResult?.token) {
+            console.log(`🔑 [SCRUB_BULK] Using auth worker token from ${session.targetDomain}`);
+            return tokenResult.token;
+          }
+        } catch {
+          continue;
+        }
+      }
+    }
+  } catch (error) {
+    console.warn('⚠️ [SCRUB_BULK] Auth worker failed, using fallback:', error instanceof Error ? error.message : 'Unknown');
+  }
+  
+  return await getUshaToken();
+}
 
 /**
  * USHA Bulk Lead Scrubbing API endpoint
@@ -11,10 +55,8 @@ import { getUshaToken } from '@/utils/getUshaToken';
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
-    
-    // Get JWT token automatically (Cognito → OAuth → env var)
     const providedToken = formData.get('token')?.toString();
-    const token = await getUshaToken(providedToken);
+    let token = await getUshaTokenForDNC(providedToken);
     
     if (!token) {
       return NextResponse.json(
@@ -44,8 +86,6 @@ export async function POST(request: NextRequest) {
     const campaignDNCExemption = formData.get('CampaignDNCExemption')?.toString() || '';
 
     // Create FormData for USHA API
-    // Note: In Node.js/Next.js, we need to use a FormData-compatible library
-    // For now, we'll construct the multipart form data manually or use a library
     const ushaFormData = new FormData();
     ushaFormData.append('VendorName', vendorName);
     ushaFormData.append('VendorID', vendorID);
@@ -63,13 +103,42 @@ export async function POST(request: NextRequest) {
     ushaFormData.append('UploadFile', blob, file.name);
 
     // Make request to USHA API
-    const response = await fetch('https://api-business-agent.ushadvisors.com/Leads/api/leads/importafterMapping', {
+    let response = await fetch('https://api-business-agent.ushadvisors.com/Leads/api/leads/importafterMapping', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
       },
       body: ushaFormData,
     });
+
+    // Retry on auth failure with fresh token
+    if (response.status === 401 || response.status === 403) {
+      console.log(`🔄 [SCRUB_BULK] Token expired (${response.status}), refreshing and retrying...`);
+      clearTokenCache();
+      token = await getUshaTokenForDNC();
+      if (token) {
+        // Recreate FormData for retry (can't reuse)
+        const retryFormData = new FormData();
+        retryFormData.append('VendorName', vendorName);
+        retryFormData.append('VendorID', vendorID);
+        retryFormData.append('CampaignName', campaignName);
+        retryFormData.append('CampaignID', campaignID);
+        retryFormData.append('ImportLeads', importLeads);
+        retryFormData.append('ScrubList', scrubList);
+        retryFormData.append('AllowLeadsWithNoPhoneNumber', allowLeadsWithNoPhoneNumber);
+        retryFormData.append('CurrentContextAgentNumber', currentContextAgentNumber);
+        retryFormData.append('CampaignDNCExemption', campaignDNCExemption);
+        retryFormData.append('UploadFile', blob, file.name);
+        
+        response = await fetch('https://api-business-agent.ushadvisors.com/Leads/api/leads/importafterMapping', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+          body: retryFormData,
+        });
+      }
+    }
 
     if (!response.ok) {
       const errorText = await response.text();

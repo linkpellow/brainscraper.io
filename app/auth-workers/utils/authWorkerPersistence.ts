@@ -256,29 +256,30 @@ function updateSessionsIndex(sessionIds: string[]): void {
  * Overload 1: Full state object (from HAR creation)
  * Overload 2: Individual parameters (legacy)
  */
-export function persistAuthWorkerState(
+export async function persistAuthWorkerState(
   sessionId: string,
   step2OrState: LockedStep | PersistedAuthWorkerState,
   authenticatedEndpoints?: string[],
   lockedSteps?: LockedStep[]
-): void {
+): Promise<void> {
   // Check if second parameter is a full state object
   if (authenticatedEndpoints === undefined && lockedSteps === undefined && 'step2' in step2OrState) {
     // Overload 1: Full state object
     const state = step2OrState as PersistedAuthWorkerState;
-    persistFullState(sessionId, state);
+    await persistFullState(sessionId, state);
     return;
   }
   
   // Overload 2: Individual parameters (legacy)
   const step2 = step2OrState as LockedStep;
-  persistFromComponents(sessionId, step2, authenticatedEndpoints || [], lockedSteps || []);
+  await persistFromComponents(sessionId, step2, authenticatedEndpoints || [], lockedSteps || []);
 }
 
 /**
  * Persist full state object
+ * Returns a Promise that resolves when server-side save completes (for critical token refresh)
  */
-function persistFullState(sessionId: string, state: PersistedAuthWorkerState): void {
+async function persistFullState(sessionId: string, state: PersistedAuthWorkerState): Promise<void> {
   try {
     // Ensure sessionId matches
     if (state.sessionId !== sessionId) {
@@ -310,27 +311,49 @@ function persistFullState(sessionId: string, state: PersistedAuthWorkerState): v
     }
     
     // Also save to server-side storage (for API access)
-    // Sync via API call (works from client)
+    // CRITICAL: This must be awaited to ensure token is persisted before returning
     if (typeof window !== 'undefined') {
-      // Client-side: sync via API
-      fetch('/api/auth-worker/sync', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(state),
-      }).catch((err) => {
-        console.warn('[AuthWorkerPersistence] Failed to sync to server storage:', err);
-      });
+      // Client-side: sync via API with retry
+      const maxRetries = 3;
+      let lastError: Error | null = null;
+      
+      for (let attempt = 0; attempt < maxRetries; attempt++) {
+        try {
+          const response = await fetch('/api/auth-worker/sync', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(state),
+          });
+          
+          if (response.ok) {
+            break; // Success
+          } else if (response.status >= 500 && attempt < maxRetries - 1) {
+            // Server error, retry with backoff
+            await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, attempt)));
+            continue;
+          } else {
+            console.error(`[AuthWorkerPersistence] Sync API returned ${response.status}: ${await response.text()}`);
+          }
+        } catch (err) {
+          lastError = err instanceof Error ? err : new Error(String(err));
+          if (attempt < maxRetries - 1) {
+            await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, attempt)));
+            continue;
+          }
+          console.error('[AuthWorkerPersistence] Failed to sync to server storage after retries:', lastError);
+        }
+      }
     } else {
-      // Server-side: direct save
+      // Server-side: direct save - MUST await for token refresh reliability
       try {
         const { saveSessionToServer } = require('./authWorkerServerStorage');
-        saveSessionToServer(state).catch((err: any) => {
-          console.error('[AuthWorkerPersistence] Failed to sync to server storage:', err);
-        });
+        await saveSessionToServer(state);
+        console.log('[AuthWorkerPersistence] ✅ Server-side save completed for', sessionId);
       } catch (err) {
-        // Server storage not available
+        console.error('[AuthWorkerPersistence] ❌ CRITICAL: Failed to save to server storage:', err);
+        throw err; // Re-throw so caller knows save failed
       }
     }
     
@@ -342,18 +365,19 @@ function persistFullState(sessionId: string, state: PersistedAuthWorkerState): v
     });
   } catch (err) {
     console.error('[AuthWorkerPersistence] ❌ Failed to persist state:', err);
+    throw err; // Re-throw for caller to handle
   }
 }
 
 /**
  * Persist from individual components (legacy)
  */
-function persistFromComponents(
+async function persistFromComponents(
   sessionId: string,
   step2: LockedStep,
   authenticatedEndpoints: string[],
   lockedSteps: LockedStep[]
-): void {
+): Promise<void> {
   try {
     // Extract domain from step-2
     const targetDomain = extractDomainFromStep2(step2);
@@ -428,27 +452,41 @@ function persistFromComponents(
     }
     
     // Also save to server-side storage (for API access)
-    // Sync via API call (works from client)
+    // CRITICAL: Must await to ensure token is persisted before returning
     if (typeof window !== 'undefined') {
-      // Client-side: sync via API
-      fetch('/api/auth-worker/sync', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(state),
-      }).catch((err) => {
-        console.warn('[AuthWorkerPersistence] Failed to sync to server storage:', err);
-      });
+      // Client-side: sync via API with retry
+      const maxRetries = 3;
+      for (let attempt = 0; attempt < maxRetries; attempt++) {
+        try {
+          const response = await fetch('/api/auth-worker/sync', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(state),
+          });
+          if (response.ok) break;
+          if (response.status >= 500 && attempt < maxRetries - 1) {
+            await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, attempt)));
+            continue;
+          }
+          console.error(`[AuthWorkerPersistence] Sync API returned ${response.status}`);
+        } catch (err) {
+          if (attempt < maxRetries - 1) {
+            await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, attempt)));
+            continue;
+          }
+          console.error('[AuthWorkerPersistence] Failed to sync to server storage:', err);
+        }
+      }
     } else {
-      // Server-side: direct save
+      // Server-side: direct save - MUST await
       try {
         const { saveSessionToServer } = require('./authWorkerServerStorage');
-        saveSessionToServer(state).catch((err: any) => {
-          console.error('[AuthWorkerPersistence] Failed to sync to server storage:', err);
-        });
+        await saveSessionToServer(state);
       } catch (err) {
-        // Server storage not available
+        console.error('[AuthWorkerPersistence] ❌ CRITICAL: Failed to save to server storage:', err);
+        throw err;
       }
     }
     
@@ -460,6 +498,7 @@ function persistFromComponents(
     });
   } catch (err) {
     console.error('[AuthWorkerPersistence] ❌ Failed to persist state:', err);
+    throw err;
   }
 }
 
