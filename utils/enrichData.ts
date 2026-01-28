@@ -1621,6 +1621,15 @@ export async function enrichRow(
     addressLine2: address.addressLine2,
   };
   
+  // CRITICAL FIX: Store income pre-qualification result and income data in result object
+  // This ensures extractLeadSummary can access the income data
+  if (incomePreQualResult) {
+    result.incomePreQual = incomePreQualResult;
+  }
+  if (incomeData) {
+    result.incomeData = incomeData;
+  }
+  
   // DIAGNOSTIC: Enhanced debug logging
   console.log(`[ENRICH_ROW] Initial data:`, {
     firstName,
