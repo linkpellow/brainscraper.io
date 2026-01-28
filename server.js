@@ -149,7 +149,10 @@ function startTokenRefreshJob() {
     urgentModeActive = false;
     
     try {
-      const { listSessionsFromServer, getSessionFromServer } = require('./app/auth-workers/utils/authWorkerServerStorage');
+      // Use dynamic import to handle TypeScript modules correctly
+      // Next.js compiles TypeScript to .next/server/, so require() doesn't work
+      const authWorkerStorage = await import('./app/auth-workers/utils/authWorkerServerStorage');
+      const { listSessionsFromServer, getSessionFromServer } = authWorkerStorage;
       const sessions = listSessionsFromServer();
       
       if (sessions.length === 0) {
@@ -312,7 +315,14 @@ function startTokenRefreshJob() {
       // Reset urgent mode if no tokens are urgent
       // (will be set to true above if any token is urgent)
     } catch (error) {
-      console.error('[Server] Error in token refresh job:', error.message);
+      // Handle module import errors specifically
+      if (error.code === 'MODULE_NOT_FOUND' || error.message.includes('Cannot find module')) {
+        console.error('[Server] Failed to import authWorkerServerStorage:', error.message);
+        console.error('[Server] Token refresh job will be disabled - module not available');
+        console.error('[Server] This may be expected in development or if auth workers are not configured');
+      } else {
+        console.error('[Server] Error in token refresh job:', error.message);
+      }
     }
     
     return { urgentModeActive };
