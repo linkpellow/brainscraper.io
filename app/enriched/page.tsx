@@ -5,6 +5,7 @@ import { Download, ArrowUpDown, ArrowUp, ArrowDown, Loader2, Zap, X, CheckCircle
 import Link from 'next/link';
 import { LeadSummary, leadSummariesToCSV, formatPhoneNumber } from '@/utils/extractLeadSummary';
 import AppLayout from '../components/AppLayout';
+import DatePickerModal from '../components/DatePickerModal';
 
 // State name to abbreviation mapping
 const stateToAbbreviation: Record<string, string> = {
@@ -50,7 +51,7 @@ function getStateAbbreviation(state: string | undefined | null): string {
   return state;
 }
 
-type SortField = 'name' | 'state' | 'city' | 'zipcode' | 'age' | 'income' | 'searchFilter' | 'none';
+type SortField = 'name' | 'city' | 'zipcode' | 'age' | 'income' | 'searchFilter' | 'none';
 type SortDirection = 'asc' | 'desc';
 
 type EnrichmentLog = {
@@ -69,6 +70,7 @@ export default function EnrichedLeadsPage() {
   const [filterDNC, setFilterDNC] = useState<boolean>(false);
   const [selectedState, setSelectedState] = useState<string>(''); // State filter: empty = all states
   const [selectedDate, setSelectedDate] = useState<string>(''); // Date filter: empty = all dates
+  const [showDatePicker, setShowDatePicker] = useState(false); // Calendar modal visibility
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -540,10 +542,6 @@ export default function EnrichedLeadsPage() {
           aValue = (a.name || '').toLowerCase();
           bValue = (b.name || '').toLowerCase();
           break;
-        case 'state':
-          aValue = (a.state || '').toLowerCase();
-          bValue = (b.state || '').toLowerCase();
-          break;
         case 'city':
           aValue = (a.city || '').toLowerCase();
           bValue = (b.city || '').toLowerCase();
@@ -733,15 +731,27 @@ export default function EnrichedLeadsPage() {
 
       if (result.success && result.value) {
         // Update the lead in state
+        // Handle income separately to ensure proper type and React re-render
         const updatedLead: LeadSummary = {
           ...lead,
-          [field]: result.value,
+          ...(field === 'income' 
+            ? { income: typeof result.value === 'number' ? result.value : lead.income }
+            : { [field]: result.value }
+          ),
           // Also update bonus field if provided
           ...(result.bonus && field === 'phone' ? { email: result.bonus } : {}),
           ...(result.bonus && field === 'email' ? { phone: result.bonus } : {}),
-          // Handle income as number
-          ...(field === 'income' && typeof result.value === 'number' ? { income: result.value } : {}),
         };
+
+        // Debug logging for income updates
+        if (field === 'income') {
+          console.log(`[ENRICH_FIELD] Income updated for "${lead.name}":`, {
+            oldIncome: lead.income,
+            newIncome: updatedLead.income,
+            resultValue: result.value,
+            resultValueType: typeof result.value,
+          });
+        }
 
         setLeads(prevLeads => {
           const updated = [...prevLeads];
@@ -749,7 +759,10 @@ export default function EnrichedLeadsPage() {
           const leadIndex = updated.findIndex(l => l.name === lead.name);
           
           if (leadIndex >= 0) {
-            updated[leadIndex] = updatedLead;
+            // Create a new object to ensure React detects the change
+            updated[leadIndex] = { ...updatedLead };
+          } else {
+            console.warn(`[ENRICH_FIELD] Lead "${lead.name}" not found in leads array`);
           }
           
           // Update localStorage
@@ -1317,7 +1330,10 @@ export default function EnrichedLeadsPage() {
                   {searchQuery && ` (search: "${searchQuery}")`}
                   {(ageMin !== '' || ageMax !== '') && ` (age: ${ageMin !== '' ? ageMin : '0'}-${ageMax !== '' ? ageMax : '99+'})`}
                   {selectedState && ` (state: ${selectedState})`}
-                  {selectedDate && ` (date: ${new Date(selectedDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })})`}
+                  {selectedDate && (() => {
+                    const date = new Date(selectedDate + 'T00:00:00');
+                    return ` (date: ${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })})`;
+                  })()}
                   {mobileOnly && ' (mobile only)'}
                   {filterDNC && ' (DNC filtered)'}
                 </>
@@ -1478,43 +1494,38 @@ export default function EnrichedLeadsPage() {
                 </button>
               )}
             </div>
-            {/* Date Scraped Filter Dropdown */}
+            {/* Date Scraped Filter - Calendar Button */}
             <div className="relative">
-              <select
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className={`px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold border transition-all font-data appearance-none cursor-pointer ${
+              <button
+                onClick={() => setShowDatePicker(true)}
+                className={`px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold border transition-all font-data flex items-center gap-1.5 sm:gap-2 ${
                   selectedDate
                     ? 'border-white/80 bg-white/20 text-white shadow-lg shadow-white/50 ring-2 ring-white/50'
                     : 'btn-inactive text-slate-200 border-slate-600'
                 }`}
-                style={{
-                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23cbd5e1' d='M6 9L1 4h10z'/%3E%3C/svg%3E")`,
-                  backgroundRepeat: 'no-repeat',
-                  backgroundPosition: 'right 0.5rem center',
-                  paddingRight: '2rem',
-                  minWidth: '120px'
-                }}
+                title={selectedDate ? 'Change date filter' : 'Select date filter'}
               >
-                <option value="">All Dates</option>
-                {uniqueDates.map((dateStr) => {
-                  const date = new Date(dateStr);
-                  const formattedDate = date.toLocaleDateString('en-US', { 
-                    month: 'short', 
-                    day: 'numeric', 
-                    year: 'numeric' 
-                  });
-                  return (
-                    <option key={dateStr} value={dateStr} className="bg-slate-800 text-slate-200">
-                      {formattedDate}
-                    </option>
-                  );
-                })}
-              </select>
+                <Calendar className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+                <span className="whitespace-nowrap">
+                  {selectedDate
+                    ? (() => {
+                        const date = new Date(selectedDate + 'T00:00:00');
+                        return date.toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                        });
+                      })()
+                    : 'All Dates'}
+                </span>
+              </button>
               {selectedDate && (
                 <button
-                  onClick={() => setSelectedDate('')}
-                  className="absolute right-6 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-gray-300 transition-colors"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedDate('');
+                  }}
+                  className="absolute right-1 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-gray-300 transition-colors p-0.5"
                   title="Clear date filter"
                 >
                   <X className="w-3 h-3 sm:w-4 sm:h-4" />
@@ -1551,16 +1562,6 @@ export default function EnrichedLeadsPage() {
               }`}
             >
               Name {getSortIcon('name')}
-            </button>
-            <button
-              onClick={() => handleSort('state')}
-              className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold state-transition border flex items-center gap-1 sm:gap-2 font-data ${
-                sortField === 'state'
-                  ? 'btn-active text-white border-transparent'
-                  : 'btn-inactive text-slate-200'
-              }`}
-            >
-              State {getSortIcon('state')}
             </button>
             <button
               onClick={() => handleSort('city')}
@@ -2103,6 +2104,15 @@ export default function EnrichedLeadsPage() {
           </div>
         </div>
         )}
+
+        {/* Date Picker Modal */}
+        <DatePickerModal
+          isOpen={showDatePicker}
+          selectedDate={selectedDate || null}
+          onDateSelect={(date) => setSelectedDate(date || '')}
+          onClose={() => setShowDatePicker(false)}
+          availableDates={uniqueDates}
+        />
       </div>
     </AppLayout>
   );
