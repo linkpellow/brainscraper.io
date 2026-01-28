@@ -381,6 +381,70 @@ export default function EnrichedLeadsPage() {
           }
         }
         
+        // RETRY PASS: Retry failed/unknown leads
+        const failedPhones = Array.from(dncResults.entries())
+          .filter(([_, status]) => status === 'UNKNOWN')
+          .map(([phone]) => phone);
+        
+        if (failedPhones.length > 0) {
+          console.log(`\n🔄 [FRONTEND DNC] Retry Pass: ${failedPhones.length} leads failed, retrying...`);
+          
+          // Wait a bit before retrying
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          
+          // Retry in smaller batches
+          const retryBatchSize = 10;
+          for (let i = 0; i < failedPhones.length; i += retryBatchSize) {
+            const retryBatch = failedPhones.slice(i, i + retryBatchSize);
+            const retryBatchNum = Math.floor(i / retryBatchSize) + 1;
+            const totalRetryBatches = Math.ceil(failedPhones.length / retryBatchSize);
+            
+            console.log(`🔄 [FRONTEND DNC] Retry batch ${retryBatchNum}/${totalRetryBatches} (${retryBatch.length} numbers)...`);
+            
+            try {
+              const response = await fetch('/api/usha/scrub-batch', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ phoneNumbers: retryBatch }),
+              });
+              
+              if (response.ok) {
+                const result = await response.json();
+                if (result.success && result.results && Array.isArray(result.results)) {
+                  let retrySuccessCount = 0;
+                  result.results.forEach((r: any) => {
+                    const normalizedPhone = String(r.phone || '').replace(/\D/g, '');
+                    if (normalizedPhone && normalizedPhone.length >= 10) {
+                      const dncStatus = r.status === 'DNC' ? 'YES' : r.status === 'OK' ? 'NO' : 'UNKNOWN';
+                      // Only update if we got a definitive result
+                      if (dncStatus !== 'UNKNOWN') {
+                        dncResults.set(normalizedPhone, dncStatus);
+                        retrySuccessCount++;
+                      }
+                    }
+                  });
+                  console.log(`✅ [FRONTEND DNC] Retry batch ${retryBatchNum}: ${retrySuccessCount} recovered`);
+                }
+              }
+            } catch (error) {
+              console.error(`❌ [FRONTEND DNC] Retry batch ${retryBatchNum} failed:`, error);
+            }
+            
+            // Delay between retry batches
+            if (i + retryBatchSize < failedPhones.length) {
+              await new Promise(resolve => setTimeout(resolve, 500));
+            }
+          }
+          
+          // Check how many are still unknown after retry
+          const stillUnknown = Array.from(dncResults.values()).filter(v => v === 'UNKNOWN').length;
+          if (stillUnknown > 0) {
+            console.warn(`⚠️ [FRONTEND DNC] ${stillUnknown} leads still have UNKNOWN status after retry`);
+          } else {
+            console.log(`✅ [FRONTEND DNC] All failed leads recovered successfully!`);
+          }
+        }
+        
         // Update leads with DNC status
         if (dncResults.size > 0) {
           const totalTime = Date.now() - startTime;

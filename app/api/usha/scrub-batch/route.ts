@@ -4,6 +4,38 @@ import { listSessionsFromServer, getSessionFromServer } from '@/app/auth-workers
 import { getValidToken } from '@/app/auth-workers/utils/tokenRefreshService';
 
 /**
+ * Retry a function with exponential backoff
+ * @param fn - The async function to retry
+ * @param maxRetries - Maximum number of retry attempts (default: 3)
+ * @param baseDelayMs - Base delay in milliseconds (default: 1000)
+ * @returns The result of the function or throws after all retries exhausted
+ */
+async function retryWithBackoff<T>(
+  fn: () => Promise<T>,
+  maxRetries: number = 3,
+  baseDelayMs: number = 1000
+): Promise<T> {
+  let lastError: Error | null = null;
+  
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+      
+      if (attempt < maxRetries) {
+        // Exponential backoff: 1s, 2s, 4s
+        const delayMs = baseDelayMs * Math.pow(2, attempt);
+        console.log(`  🔄 [DNC SCRUB] Retry ${attempt + 1}/${maxRetries} after ${delayMs}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delayMs));
+      }
+    }
+  }
+  
+  throw lastError;
+}
+
+/**
  * Get USHA JWT token from auth worker (preferred) or fallback to getUshaToken
  * 
  * Priority:
@@ -163,16 +195,18 @@ export async function POST(request: NextRequest) {
           };
 
           const requestStart = Date.now();
-          let response = await fetch(url, {
-            method: 'GET',
-            headers,
-          });
+          
+          // Wrap API call in retry logic with exponential backoff
+          const result = await retryWithBackoff(async () => {
+            let response = await fetch(url, {
+              method: 'GET',
+              headers,
+            });
 
-          // Retry once on auth failure (automatic token refresh via auth worker or getUshaToken)
-          if (response.status === 401 || response.status === 403) {
-            console.log(`  🔄 [DNC SCRUB] ${normalizedPhone}: Token expired (${response.status}), refreshing token and retrying...`);
-            clearTokenCache();
-            try {
+            // Retry once on auth failure (automatic token refresh via auth worker or getUshaToken)
+            if (response.status === 401 || response.status === 403) {
+              console.log(`  🔄 [DNC SCRUB] ${normalizedPhone}: Token expired (${response.status}), refreshing token and retrying...`);
+              clearTokenCache();
               const freshToken = await getUshaTokenForDNC();
               if (freshToken) {
                 headers = { ...headers, 'Authorization': `Bearer ${freshToken}` };
@@ -182,23 +216,31 @@ export async function POST(request: NextRequest) {
                   headers,
                 });
               }
-            } catch (e) {
-              console.log(`  ⚠️ [DNC SCRUB] ${normalizedPhone}: Token refresh failed:`, e);
             }
-          }
+            
+            if (!response.ok) {
+              const errorText = await response.text().catch(() => 'Unknown error');
+              // Throw to trigger retry for server errors (5xx) or rate limits (429)
+              if (response.status >= 500 || response.status === 429) {
+                throw new Error(`API error: ${response.status} ${response.statusText} - ${errorText.substring(0, 100)}`);
+              }
+              // Don't retry client errors (4xx except 429, 401, 403)
+              console.log(`  ❌ [DNC SCRUB] ${normalizedPhone}: API error ${response.status}: ${errorText.substring(0, 100)}`);
+              return { error: `API error: ${response.status} ${response.statusText}`, status: response.status };
+            }
+            
+            return await response.json();
+          }, 3, 1000); // 3 retries with 1s base delay (1s, 2s, 4s)
           
-          if (!response.ok) {
-            const errorText = await response.text().catch(() => 'Unknown error');
-            console.log(`  ❌ [DNC SCRUB] ${normalizedPhone}: API error ${response.status}: ${errorText.substring(0, 100)}`);
+          // Handle non-retryable error response
+          if (result.error && result.status) {
             return {
               phone: normalizedPhone,
               isDNC: false,
               status: 'ERROR',
-              error: `API error: ${response.status} ${response.statusText}`
+              error: result.error
             };
           }
-          
-          const result = await response.json();
           
           // Parse USHA DNC API response format:
           // {

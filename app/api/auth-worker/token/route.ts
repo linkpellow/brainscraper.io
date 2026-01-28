@@ -145,6 +145,25 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // If expiresIn/expiresAt not found in session, extract from JWT exp claim
+    if (accessToken && (!expiresAt || !expiresIn)) {
+      try {
+        const parts = accessToken.split('.');
+        if (parts.length === 3) {
+          // Decode JWT payload (base64url)
+          const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString());
+          if (payload.exp && typeof payload.exp === 'number') {
+            // JWT exp is in seconds, convert to milliseconds for expiresAt
+            expiresAt = payload.exp * 1000;
+            // Calculate seconds until expiry
+            expiresIn = Math.max(0, Math.floor((expiresAt - Date.now()) / 1000));
+          }
+        }
+      } catch {
+        // JWT parsing failed, leave expiresIn/expiresAt as undefined
+      }
+    }
+
     // Return token + auth metadata
     const origin = request.headers.get('origin');
     return NextResponse.json({
