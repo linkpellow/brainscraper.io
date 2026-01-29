@@ -905,6 +905,18 @@ export default function LinkedInLeadGenerator() {
         return;
       }
 
+      // Check for errors in response body (even if HTTP status is 200)
+      // RapidAPI sometimes returns 200 OK with { success: false, error: "..." } in body
+      if (result.error || result.success === false) {
+        const errorMsg = result.message || result.error || 'API request failed';
+        console.error('🔍 [SEARCH] ❌ Error in response body:', errorMsg);
+        setError(errorMsg);
+        setScrapingProgress(prev => ({ ...prev, status: 'error', currentOperation: 'Error occurred' }));
+        setResults([]);
+        setWorkflowStep('results');
+        return;
+      }
+
       if (result.data) {
         console.log('🔍 [SEARCH] Result has data property');
         console.log('🔍 [SEARCH] Result.data type:', typeof result.data);
@@ -1000,10 +1012,31 @@ export default function LinkedInLeadGenerator() {
         }));
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
-      setScrapingProgress(prev => ({ ...prev, status: 'error', currentOperation: 'Error occurred' }));
-      // Still show results step even on error, with empty results
-      setResults([]);
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      
+      // Detect network errors
+      const isNetworkError = 
+        errorMessage.includes('Failed to fetch') ||
+        errorMessage.includes('ERR_INTERNET_DISCONNECTED') ||
+        errorMessage.includes('ERR_NETWORK_CHANGED') ||
+        errorMessage.includes('NetworkError') ||
+        (err instanceof TypeError && errorMessage.includes('fetch'));
+      
+      const userFriendlyMessage = isNetworkError
+        ? 'Network error: Connection lost. Please check your internet connection and try again.'
+        : errorMessage;
+      
+      setError(userFriendlyMessage);
+      setScrapingProgress(prev => ({ 
+        ...prev, 
+        status: 'error', 
+        currentOperation: isNetworkError ? 'Network error' : 'Error occurred' 
+      }));
+      
+      // Only set empty results if it's not a network error (preserve partial results)
+      if (!isNetworkError) {
+        setResults([]);
+      }
       setWorkflowStep('results');
     } finally {
       setIsSearching(false);
@@ -1092,8 +1125,33 @@ export default function LinkedInLeadGenerator() {
           } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
             
+            // Detect network errors
+            const isNetworkError = 
+              errorMessage.includes('Failed to fetch') ||
+              errorMessage.includes('ERR_INTERNET_DISCONNECTED') ||
+              errorMessage.includes('ERR_NETWORK_CHANGED') ||
+              errorMessage.includes('NetworkError') ||
+              (error instanceof TypeError && errorMessage.includes('fetch'));
+            
             // Check if it's an account freeze (should stop immediately, no retries)
             const isAccountFrozen = errorMessage.includes('ACCOUNT_FROZEN:');
+            
+            // Network errors should be retried (like rate limits)
+            if (isNetworkError && retryCount < maxRetries) {
+              console.warn(`📄 [PAGINATION] ⚠️ Network error on page ${page}, attempt ${retryCount + 1}/${maxRetries + 1}`);
+              const exponentialDelay = baseBackoffMs * Math.pow(2, retryCount);
+              const jitter = Math.random() * exponentialDelay * 0.25;
+              const backoffDelay = Math.min(exponentialDelay + jitter, 30000); // Max 30 seconds for network retries
+              
+              setScrapingProgress(prev => ({
+                ...prev,
+                currentOperation: `Network error - retrying in ${Math.round(backoffDelay / 1000)}s (${retryCount + 1}/${maxRetries})...`
+              }));
+              
+              await new Promise(resolve => setTimeout(resolve, Math.round(backoffDelay)));
+              retryCount++;
+              continue; // Retry
+            }
             
             if (isAccountFrozen) {
               // Account freeze - stop immediately, don't retry
@@ -1302,10 +1360,36 @@ export default function LinkedInLeadGenerator() {
         message: err instanceof Error ? err.message : String(err),
         stack: err instanceof Error ? err.stack : undefined
       });
-      setError(err instanceof Error ? err.message : 'Unknown error');
-      setScrapingProgress(prev => ({ ...prev, status: 'error', currentOperation: 'Error occurred' }));
-      // Still show results step even on error, with empty results
-      setResults([]);
+      
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      
+      // Detect network errors
+      const isNetworkError = 
+        errorMessage.includes('Failed to fetch') ||
+        errorMessage.includes('ERR_INTERNET_DISCONNECTED') ||
+        errorMessage.includes('ERR_NETWORK_CHANGED') ||
+        errorMessage.includes('NetworkError') ||
+        (err instanceof TypeError && errorMessage.includes('fetch'));
+      
+      const userFriendlyMessage = isNetworkError
+        ? 'Network error: Connection lost. Please check your internet connection and try again.'
+        : errorMessage;
+      
+      setError(userFriendlyMessage);
+      setScrapingProgress(prev => ({ 
+        ...prev, 
+        status: 'error', 
+        currentOperation: isNetworkError ? 'Network error' : 'Error occurred' 
+      }));
+      
+      // If we have partial results, keep them (user can see what was fetched)
+      // Only clear if we have zero results
+      if (allResults.length === 0) {
+        setResults([]);
+      } else {
+        // Keep partial results, but show error message
+        setResults(allResults);
+      }
       setWorkflowStep('results');
     } finally {
       console.log('📄 [PAGINATION] Finished fetchAllPagesSequentially, setting isSearching to false');
@@ -3000,11 +3084,32 @@ export default function LinkedInLeadGenerator() {
       {/* Results */}
       {workflowStep === 'results' && results !== null && (
         <div className="space-y-3 animate-fade-in">
+          {/* Show error if present */}
+          {error && (
+            <div className="px-6 py-4 bg-red-900/20 border border-red-700/50 rounded-lg">
+              <div className="flex items-start gap-2">
+                <XCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <p className="text-red-300 font-semibold">Search Error</p>
+                  <p className="text-red-400 text-sm mt-1">{error}</p>
+                  {(error.toLowerCase().includes('network') || 
+                    error.toLowerCase().includes('fetch') || 
+                    error.toLowerCase().includes('disconnected') ||
+                    error.toLowerCase().includes('connection')) ? (
+                    <p className="text-red-400/80 text-xs mt-2">
+                      Please check your internet connection and try again.
+                    </p>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+          )}
+          
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-xl font-bold tracking-tight mb-0.5" style={{ color: '#ff5757' }}>Search Results</h2>
               <p className="text-xs text-slate-400">
-                {results.length > 0 ? `${results.length} leads found` : 'No leads found'}
+                {results.length > 0 ? `${results.length} leads found` : error ? 'Search failed' : 'No leads found'}
               </p>
             </div>
             {results.length > 0 && (
@@ -3228,11 +3333,11 @@ export default function LinkedInLeadGenerator() {
               </table>
             </div>
             </>
-          ) : (
+          ) : !error ? (
             <div className="px-6 py-8 panel-inactive rounded-lg text-center">
               <p className="text-slate-400">No leads found. Try adjusting your search filters.</p>
             </div>
-          )}
+          ) : null}
           </div>
         )}
 
