@@ -786,23 +786,25 @@ export default function EnrichedLeadsPage() {
           });
         }
 
-        setLeads(prevLeads => {
-          const updated = [...prevLeads];
-          // Find the lead by name (most reliable identifier)
-          const leadIndex = updated.findIndex(l => l.name === lead.name);
-          
-          if (leadIndex >= 0) {
-            // Create a new object to ensure React detects the change
-            updated[leadIndex] = { ...updatedLead };
-          } else {
-            console.warn(`[ENRICH_FIELD] Lead "${lead.name}" not found in leads array`);
+        // Save updated lead to server and refetch current page
+        try {
+          const saveResponse = await fetch('/api/aggregate-enriched-leads', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ newLeads: [updatedLead] }),
+          });
+
+          const saveResult = await saveResponse.json();
+          if (saveResult.success) {
+            if (fetchAbortControllerRef.current) {
+              fetchAbortControllerRef.current.abort();
+            }
+            fetchAbortControllerRef.current = new AbortController();
+            fetchPaginatedLeads(fetchAbortControllerRef.current.signal);
           }
-          
-          // Update localStorage
-          localStorage.setItem('enrichedLeads', JSON.stringify(updated));
-          
-          return updated;
-        });
+        } catch (error) {
+          console.error('Failed to save enriched field:', error);
+        }
 
         // Save to disk via API
         try {
@@ -1152,9 +1154,24 @@ export default function EnrichedLeadsPage() {
                               errors: 0,
                             });
                             
-      localStorage.setItem('enrichedLeads', JSON.stringify(leadsWithDate));
-                    window.dispatchEvent(new Event('enrichedLeadsUpdated'));
-      setLeads(leadsWithDate);
+      try {
+        const saveResponse = await fetch('/api/aggregate-enriched-leads', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ newLeads: leadsWithDate }),
+        });
+
+        const saveResult = await saveResponse.json();
+        if (saveResult.success) {
+          if (fetchAbortControllerRef.current) {
+            fetchAbortControllerRef.current.abort();
+          }
+          fetchAbortControllerRef.current = new AbortController();
+          fetchPaginatedLeads(fetchAbortControllerRef.current.signal);
+        }
+      } catch (error) {
+        console.error('Failed to save restored leads:', error);
+      }
                             setCurrentLead(null);
                             
                             const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
@@ -1267,9 +1284,24 @@ export default function EnrichedLeadsPage() {
                                 errors: 0,
                               });
                               
-                    localStorage.setItem('enrichedLeads', JSON.stringify(combinedWithDate));
-                        window.dispatchEvent(new Event('enrichedLeadsUpdated'));
-                    setLeads(combinedWithDate);
+                    try {
+                      const saveResponse = await fetch('/api/aggregate-enriched-leads', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ newLeads: combinedWithDate }),
+                      });
+
+                      const saveResult = await saveResponse.json();
+                      if (saveResult.success) {
+                        if (fetchAbortControllerRef.current) {
+                          fetchAbortControllerRef.current.abort();
+                        }
+                        fetchAbortControllerRef.current = new AbortController();
+                        fetchPaginatedLeads(fetchAbortControllerRef.current.signal);
+                      }
+                    } catch (error) {
+                      console.error('Failed to save enriched leads:', error);
+                    }
                               setCurrentLead(null);
                               
                               const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
