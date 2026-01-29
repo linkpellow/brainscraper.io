@@ -137,7 +137,7 @@ function startTokenRefreshJob(port) {
     return;
   }
 
-  const REFRESH_CHECK_INTERVAL_MS = 5 * 60 * 1000;
+  const REFRESH_CHECK_INTERVAL_MS = 2 * 60 * 1000; // 2 minutes - catch failures faster
   const URGENT_CHECK_INTERVAL_MS = 1 * 60 * 1000;
   const url = `http://127.0.0.1:${port}/api/auth-worker/cron-refresh`;
   const headers = { 'Content-Type': 'application/json' };
@@ -187,7 +187,7 @@ function startTokenRefreshJob(port) {
       console.error('[Server] ⚠️ Startup token check failed:', err.message);
     }
     mainInterval = setInterval(runCheckAndAdjustInterval, REFRESH_CHECK_INTERVAL_MS);
-    console.log('[Server] ✅ Token refresh job started (checks every 5 minutes, 1 minute when urgent)');
+    console.log('[Server] ✅ Token refresh job started (checks every 2 minutes, 1 minute when urgent)');
 
     if (process.on) {
       process.on('SIGINT', () => {

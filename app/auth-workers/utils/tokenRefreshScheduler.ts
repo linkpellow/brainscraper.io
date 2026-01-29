@@ -5,7 +5,7 @@
  */
 
 import { listSessionsFromServer, getSessionFromServer } from './authWorkerServerStorage';
-import { refreshAuthWorkerToken, getRefreshFailureStats } from './tokenRefreshService';
+import { refreshAuthWorkerToken, getRefreshFailureStats, needsTokenRefresh } from './tokenRefreshService';
 
 const PROACTIVE_REFRESH_BUFFER_MS = 2 * 60 * 60 * 1000; // 2 hours
 const URGENT_REFRESH_THRESHOLD_MS = 1 * 60 * 60 * 1000; // 1 hour
@@ -67,7 +67,6 @@ export async function runTokenRefreshCheck(): Promise<TokenRefreshCheckResult> {
 
         const now = Date.now();
         const timeUntilExpiry = expirationTime - now;
-        const timeUntilExpiryWithBuffer = timeUntilExpiry - PROACTIVE_REFRESH_BUFFER_MS;
         const minutesUntilExpiry = Math.floor(timeUntilExpiry / 1000 / 60);
         const isExpired = timeUntilExpiry <= 0;
         const isUrgent = timeUntilExpiry <= URGENT_REFRESH_THRESHOLD_MS && !isExpired;
@@ -76,12 +75,18 @@ export async function runTokenRefreshCheck(): Promise<TokenRefreshCheckResult> {
           urgent = true;
         }
 
-        const shouldRefresh =
-          timeUntilExpiry <= 0 ||
-          (timeUntilExpiryWithBuffer <= 0 && timeUntilExpiry > 0);
+        // CRITICAL: Use needsTokenRefresh to get adaptive buffer for previous failures
+        // This ensures tokens are refreshed earlier if previous attempts failed
+        const shouldRefresh = needsTokenRefresh(session);
 
         if (!shouldRefresh) {
-          if (isUrgent) {
+          // Log why refresh is skipped (for debugging)
+          const failureStats = getRefreshFailureStats(sessionMeta.sessionId);
+          if (failureStats.consecutiveFailures > 0) {
+            console.warn(
+              `[Server] ⚠️ Skipping refresh for ${sessionMeta.targetDomain || sessionMeta.sessionId} (expires in ${minutesUntilExpiry}min, ${failureStats.consecutiveFailures} previous failures) - buffer not reached yet`
+            );
+          } else if (isUrgent) {
             console.log(
               `[Server] 📊 Token for ${sessionMeta.targetDomain || sessionMeta.sessionId} expires in ${minutesUntilExpiry}min (monitoring)`
             );
