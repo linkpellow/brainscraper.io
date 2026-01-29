@@ -205,18 +205,73 @@ function startTokenRefreshJob(port) {
 app.prepare().then(async () => {
   initializeAuthWorkers();
 
-  createServer(async (req, res) => {
+  const server = createServer(async (req, res) => {
+    // Set timeouts to prevent hanging connections
+    req.setTimeout(30000); // 30 second request timeout
+    res.setTimeout(30000); // 30 second response timeout
+    
+    // Handle connection errors gracefully
+    req.on('error', (err) => {
+      if (err.code !== 'ECONNRESET' && err.code !== 'EPIPE') {
+        console.error('[Server] Request error:', err.code, req.url);
+      }
+      if (!res.headersSent) {
+        res.statusCode = 400;
+        res.end();
+      }
+    });
+
+    res.on('error', (err) => {
+      if (err.code !== 'ECONNRESET' && err.code !== 'EPIPE') {
+        console.error('[Server] Response error:', err.code, req.url);
+      }
+    });
+
     try {
       const parsedUrl = parse(req.url, true);
       await handle(req, res, parsedUrl);
     } catch (err) {
-      console.error('Error occurred handling', req.url, err);
-      res.statusCode = 500;
-      res.end('Internal server error');
+      // Don't log connection reset errors as they're common and expected
+      if (err.code !== 'ECONNRESET' && err.code !== 'EPIPE' && err.code !== 'ECONNABORTED') {
+        console.error('[Server] Error handling', req.url, err.message);
+      }
+      if (!res.headersSent) {
+        res.statusCode = 500;
+        res.end('Internal server error');
+      }
     }
-  }).listen(port, hostname, (err) => {
+  });
+
+  // Configure server timeouts and keep-alive
+  server.keepAliveTimeout = 65000; // 65 seconds (Railway default is 60s, add buffer)
+  server.headersTimeout = 66000; // 66 seconds (must be > keepAliveTimeout)
+  server.maxHeadersCount = 2000; // Increase header limit if needed
+  
+  // Handle server-level errors
+  server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      console.error(`[Server] Port ${port} is already in use`);
+      process.exit(1);
+    } else {
+      console.error('[Server] Server error:', err);
+    }
+  });
+
+  // Handle client connection errors (don't crash server)
+  server.on('clientError', (err, socket) => {
+    if (err.code === 'ECONNRESET' || err.code === 'EPIPE') {
+      // These are common and expected, just close the socket
+      socket.destroy();
+    } else {
+      console.error('[Server] Client error:', err.code);
+      socket.end('HTTP/1.1 400 Bad Request\r\n\r\n');
+    }
+  });
+
+  server.listen(port, hostname, (err) => {
     if (err) throw err;
     console.log(`> Ready on http://${hostname}:${port}`);
+    console.log(`> Server configured: keepAliveTimeout=${server.keepAliveTimeout}ms, headersTimeout=${server.headersTimeout}ms`);
     startTokenRefreshJob(port);
   });
 }).catch((err) => {

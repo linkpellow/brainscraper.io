@@ -26,16 +26,57 @@ export default function BackgroundJobs() {
   const [jobs, setJobs] = useState<JobStatus[]>([]);
   const [loading, setLoading] = useState(true);
   const [autoRefresh, setAutoRefresh] = useState(true);
+  const [retryCount, setRetryCount] = useState(0);
 
-  const fetchJobs = async () => {
+  const fetchJobs = async (isRetry = false) => {
     try {
-      const response = await fetch('/api/jobs/status?activeOnly=true');
+      // Use AbortController for timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
+      const response = await fetch('/api/jobs/status?activeOnly=true', {
+        signal: controller.signal,
+        // Add cache control to prevent stale connections
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache',
+        },
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
       const data = await response.json();
       if (data.success) {
         setJobs(data.jobs || []);
+        setRetryCount(0); // Reset retry count on success
       }
-    } catch (error) {
-      console.error('Error fetching jobs:', error);
+    } catch (error: any) {
+      // Don't log connection reset errors - they're common and expected
+      const isConnectionError = 
+        error.name === 'AbortError' ||
+        error.message?.includes('Failed to fetch') ||
+        error.message?.includes('ERR_CONNECTION_RESET') ||
+        error.message?.includes('NetworkError');
+
+      if (!isConnectionError && !isRetry) {
+        console.error('Error fetching jobs:', error);
+      }
+
+      // Retry with exponential backoff (max 3 retries)
+      if (retryCount < 3 && autoRefresh) {
+        const delay = Math.min(1000 * Math.pow(2, retryCount), 10000); // 1s, 2s, 4s max
+        setTimeout(() => {
+          setRetryCount(prev => prev + 1);
+          fetchJobs(true);
+        }, delay);
+      } else if (retryCount >= 3) {
+        // After max retries, reset and wait for next interval
+        setRetryCount(0);
+      }
     } finally {
       setLoading(false);
     }
