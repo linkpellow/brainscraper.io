@@ -3,15 +3,16 @@
   "sessionId": "har_1769120388847_agent_ushadvisors_com",
   "targetDomain": "agent.ushadvisors.com",
   "stabilized": true,
-  "stabilizedAt": 1769120388847,
+  "stabilizedAt": 1769735000000,
   "step2": {
     "id": "har_har_1769120388847_agent_ushadvisors_com",
     "endpoint": "/account/refresh",
     "method": "POST",
     "extractedVars": {
-      "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIyN2Y1MzBkZC0xMDEyLTQyODMtODk1Ny0yZTRlMWQxNDRjNDEiLCJzdWIiOiI1RjlFMjBGQS1FMEQzLTQwQzQtQTUzMS0wREIzOTAwN0Q4REEiLCJ1bmlxdWVfbmFtZSI6IkxJTksuUEVMTE9XQHVzaGFkdmlzb3JzLmNvbSIsIk5hbWUiOiJMSU5LLlBFTExPV0B1c2hhZHZpc29ycy5jb20iLCJFbWFpbCI6IkxJTksuUEVMTE9XQHVzaGFkdmlzb3JzLmNvbSIsIkFnZW50TnVtYmVyIjoiMDAwNDQ0NDciLCJDdXJyZW50Q29udGV4dEFnZW50TnVtYmVyIjoiMDAwNDQ0NDciLCJDdXJyZW50Q29udGV4dEFnZW50SUQiOiI0MjY5MiIsIkN1cnJlbnRDb250ZXh0QWdlbmN5VGl0bGUiOiJXQSIsIklkIjoiNUY5RTIwRkEtRTBEMy00MEM0LUE1MzEtMERCMzkwMDdEOERBIiwiZXhwIjoxNzY5MjAyNjY5LCJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjUxMzcwIiwiYXVkIjoiaHR0cDovL2xvY2FsaG9zdDo1MTM3MCJ9.o57Ce2715jz9Qfhdb9A865OEogU9wsdkq-SA8Gln1Kk",
+      "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIyZDNjMDAwMC1hN2Q0LTQyZTMtYjE5Yy0zOGQ4NWJlYjUwMWYiLCJzdWIiOiI1RjlFMjBGQS1FMEQzLTQwQzQtQTUzMS0wREIzOTAwN0Q4REEiLCJ1bmlxdWVfbmFtZSI6IkxJTksuUEVMTE9XQHVzaGFkdmlzb3JzLmNvbSIsIk5hbWUiOiJMSU5LLlBFTExPV0B1c2hhZHZpc29ycy5jb20iLCJFbWFpbCI6IkxJTksuUEVMTE9XQHVzaGFkdmlzb3JzLmNvbSIsIkFnZW50TnVtYmVyIjoiMDAwNDQ0NDciLCJDdXJyZW50Q29udGV4dEFnZW50TnVtYmVyIjoiMDAwNDQ0NDciLCJDdXJyZW50Q29udGV4dEFnZW50SUQiOiI0MjY5MiIsIkN1cnJlbnRDb250ZXh0QWdlbmN5VGl0bGUiOiJXQSIsIklkIjoiNUY5RTIwRkEtRTBEMy00MEM0LUE1MzEtMERCMzkwMDdEOERBIiwiZXhwIjoxNzY5NzM0OTU2LCJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjUxMzcwIiwiYXVkIjoiaHR0cDovL2xvY2FsaG9zdDo1MTM3MCJ9.qj_81_imZ62CvjJgqgm3-YXqNaIqXZDP3CsaRc5nNtE",
       "refresh_url": "https://api-identity-agent.ushadvisors.com/account/refresh",
-      "token_endpoint_host": "api-identity-agent.ushadvisors.com"
+      "token_endpoint_host": "api-identity-agent.ushadvisors.com",
+      "expires_at": "1769734956000"
     },
     "verificationStatus": {
       "tokenCaptured": true,
@@ -20,16 +21,16 @@
       "authenticatedRequestsDetected": false,
       "authenticatedRequestCount": 0,
       "verified": true,
-      "verifiedAt": 1769120388847,
+      "verifiedAt": 1769735000000,
       "authenticatedEndpoints": [],
       "issues": []
     },
     "response": {
       "tokenResult": {
         "name": "LINK.PELLOW@ushadvisors.com",
-        "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIyN2Y1MzBkZC0xMDEyLTQyODMtODk1Ny0yZTRlMWQxNDRjNDEiLCJzdWIiOiI1RjlFMjBGQS1FMEQzLTQwQzQtQTUzMS0wREIzOTAwN0Q4REEiLCJ1bmlxdWVfbmFtZSI6IkxJTksuUEVMTE9XQHVzaGFkdmlzb3JzLmNvbSIsIk5hbWUiOiJMSU5LLlBFTExPV0B1c2hhZHZpc29ycy5jb20iLCJFbWFpbCI6IkxJTksuUEVMTE9XQHVzaGFkdmlzb3JzLmNvbSIsIkFnZW50TnVtYmVyIjoiMDAwNDQ0NDciLCJDdXJyZW50Q29udGV4dEFnZW50TnVtYmVyIjoiMDAwNDQ0NDciLCJDdXJyZW50Q29udGV4dEFnZW50SUQiOiI0MjY5MiIsIkN1cnJlbnRDb250ZXh0QWdlbmN5VGl0bGUiOiJXQSIsIklkIjoiNUY5RTIwRkEtRTBEMy00MEM0LUE1MzEtMERCMzkwMDdEOERBIiwiZXhwIjoxNzY5MjAyNjY5LCJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjUxMzcwIiwiYXVkIjoiaHR0cDovL2xvY2FsaG9zdDo1MTM3MCJ9.o57Ce2715jz9Qfhdb9A865OEogU9wsdkq-SA8Gln1Kk",
+        "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIyZDNjMDAwMC1hN2Q0LTQyZTMtYjE5Yy0zOGQ4NWJlYjUwMWYiLCJzdWIiOiI1RjlFMjBGQS1FMEQzLTQwQzQtQTUzMS0wREIzOTAwN0Q4REEiLCJ1bmlxdWVfbmFtZSI6IkxJTksuUEVMTE9XQHVzaGFkdmlzb3JzLmNvbSIsIk5hbWUiOiJMSU5LLlBFTExPV0B1c2hhZHZpc29ycy5jb20iLCJFbWFpbCI6IkxJTksuUEVMTE9XQHVzaGFkdmlzb3JzLmNvbSIsIkFnZW50TnVtYmVyIjoiMDAwNDQ0NDciLCJDdXJyZW50Q29udGV4dEFnZW50TnVtYmVyIjoiMDAwNDQ0NDciLCJDdXJyZW50Q29udGV4dEFnZW50SUQiOiI0MjY5MiIsIkN1cnJlbnRDb250ZXh0QWdlbmN5VGl0bGUiOiJXQSIsIklkIjoiNUY5RTIwRkEtRTBEMy00MEM0LUE1MzEtMERCMzkwMDdEOERBIiwiZXhwIjoxNzY5NzM0OTU2LCJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjUxMzcwIiwiYXVkIjoiaHR0cDovL2xvY2FsaG9zdDo1MTM3MCJ9.qj_81_imZ62CvjJgqgm3-YXqNaIqXZDP3CsaRc5nNtE",
         "token_type": "Bearer",
-        "expires_in": 1769202669
+        "expires_in": 1769734956
       }
     }
   },
@@ -44,18 +45,19 @@
       "response": {
         "tokenResult": {
           "name": "LINK.PELLOW@ushadvisors.com",
-          "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIyN2Y1MzBkZC0xMDEyLTQyODMtODk1Ny0yZTRlMWQxNDRjNDEiLCJzdWIiOiI1RjlFMjBGQS1FMEQzLTQwQzQtQTUzMS0wREIzOTAwN0Q4REEiLCJ1bmlxdWVfbmFtZSI6IkxJTksuUEVMTE9XQHVzaGFkdmlzb3JzLmNvbSIsIk5hbWUiOiJMSU5LLlBFTExPV0B1c2hhZHZpc29ycy5jb20iLCJFbWFpbCI6IkxJTksuUEVMTE9XQHVzaGFkdmlzb3JzLmNvbSIsIkFnZW50TnVtYmVyIjoiMDAwNDQ0NDciLCJDdXJyZW50Q29udGV4dEFnZW50TnVtYmVyIjoiMDAwNDQ0NDciLCJDdXJyZW50Q29udGV4dEFnZW50SUQiOiI0MjY5MiIsIkN1cnJlbnRDb250ZXh0QWdlbmN5VGl0bGUiOiJXQSIsIklkIjoiNUY5RTIwRkEtRTBEMy00MEM0LUE1MzEtMERCMzkwMDdEOERBIiwiZXhwIjoxNzY5MjAyNjY5LCJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjUxMzcwIiwiYXVkIjoiaHR0cDovL2xvY2FsaG9zdDo1MTM3MCJ9.o57Ce2715jz9Qfhdb9A865OEogU9wsdkq-SA8Gln1Kk",
+          "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIyZDNjMDAwMC1hN2Q0LTQyZTMtYjE5Yy0zOGQ4NWJlYjUwMWYiLCJzdWIiOiI1RjlFMjBGQS1FMEQzLTQwQzQtQTUzMS0wREIzOTAwN0Q4REEiLCJ1bmlxdWVfbmFtZSI6IkxJTksuUEVMTE9XQHVzaGFkdmlzb3JzLmNvbSIsIk5hbWUiOiJMSU5LLlBFTExPV0B1c2hhZHZpc29ycy5jb20iLCJFbWFpbCI6IkxJTksuUEVMTE9XQHVzaGFkdmlzb3JzLmNvbSIsIkFnZW50TnVtYmVyIjoiMDAwNDQ0NDciLCJDdXJyZW50Q29udGV4dEFnZW50TnVtYmVyIjoiMDAwNDQ0NDciLCJDdXJyZW50Q29udGV4dEFnZW50SUQiOiI0MjY5MiIsIkN1cnJlbnRDb250ZXh0QWdlbmN5VGl0bGUiOiJXQSIsIklkIjoiNUY5RTIwRkEtRTBEMy00MEM0LUE1MzEtMERCMzkwMDdEOERBIiwiZXhwIjoxNzY5NzM0OTU2LCJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjUxMzcwIiwiYXVkIjoiaHR0cDovL2xvY2FsaG9zdDo1MTM3MCJ9.qj_81_imZ62CvjJgqgm3-YXqNaIqXZDP3CsaRc5nNtE",
           "token_type": "Bearer",
-          "expires_in": 1769202669
+          "expires_in": 1769734956
         }
       },
       "extractedVars": {
-        "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIyN2Y1MzBkZC0xMDEyLTQyODMtODk1Ny0yZTRlMWQxNDRjNDEiLCJzdWIiOiI1RjlFMjBGQS1FMEQzLTQwQzQtQTUzMS0wREIzOTAwN0Q4REEiLCJ1bmlxdWVfbmFtZSI6IkxJTksuUEVMTE9XQHVzaGFkdmlzb3JzLmNvbSIsIk5hbWUiOiJMSU5LLlBFTExPV0B1c2hhZHZpc29ycy5jb20iLCJFbWFpbCI6IkxJTksuUEVMTE9XQHVzaGFkdmlzb3JzLmNvbSIsIkFnZW50TnVtYmVyIjoiMDAwNDQ0NDciLCJDdXJyZW50Q29udGV4dEFnZW50TnVtYmVyIjoiMDAwNDQ0NDciLCJDdXJyZW50Q29udGV4dEFnZW50SUQiOiI0MjY5MiIsIkN1cnJlbnRDb250ZXh0QWdlbmN5VGl0bGUiOiJXQSIsIklkIjoiNUY5RTIwRkEtRTBEMy00MEM0LUE1MzEtMERCMzkwMDdEOERBIiwiZXhwIjoxNzY5MjAyNjY5LCJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjUxMzcwIiwiYXVkIjoiaHR0cDovL2xvY2FsaG9zdDo1MTM3MCJ9.o57Ce2715jz9Qfhdb9A865OEogU9wsdkq-SA8Gln1Kk",
+        "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIyZDNjMDAwMC1hN2Q0LTQyZTMtYjE5Yy0zOGQ4NWJlYjUwMWYiLCJzdWIiOiI1RjlFMjBGQS1FMEQzLTQwQzQtQTUzMS0wREIzOTAwN0Q4REEiLCJ1bmlxdWVfbmFtZSI6IkxJTksuUEVMTE9XQHVzaGFkdmlzb3JzLmNvbSIsIk5hbWUiOiJMSU5LLlBFTExPV0B1c2hhZHZpc29ycy5jb20iLCJFbWFpbCI6IkxJTksuUEVMTE9XQHVzaGFkdmlzb3JzLmNvbSIsIkFnZW50TnVtYmVyIjoiMDAwNDQ0NDciLCJDdXJyZW50Q29udGV4dEFnZW50TnVtYmVyIjoiMDAwNDQ0NDciLCJDdXJyZW50Q29udGV4dEFnZW50SUQiOiI0MjY5MiIsIkN1cnJlbnRDb250ZXh0QWdlbmN5VGl0bGUiOiJXQSIsIklkIjoiNUY5RTIwRkEtRTBEMy00MEM0LUE1MzEtMERCMzkwMDdEOERBIiwiZXhwIjoxNzY5NzM0OTU2LCJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjUxMzcwIiwiYXVkIjoiaHR0cDovL2xvY2FsaG9zdDo1MTM3MCJ9.qj_81_imZ62CvjJgqgm3-YXqNaIqXZDP3CsaRc5nNtE",
         "refresh_url": "https://api-identity-agent.ushadvisors.com/account/refresh",
-        "token_endpoint_host": "api-identity-agent.ushadvisors.com"
+        "token_endpoint_host": "api-identity-agent.ushadvisors.com",
+        "expires_at": "1769734956000"
       },
       "dependencies": [],
-      "lockedAt": 1769120388847,
+      "lockedAt": 1769735000000,
       "status": "success",
       "verificationStatus": {
         "tokenCaptured": true,
@@ -64,11 +66,11 @@
         "authenticatedRequestsDetected": false,
         "authenticatedRequestCount": 0,
         "verified": true,
-        "verifiedAt": 1769120388847,
+        "verifiedAt": 1769735000000,
         "authenticatedEndpoints": [],
         "issues": []
       }
     }
   ],
-  "savedAt": 1769120389029
+  "savedAt": 1769735000000
 }
