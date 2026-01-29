@@ -15,6 +15,80 @@ const port = process.env.PORT || 3000;
 const isProduction = process.env.NODE_ENV === 'production' || process.env.RAILWAY_ENVIRONMENT === 'production';
 
 /**
+ * Resolve module path for TypeScript modules compiled by Next.js
+ * Handles both production (.next/server/app/...) and development (app/...) paths
+ * Uses __dirname instead of process.cwd() to avoid Railway's /app/app/ path issue
+ * 
+ * @param {string} modulePath - Relative path from app/ directory (e.g., 'auth-workers/utils/authWorkerServerStorage')
+ * @returns {string} - Resolved absolute path to the module
+ * @throws {Error} - If module cannot be found in either location
+ */
+function resolveModulePath(modulePath) {
+  const { join } = require('path');
+  const { existsSync } = require('fs');
+  
+  // Use __dirname (where server.js is located) instead of process.cwd()
+  // In Railway: __dirname = /app (where server.js is)
+  // This avoids Railway's /app/app/ double prefix issue
+  const projectRoot = __dirname;
+  
+  // In production, Next.js compiles TypeScript to .next/server/app/...
+  // Production path: /app/.next/server/app/auth-workers/utils/authWorkerServerStorage.js
+  const prodPathBase = join(projectRoot, '.next', 'server', 'app', modulePath);
+  const prodPathJs = prodPathBase + '.js';
+  const prodPathMjs = prodPathBase + '.mjs';
+  
+  // Always try production path first (this is where files are in Railway)
+  if (existsSync(prodPathJs)) {
+    return prodPathJs;
+  }
+  if (existsSync(prodPathMjs)) {
+    return prodPathMjs;
+  }
+  
+  // Fallback to source path ONLY in development (when .next doesn't exist)
+  // In Railway production, source files may not be available, so skip this
+  if (!isProduction) {
+    const sourcePathBase = join(projectRoot, 'app', modulePath);
+    const sourcePathJs = sourcePathBase + '.js';
+    const sourcePathTs = sourcePathBase + '.ts';
+    const sourcePathMjs = sourcePathBase + '.mjs';
+    
+    if (existsSync(sourcePathJs)) {
+      return sourcePathJs;
+    }
+    if (existsSync(sourcePathTs)) {
+      return sourcePathTs;
+    }
+    if (existsSync(sourcePathMjs)) {
+      return sourcePathMjs;
+    }
+  }
+  
+  // Neither path exists - throw descriptive error with all attempted paths
+  const attemptedPaths = [
+    prodPathJs,
+    prodPathMjs,
+  ];
+  
+  if (!isProduction) {
+    attemptedPaths.push(
+      join(projectRoot, 'app', modulePath) + '.js',
+      join(projectRoot, 'app', modulePath) + '.ts',
+      join(projectRoot, 'app', modulePath) + '.mjs'
+    );
+  }
+  
+  throw new Error(
+    `Cannot find module '${modulePath}'. Tried:\n` +
+    attemptedPaths.map(p => `    - ${p}`).join('\n') +
+    `\nProject root (__dirname): ${projectRoot}\n` +
+    `process.cwd(): ${process.cwd()}\n` +
+    `isProduction: ${isProduction}`
+  );
+}
+
+/**
  * Initialize auth workers on startup
  * Copies auth workers from build artifact to Railway persistent volume
  */
@@ -149,22 +223,10 @@ function startTokenRefreshJob() {
     urgentModeActive = false;
     
     try {
-      // Use dynamic import to handle TypeScript modules correctly
-      // Next.js compiles TypeScript to .next/server/app/ in production
-      // Build absolute path to avoid double /app/app/ issue
-      const { join } = require('path');
-      let authWorkerStorage;
-      const cwd = process.cwd();
-      
-      // Try production compiled path first (.next/server/app/...)
-      const prodPath = join(cwd, '.next', 'server', 'app', 'auth-workers', 'utils', 'authWorkerServerStorage');
-      try {
-        authWorkerStorage = await import(prodPath);
-      } catch (prodError) {
-        // Fallback to source path (for development or if .next doesn't exist yet)
-        const sourcePath = join(cwd, 'app', 'auth-workers', 'utils', 'authWorkerServerStorage');
-        authWorkerStorage = await import(sourcePath);
-      }
+      // Use helper function to resolve module path (handles Railway's /app/app/ issue)
+      // Use require() instead of import() because require() handles absolute paths better
+      const modulePath = resolveModulePath('auth-workers/utils/authWorkerServerStorage');
+      const authWorkerStorage = require(modulePath);
       const { listSessionsFromServer, getSessionFromServer } = authWorkerStorage;
       const sessions = listSessionsFromServer();
       
@@ -244,21 +306,10 @@ function startTokenRefreshJob() {
             
             // Use direct refresh function instead of API call for better error handling
             try {
-              // Use dynamic import with absolute paths to handle TypeScript modules correctly
-              // Next.js compiles TypeScript to .next/server/app/ in production
-              const { join } = require('path');
-              let tokenRefreshService;
-              const cwd = process.cwd();
-              
-              // Try production compiled path first (.next/server/app/...)
-              const prodPath = join(cwd, '.next', 'server', 'app', 'auth-workers', 'utils', 'tokenRefreshService');
-              try {
-                tokenRefreshService = await import(prodPath);
-              } catch (prodError) {
-                // Fallback to source path (for development or if .next doesn't exist yet)
-                const sourcePath = join(cwd, 'app', 'auth-workers', 'utils', 'tokenRefreshService');
-                tokenRefreshService = await import(sourcePath);
-              }
+              // Use helper function to resolve module path (handles Railway's /app/app/ issue)
+              // Use require() instead of import() because require() handles absolute paths better
+              const modulePath = resolveModulePath('auth-workers/utils/tokenRefreshService');
+              const tokenRefreshService = require(modulePath);
               const { refreshAuthWorkerToken, getRefreshFailureStats } = tokenRefreshService;
               
               // Check failure stats before refresh
@@ -345,11 +396,20 @@ function startTokenRefreshJob() {
     } catch (error) {
       // Handle module import errors specifically
       if (error.code === 'MODULE_NOT_FOUND' || error.message.includes('Cannot find module')) {
-        console.error('[Server] Failed to import authWorkerServerStorage:', error.message);
-        console.error('[Server] Token refresh job will be disabled - module not available');
-        console.error('[Server] This may be expected in development or if auth workers are not configured');
+        console.error('[Server] Failed to require authWorkerServerStorage:', error.message);
+        if (error.message.includes('Tried:')) {
+          // Error from resolveModulePath - already includes attempted paths
+          console.error('[Server] Token refresh job will be disabled - module not available');
+        } else {
+          // Generic module not found error
+          console.error('[Server] Token refresh job will be disabled - module not available');
+          console.error('[Server] This may be expected in development or if auth workers are not configured');
+        }
       } else {
         console.error('[Server] Error in token refresh job:', error.message);
+        if (error.stack) {
+          console.error('[Server] Stack:', error.stack);
+        }
       }
     }
     
