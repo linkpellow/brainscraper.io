@@ -61,7 +61,18 @@ type EnrichmentLog = {
 };
 
 export default function EnrichedLeadsPage() {
-  const [leads, setLeads] = useState<LeadSummary[]>([]);
+  // Server-side pagination state
+  const [paginatedLeads, setPaginatedLeads] = useState<LeadSummary[]>([]);
+  const [totalLeads, setTotalLeads] = useState<number>(0); // Total filtered leads
+  const [totalUnfilteredLeads, setTotalUnfilteredLeads] = useState<number>(0); // Total unfiltered leads (for stats)
+  const [paginationMeta, setPaginationMeta] = useState<{
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  }>({ page: 1, limit: 50, total: 0, totalPages: 0 });
+  const [isLoadingPage, setIsLoadingPage] = useState(false);
+  
   const [sortField, setSortField] = useState<SortField>('none');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [ageMin, setAgeMin] = useState<number | ''>('');
@@ -100,294 +111,211 @@ export default function EnrichedLeadsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(50);
   const logsEndRef = useRef<HTMLDivElement>(null);
+  const fetchAbortControllerRef = useRef<AbortController | null>(null);
+  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const addLog = (message: string, type: EnrichmentLog['type'] = 'info') => {
     setEnrichmentLogs(prev => [...prev, { timestamp: new Date(), message, type }]);
     setTimeout(() => logsEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
   };
 
+  // Fetch paginated leads from API
+  const fetchPaginatedLeads = async (abortSignal?: AbortSignal) => {
+    setIsLoadingPage(true);
+    
+    try {
+      // Build query parameters
+      const params = new URLSearchParams();
+      params.set('page', currentPage.toString());
+      params.set('limit', rowsPerPage.toString());
+      if (sortField !== 'none') {
+        params.set('sortField', sortField);
+        params.set('sortDirection', sortDirection);
+      }
+      if (searchQuery.trim()) {
+        params.set('searchQuery', searchQuery.trim());
+      }
+      if (ageMin !== '') {
+        params.set('ageMin', ageMin.toString());
+      }
+      if (ageMax !== '') {
+        params.set('ageMax', ageMax.toString());
+      }
+      if (mobileOnly) {
+        params.set('mobileOnly', 'true');
+      }
+      if (filterDNC) {
+        params.set('filterDNC', 'true');
+      }
+      if (selectedState) {
+        params.set('selectedState', selectedState);
+      }
+      if (selectedDate) {
+        params.set('selectedDate', selectedDate);
+      }
+      
+      const response = await fetch(`/api/load-enriched-results?${params.toString()}&t=${Date.now()}`, {
+        signal: abortSignal,
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0',
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        // Add today's date to leads that don't have dateScraped
+        const today = new Date().toISOString().split('T')[0];
+        const leadsWithDate = result.leads.map((lead: LeadSummary) => ({
+          ...lead,
+          dateScraped: lead.dateScraped || today,
+          dncStatus: lead.dncStatus || 'UNKNOWN',
+        }));
+        
+        setPaginatedLeads(leadsWithDate);
+        setTotalLeads(result.pagination.total);
+        setTotalUnfilteredLeads(result.stats.total);
+        setPaginationMeta(result.pagination);
+        setLoading(false);
+      } else {
+        throw new Error(result.error || 'Failed to load leads');
+      }
+    } catch (error: any) {
+      if (error.name === 'AbortError') {
+        console.log('[ENRICHED_PAGE] Request aborted');
+        return;
+      }
+      console.error('Failed to fetch paginated leads:', error);
+      setPaginatedLeads([]);
+      setTotalLeads(0);
+      setTotalUnfilteredLeads(0);
+      setPaginationMeta({ page: 1, limit: rowsPerPage, total: 0, totalPages: 0 });
+      setLoading(false);
+    } finally {
+      setIsLoadingPage(false);
+    }
+  };
+
+
+  // Initial load on mount
   useEffect(() => {
-    // Explicitly reset modal state on mount to prevent auto-triggering
     setShowProgressModal(false);
     setLoadingSaved(false);
     setEnrichmentProgress(0);
     setEnrichmentLogs([]);
     
-    // Validation function: lead must have name AND phone (email-only leads are excluded)
-    const isValidLead = (lead: any): boolean => {
-      const name = (lead.name || '').trim();
-      const phone = (lead.phone || '').trim().replace(/\D/g, ''); // Remove non-digits for validation
-      // Require phone number (10+ digits) - leads with only email are excluded
-      return name.length > 0 && phone.length >= 10;
-    };
-
-    // AbortController to cancel in-flight requests
-    let abortController: AbortController | null = null;
-
-    // Load enriched leads from localStorage and API
-    const loadLeads = async (isRetry: boolean = false) => {
-      // Cancel any previous in-flight request
-      if (abortController) {
-        abortController.abort();
-      }
-      abortController = new AbortController();
-
-      try {
-        const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
-        
-        // Try localStorage first (preserve user's current view)
-        // But always check API to ensure we have latest data
-        const stored = localStorage.getItem('enrichedLeads');
-        let localStorageLeads: LeadSummary[] = [];
-        if (stored) {
-          try {
-            const parsed = JSON.parse(stored);
-            if (Array.isArray(parsed) && parsed.length > 0) {
-              // Filter to only valid leads
-              localStorageLeads = parsed.filter(isValidLead);
-              if (localStorageLeads.length > 0) {
-                console.log(`📦 Found ${localStorageLeads.length} valid leads in localStorage`);
-              }
-            }
-          } catch (e) {
-            console.log('Error parsing localStorage data');
-          }
-        }
-        
-        // Always load from API to get latest server data
-        const MAX_RETRIES = 3;
-        const BASE_DELAY_MS = 1000; // 1 second
-        const TIMEOUT_MS = 30000; // 30 seconds timeout
-        
-        let retries = 0;
-        while (retries <= MAX_RETRIES) {
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
-          
-          // Merge with main abort controller
-          abortController.signal.addEventListener('abort', () => controller.abort());
-
-          try {
-            const response = await fetch(`/api/load-enriched-results?t=${Date.now()}`, {
-              signal: controller.signal,
-              headers: {
-                'Cache-Control': 'no-cache, no-store, must-revalidate',
-                'Pragma': 'no-cache',
-                'Expires': '0',
-              },
-            });
-            clearTimeout(timeoutId);
-
-            if (response.ok) {
-              // Read response as text first to handle incomplete JSON gracefully
-              const text = await response.text();
-              if (!text || text.trim().length === 0) {
-                throw new Error('Empty response from server');
-              }
-
-              let result;
-              try {
-                result = JSON.parse(text);
-              } catch (jsonError: any) {
-                // JSON parsing error - likely incomplete response due to connection reset
-                console.warn(`⚠️ [ENRICHED_PAGE] JSON parse error (incomplete response):`, jsonError.message);
-                if (retries < MAX_RETRIES) {
-                  retries++;
-                  const delay = BASE_DELAY_MS * Math.pow(2, retries - 1); // Exponential backoff
-                  console.log(`🔄 [ENRICHED_PAGE] Retrying after ${delay}ms... (${retries}/${MAX_RETRIES})`);
-                  await new Promise(resolve => setTimeout(resolve, delay));
-                  continue;
-                }
-                // Max retries reached, fallback to localStorage
-                throw new Error('Failed to parse JSON after retries');
-              }
-
-              console.log(`📡 [ENRICHED_PAGE] API response:`, { success: result.success, leadsCount: result.leads?.length, source: result.source, stats: result.stats });
-              if (result.success && Array.isArray(result.leads) && result.leads.length > 0) {
-                // Filter to only valid leads (API already filters, but double-check)
-                const validLeads = result.leads.filter(isValidLead);
-                
-                // Debug: Check DNC status in loaded leads
-                const leadsWithDNC = validLeads.filter((l: LeadSummary) => l.dncStatus && l.dncStatus !== 'UNKNOWN');
-                console.log(`📊 [ENRICHED_PAGE] Loaded leads DNC status: ${leadsWithDNC.length} with DNC status (YES/NO) out of ${validLeads.length} total`);
-                if (leadsWithDNC.length > 0) {
-                  const dncCount = leadsWithDNC.filter((l: LeadSummary) => l.dncStatus === 'YES').length;
-                  const okCount = leadsWithDNC.filter((l: LeadSummary) => l.dncStatus === 'NO').length;
-                  console.log(`   DNC breakdown: ${dncCount} DNC, ${okCount} OK`);
-                }
-                
-                // Add today's date to all leads that don't have dateScraped
-                // CRITICAL: Preserve all fields including DNC status
-                const leadsWithDate = validLeads.map((lead: LeadSummary) => ({
-                  ...lead,
-                  dateScraped: lead.dateScraped || today,
-                  // Ensure DNC status is preserved
-                  dncStatus: lead.dncStatus || 'UNKNOWN',
-                  dncLastChecked: lead.dncLastChecked,
-                  canContact: lead.canContact,
-                  dncReason: lead.dncReason,
-                }));
-                setLeads(leadsWithDate);
-                // Update localStorage with fresh filtered data and dates
-                localStorage.setItem('enrichedLeads', JSON.stringify(leadsWithDate));
-                console.log(`✅ Loaded ${leadsWithDate.length} valid leads from ${result.source} (API had ${result.leads.length} total)`);
-                setLoading(false);
-                return; // Success, exit retry loop
-              } else if (localStorageLeads.length > 0) {
-                // Fallback to localStorage if API returns empty but we have localStorage data
-                console.log(`⚠️ API returned no leads, using ${localStorageLeads.length} leads from localStorage`);
-                const leadsWithDate = localStorageLeads.map((lead: LeadSummary) => ({
-                  ...lead,
-                  dateScraped: lead.dateScraped || today
-                }));
-                setLeads(leadsWithDate);
-                setLoading(false);
-                return;
-              }
-            } else {
-              // Response not OK, but not a network error - break retry loop
-              console.warn(`⚠️ [ENRICHED_PAGE] API response not OK (status: ${response.status}), not retrying.`);
-              break;
-            }
-          } catch (error: any) {
-            clearTimeout(timeoutId);
-            
-            // Check if request was aborted
-            if (error.name === 'AbortError' || (abortController && abortController.signal.aborted)) {
-              console.log(`[ENRICHED_PAGE] Request aborted`);
-              return; // Don't retry if aborted
-            }
-
-            if (error instanceof TypeError && error.message === 'Failed to fetch') {
-              console.warn(`⚠️ [ENRICHED_PAGE] Network error (Failed to fetch). Retrying... (${retries + 1}/${MAX_RETRIES})`);
-            } else if (error.message.includes('ECONNRESET') || error.message.includes('EPIPE')) {
-              console.warn(`⚠️ [ENRICHED_PAGE] Connection reset error. Retrying... (${retries + 1}/${MAX_RETRIES})`);
-            } else if (error.message.includes('JSON') || error.message.includes('parse')) {
-              console.warn(`⚠️ [ENRICHED_PAGE] JSON parsing error. Retrying... (${retries + 1}/${MAX_RETRIES})`);
-            } else {
-              console.error(`❌ [ENRICHED_PAGE] Error loading leads:`, error);
-              // For other errors, don't retry
-              break;
-            }
-
-            retries++;
-            if (retries <= MAX_RETRIES) {
-              const delay = BASE_DELAY_MS * Math.pow(2, retries - 1); // Exponential backoff
-              await new Promise(resolve => setTimeout(resolve, delay));
-            }
-          }
-        }
-
-        // If we get here, all retries failed - fallback to localStorage
-        if (localStorageLeads.length > 0) {
-          console.log(`⚠️ API failed after retries, using ${localStorageLeads.length} leads from localStorage`);
-          const leadsWithDate = localStorageLeads.map((lead: LeadSummary) => ({
-            ...lead,
-            dateScraped: lead.dateScraped || today
-          }));
-          setLeads(leadsWithDate);
-          setLoading(false);
-          return;
-        }
-        
-        setLeads([]);
-      } catch (error) {
-        console.error('Failed to load enriched leads:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadLeads();
-
-    // Listen for new enriched leads from storage events (other tabs)
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'enrichedLeads') {
-        try {
-          const parsed = e.newValue ? JSON.parse(e.newValue) : [];
-          const today = new Date().toISOString().split('T')[0];
-          // Filter to only valid leads, then add today's date
-          const validLeads = Array.isArray(parsed) ? parsed.filter(isValidLead) : [];
-          const leadsWithDate = validLeads.map((lead: LeadSummary) => ({
-            ...lead,
-            dateScraped: lead.dateScraped || today
-          }));
-          setLeads(leadsWithDate);
-        } catch (error) {
-          console.error('Failed to parse enriched leads:', error);
-        }
-      }
-    };
-
-    // Listen for custom event (same window updates)
-    const handleCustomStorage = () => {
-      loadLeads();
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    window.addEventListener('enrichedLeadsUpdated', handleCustomStorage);
-    
-    // Poll for updates (reduced frequency to prevent connection exhaustion)
-    // Only poll when page is visible to reduce unnecessary requests
-    const POLL_INTERVAL_MS = 30000; // 30 seconds (reduced from 2 seconds)
-    const interval = setInterval(() => {
-      if (document.visibilityState === 'visible') {
-        loadLeads(false);
-      }
-    }, POLL_INTERVAL_MS);
+    // Cancel any in-flight request
+    if (fetchAbortControllerRef.current) {
+      fetchAbortControllerRef.current.abort();
+    }
+    fetchAbortControllerRef.current = new AbortController();
+    fetchPaginatedLeads(fetchAbortControllerRef.current.signal);
     
     return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('enrichedLeadsUpdated', handleCustomStorage);
-      clearInterval(interval);
-      // Cancel any in-flight request on unmount
-      if (abortController) {
-        abortController.abort();
+      if (fetchAbortControllerRef.current) {
+        fetchAbortControllerRef.current.abort();
+      }
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
       }
     };
-  }, []); // Empty dependency array - only run on mount
+  }, []); // Only run on mount
+
+  // Fetch when page, rowsPerPage, sort changes (immediate)
+  useEffect(() => {
+    // Cancel any in-flight request
+    if (fetchAbortControllerRef.current) {
+      fetchAbortControllerRef.current.abort();
+    }
+    fetchAbortControllerRef.current = new AbortController();
+    fetchPaginatedLeads(fetchAbortControllerRef.current.signal);
+  }, [currentPage, rowsPerPage, sortField, sortDirection]); // Immediate for page/sort changes
+
+  // Debounced fetch for filter changes (resets to page 1)
+  useEffect(() => {
+    // Reset to page 1 when filters change
+    if (currentPage !== 1) {
+      setCurrentPage(1);
+      return; // Will trigger page change effect
+    }
+    
+    // Debounce the fetch
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current);
+    }
+    debounceTimeoutRef.current = setTimeout(() => {
+      // Cancel any in-flight request
+      if (fetchAbortControllerRef.current) {
+        fetchAbortControllerRef.current.abort();
+      }
+      fetchAbortControllerRef.current = new AbortController();
+      fetchPaginatedLeads(fetchAbortControllerRef.current.signal);
+    }, 300); // 300ms debounce
+    
+    return () => {
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+      }
+    };
+  }, [searchQuery, ageMin, ageMax, mobileOnly, filterDNC, selectedState, selectedDate, currentPage]);
 
   // Auto-scrub DNC status in background after leads are loaded
   // Checks DNC status for existing leads that haven't been checked today
+  // Note: This fetches all leads (not paginated) for DNC scrubbing
   useEffect(() => {
-    if (leads.length === 0 || isScrubbingDNC) return;
+    if (totalUnfilteredLeads === 0 || isScrubbingDNC) return;
     
-    // Check if any leads need DNC scrubbing
-    // Skip leads that were already checked today
-    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
-    
-    const leadsToScrub = leads.filter((lead: LeadSummary) => {
-      const phone = lead.phone?.replace(/\D/g, '');
-      if (!phone || phone.length < 10) {
-        return false;
-      }
-      
-      // Skip if already checked today (one time daily pass)
-      if (lead.dncLastChecked) {
-        const lastCheckedDate = lead.dncLastChecked.split('T')[0];
-        if (lastCheckedDate === today) {
-          return false; // Already checked today, skip
-        }
-      }
-      
-      // Include all leads that haven't been checked today (regardless of current status)
-      // This ensures every lead gets checked once per day
-      return true;
-    });
-    
-    if (leadsToScrub.length === 0) return;
-    
-    // Wait a bit before starting to avoid blocking initial load
-    const dncTimeout = setTimeout(async () => {
-      console.log('\n🔍 [FRONTEND DNC] ============================================');
-      console.log(`🔍 [FRONTEND DNC] Starting background DNC scrubbing`);
-      console.log(`🔍 [FRONTEND DNC] Found ${leadsToScrub.length} leads that need DNC checking`);
-      console.log('🔍 [FRONTEND DNC] ============================================\n');
-      
-      setIsScrubbingDNC(true);
-      setDncScrubProgress({ current: 0, total: leadsToScrub.length });
-      
-      const startTime = Date.now();
+    // Fetch all leads for DNC scrubbing (not paginated)
+    const fetchAllLeadsForDNC = async () => {
+      try {
+        const response = await fetch(`/api/load-enriched-results?limit=10000&t=${Date.now()}`);
+        if (!response.ok) return;
+        
+        const result = await response.json();
+        if (!result.success || !Array.isArray(result.leads)) return;
+        
+        // Check if any leads need DNC scrubbing
+        // Skip leads that were already checked today
+        const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+        
+        const leadsToScrub = result.leads.filter((lead: LeadSummary) => {
+          const phone = lead.phone?.replace(/\D/g, '');
+          if (!phone || phone.length < 10) {
+            return false;
+          }
+          
+          // Skip if already checked today (one time daily pass)
+          if (lead.dncLastChecked) {
+            const lastCheckedDate = lead.dncLastChecked.split('T')[0];
+            if (lastCheckedDate === today) {
+              return false; // Already checked today, skip
+            }
+          }
+          
+          // Include all leads that haven't been checked today (regardless of current status)
+          // This ensures every lead gets checked once per day
+          return true;
+        });
+        
+        if (leadsToScrub.length === 0) return;
+        
+        // Wait a bit before starting to avoid blocking initial load
+        setTimeout(async () => {
+          console.log('\n🔍 [FRONTEND DNC] ============================================');
+          console.log(`🔍 [FRONTEND DNC] Starting background DNC scrubbing`);
+          console.log(`🔍 [FRONTEND DNC] Found ${leadsToScrub.length} leads that need DNC checking`);
+          console.log('🔍 [FRONTEND DNC] ============================================\n');
+          
+          setIsScrubbingDNC(true);
+          setDncScrubProgress({ current: 0, total: leadsToScrub.length });
+          
+          const startTime = Date.now();
       
       try {
         // Scrub in batches
@@ -545,51 +473,54 @@ export default function EnrichedLeadsPage() {
           
           console.log(`🔄 [FRONTEND DNC] Updating ${dncResults.size} leads with DNC status...`);
           
-          setLeads(prevLeads => {
-            const updatedLeads = prevLeads.map((lead: LeadSummary) => {
-              // Normalize phone number for consistent matching
-              const phone = lead.phone?.replace(/\D/g, '');
-              if (phone && phone.length >= 10 && dncResults.has(phone)) {
-                return { 
-                  ...lead, 
-                  dncStatus: dncResults.get(phone) || 'UNKNOWN',
-                  dncLastChecked: new Date().toISOString() // Mark as checked today
-                };
-              }
-              return lead;
-            });
-            
-            // Save to localStorage for immediate UI update
-            localStorage.setItem('enrichedLeads', JSON.stringify(updatedLeads));
-            
-            // CRITICAL: Save to server so DNC status persists across page reloads
-            console.log(`💾 [FRONTEND DNC] Saving ${updatedLeads.length} leads to server...`);
-            fetch('/api/aggregate-enriched-leads', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ newLeads: updatedLeads }),
-            })
-              .then(response => response.json())
-              .then(result => {
-                if (result.success) {
-                  console.log(`✅ [FRONTEND DNC] Saved ${result.totalLeads} leads to server (DNC status persisted)`);
-                } else {
-                  console.error(`❌ [FRONTEND DNC] Failed to save to server:`, result.error);
+          // Fetch all leads again to update them
+          const allLeadsResponse = await fetch(`/api/load-enriched-results?limit=10000&t=${Date.now()}`);
+          if (allLeadsResponse.ok) {
+            const allLeadsResult = await allLeadsResponse.json();
+            if (allLeadsResult.success && Array.isArray(allLeadsResult.leads)) {
+              const updatedLeads = allLeadsResult.leads.map((lead: LeadSummary) => {
+                // Normalize phone number for consistent matching
+                const phone = lead.phone?.replace(/\D/g, '');
+                if (phone && phone.length >= 10 && dncResults.has(phone)) {
+                  return { 
+                    ...lead, 
+                    dncStatus: dncResults.get(phone) || 'UNKNOWN',
+                    dncLastChecked: new Date().toISOString() // Mark as checked today
+                  };
                 }
-              })
-              .catch(error => {
-                console.error(`❌ [FRONTEND DNC] Error saving to server:`, error);
+                return lead;
               });
-            
-            console.log('✅ [FRONTEND DNC] ============================================');
-            console.log(`✅ [FRONTEND DNC] DNC Scrubbing Complete!`);
-            console.log(`✅ [FRONTEND DNC] Updated: ${dncResults.size} leads`);
-            console.log(`✅ [FRONTEND DNC] Results: ${okCount} OK, ${dncCount} DNC`);
-            console.log(`✅ [FRONTEND DNC] Total Time: ${totalTime}ms (${(totalTime / 1000).toFixed(2)}s)`);
-            console.log('✅ [FRONTEND DNC] ============================================\n');
-            
-            return updatedLeads;
-          });
+              
+              // CRITICAL: Save to server so DNC status persists across page reloads
+              console.log(`💾 [FRONTEND DNC] Saving ${updatedLeads.length} leads to server...`);
+              const saveResponse = await fetch('/api/aggregate-enriched-leads', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ newLeads: updatedLeads }),
+              });
+              
+              const saveResult = await saveResponse.json();
+              if (saveResult.success) {
+                console.log(`✅ [FRONTEND DNC] Saved ${saveResult.totalLeads} leads to server (DNC status persisted)`);
+                
+                // Refetch current page to show updated DNC status
+                if (fetchAbortControllerRef.current) {
+                  fetchAbortControllerRef.current.abort();
+                }
+                fetchAbortControllerRef.current = new AbortController();
+                fetchPaginatedLeads(fetchAbortControllerRef.current.signal);
+              } else {
+                console.error(`❌ [FRONTEND DNC] Failed to save to server:`, saveResult.error);
+              }
+            }
+          }
+          
+          console.log('✅ [FRONTEND DNC] ============================================');
+          console.log(`✅ [FRONTEND DNC] DNC Scrubbing Complete!`);
+          console.log(`✅ [FRONTEND DNC] Updated: ${dncResults.size} leads`);
+          console.log(`✅ [FRONTEND DNC] Results: ${okCount} OK, ${dncCount} DNC`);
+          console.log(`✅ [FRONTEND DNC] Total Time: ${totalTime}ms (${(totalTime / 1000).toFixed(2)}s)`);
+          console.log('✅ [FRONTEND DNC] ============================================\n');
         } else {
           console.warn('⚠️  [FRONTEND DNC] No DNC results received from API\n');
         }
@@ -600,15 +531,24 @@ export default function EnrichedLeadsPage() {
         console.error('❌ [FRONTEND DNC] Fatal Error:', errorMessage);
         console.error(`❌ [FRONTEND DNC] Time before error: ${totalTime}ms`);
         console.error('❌ [FRONTEND DNC] ============================================\n');
-        setDncError(`DNC scrubbing failed: ${errorMessage}`);
-      } finally {
-        setIsScrubbingDNC(false);
-        setDncScrubProgress({ current: 0, total: 0 });
+          setDncError(`DNC scrubbing failed: ${errorMessage}`);
+        } finally {
+          setIsScrubbingDNC(false);
+          setDncScrubProgress({ current: 0, total: 0 });
+        }
+        }, 2000);
+      } catch (error) {
+        console.error('Failed to fetch leads for DNC scrubbing:', error);
       }
+    };
+    
+    // Wait a bit before starting to avoid blocking initial load
+    const dncTimeout = setTimeout(() => {
+      fetchAllLeadsForDNC();
     }, 2000);
     
     return () => clearTimeout(dncTimeout);
-  }, [leads.length, isScrubbingDNC]); // Run when leads change or scrubbing completes
+  }, [totalUnfilteredLeads, isScrubbingDNC]); // Run when total leads change or scrubbing completes
 
   // DISABLED: Auto re-enrichment - removed to prevent automatic API calls
   // Enrichment should only happen when user explicitly clicks "Enrich" or "Re-enrich Existing Leads"
@@ -625,125 +565,62 @@ export default function EnrichedLeadsPage() {
     }
   };
 
-  const getSortedLeads = (): LeadSummary[] => {
-    // Apply filters first
-    let filteredLeads = leads;
-    
-    // Search filter (by name)
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase().trim();
-      filteredLeads = filteredLeads.filter((lead) => {
-        const name = (lead.name || '').toLowerCase();
-        return name.includes(query);
-      });
-    }
-    
-    // Age range filter
-    if (ageMin !== '' || ageMax !== '') {
-      filteredLeads = filteredLeads.filter((lead) => {
-        if (!lead.dobOrAge) return false;
-        const age = parseInt(lead.dobOrAge);
-        if (isNaN(age)) return false;
-        
-        const min = ageMin !== '' ? Number(ageMin) : 0;
-        const max = ageMax !== '' ? Number(ageMax) : 999;
-        
-        return age >= min && age <= max;
-      });
-    }
-    
-    // Mobile only filter
-    if (mobileOnly) {
-      filteredLeads = filteredLeads.filter((lead) => {
-        return lead.lineType === 'mobile';
-      });
-    }
-    
-    // DNC filter (exclude DNC leads)
-    if (filterDNC) {
-      filteredLeads = filteredLeads.filter((lead) => {
-        // Filter out leads where dncStatus is "YES" (Do Not Call)
-        return lead.dncStatus !== 'YES';
-      });
-    }
-    
-    // State filter (filter by selected state abbreviation)
-    if (selectedState) {
-      filteredLeads = filteredLeads.filter((lead) => {
-        if (!lead.state) return false;
-        // Normalize state to abbreviation for comparison
-        const leadStateAbbr = getStateAbbreviation(lead.state);
-        return leadStateAbbr === selectedState;
-      });
-    }
-
-    // Date filter (filter by date scraped)
-    if (selectedDate) {
-      filteredLeads = filteredLeads.filter((lead) => {
-        if (!lead.dateScraped) return false;
-        // Compare dates (YYYY-MM-DD format)
-        const leadDate = lead.dateScraped.split('T')[0]; // Get date part only
-        return leadDate === selectedDate;
-      });
-    }
-
-    if (sortField === 'none') return filteredLeads;
-
-    return [...filteredLeads].sort((a, b) => {
-      let aValue: string | number = '';
-      let bValue: string | number = '';
-
-      switch (sortField) {
-        case 'name':
-          aValue = (a.name || '').toLowerCase();
-          bValue = (b.name || '').toLowerCase();
-          break;
-        case 'city':
-          aValue = (a.city || '').toLowerCase();
-          bValue = (b.city || '').toLowerCase();
-          break;
-        case 'zipcode':
-          aValue = (a.zipcode || '').toLowerCase();
-          bValue = (b.zipcode || '').toLowerCase();
-          break;
-        case 'age':
-          // Extract numeric age from dobOrAge
-          const aAge = parseInt(a.dobOrAge) || 0;
-          const bAge = parseInt(b.dobOrAge) || 0;
-          aValue = aAge;
-          bValue = bAge;
-          break;
-        case 'income':
-          aValue = a.income || 0;
-          bValue = b.income || 0;
-          break;
-        case 'searchFilter':
-          aValue = (a.searchFilter || '').toLowerCase();
-          bValue = (b.searchFilter || '').toLowerCase();
-          break;
+  const handleExportCSV = async () => {
+    try {
+      // Fetch all filtered results (without pagination) for export
+      const params = new URLSearchParams();
+      params.set('export', 'true'); // Special flag to get all filtered results
+      params.set('limit', '10000'); // Large limit to get all results
+      if (sortField !== 'none') {
+        params.set('sortField', sortField);
+        params.set('sortDirection', sortDirection);
       }
-
-      if (typeof aValue === 'string' && typeof bValue === 'string') {
-        const comparison = aValue.localeCompare(bValue);
-        return sortDirection === 'asc' ? comparison : -comparison;
+      if (searchQuery.trim()) {
+        params.set('searchQuery', searchQuery.trim());
+      }
+      if (ageMin !== '') {
+        params.set('ageMin', ageMin.toString());
+      }
+      if (ageMax !== '') {
+        params.set('ageMax', ageMax.toString());
+      }
+      if (mobileOnly) {
+        params.set('mobileOnly', 'true');
+      }
+      if (filterDNC) {
+        params.set('filterDNC', 'true');
+      }
+      if (selectedState) {
+        params.set('selectedState', selectedState);
+      }
+      if (selectedDate) {
+        params.set('selectedDate', selectedDate);
+      }
+      
+      const response = await fetch(`/api/load-enriched-results?${params.toString()}&t=${Date.now()}`);
+      if (!response.ok) {
+        throw new Error(`Export failed: ${response.status}`);
+      }
+      
+      const result = await response.json();
+      if (result.success && Array.isArray(result.leads)) {
+        const csv = leadSummariesToCSV(result.leads);
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `enriched_leads_${new Date().toISOString().split('T')[0]}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
       } else {
-        const comparison = (aValue as number) - (bValue as number);
-        return sortDirection === 'asc' ? comparison : -comparison;
+        throw new Error('No leads to export');
       }
-    });
-  };
-
-  const handleExportCSV = () => {
-    const csv = leadSummariesToCSV(getSortedLeads());
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `enriched_leads_all_${new Date().toISOString().split('T')[0]}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Failed to export CSV:', error);
+      alert('Failed to export CSV. Please try again.');
+    }
   };
 
   const getSortIcon = (field: SortField) => {
@@ -1424,50 +1301,40 @@ export default function EnrichedLeadsPage() {
                     }
   };
 
-  const sortedLeads = getSortedLeads();
+  // Get unique dates from all leads (for date filter dropdown)
+  // Note: This requires a separate API call or we can use a cached list
+  // For now, we'll fetch all dates on mount and cache them
+  const [uniqueDates, setUniqueDates] = useState<string[]>([]);
   
-  // Get unique dates from leads for the date filter dropdown
-  const getUniqueDates = (): string[] => {
-    const dates = new Set<string>();
-    leads.forEach((lead) => {
-      if (lead.dateScraped) {
-        const dateStr = lead.dateScraped.split('T')[0]; // Get YYYY-MM-DD format
-        dates.add(dateStr);
+  useEffect(() => {
+    // Fetch unique dates for filter dropdown
+    const fetchUniqueDates = async () => {
+      try {
+        const response = await fetch(`/api/load-enriched-results?limit=10000&t=${Date.now()}`);
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success && Array.isArray(result.leads)) {
+            const dates = new Set<string>();
+            result.leads.forEach((lead: LeadSummary) => {
+              if (lead.dateScraped) {
+                const dateStr = lead.dateScraped.split('T')[0];
+                dates.add(dateStr);
+              }
+            });
+            setUniqueDates(Array.from(dates).sort().reverse());
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch unique dates:', error);
       }
-    });
-    return Array.from(dates).sort().reverse(); // Most recent first
-  };
-
-  const uniqueDates = getUniqueDates();
+    };
+    fetchUniqueDates();
+  }, []);
   
-  // Pagination calculations
-  const totalPages = Math.ceil(sortedLeads.length / rowsPerPage);
-  const startIndex = (currentPage - 1) * rowsPerPage;
-  const endIndex = startIndex + rowsPerPage;
-  const paginatedLeads = sortedLeads.slice(startIndex, endIndex);
-  
-  // Reset to page 1 when filters change
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchQuery, ageMin, ageMax, mobileOnly, filterDNC, selectedState, selectedDate, sortField, sortDirection]);
-  
-  // Debug logging
-  useEffect(() => {
-    console.log('🔍 [ENRICHED_PAGE] Leads state:', {
-      totalLeads: leads.length,
-      sortedLeads: sortedLeads.length,
-      searchQuery,
-      ageMin,
-      ageMax,
-      mobileOnly,
-      filterDNC,
-      selectedState,
-      sortField
-    });
-    if (leads.length > 0 && sortedLeads.length === 0) {
-      console.warn('⚠️ [ENRICHED_PAGE] Leads exist but sortedLeads is empty - filters may be too restrictive');
-    }
-  }, [leads.length, sortedLeads.length, searchQuery, ageMin, ageMax, mobileOnly, filterDNC, selectedState, selectedDate, sortField]);
+  // Use server pagination metadata
+  const totalPages = paginationMeta.totalPages;
+  const startIndex = (paginationMeta.page - 1) * paginationMeta.limit;
+  const endIndex = Math.min(startIndex + paginationMeta.limit, paginationMeta.total);
 
   return (
     <AppLayout>
@@ -1481,7 +1348,7 @@ export default function EnrichedLeadsPage() {
             <p className="text-xs sm:text-sm text-slate-400 mt-1 sm:mt-2 font-medium font-data">
               {searchQuery || ageMin !== '' || ageMax !== '' || mobileOnly || filterDNC || selectedState || selectedDate ? (
                 <>
-                  {sortedLeads.length} of {leads.length} leads
+                  {totalLeads} of {totalUnfilteredLeads} leads
                   {totalPages > 1 && ` (Page ${currentPage}/${totalPages})`}
                   {searchQuery && ` (search: "${searchQuery}")`}
                   {(ageMin !== '' || ageMax !== '') && ` (age: ${ageMin !== '' ? ageMin : '0'}-${ageMax !== '' ? ageMax : '99+'})`}
@@ -1495,7 +1362,7 @@ export default function EnrichedLeadsPage() {
                 </>
               ) : (
                 <>
-                  {leads.length} total enriched leads
+                  {totalUnfilteredLeads} total enriched leads
                   {totalPages > 1 && ` • Page ${currentPage}/${totalPages}`}
                   {isScrubbingDNC && ` • Scrubbing DNC: ${dncScrubProgress.current}/${dncScrubProgress.total}`}
                 </>
@@ -1524,7 +1391,7 @@ export default function EnrichedLeadsPage() {
             </button>
             <button
               onClick={handleExportCSV}
-              disabled={leads.length === 0}
+              disabled={totalLeads === 0}
               className="px-3 sm:px-4 py-1.5 sm:py-2 btn-inactive rounded-lg text-slate-200 hover:text-white text-xs sm:text-sm font-medium flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Download className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
@@ -1554,7 +1421,7 @@ export default function EnrichedLeadsPage() {
         )}
 
         {/* Search and Filters */}
-        {leads.length > 0 && (
+        {totalUnfilteredLeads > 0 && (
           <div className="space-y-4">
             {/* Search Bar */}
             <div className="relative group">
@@ -1783,12 +1650,12 @@ export default function EnrichedLeadsPage() {
         )}
 
         {/* Leads Table */}
-        {loading ? (
+        {loading || isLoadingPage ? (
           <div className="px-6 py-12 panel-inactive rounded-2xl text-center">
             <Loader2 className="w-8 h-8 text-white animate-spin mx-auto mb-4" />
             <p className="text-slate-300 font-medium">Loading enriched leads...</p>
           </div>
-        ) : leads.length === 0 ? (
+        ) : !loading && !isLoadingPage && paginatedLeads.length === 0 && totalLeads === 0 ? (
           <div className="px-6 py-12 panel-inactive rounded-2xl text-center space-y-4">
             <p className="text-slate-300 font-semibold text-lg">No enriched leads found.</p>
             <div className="text-left bg-slate-900/60 backdrop-blur-sm p-6 rounded-xl border border-slate-700/50 max-w-2xl mx-auto shadow-lg">
@@ -1824,7 +1691,7 @@ export default function EnrichedLeadsPage() {
                 </thead>
                 <tbody className="divide-y divide-slate-700/30">
                 {paginatedLeads.map((lead, index) => {
-                  const globalIndex = startIndex + index;
+                  const globalIndex = (paginationMeta.page - 1) * paginationMeta.limit + index;
                   // Extract age from dobOrAge
                   let age = '';
                   if (lead.dobOrAge) {
@@ -2011,7 +1878,7 @@ export default function EnrichedLeadsPage() {
         )}
 
         {/* Pagination Controls */}
-        {!loading && sortedLeads.length > 0 && totalPages > 1 && (
+        {!loading && paginatedLeads.length > 0 && totalPages > 1 && (
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-4 py-4 panel-inactive rounded-xl">
             <div className="flex items-center gap-2 text-xs sm:text-sm text-slate-400">
               <span>Showing</span>
@@ -2031,7 +1898,7 @@ export default function EnrichedLeadsPage() {
               <span>per page</span>
               <span className="text-slate-500">•</span>
               <span>
-                {startIndex + 1}-{Math.min(endIndex, sortedLeads.length)} of {sortedLeads.length}
+                {startIndex + 1}-{endIndex} of {totalLeads}
               </span>
             </div>
             
