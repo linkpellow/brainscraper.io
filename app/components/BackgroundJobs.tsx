@@ -45,7 +45,13 @@ export default function BackgroundJobs() {
     fetchJobs();
     
     if (autoRefresh) {
-      const interval = setInterval(fetchJobs, 2000); // Poll every 2 seconds
+      // Poll every 10 seconds instead of 2 seconds to reduce server load
+      // Only poll when page is visible to avoid unnecessary requests when tab is hidden
+      const interval = setInterval(() => {
+        if (document.visibilityState === 'visible') {
+          fetchJobs();
+        }
+      }, 10000); // Poll every 10 seconds (reduced from 2 seconds)
       return () => clearInterval(interval);
     }
   }, [autoRefresh]);
