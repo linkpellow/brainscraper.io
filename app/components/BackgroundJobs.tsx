@@ -166,7 +166,7 @@ export default function BackgroundJobs() {
         <h3 className="text-sm font-semibold text-slate-200">Background Jobs ({jobs.length})</h3>
         <div className="flex items-center gap-2">
           <button
-            onClick={fetchJobs}
+            onClick={() => fetchJobs(false)}
             className="text-xs text-slate-400 hover:text-slate-200 transition-colors"
           >
             Refresh
