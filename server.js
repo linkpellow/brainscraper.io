@@ -15,80 +15,6 @@ const port = process.env.PORT || 3000;
 const isProduction = process.env.NODE_ENV === 'production' || process.env.RAILWAY_ENVIRONMENT === 'production';
 
 /**
- * Resolve module path for TypeScript modules compiled by Next.js
- * Handles both production (.next/server/app/...) and development (app/...) paths
- * Uses __dirname instead of process.cwd() to avoid Railway's /app/app/ path issue
- * 
- * @param {string} modulePath - Relative path from app/ directory (e.g., 'auth-workers/utils/authWorkerServerStorage')
- * @returns {string} - Resolved absolute path to the module
- * @throws {Error} - If module cannot be found in either location
- */
-function resolveModulePath(modulePath) {
-  const { join } = require('path');
-  const { existsSync } = require('fs');
-  
-  // Use __dirname (where server.js is located) instead of process.cwd()
-  // In Railway: __dirname = /app (where server.js is)
-  // This avoids Railway's /app/app/ double prefix issue
-  const projectRoot = __dirname;
-  
-  // In production, Next.js compiles TypeScript to .next/server/app/...
-  // Production path: /app/.next/server/app/auth-workers/utils/authWorkerServerStorage.js
-  const prodPathBase = join(projectRoot, '.next', 'server', 'app', modulePath);
-  const prodPathJs = prodPathBase + '.js';
-  const prodPathMjs = prodPathBase + '.mjs';
-  
-  // Always try production path first (this is where files are in Railway)
-  if (existsSync(prodPathJs)) {
-    return prodPathJs;
-  }
-  if (existsSync(prodPathMjs)) {
-    return prodPathMjs;
-  }
-  
-  // Fallback to source path ONLY in development (when .next doesn't exist)
-  // In Railway production, source files may not be available, so skip this
-  if (!isProduction) {
-    const sourcePathBase = join(projectRoot, 'app', modulePath);
-    const sourcePathJs = sourcePathBase + '.js';
-    const sourcePathTs = sourcePathBase + '.ts';
-    const sourcePathMjs = sourcePathBase + '.mjs';
-    
-    if (existsSync(sourcePathJs)) {
-      return sourcePathJs;
-    }
-    if (existsSync(sourcePathTs)) {
-      return sourcePathTs;
-    }
-    if (existsSync(sourcePathMjs)) {
-      return sourcePathMjs;
-    }
-  }
-  
-  // Neither path exists - throw descriptive error with all attempted paths
-  const attemptedPaths = [
-    prodPathJs,
-    prodPathMjs,
-  ];
-  
-  if (!isProduction) {
-    attemptedPaths.push(
-      join(projectRoot, 'app', modulePath) + '.js',
-      join(projectRoot, 'app', modulePath) + '.ts',
-      join(projectRoot, 'app', modulePath) + '.mjs'
-    );
-  }
-  
-  throw new Error(
-    `Cannot find module '${modulePath}'. Tried:\n` +
-    attemptedPaths.map(p => `    - ${p}`).join('\n') +
-    `\nProject root (__dirname): ${projectRoot}\n` +
-    `process.cwd(): ${process.cwd()}\n` +
-    `isProduction: ${isProduction}`
-  );
-}
-
-/**
  * Initialize auth workers on startup
  * Copies auth workers from build artifact to Railway persistent volume
  */
@@ -201,268 +127,75 @@ const app = next({
 const handle = app.getRequestHandler();
 
 /**
- * Server-side automatic token refresh
- * Runs in background to refresh auth worker tokens before expiration
+ * Server-side automatic token refresh.
+ * Triggers /api/auth-worker/cron-refresh via HTTP (logic lives in Next.js bundle).
+ * Must run only after the HTTP server is listening.
  */
-function startTokenRefreshJob() {
+function startTokenRefreshJob(port) {
   if (!isProduction) {
     console.log('[Server] Token refresh job disabled in development');
     return;
   }
 
-  const REFRESH_CHECK_INTERVAL_MS = 5 * 60 * 1000; // Check every 5 minutes (normal)
-  const URGENT_CHECK_INTERVAL_MS = 1 * 60 * 1000; // Check every 1 minute when urgent
-  // Refresh 2 HOURS before expiration to ensure tokens are always valid
-  // This aggressive buffer accounts for: Railway deployments, network issues, retry delays
-  // Critical for DNC scrub API calls which must never fail due to expired tokens
-  const PROACTIVE_REFRESH_BUFFER_MS = 2 * 60 * 60 * 1000; // 2 hours
-  const URGENT_REFRESH_THRESHOLD_MS = 1 * 60 * 60 * 1000; // 1 hour - triggers frequent checks
-
-  async function checkAndRefreshTokens() {
-    // Reset urgent mode at start of each check - will be set to true if any token is urgent
-    urgentModeActive = false;
-    
-    try {
-      // Use helper function to resolve module path (handles Railway's /app/app/ issue)
-      // Use require() instead of import() because require() handles absolute paths better
-      const modulePath = resolveModulePath('auth-workers/utils/authWorkerServerStorage');
-      const authWorkerStorage = require(modulePath);
-      const { listSessionsFromServer, getSessionFromServer } = authWorkerStorage;
-      const sessions = listSessionsFromServer();
-      
-      if (sessions.length === 0) {
-        return { urgentModeActive: false };
-      }
-
-      console.log(`[Server] Checking ${sessions.length} auth worker(s) for token refresh...`);
-
-      for (const sessionMeta of sessions) {
-        try {
-          const session = getSessionFromServer(sessionMeta.sessionId);
-          if (!session) continue;
-
-          const extractedVars = session.step2.extractedVars;
-          const accessToken = extractedVars.access_token;
-          
-          if (!accessToken) continue;
-          
-          // Must have refresh capability
-          const hasRefreshToken = !!extractedVars.refresh_token;
-          const hasRefreshUrl = !!extractedVars.refresh_url;
-          
-          if (!hasRefreshToken && !hasRefreshUrl) {
-            continue;
-          }
-
-          // Extract expiration time
-          let expirationTime = null;
-          
-          if (extractedVars.expires_at) {
-            expirationTime = parseInt(extractedVars.expires_at, 10);
-          } else {
-            // Try to extract from JWT
-            try {
-              const parts = accessToken.split('.');
-              if (parts.length === 3) {
-                const Buffer = require('buffer').Buffer;
-                const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString());
-                if (payload.exp) {
-                  expirationTime = payload.exp * 1000;
-                }
-              }
-            } catch {
-              // JWT parsing failed
-            }
-          }
-
-          if (!expirationTime) {
-            continue;
-          }
-
-          const now = Date.now();
-          const timeUntilExpiry = expirationTime - now;
-          const timeUntilExpiryWithBuffer = timeUntilExpiry - PROACTIVE_REFRESH_BUFFER_MS;
-          const minutesUntilExpiry = Math.floor(timeUntilExpiry / 1000 / 60);
-          const isExpired = timeUntilExpiry <= 0;
-          const isUrgent = timeUntilExpiry <= URGENT_REFRESH_THRESHOLD_MS; // Within 1 hour
-
-          // Track if ANY token is in urgent state (for interval adjustment)
-          if (isUrgent && !isExpired) {
-            urgentModeActive = true;
-          }
-
-          // Refresh if expired or within buffer window (2 hours)
-          const shouldRefresh = 
-            timeUntilExpiry <= 0 || // Already expired
-            (timeUntilExpiryWithBuffer <= 0 && timeUntilExpiry > 0); // Within buffer window
-
-          if (shouldRefresh) {
-            const urgency = isExpired ? 'CRITICAL (expired)' : 
-                           timeUntilExpiry < 5 * 60 * 1000 ? 'URGENT (<5min)' :
-                           timeUntilExpiry < 15 * 60 * 1000 ? 'HIGH (<15min)' :
-                           timeUntilExpiry < 60 * 60 * 1000 ? 'ELEVATED (<1hr)' : 'NORMAL';
-            
-            console.log(`[Server] 🔄 Auto-refreshing token for ${sessionMeta.targetDomain || sessionMeta.sessionId} (${urgency}, expires in ${minutesUntilExpiry}min)`);
-            
-            // Use direct refresh function instead of API call for better error handling
-            try {
-              // Use helper function to resolve module path (handles Railway's /app/app/ issue)
-              // Use require() instead of import() because require() handles absolute paths better
-              const modulePath = resolveModulePath('auth-workers/utils/tokenRefreshService');
-              const tokenRefreshService = require(modulePath);
-              const { refreshAuthWorkerToken, getRefreshFailureStats } = tokenRefreshService;
-              
-              // Check failure stats before refresh
-              const failureStats = getRefreshFailureStats(sessionMeta.sessionId);
-              if (failureStats.needsAttention) {
-                console.warn(`[Server] ⚠️ Session ${sessionMeta.sessionId.substring(0, 8)}... has ${failureStats.consecutiveFailures} consecutive failures`);
-                console.warn(`[Server] Last error: ${failureStats.lastFailureError}`);
-              }
-              
-              // Refresh with retry logic (built into refreshAuthWorkerToken)
-              const refreshResult = await refreshAuthWorkerToken(sessionMeta.sessionId);
-              
-              if (refreshResult.success && refreshResult.newToken) {
-                const newExpiresAt = refreshResult.expiresAt;
-                const newTimeUntilExpiry = newExpiresAt ? newExpiresAt - Date.now() : null;
-                const newMinutesUntilExpiry = newTimeUntilExpiry ? Math.floor(newTimeUntilExpiry / 1000 / 60) : null;
-                
-                console.log(`[Server] ✅ Token refreshed for ${sessionMeta.targetDomain || sessionMeta.sessionId}`, {
-                  expiresAt: newExpiresAt ? new Date(newExpiresAt).toISOString() : 'unknown',
-                  expiresIn: newMinutesUntilExpiry ? `${newMinutesUntilExpiry}min` : 'unknown',
-                  retried: refreshResult.retried ? 'yes' : 'no',
-                });
-                
-                // Check if new token is still in urgent zone
-                if (newTimeUntilExpiry && newTimeUntilExpiry > URGENT_REFRESH_THRESHOLD_MS) {
-                  // Token is now safe, no longer urgent
-                } else if (newTimeUntilExpiry) {
-                  urgentModeActive = true; // Still urgent
-                }
-              } else {
-                const errorMsg = refreshResult.error || 'Unknown error';
-                console.error(`[Server] ❌ Token refresh failed for ${sessionMeta.targetDomain || sessionMeta.sessionId}:`, errorMsg);
-                
-                // CRITICAL ALERTS based on urgency level
-                if (isExpired) {
-                  console.error(`[Server] 🚨🚨🚨 CRITICAL ALERT 🚨🚨🚨`);
-                  console.error(`[Server] 🚨 Token is EXPIRED and refresh FAILED`);
-                  console.error(`[Server] 🚨 Session: ${sessionMeta.targetDomain || sessionMeta.sessionId}`);
-                  console.error(`[Server] 🚨 Error: ${errorMsg}`);
-                  console.error(`[Server] 🚨 DNC scrub API calls will fail until re-authenticated`);
-                  console.error(`[Server] 🚨 ACTION REQUIRED: Create new auth worker from fresh HAR file`);
-                  console.error(`[Server] 🚨🚨🚨 END CRITICAL ALERT 🚨🚨🚨`);
-                } else if (timeUntilExpiry < 30 * 60 * 1000) {
-                  // Less than 30 minutes - very high urgency
-                  console.error(`[Server] ⚠️⚠️ HIGH URGENCY ALERT ⚠️⚠️`);
-                  console.error(`[Server] ⚠️ Token expires in ${minutesUntilExpiry} minutes and refresh FAILED`);
-                  console.error(`[Server] ⚠️ Session: ${sessionMeta.targetDomain || sessionMeta.sessionId}`);
-                  console.error(`[Server] ⚠️ Error: ${errorMsg}`);
-                  console.error(`[Server] ⚠️ Will retry in 1 minute (urgent mode active)`);
-                  urgentModeActive = true;
-                } else if (isUrgent) {
-                  // 30-60 minutes - elevated urgency
-                  console.warn(`[Server] ⚠️ ELEVATED ALERT: Token expires in ${minutesUntilExpiry} minutes and refresh failed`);
-                  console.warn(`[Server] ⚠️ Session: ${sessionMeta.targetDomain || sessionMeta.sessionId}`);
-                  urgentModeActive = true;
-                }
-              }
-            } catch (error) {
-              console.error(`[Server] ❌ Token refresh error for ${sessionMeta.targetDomain || sessionMeta.sessionId}:`, error.message);
-              console.error(`[Server] Stack:`, error.stack);
-              
-              // Critical alerts for exceptions too
-              if (isExpired) {
-                console.error(`[Server] 🚨 CRITICAL: Token is EXPIRED and refresh threw exception`);
-                console.error(`[Server] 🚨 ACTION REQUIRED: Create new auth worker from fresh HAR file`);
-              } else if (isUrgent) {
-                console.error(`[Server] ⚠️ URGENT: Token expires in ${minutesUntilExpiry}min and refresh threw exception`);
-                urgentModeActive = true;
-              }
-            }
-          } else {
-            // Token not in refresh window yet, but check if it's approaching urgent
-            if (isUrgent) {
-              console.log(`[Server] 📊 Token for ${sessionMeta.targetDomain || sessionMeta.sessionId} expires in ${minutesUntilExpiry}min (monitoring)`);
-            }
-          }
-        } catch (error) {
-          console.error(`[Server] Error checking session ${sessionMeta.sessionId}:`, error.message);
-        }
-      }
-      
-      // Reset urgent mode if no tokens are urgent
-      // (will be set to true above if any token is urgent)
-    } catch (error) {
-      // Handle module import errors specifically
-      if (error.code === 'MODULE_NOT_FOUND' || error.message.includes('Cannot find module')) {
-        console.error('[Server] Failed to require authWorkerServerStorage:', error.message);
-        if (error.message.includes('Tried:')) {
-          // Error from resolveModulePath - already includes attempted paths
-          console.error('[Server] Token refresh job will be disabled - module not available');
-        } else {
-          // Generic module not found error
-          console.error('[Server] Token refresh job will be disabled - module not available');
-          console.error('[Server] This may be expected in development or if auth workers are not configured');
-        }
-      } else {
-        console.error('[Server] Error in token refresh job:', error.message);
-        if (error.stack) {
-          console.error('[Server] Stack:', error.stack);
-        }
-      }
-    }
-    
-    return { urgentModeActive };
+  const REFRESH_CHECK_INTERVAL_MS = 5 * 60 * 1000;
+  const URGENT_CHECK_INTERVAL_MS = 1 * 60 * 1000;
+  const url = `http://127.0.0.1:${port}/api/auth-worker/cron-refresh`;
+  const headers = { 'Content-Type': 'application/json' };
+  if (process.env.CRON_SECRET) {
+    headers['Authorization'] = `Bearer ${process.env.CRON_SECRET}`;
   }
 
-  // Track if any tokens need urgent attention
-  let urgentModeActive = false;
+  let lastUrgent = false;
+  let mainInterval = null;
   let urgentInterval = null;
 
-  // Wrapper that also checks for urgent tokens
-  async function checkTokensAndAdjustInterval() {
-    const result = await checkAndRefreshTokens();
-    
-    // checkAndRefreshTokens will set urgentModeActive if any tokens are within 1 hour
-    if (urgentModeActive && !urgentInterval) {
-      console.log('[Server] ⚠️ URGENT MODE: Switching to 1-minute checks due to near-expiry tokens');
-      urgentInterval = setInterval(checkAndRefreshTokens, URGENT_CHECK_INTERVAL_MS);
-    } else if (!urgentModeActive && urgentInterval) {
-      console.log('[Server] ✅ NORMAL MODE: Switching back to 5-minute checks');
-      clearInterval(urgentInterval);
-      urgentInterval = null;
+  async function fetchCronRefresh() {
+    const res = await fetch(url, { method: 'POST', headers });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      console.error('[Server] Cron-refresh request failed:', res.status, data.error || res.statusText);
+      return lastUrgent;
+    }
+    if (data.ok && typeof data.urgent === 'boolean') {
+      lastUrgent = data.urgent;
+    }
+    return lastUrgent;
+  }
+
+  async function runCheckAndAdjustInterval() {
+    try {
+      const urgent = await fetchCronRefresh();
+      if (urgent && !urgentInterval) {
+        console.log('[Server] ⚠️ URGENT MODE: Switching to 1-minute checks due to near-expiry tokens');
+        urgentInterval = setInterval(runCheckAndAdjustInterval, URGENT_CHECK_INTERVAL_MS);
+      } else if (!urgent && urgentInterval) {
+        console.log('[Server] ✅ NORMAL MODE: Switching back to 5-minute checks');
+        clearInterval(urgentInterval);
+        urgentInterval = null;
+      }
+    } catch (err) {
+      console.error('[Server] Token refresh fetch error:', err.message);
     }
   }
 
-  // IMMEDIATE check on startup - MUST complete before starting intervals
-  // This ensures tokens are refreshed before any API calls can be made
   console.log('[Server] 🚀 Running IMMEDIATE token refresh check on startup...');
-  
   (async () => {
     try {
-      await checkTokensAndAdjustInterval();
+      await runCheckAndAdjustInterval();
       console.log('[Server] ✅ Startup token check completed');
     } catch (err) {
       console.error('[Server] ⚠️ Startup token check failed:', err.message);
-      // Continue anyway - intervals will handle subsequent checks
     }
-    
-    // Set up regular interval (5 minutes) AFTER startup check completes
-    const interval = setInterval(() => {
-      checkTokensAndAdjustInterval();
-    }, REFRESH_CHECK_INTERVAL_MS);
-
+    mainInterval = setInterval(runCheckAndAdjustInterval, REFRESH_CHECK_INTERVAL_MS);
     console.log('[Server] ✅ Token refresh job started (checks every 5 minutes, 1 minute when urgent)');
 
-    // Cleanup on exit - clear BOTH intervals
     if (process.on) {
       process.on('SIGINT', () => {
-        clearInterval(interval);
+        if (mainInterval) clearInterval(mainInterval);
         if (urgentInterval) clearInterval(urgentInterval);
       });
       process.on('SIGTERM', () => {
-        clearInterval(interval);
+        if (mainInterval) clearInterval(mainInterval);
         if (urgentInterval) clearInterval(urgentInterval);
       });
     }
@@ -470,12 +203,8 @@ function startTokenRefreshJob() {
 }
 
 app.prepare().then(async () => {
-  // Initialize auth workers before starting server (don't block startup)
   initializeAuthWorkers();
-  
-  // Start automatic token refresh job
-  startTokenRefreshJob();
-  
+
   createServer(async (req, res) => {
     try {
       const parsedUrl = parse(req.url, true);
@@ -488,6 +217,7 @@ app.prepare().then(async () => {
   }).listen(port, hostname, (err) => {
     if (err) throw err;
     console.log(`> Ready on http://${hostname}:${port}`);
+    startTokenRefreshJob(port);
   });
 }).catch((err) => {
   console.error('Failed to start server:', err);
