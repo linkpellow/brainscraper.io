@@ -117,15 +117,20 @@ function detectClockSkew(session: PersistedAuthWorkerState): number {
  */
 function extractJWTExpiration(token: string): number | null {
   try {
+    const payload = decodeJwtPayload(token);
+    const exp = payload?.exp;
+    if (typeof exp === 'number') return exp * 1000;
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+function decodeJwtPayload(token: string): Record<string, unknown> | null {
+  try {
     const parts = token.split('.');
     if (parts.length !== 3) return null;
-    
-    const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString());
-    if (payload.exp) {
-      // JWT exp is in seconds, convert to milliseconds
-      return payload.exp * 1000;
-    }
-    return null;
+    return JSON.parse(Buffer.from(parts[1], 'base64url').toString()) as Record<string, unknown>;
   } catch {
     return null;
   }
@@ -154,6 +159,47 @@ function getRefreshMethod(session: PersistedAuthWorkerState): 'oauth' | 'bearer'
   
   // Default to bearer for custom implementations
   return 'bearer';
+}
+
+const CHANGECONTEXT_URL = 'https://api-identity-agent.ushadvisors.com/account/changecontext';
+
+/**
+ * Fallback when /account/refresh returns 401 with expired token: call /account/changecontext.
+ * Returns same shape as refreshBearerToken or null on failure.
+ */
+async function tryChangecontext(
+  session: PersistedAuthWorkerState
+): Promise<{ access_token: string; expires_in?: number; expires_at?: number } | null> {
+  const accessToken = session.step2.extractedVars.access_token;
+  if (!accessToken) return null;
+  const payload = decodeJwtPayload(accessToken);
+  const agentNumber = (payload?.AgentNumber as string) || '00044447';
+  const res = await fetch(CHANGECONTEXT_URL, {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json, text/plain, */*',
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+      Origin: 'https://agent.ushadvisors.com',
+      Referer: 'https://agent.ushadvisors.com/',
+      'User-Agent':
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36',
+    },
+    body: JSON.stringify({ agentNumber }),
+  });
+  if (!res.ok) return null;
+  const data = (await res.json()) as { tokenResult?: { access_token?: string; expires_in?: number } };
+  const tr = data?.tokenResult;
+  const newToken = tr?.access_token;
+  if (!newToken) return null;
+  const expiresIn = tr?.expires_in;
+  const expiresAt =
+    typeof expiresIn === 'number'
+      ? expiresIn > 1e9
+        ? expiresIn * 1000
+        : Date.now() + expiresIn * 1000
+      : undefined;
+  return { access_token: newToken, expires_in: expiresIn, expires_at: expiresAt };
 }
 
 /**
@@ -467,7 +513,27 @@ export async function refreshAuthWorkerToken(
           if (!refreshUrl) {
             return { success: false, error: 'Bearer token refresh requires refresh_url' };
           }
-          refreshResult = await refreshBearerToken(session, refreshUrl);
+          try {
+            refreshResult = await refreshBearerToken(session, refreshUrl);
+          } catch (e) {
+            const msg = (e instanceof Error ? e.message : String(e)) ?? '';
+            const is401Expired =
+              (msg.includes('401') || msg.includes('403')) &&
+              msg.includes('expired') &&
+              msg.includes('does not accept');
+            const isUshadvisors = refreshUrl.includes('api-identity-agent.ushadvisors.com');
+            if (is401Expired && isUshadvisors) {
+              const fallback = await tryChangecontext(session);
+              if (fallback) {
+                console.log('[TokenRefreshService] refresh 401+expired; changecontext fallback succeeded');
+                refreshResult = fallback;
+              } else {
+                throw e;
+              }
+            } else {
+              throw e;
+            }
+          }
         }
 
         const { access_token: newToken, expires_at, expires_in } = refreshResult;
