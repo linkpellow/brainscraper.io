@@ -121,8 +121,17 @@ export default function EnrichedLeadsPage() {
       return name.length > 0 && phone.length >= 10;
     };
 
+    // AbortController to cancel in-flight requests
+    let abortController: AbortController | null = null;
+
     // Load enriched leads from localStorage and API
-    const loadLeads = async () => {
+    const loadLeads = async (isRetry: boolean = false) => {
+      // Cancel any previous in-flight request
+      if (abortController) {
+        abortController.abort();
+      }
+      abortController = new AbortController();
+
       try {
         const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
         
@@ -146,66 +155,139 @@ export default function EnrichedLeadsPage() {
         }
         
         // Always load from API to get latest server data
-        try {
-          const response = await fetch(`/api/load-enriched-results?t=${Date.now()}`);
-          if (response.ok) {
-            const result = await response.json();
-            console.log(`📡 [ENRICHED_PAGE] API response:`, { success: result.success, leadsCount: result.leads?.length, source: result.source, stats: result.stats });
-            if (result.success && Array.isArray(result.leads) && result.leads.length > 0) {
-              // Filter to only valid leads (API already filters, but double-check)
-              const validLeads = result.leads.filter(isValidLead);
-              
-              // Debug: Check DNC status in loaded leads
-              const leadsWithDNC = validLeads.filter((l: LeadSummary) => l.dncStatus && l.dncStatus !== 'UNKNOWN');
-              console.log(`📊 [ENRICHED_PAGE] Loaded leads DNC status: ${leadsWithDNC.length} with DNC status (YES/NO) out of ${validLeads.length} total`);
-              if (leadsWithDNC.length > 0) {
-                const dncCount = leadsWithDNC.filter((l: LeadSummary) => l.dncStatus === 'YES').length;
-                const okCount = leadsWithDNC.filter((l: LeadSummary) => l.dncStatus === 'NO').length;
-                console.log(`   DNC breakdown: ${dncCount} DNC, ${okCount} OK`);
+        const MAX_RETRIES = 3;
+        const BASE_DELAY_MS = 1000; // 1 second
+        const TIMEOUT_MS = 30000; // 30 seconds timeout
+        
+        let retries = 0;
+        while (retries <= MAX_RETRIES) {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
+          
+          // Merge with main abort controller
+          abortController.signal.addEventListener('abort', () => controller.abort());
+
+          try {
+            const response = await fetch(`/api/load-enriched-results?t=${Date.now()}`, {
+              signal: controller.signal,
+              headers: {
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache',
+                'Expires': '0',
+              },
+            });
+            clearTimeout(timeoutId);
+
+            if (response.ok) {
+              // Read response as text first to handle incomplete JSON gracefully
+              const text = await response.text();
+              if (!text || text.trim().length === 0) {
+                throw new Error('Empty response from server');
               }
-              
-              // Add today's date to all leads that don't have dateScraped
-              // CRITICAL: Preserve all fields including DNC status
-              const leadsWithDate = validLeads.map((lead: LeadSummary) => ({
-                ...lead,
-                dateScraped: lead.dateScraped || today,
-                // Ensure DNC status is preserved
-                dncStatus: lead.dncStatus || 'UNKNOWN',
-                dncLastChecked: lead.dncLastChecked,
-                canContact: lead.canContact,
-                dncReason: lead.dncReason,
-              }));
-              setLeads(leadsWithDate);
-              // Update localStorage with fresh filtered data and dates
-              localStorage.setItem('enrichedLeads', JSON.stringify(leadsWithDate));
-              console.log(`✅ Loaded ${leadsWithDate.length} valid leads from ${result.source} (API had ${result.leads.length} total)`);
-              setLoading(false);
-              return;
-            } else if (localStorageLeads.length > 0) {
-              // Fallback to localStorage if API returns empty but we have localStorage data
-              console.log(`⚠️ API returned no leads, using ${localStorageLeads.length} leads from localStorage`);
-              const leadsWithDate = localStorageLeads.map((lead: LeadSummary) => ({
-                ...lead,
-                dateScraped: lead.dateScraped || today
-              }));
-              setLeads(leadsWithDate);
-              setLoading(false);
-              return;
+
+              let result;
+              try {
+                result = JSON.parse(text);
+              } catch (jsonError: any) {
+                // JSON parsing error - likely incomplete response due to connection reset
+                console.warn(`⚠️ [ENRICHED_PAGE] JSON parse error (incomplete response):`, jsonError.message);
+                if (retries < MAX_RETRIES) {
+                  retries++;
+                  const delay = BASE_DELAY_MS * Math.pow(2, retries - 1); // Exponential backoff
+                  console.log(`🔄 [ENRICHED_PAGE] Retrying after ${delay}ms... (${retries}/${MAX_RETRIES})`);
+                  await new Promise(resolve => setTimeout(resolve, delay));
+                  continue;
+                }
+                // Max retries reached, fallback to localStorage
+                throw new Error('Failed to parse JSON after retries');
+              }
+
+              console.log(`📡 [ENRICHED_PAGE] API response:`, { success: result.success, leadsCount: result.leads?.length, source: result.source, stats: result.stats });
+              if (result.success && Array.isArray(result.leads) && result.leads.length > 0) {
+                // Filter to only valid leads (API already filters, but double-check)
+                const validLeads = result.leads.filter(isValidLead);
+                
+                // Debug: Check DNC status in loaded leads
+                const leadsWithDNC = validLeads.filter((l: LeadSummary) => l.dncStatus && l.dncStatus !== 'UNKNOWN');
+                console.log(`📊 [ENRICHED_PAGE] Loaded leads DNC status: ${leadsWithDNC.length} with DNC status (YES/NO) out of ${validLeads.length} total`);
+                if (leadsWithDNC.length > 0) {
+                  const dncCount = leadsWithDNC.filter((l: LeadSummary) => l.dncStatus === 'YES').length;
+                  const okCount = leadsWithDNC.filter((l: LeadSummary) => l.dncStatus === 'NO').length;
+                  console.log(`   DNC breakdown: ${dncCount} DNC, ${okCount} OK`);
+                }
+                
+                // Add today's date to all leads that don't have dateScraped
+                // CRITICAL: Preserve all fields including DNC status
+                const leadsWithDate = validLeads.map((lead: LeadSummary) => ({
+                  ...lead,
+                  dateScraped: lead.dateScraped || today,
+                  // Ensure DNC status is preserved
+                  dncStatus: lead.dncStatus || 'UNKNOWN',
+                  dncLastChecked: lead.dncLastChecked,
+                  canContact: lead.canContact,
+                  dncReason: lead.dncReason,
+                }));
+                setLeads(leadsWithDate);
+                // Update localStorage with fresh filtered data and dates
+                localStorage.setItem('enrichedLeads', JSON.stringify(leadsWithDate));
+                console.log(`✅ Loaded ${leadsWithDate.length} valid leads from ${result.source} (API had ${result.leads.length} total)`);
+                setLoading(false);
+                return; // Success, exit retry loop
+              } else if (localStorageLeads.length > 0) {
+                // Fallback to localStorage if API returns empty but we have localStorage data
+                console.log(`⚠️ API returned no leads, using ${localStorageLeads.length} leads from localStorage`);
+                const leadsWithDate = localStorageLeads.map((lead: LeadSummary) => ({
+                  ...lead,
+                  dateScraped: lead.dateScraped || today
+                }));
+                setLeads(leadsWithDate);
+                setLoading(false);
+                return;
+              }
+            } else {
+              // Response not OK, but not a network error - break retry loop
+              console.warn(`⚠️ [ENRICHED_PAGE] API response not OK (status: ${response.status}), not retrying.`);
+              break;
+            }
+          } catch (error: any) {
+            clearTimeout(timeoutId);
+            
+            // Check if request was aborted
+            if (error.name === 'AbortError' || (abortController && abortController.signal.aborted)) {
+              console.log(`[ENRICHED_PAGE] Request aborted`);
+              return; // Don't retry if aborted
+            }
+
+            if (error instanceof TypeError && error.message === 'Failed to fetch') {
+              console.warn(`⚠️ [ENRICHED_PAGE] Network error (Failed to fetch). Retrying... (${retries + 1}/${MAX_RETRIES})`);
+            } else if (error.message.includes('ECONNRESET') || error.message.includes('EPIPE')) {
+              console.warn(`⚠️ [ENRICHED_PAGE] Connection reset error. Retrying... (${retries + 1}/${MAX_RETRIES})`);
+            } else if (error.message.includes('JSON') || error.message.includes('parse')) {
+              console.warn(`⚠️ [ENRICHED_PAGE] JSON parsing error. Retrying... (${retries + 1}/${MAX_RETRIES})`);
+            } else {
+              console.error(`❌ [ENRICHED_PAGE] Error loading leads:`, error);
+              // For other errors, don't retry
+              break;
+            }
+
+            retries++;
+            if (retries <= MAX_RETRIES) {
+              const delay = BASE_DELAY_MS * Math.pow(2, retries - 1); // Exponential backoff
+              await new Promise(resolve => setTimeout(resolve, delay));
             }
           }
-        } catch (apiError) {
-          console.error('❌ Could not load from API:', apiError);
-          // Fallback to localStorage if API fails
-          if (localStorageLeads.length > 0) {
-            console.log(`⚠️ API failed, using ${localStorageLeads.length} leads from localStorage`);
-            const leadsWithDate = localStorageLeads.map((lead: LeadSummary) => ({
-              ...lead,
-              dateScraped: lead.dateScraped || today
-            }));
-            setLeads(leadsWithDate);
-            setLoading(false);
-            return;
-          }
+        }
+
+        // If we get here, all retries failed - fallback to localStorage
+        if (localStorageLeads.length > 0) {
+          console.log(`⚠️ API failed after retries, using ${localStorageLeads.length} leads from localStorage`);
+          const leadsWithDate = localStorageLeads.map((lead: LeadSummary) => ({
+            ...lead,
+            dateScraped: lead.dateScraped || today
+          }));
+          setLeads(leadsWithDate);
+          setLoading(false);
+          return;
         }
         
         setLeads([]);
@@ -245,13 +327,23 @@ export default function EnrichedLeadsPage() {
     window.addEventListener('storage', handleStorageChange);
     window.addEventListener('enrichedLeadsUpdated', handleCustomStorage);
     
-    // Poll for updates (fallback for same-window updates)
-    const interval = setInterval(loadLeads, 2000);
+    // Poll for updates (reduced frequency to prevent connection exhaustion)
+    // Only poll when page is visible to reduce unnecessary requests
+    const POLL_INTERVAL_MS = 30000; // 30 seconds (reduced from 2 seconds)
+    const interval = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        loadLeads(false);
+      }
+    }, POLL_INTERVAL_MS);
     
     return () => {
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('enrichedLeadsUpdated', handleCustomStorage);
       clearInterval(interval);
+      // Cancel any in-flight request on unmount
+      if (abortController) {
+        abortController.abort();
+      }
     };
   }, []); // Empty dependency array - only run on mount
 
