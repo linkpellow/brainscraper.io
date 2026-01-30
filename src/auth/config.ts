@@ -3,4 +3,4 @@ export {
   CHECK_INTERVAL_MS,
   URGENT_CHECK_MS,
   allowExpiredRefresh,
-} from './constants.js';
+} from './constants';
