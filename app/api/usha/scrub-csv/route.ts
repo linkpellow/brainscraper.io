@@ -21,13 +21,12 @@ interface DNCResult {
 }
 
 /**
- * Scrub a single phone number using the USHA API with automatic token refresh
+ * Scrub a single phone number using the USHA API with a manual token.
  */
 async function scrubPhoneNumber(
   phone: string,
   token: string,
-  agentNumber: string = DEFAULT_AGENT_NUMBER,
-  getFreshToken?: () => Promise<string>
+  agentNumber: string = DEFAULT_AGENT_NUMBER
 ): Promise<DNCResult> {
   // Clean phone number - remove all non-digits
   const cleanedPhone = phone.replace(/\D/g, '');
@@ -164,10 +163,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create a function to get fresh token (for retry on 401/403)
-    // This will update the token variable for subsequent batches
-    const getFreshToken = undefined;
-
     // Parse CSV
     console.log(`📖 [DNC CSV SCRUB] Parsing CSV file...`);
     const csvText = await file.text();
@@ -214,13 +209,13 @@ export async function POST(request: NextRequest) {
       
       // Process batch in parallel
       const batchPromises = batch.map(async ({ row, phone }) => {
-        // Use current token, but allow refresh on 401/403
+        // Use current token for this batch
         if (!token) {
           throw new Error('Token is required for DNC scrubbing');
         }
         // TypeScript: token is guaranteed to be string here due to check above
         const currentToken: string = token;
-        const dncResult = await scrubPhoneNumber(phone, currentToken, DEFAULT_AGENT_NUMBER, getFreshToken);
+        const dncResult = await scrubPhoneNumber(phone, currentToken, DEFAULT_AGENT_NUMBER);
         
         // Add DNC status to row
         (row as any).dncStatus = dncResult.isDoNotCall ? 'DNC' : 'OK';
