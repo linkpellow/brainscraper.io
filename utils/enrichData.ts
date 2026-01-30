@@ -6,7 +6,7 @@ import { ParsedData } from './parseFile';
 import { isLeadProcessed, saveEnrichedLeadImmediate, getLeadKey } from './incrementalSave';
 import { extractLeadSummary } from './extractLeadSummary';
 import { callAPIWithConfig } from './apiToggleMiddleware';
-import { getDncToken } from './dncToken';
+import { getDncToken } from '@/server/settings/dncToken';
 import { incrementMetric } from './dncMetrics';
 import { getCognitoIdToken, clearCognitoTokenCache } from './cognitoAuth';
 import type { EnrichmentStation } from './enrichmentStations';
@@ -1248,14 +1248,14 @@ async function checkDNCStatus(
       return { isDNC: false, canContact: true, reason: 'Invalid phone number format' };
     }
     
-    const token = getDncToken();
+    const token = await getDncToken();
     if (!token) {
       incrementMetric('dnc.token.missing');
       console.info('[DNC_CHECK] DNC token missing; skip DNC check.');
       return { isDNC: false, canContact: true, reason: 'DNC token not configured' };
     }
     
-    // Call USHA DNC API with automatic token refresh
+    // Call USHA DNC API with manual token
     console.log(`[DNC_CHECK] 📞 Calling DNC API for phone: ${cleanedPhone}`);
     const response = await callDNCAPI(cleanedPhone, token);
     

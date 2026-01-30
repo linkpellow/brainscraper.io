@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDncToken } from '@/utils/dncToken';
+import { getDncToken } from '@/server/settings/dncToken';
 import { incrementMetric } from '@/utils/dncMetrics';
+import { extractBearerToken } from '@/utils/auth/extractBearerToken';
 
 import Papa from 'papaparse';
 
@@ -135,6 +136,10 @@ export async function POST(request: NextRequest) {
 
   try {
     const providedToken = extractBearerToken(request);
+    if (providedToken) {
+      console.info('[DNC CSV SCRUB] Authorization header provided; ignoring in favor of manual DNC token.');
+    }
+
     const formData = await request.formData();
     const file = formData.get('file') as File;
 
@@ -152,7 +157,7 @@ export async function POST(request: NextRequest) {
 
     console.log(`📁 [DNC CSV SCRUB] File: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`);
 
-    const token = getDncToken();
+    const token = await getDncToken();
     
     if (!token) {
       incrementMetric('dnc.token.missing');

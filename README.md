@@ -2,14 +2,23 @@
 
 Internal tooling for lead enrichment, scrubbing, and operational workflows.
 
-## Manual DNC JWT
+## Manual DNC token
 
-This app is single-user, so the DNC scrubbing token UI stores your JWT in `localStorage` (key: `dnc.jwt`) on your own browser only. The token is **unmasked** and never sent to analytics or logs. Clear it any time via the **Clear token** button on `/settings/dnc`.
+DNC scrubbing uses a **manually managed** JWT stored in server settings (persisted in `data/settings.json`). The Lead Generation UI lets you save and test the token without ever displaying the full value—only a masked preview is shown.
 
-To enable/disable the settings UI, set:
+### Setup
 
-```bash
-NEXT_PUBLIC_ENABLE_DNC_TOKEN_UI=true
+1. Navigate to **Lead Generation → Settings**.
+2. Paste the DNC JWT into the token field.
+3. Click **Save Token** and then **Test Connection**.
+
+If the token is missing or invalid, DNC endpoints respond with:
+
+```
+DNC token not configured. Add token in Lead Generation > Settings.
 ```
 
-When enabled, DNC scrubbing requests automatically attach `Authorization: Bearer <token>` for API calls.
+### Design notes
+
+- Auto-refresh is **removed by design**. Update the token manually whenever it expires.
+- Tokens are masked in responses/logs (only the last 4 characters are shown).

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDncToken } from '@/utils/dncToken';
+import { getDncToken } from '@/server/settings/dncToken';
 import { incrementMetric } from '@/utils/dncMetrics';
 
 function getCorsHeaders(origin: string | null) {
@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
     
     console.log(`📞 [DNC SCRUB] Received ${phoneNumbers?.length || 0} phone numbers to scrub`);
     
-    const token = getDncToken();
+    const token = await getDncToken();
     
     if (!token) {
       incrementMetric('dnc.token.missing');

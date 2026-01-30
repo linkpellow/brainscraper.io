@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDncToken } from '@/utils/dncToken';
+import { getDncToken } from '@/server/settings/dncToken';
 import { incrementMetric } from '@/utils/dncMetrics';
 
 /**
@@ -12,7 +12,7 @@ import { incrementMetric } from '@/utils/dncMetrics';
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
-    const token = getDncToken();
+    const token = await getDncToken();
     
     if (!token) {
       incrementMetric('dnc.token.missing');

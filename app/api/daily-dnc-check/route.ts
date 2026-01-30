@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as fs from 'fs';
 import * as path from 'path';
-import { getDncToken } from '@/utils/dncToken';
+import { getDncToken } from '@/server/settings/dncToken';
 import { incrementMetric } from '@/utils/dncMetrics';
 import { getDataDirectory, getDataFilePath, safeWriteFile, safeReadFile, ensureDataDirectory } from '@/utils/dataDirectory';
 import { withLock } from '@/utils/fileLock';
+import { extractBearerToken } from '@/utils/auth/extractBearerToken';
  
 
 /**
@@ -39,8 +40,8 @@ export async function GET(request: NextRequest) {
   console.log('🌅 [DAILY_DNC] ============================================\n');
   
   // Verify this is a cron job request (optional security check)
-  const authHeader = request.headers.get('authorization');
-  if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  const authHeader = extractBearerToken(request);
+  if (process.env.CRON_SECRET && authHeader !== process.env.CRON_SECRET) {
     console.log('⚠️ [DAILY_DNC] Unauthorized cron request');
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -106,7 +107,7 @@ export async function GET(request: NextRequest) {
     
     // Step 3: Get manual DNC token
     console.log('🔑 [DAILY_DNC] Step 3: Getting manual DNC token...');
-    const token = getDncToken();
+    const token = await getDncToken();
     if (!token) {
       incrementMetric('dnc.token.missing');
       throw new Error('DNC token not configured. Add token in Lead Generation > Settings.');

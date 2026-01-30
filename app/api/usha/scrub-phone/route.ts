@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDncToken } from '@/utils/dncToken';
+import { getDncToken } from '@/server/settings/dncToken';
 import { incrementMetric } from '@/utils/dncMetrics';
 
 // CORS headers helper - allows requests from any origin
@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
     const phone = searchParams.get('phone');
     const currentContextAgentNumber = searchParams.get('currentContextAgentNumber') || '00044447';
     
-    const token = getDncToken();
+    const token = await getDncToken();
     
     const origin = request.headers.get('origin');
     

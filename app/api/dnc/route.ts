@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDncToken } from '@/utils/dncToken';
+import { getDncToken } from '@/server/settings/dncToken';
 import { incrementMetric } from '@/utils/dncMetrics';
 
 function getCorsHeaders(origin: string | null) {
@@ -18,7 +18,7 @@ export async function OPTIONS(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   const origin = request.headers.get('origin');
-  const token = getDncToken();
+  const token = await getDncToken();
   if (!token) {
     incrementMetric('dnc.token.missing');
     return NextResponse.json(
@@ -44,6 +44,14 @@ export async function POST(request: NextRequest) {
     },
     body: JSON.stringify(body),
   });
+
+  if (response.status === 401 || response.status === 403) {
+    incrementMetric('dnc.api.unauthorized');
+    return NextResponse.json(
+      { error: 'DNC request unauthorized (invalid manual token). Update token in Lead Generation settings.' },
+      { status: 401, headers: getCorsHeaders(origin) },
+    );
+  }
 
   const responseBody = await response.text();
   return new NextResponse(responseBody, {

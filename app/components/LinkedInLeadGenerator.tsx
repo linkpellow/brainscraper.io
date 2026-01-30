@@ -274,8 +274,10 @@ export default function LinkedInLeadGenerator() {
       try {
         const response = await fetch('/api/settings/dnc/token');
         const data = await response.json();
-        if (data.success) {
+        if (data.configured) {
           setDncTokenMasked(data.masked ?? null);
+        } else {
+          setDncTokenMasked(null);
         }
       } catch (error) {
         console.warn('[LeadGen] Failed to load DNC token metadata:', error);
@@ -294,7 +296,7 @@ export default function LinkedInLeadGenerator() {
         body: JSON.stringify({ token: dncTokenInput }),
       });
       const data = await response.json();
-      if (!response.ok || !data.success) {
+      if (!response.ok || !data.ok) {
         throw new Error(data.error || 'Failed to save DNC token');
       }
       setDncTokenMasked(data.masked ?? null);
@@ -311,10 +313,10 @@ export default function LinkedInLeadGenerator() {
     try {
       setIsTestingDncToken(true);
       setDncTokenStatus(null);
-      const response = await fetch('/api/settings/dnc/token/test', { method: 'POST' });
+      const response = await fetch('/api/settings/dnc/test', { method: 'POST' });
       const data = await response.json();
-      if (!response.ok || !data.success) {
-        throw new Error(data.error || 'DNC token test failed');
+      if (!response.ok || !data.ok) {
+        throw new Error(data.reason || 'DNC token test failed');
       }
       setDncTokenStatus('DNC token is valid.');
     } catch (error) {
