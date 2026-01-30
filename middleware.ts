@@ -26,6 +26,8 @@ export function middleware(request: NextRequest) {
   return NextResponse.next();
 }
 
+// TODO: Replace middleware with the recommended proxy-based alternative once Next.js deprecations
+// are addressed, keeping the same auth gating behavior.
 export const config = {
   matcher: [
     /*
@@ -38,4 +40,3 @@ export const config = {
     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 };
-

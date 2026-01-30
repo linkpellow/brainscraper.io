@@ -6,7 +6,8 @@ import { ParsedData } from './parseFile';
 import { isLeadProcessed, saveEnrichedLeadImmediate, getLeadKey } from './incrementalSave';
 import { extractLeadSummary } from './extractLeadSummary';
 import { callAPIWithConfig } from './apiToggleMiddleware';
-import { getUshaToken, clearTokenCache } from './getUshaToken';
+import { getDncToken } from './dncToken';
+import { incrementMetric } from './dncMetrics';
 import { getCognitoIdToken, clearCognitoTokenCache } from './cognitoAuth';
 import type { EnrichmentStation } from './enrichmentStations';
 import { getDefaultStationConfig } from './enrichmentStations';
@@ -1190,7 +1191,7 @@ function shouldContinueEnrichment(
 }
 
 /**
- * Helper: Makes DNC API call with automatic token refresh on auth failure
+ * Helper: Makes DNC API call with manual token (no refresh)
  * 
  * Uses USHA DNC API which accepts phone numbers directly and requires USHA JWT tokens.
  * 
@@ -1209,7 +1210,7 @@ function shouldContinueEnrichment(
  *   }
  * }
  * 
- * Automatic refresh: On 401/403, refreshes USHA JWT token and retries automatically.
+ * Manual token only: No refresh attempts.
  */
 async function callDNCAPI(phone: string, token: string): Promise<Response> {
   const USHA_DNC_API_BASE = 'https://api-business-agent.ushadvisors.com';
@@ -1225,26 +1226,7 @@ async function callDNCAPI(phone: string, token: string): Promise<Response> {
     'Content-Type': 'application/json',
   };
   
-  let response = await fetch(url, { method: 'GET', headers });
-  
-  // Retry once on auth failure (automatic USHA token refresh)
-  if (response.status === 401 || response.status === 403) {
-    console.log('[DNC_CHECK] Token expired, refreshing USHA token...');
-    clearTokenCache();
-    
-    try {
-      // Get fresh USHA JWT token
-      const freshUshaToken = await getUshaToken(null, true);
-      if (freshUshaToken) {
-        headers = { ...headers, 'Authorization': `Bearer ${freshUshaToken}` };
-        response = await fetch(url, { method: 'GET', headers });
-      }
-    } catch (e) {
-      console.log('[DNC_CHECK] USHA token refresh failed:', e);
-    }
-  }
-  
-  return response;
+  return await fetch(url, { method: 'GET', headers });
 }
 
 /**
@@ -1266,32 +1248,21 @@ async function checkDNCStatus(
       return { isDNC: false, canContact: true, reason: 'Invalid phone number format' };
     }
     
-    // Get USHA JWT token (required for USHA DNC API)
-    let token: string | null = null;
-    try {
-      console.log(`[DNC_CHECK] 🔑 Attempting to get USHA token...`);
-      token = await getUshaToken();
-      if (token) {
-        console.log(`[DNC_CHECK] ✅ Got USHA token (length: ${token.length}, first 20 chars: ${token.substring(0, 20)}...)`);
-      } else {
-        console.error(`[DNC_CHECK] ❌ getUshaToken() returned null/undefined`);
-      }
-    } catch (e) {
-      const errorMsg = e instanceof Error ? e.message : String(e);
-      console.error(`[DNC_CHECK] ❌ Failed to get USHA token - skipping DNC check:`, errorMsg);
-      console.error(`[DNC_CHECK] ❌ Error details:`, e);
-      return { isDNC: false, canContact: true, reason: `Token fetch failed: ${errorMsg}` };
-    }
-    
+    const token = getDncToken();
     if (!token) {
-      console.error(`[DNC_CHECK] ❌ No token available after getUshaToken() - skipping DNC check`);
-      return { isDNC: false, canContact: true, reason: 'Token fetch failed: returned null' };
+      incrementMetric('dnc.token.missing');
+      console.info('[DNC_CHECK] DNC token missing; skip DNC check.');
+      return { isDNC: false, canContact: true, reason: 'DNC token not configured' };
     }
     
     // Call USHA DNC API with automatic token refresh
     console.log(`[DNC_CHECK] 📞 Calling DNC API for phone: ${cleanedPhone}`);
     const response = await callDNCAPI(cleanedPhone, token);
     
+    if (response.status === 401 || response.status === 403) {
+      incrementMetric('dnc.api.unauthorized');
+      return { isDNC: false, canContact: true, reason: 'DNC token unauthorized' };
+    }
     if (!response.ok) {
       const errorText = await response.text().catch(() => 'Could not read error response');
       console.error(`[DNC_CHECK] ❌ API error ${response.status} ${response.statusText}: ${errorText.substring(0, 200)}`);
@@ -2755,4 +2726,3 @@ export async function enrichData(
     rows: enrichedRows,
   };
 }
-

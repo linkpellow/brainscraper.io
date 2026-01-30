@@ -10,7 +10,7 @@
     "start": "node server.js",
     "start:next": "next start",
     "lint": "next lint",
-    "test": "vitest",
+    "test": "vitest run",
     "test:ui": "vitest --ui",
     "verify:api": "tsx scripts/comprehensive-api-verification.ts",
     "dnc-scrub": "tsx scripts/dnc-scrub-leads-one-by-one.ts",
@@ -28,6 +28,9 @@
   ],
   "author": "",
   "license": "ISC",
+  "engines": {
+    "node": ">=20.19.0 <21"
+  },
   "dependencies": {
     "@tailwindcss/postcss": "^4.1.17",
     "@types/cheerio": "^0.22.35",
