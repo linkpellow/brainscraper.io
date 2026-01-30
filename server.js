@@ -6,6 +6,7 @@ const { parse } = require('url');
 const { existsSync, readdirSync, readFileSync, writeFileSync, mkdirSync } = require('fs');
 const { join } = require('path');
 const next = require('next');
+const { CHECK_INTERVAL_MS, URGENT_CHECK_MS } = require('./src/auth/config.js');
 
 const dev = process.env.NODE_ENV !== 'production';
 const hostname = '0.0.0.0';
@@ -137,8 +138,6 @@ function startTokenRefreshJob(port) {
     return;
   }
 
-  const REFRESH_CHECK_INTERVAL_MS = 2 * 60 * 1000; // 2 minutes - catch failures faster
-  const URGENT_CHECK_INTERVAL_MS = 1 * 60 * 1000;
   const url = `http://127.0.0.1:${port}/api/auth-worker/cron-refresh`;
   const headers = { 'Content-Type': 'application/json' };
   if (process.env.CRON_SECRET) {
@@ -167,7 +166,7 @@ function startTokenRefreshJob(port) {
       const urgent = await fetchCronRefresh();
       if (urgent && !urgentInterval) {
         console.log('[Server] ⚠️ URGENT MODE: Switching to 1-minute checks due to near-expiry tokens');
-        urgentInterval = setInterval(runCheckAndAdjustInterval, URGENT_CHECK_INTERVAL_MS);
+        urgentInterval = setInterval(runCheckAndAdjustInterval, URGENT_CHECK_MS);
       } else if (!urgent && urgentInterval) {
         console.log('[Server] ✅ NORMAL MODE: Switching back to 5-minute checks');
         clearInterval(urgentInterval);
@@ -186,8 +185,12 @@ function startTokenRefreshJob(port) {
     } catch (err) {
       console.error('[Server] ⚠️ Startup token check failed:', err.message);
     }
-    mainInterval = setInterval(runCheckAndAdjustInterval, REFRESH_CHECK_INTERVAL_MS);
-    console.log('[Server] ✅ Token refresh job started (checks every 2 minutes, 1 minute when urgent)');
+    mainInterval = setInterval(runCheckAndAdjustInterval, CHECK_INTERVAL_MS);
+    const normalMinutes = Math.round(CHECK_INTERVAL_MS / 60000);
+    const urgentMinutes = Math.round(URGENT_CHECK_MS / 60000);
+    console.log(
+      `[Server] ✅ Token refresh job started (checks every ${normalMinutes} minute${normalMinutes === 1 ? '' : 's'}, ${urgentMinutes} minute${urgentMinutes === 1 ? '' : 's'} when urgent)`
+    );
 
     if (process.on) {
       process.on('SIGINT', () => {
