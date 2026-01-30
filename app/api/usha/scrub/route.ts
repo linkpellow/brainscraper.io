@@ -1,49 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getUshaToken, clearTokenCache } from '@/utils/getUshaToken';
-import { listSessionsFromServer, getSessionFromServer } from '@/app/auth-workers/utils/authWorkerServerStorage';
-import { getValidToken } from '@/app/auth-workers/utils/tokenRefreshService';
-
-/**
- * Get USHA JWT token from auth worker (preferred) or fallback to getUshaToken
- * Uses proactive refresh to ensure tokens are always valid
- */
-async function getUshaTokenForDNC(providedToken?: string | null): Promise<string | null> {
-  if (providedToken) {
-    return await getUshaToken(providedToken);
-  }
-  
-  try {
-    const sessions = listSessionsFromServer();
-    const ushaSessions = sessions
-      .filter(s => s.targetDomain.includes('ushadvisors.com'))
-      .sort((a, b) => {
-        const aIsApiBusiness = a.targetDomain === 'api-business-agent.ushadvisors.com';
-        const bIsApiBusiness = b.targetDomain === 'api-business-agent.ushadvisors.com';
-        if (aIsApiBusiness && !bIsApiBusiness) return -1;
-        if (!aIsApiBusiness && bIsApiBusiness) return 1;
-        return b.stabilizedAt - a.stabilizedAt;
-      });
-    
-    for (const ushaSession of ushaSessions) {
-      const session = getSessionFromServer(ushaSession.sessionId);
-      if (session) {
-        try {
-          const tokenResult = await getValidToken(session.sessionId);
-          if (tokenResult?.token) {
-            console.log(`🔑 [SCRUB_BULK] Using auth worker token from ${session.targetDomain}`);
-            return tokenResult.token;
-          }
-        } catch {
-          continue;
-        }
-      }
-    }
-  } catch (error) {
-    console.warn('⚠️ [SCRUB_BULK] Auth worker failed, using fallback:', error instanceof Error ? error.message : 'Unknown');
-  }
-  
-  return await getUshaToken();
-}
+import { getDncToken } from '@/server/settings/dncToken';
+import { incrementMetric } from '@/utils/dncMetrics';
 
 /**
  * USHA Bulk Lead Scrubbing API endpoint
@@ -55,13 +12,13 @@ async function getUshaTokenForDNC(providedToken?: string | null): Promise<string
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
-    const providedToken = formData.get('token')?.toString();
-    let token = await getUshaTokenForDNC(providedToken);
+    const token = await getDncToken();
     
     if (!token) {
+      incrementMetric('dnc.token.missing');
       return NextResponse.json(
-        { error: 'USHA JWT token is required. Token fetch failed.' },
-        { status: 401 }
+        { error: 'DNC token not configured. Add token in Lead Generation > Settings.' },
+        { status: 400 }
       );
     }
 
@@ -103,41 +60,19 @@ export async function POST(request: NextRequest) {
     ushaFormData.append('UploadFile', blob, file.name);
 
     // Make request to USHA API
-    let response = await fetch('https://api-business-agent.ushadvisors.com/Leads/api/leads/importafterMapping', {
+    const response = await fetch('https://api-business-agent.ushadvisors.com/Leads/api/leads/importafterMapping', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
       },
       body: ushaFormData,
     });
-
-    // Retry on auth failure with fresh token
     if (response.status === 401 || response.status === 403) {
-      console.log(`🔄 [SCRUB_BULK] Token expired (${response.status}), refreshing and retrying...`);
-      clearTokenCache();
-      token = await getUshaTokenForDNC();
-      if (token) {
-        // Recreate FormData for retry (can't reuse)
-        const retryFormData = new FormData();
-        retryFormData.append('VendorName', vendorName);
-        retryFormData.append('VendorID', vendorID);
-        retryFormData.append('CampaignName', campaignName);
-        retryFormData.append('CampaignID', campaignID);
-        retryFormData.append('ImportLeads', importLeads);
-        retryFormData.append('ScrubList', scrubList);
-        retryFormData.append('AllowLeadsWithNoPhoneNumber', allowLeadsWithNoPhoneNumber);
-        retryFormData.append('CurrentContextAgentNumber', currentContextAgentNumber);
-        retryFormData.append('CampaignDNCExemption', campaignDNCExemption);
-        retryFormData.append('UploadFile', blob, file.name);
-        
-        response = await fetch('https://api-business-agent.ushadvisors.com/Leads/api/leads/importafterMapping', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-          body: retryFormData,
-        });
-      }
+      incrementMetric('dnc.api.unauthorized');
+      return NextResponse.json(
+        { error: 'DNC request unauthorized (invalid manual token). Update token in Lead Generation settings.' },
+        { status: 401 }
+      );
     }
 
     if (!response.ok) {
@@ -161,4 +96,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-

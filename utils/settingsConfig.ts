@@ -106,6 +106,7 @@ export interface SettingsConfig {
   output: Output;
   notifications: Notifications;
   ushaTokenOverrideEnabled: boolean;
+  dncToken: string | null;
 }
 
 /**
@@ -153,6 +154,7 @@ export const DEFAULT_SETTINGS: SettingsConfig = {
     channels: [],
   },
   ushaTokenOverrideEnabled: false,
+  dncToken: null,
 };
 
 const SETTINGS_FILE = 'settings.json';
@@ -374,6 +376,10 @@ export function validateSettings(settings: Partial<SettingsConfig>): { valid: bo
     } catch {
       errors.push('Invalid webhook URL');
     }
+  }
+
+  if (settings.dncToken !== undefined && settings.dncToken !== null && typeof settings.dncToken !== 'string') {
+    errors.push('DNC token must be a string');
   }
 
   return {

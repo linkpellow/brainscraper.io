@@ -9,20 +9,20 @@ const DEFAULT_EXPIRED_REFRESH_ALLOWLIST = new Set([
 
 const TRUE_VALUES = new Set(['1', 'true', 'yes', 'on']);
 
-const readNumberEnv = (name, fallback) => {
+const readNumberEnv = (name: string, fallback: number): number => {
   const raw = process.env[name];
   if (!raw) return fallback;
   const value = Number(raw);
   return Number.isFinite(value) ? value : fallback;
 };
 
-const readBooleanEnv = (name, fallback) => {
+const readBooleanEnv = (name: string, fallback: boolean): boolean => {
   const raw = process.env[name];
   if (!raw) return fallback;
   return TRUE_VALUES.has(raw.trim().toLowerCase());
 };
 
-const parseAllowlistEnv = (name) => {
+const parseAllowlistEnv = (name: string): string[] => {
   const raw = process.env[name];
   if (!raw) return [];
   return raw
@@ -31,7 +31,7 @@ const parseAllowlistEnv = (name) => {
     .filter((value) => value.length > 0);
 };
 
-function normalizeProviderHost(providerHost) {
+const normalizeProviderHost = (providerHost?: string | null): string => {
   if (!providerHost) return '';
   const trimmed = providerHost.trim().toLowerCase();
   if (!trimmed) return '';
@@ -43,22 +43,24 @@ function normalizeProviderHost(providerHost) {
     }
   }
   return trimmed.split('/')[0];
-}
+};
 
-const REFRESH_PREEMPT_MIN = readNumberEnv(
+export const REFRESH_PREEMPT_MIN: number = readNumberEnv(
   'AUTH_REFRESH_PREEMPT_MIN',
   DEFAULT_REFRESH_PREEMPT_MIN,
 );
-const CHECK_INTERVAL_MS = readNumberEnv(
+
+export const CHECK_INTERVAL_MS: number = readNumberEnv(
   'AUTH_CHECK_INTERVAL_MS',
   DEFAULT_CHECK_INTERVAL_MS,
 );
-const URGENT_CHECK_MS = readNumberEnv(
+
+export const URGENT_CHECK_MS: number = readNumberEnv(
   'AUTH_URGENT_CHECK_MS',
   DEFAULT_URGENT_CHECK_MS,
 );
 
-const ALLOW_EXPIRED_REFRESH_ALL = readBooleanEnv(
+const ALLOW_EXPIRED_REFRESH_ALL: boolean = readBooleanEnv(
   'AUTH_ALLOW_EXPIRED_REFRESH_ALL',
   false,
 );
@@ -68,7 +70,7 @@ const EXPIRED_REFRESH_ALLOWLIST = new Set([
   ...parseAllowlistEnv('AUTH_EXPIRED_REFRESH_ALLOWLIST'),
 ]);
 
-function allowExpiredRefresh(providerHost) {
+export const allowExpiredRefresh = (providerHost?: string | null): boolean => {
   if (ALLOW_EXPIRED_REFRESH_ALL) return true;
   const normalizedHost = normalizeProviderHost(providerHost);
   if (!normalizedHost) return false;
@@ -79,11 +81,4 @@ function allowExpiredRefresh(providerHost) {
     }
   }
   return false;
-}
-
-module.exports = {
-  REFRESH_PREEMPT_MIN,
-  CHECK_INTERVAL_MS,
-  URGENT_CHECK_MS,
-  allowExpiredRefresh,
 };

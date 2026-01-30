@@ -1,67 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as fs from 'fs';
 import * as path from 'path';
-import { getUshaToken, clearTokenCache } from '@/utils/getUshaToken';
+import { getDncToken } from '@/server/settings/dncToken';
+import { incrementMetric } from '@/utils/dncMetrics';
 import { getDataDirectory, getDataFilePath, safeWriteFile, safeReadFile, ensureDataDirectory } from '@/utils/dataDirectory';
 import { withLock } from '@/utils/fileLock';
-import { listSessionsFromServer, getSessionFromServer } from '@/app/auth-workers/utils/authWorkerServerStorage';
-import { getValidToken } from '@/app/auth-workers/utils/tokenRefreshService';
-
-/**
- * Get USHA JWT token from auth worker (preferred) or fallback to getUshaToken
- * 
- * Priority:
- * 1. Auth worker for agent.ushadvisors.com (auto-refreshes, 24/7)
- * 2. Fallback to getUshaToken() (legacy method)
- */
-async function getUshaTokenForDNC(): Promise<string | null> {
-  try {
-    // Try to get token from auth worker for any USHA domain
-    // Priority: api-business-agent.ushadvisors.com > agent.ushadvisors.com > any ushadvisors.com
-    const sessions = listSessionsFromServer();
-    const ushaSessions = sessions
-      .filter(s => s.targetDomain.includes('ushadvisors.com'))
-      .sort((a, b) => {
-        // Prefer api-business-agent.ushadvisors.com (most reliable for DNC API)
-        const aIsApiBusiness = a.targetDomain === 'api-business-agent.ushadvisors.com';
-        const bIsApiBusiness = b.targetDomain === 'api-business-agent.ushadvisors.com';
-        if (aIsApiBusiness && !bIsApiBusiness) return -1;
-        if (!aIsApiBusiness && bIsApiBusiness) return 1;
-        
-        // Then prefer agent.ushadvisors.com
-        const aIsAgent = a.targetDomain === 'agent.ushadvisors.com';
-        const bIsAgent = b.targetDomain === 'agent.ushadvisors.com';
-        if (aIsAgent && !bIsAgent) return -1;
-        if (!aIsAgent && bIsAgent) return 1;
-        
-        // Finally, most recent
-        return b.stabilizedAt - a.stabilizedAt;
-      });
-    
-    // Try sessions in priority order until we get a valid token
-    for (const ushaSession of ushaSessions) {
-      const session = getSessionFromServer(ushaSession.sessionId);
-      if (session) {
-        try {
-          const tokenResult = await getValidToken(session.sessionId);
-          if (tokenResult?.token) {
-            console.log(`🔑 [DAILY_DNC] Using auth worker token from ${session.targetDomain} (auto-refreshes, 24/7)`);
-            return tokenResult.token;
-          }
-        } catch (error) {
-          // This session failed, try next one
-          continue;
-        }
-      }
-    }
-  } catch (error) {
-    console.warn('⚠️ [DAILY_DNC] Auth worker token fetch failed, falling back to getUshaToken:', error instanceof Error ? error.message : 'Unknown error');
-  }
-  
-  // Fallback to legacy method
-  console.log('🔑 [DAILY_DNC] Using getUshaToken() fallback');
-  return await getUshaToken();
-}
+import { extractBearerToken } from '@/utils/auth/extractBearerToken';
+ 
 
 /**
  * Daily DNC Check Cron Job
@@ -95,8 +40,8 @@ export async function GET(request: NextRequest) {
   console.log('🌅 [DAILY_DNC] ============================================\n');
   
   // Verify this is a cron job request (optional security check)
-  const authHeader = request.headers.get('authorization');
-  if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  const authHeader = extractBearerToken(request);
+  if (process.env.CRON_SECRET && authHeader !== process.env.CRON_SECRET) {
     console.log('⚠️ [DAILY_DNC] Unauthorized cron request');
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -160,11 +105,12 @@ export async function GET(request: NextRequest) {
       });
     }
     
-    // Step 3: Get USHA token (Priority: Auth worker → getUshaToken fallback)
-    console.log('🔑 [DAILY_DNC] Step 3: Getting USHA authentication token...');
-    const token = await getUshaTokenForDNC();
+    // Step 3: Get manual DNC token
+    console.log('🔑 [DAILY_DNC] Step 3: Getting manual DNC token...');
+    const token = await getDncToken();
     if (!token) {
-      throw new Error('Failed to get USHA authentication token from auth worker or environment');
+      incrementMetric('dnc.token.missing');
+      throw new Error('DNC token not configured. Add token in Lead Generation > Settings.');
     }
     console.log('✅ [DAILY_DNC] Token obtained\n');
     
@@ -191,35 +137,24 @@ export async function GET(request: NextRequest) {
             return { lead, updated: false };
           }
           
-          // Helper function for DNC API call with retry
+          // Helper function for DNC API call (manual token only)
           const callDNCAPI = async (phone: string, currentToken: string): Promise<Response> => {
             const url = `https://api-business-agent.ushadvisors.com/Leads/api/leads/scrubphonenumber?currentContextAgentNumber=${encodeURIComponent(currentContextAgentNumber)}&phone=${encodeURIComponent(phone)}`;
-            let headers: Record<string, string> = {
+            const headers: Record<string, string> = {
               'Authorization': `Bearer ${currentToken}`,
               'Origin': 'https://agent.ushadvisors.com',
               'Referer': 'https://agent.ushadvisors.com',
               'Content-Type': 'application/json',
             };
-            
-            let response = await fetch(url, { method: 'GET', headers });
-            
-            // Retry once on auth failure (automatic token refresh via auth worker or getUshaToken)
-            if (response.status === 401 || response.status === 403) {
-              console.log(`  🔄 [DAILY_DNC] ${phone}: Token expired (${response.status}), refreshing...`);
-              clearTokenCache();
-              const freshToken = await getUshaTokenForDNC();
-              if (freshToken) {
-                headers = { ...headers, 'Authorization': `Bearer ${freshToken}` };
-                response = await fetch(url, { method: 'GET', headers });
-              }
-            }
-            
-            return response;
+            return await fetch(url, { method: 'GET', headers });
           };
           
-          // Use current token, refresh per item if needed (should be rare)
+          // Use current token only (manual token, no refresh)
           const response = await callDNCAPI(phone, token);
           
+          if (response.status === 401 || response.status === 403) {
+            incrementMetric('dnc.api.unauthorized');
+          }
           if (!response.ok) {
             console.log(`  ⚠️ [DAILY_DNC] ${phone}: API error ${response.status}`);
             return { lead, updated: false };
