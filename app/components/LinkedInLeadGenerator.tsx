@@ -11,6 +11,7 @@ import { ParsedData } from '@/utils/parseFile';
 import { enrichData, EnrichedData, EnrichedRow, EnrichmentProgress } from '@/utils/enrichData';
 import { extractLeadSummary, leadSummariesToCSV, LeadSummary } from '@/utils/extractLeadSummary';
 import { DNCResult } from './USHAScrubber';
+import { scrubDnc } from '@/src/lib/dncClient';
 import LeadListViewer from './LeadListViewer';
 import FacebookLeadGenerator from './FacebookLeadGenerator';
 import EnrichmentStationControl from './EnrichmentStationControl';
@@ -2106,11 +2107,7 @@ export default function LinkedInLeadGenerator() {
         console.log(`📤 [SCRUB_ONLY] Sending batch ${batchNum}/${totalBatches} (${batch.length} numbers)...`);
         
         try {
-          const response = await fetch('/api/usha/scrub-batch', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ phoneNumbers: batch }),
-          });
+          const response = await scrubDnc({ phoneNumbers: batch });
           
           if (response.ok) {
             const result = await response.json();
@@ -2138,7 +2135,7 @@ export default function LinkedInLeadGenerator() {
             
             // Check if it's a token error - stop all batches if so
             if (errorMessage.includes('USHA JWT token') || errorMessage.includes('token is required')) {
-              throw new Error(`Token error: ${errorMessage}. Please configure USHA_JWT_TOKEN.`);
+              throw new Error(`Token error: ${errorMessage}. Configure a token in Settings → Manual DNC JWT or set USHA_JWT_TOKEN.`);
             }
             // For other errors, continue processing remaining batches
           }

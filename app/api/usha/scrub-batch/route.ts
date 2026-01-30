@@ -12,6 +12,13 @@ function getCorsHeaders(origin: string | null) {
   };
 }
 
+function extractBearerToken(request: NextRequest): string | null {
+  const authHeader = request.headers.get('authorization');
+  if (!authHeader) return null;
+  const match = authHeader.match(/^Bearer\s+(.+)$/i);
+  return match ? match[1].trim() : null;
+}
+
 export async function OPTIONS(request: NextRequest) {
   const origin = request.headers.get('origin');
   return NextResponse.json({}, { headers: getCorsHeaders(origin) });
@@ -129,11 +136,16 @@ export async function POST(request: NextRequest) {
     
     // Get USHA JWT token (required for USHA DNC API)
     // Priority: Auth worker (auto-refreshes) → getUshaToken (fallback)
-    let token: string | null = null;
+    const providedToken = extractBearerToken(request);
+    let token: string | null = providedToken;
     try {
-      token = await getUshaTokenForDNC();
-      if (token) {
-        console.log('✅ [DNC SCRUB] Using USHA JWT token for DNC API');
+      if (!token) {
+        token = await getUshaTokenForDNC();
+        if (token) {
+          console.log('✅ [DNC SCRUB] Using USHA JWT token for DNC API');
+        }
+      } else {
+        console.log('✅ [DNC SCRUB] Using provided Authorization header for DNC API');
       }
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Token fetch failed';
@@ -143,11 +155,11 @@ export async function POST(request: NextRequest) {
     if (!token) {
       console.error('❌ [DNC SCRUB] Token is null/undefined');
       console.error(`❌ [DNC SCRUB] CRITICAL: The USHA DNC API requires a valid USHA JWT token.`);
-      console.error(`❌ [DNC SCRUB] Please ensure you have an auth worker for agent.ushadvisors.com or USHA_JWT_TOKEN is set in environment variables.`);
+      console.error(`❌ [DNC SCRUB] Provide a manual token via Authorization header, create an auth worker, or set USHA_JWT_TOKEN in environment variables.`);
       return NextResponse.json(
         { 
           success: false,
-          error: 'Token is required. Failed to obtain USHA JWT token from auth worker or environment. Please create an auth worker for agent.ushadvisors.com or set USHA_JWT_TOKEN in environment variables.' 
+          error: 'Token is required. Provide a manual Authorization token, create an auth worker for agent.ushadvisors.com, or set USHA_JWT_TOKEN in environment variables.' 
         },
         { status: 401, headers: getCorsHeaders(origin) }
       );
@@ -219,7 +231,7 @@ export async function POST(request: NextRequest) {
             });
 
             // Retry once on auth failure (automatic token refresh via auth worker or getUshaToken)
-            if (response.status === 401 || response.status === 403) {
+            if ((response.status === 401 || response.status === 403) && !providedToken) {
               console.log(`  🔄 [DNC SCRUB] ${normalizedPhone}: Token expired (${response.status}), refreshing token and retrying...`);
               clearTokenCache();
               const freshToken = await getUshaTokenForDNC();

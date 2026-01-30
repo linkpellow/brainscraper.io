@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { scrubDnc } from '@/src/lib/dncClient';
 
 export default function DNCScrubPage() {
   const [file, setFile] = useState<File | null>(null);
@@ -33,10 +34,7 @@ export default function DNCScrubPage() {
 
       setProgress('Processing CSV and scrubbing phone numbers...');
 
-      const response = await fetch('/api/usha/scrub-csv', {
-        method: 'POST',
-        body: formData,
-      });
+      const response = await scrubDnc(formData);
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
@@ -121,4 +119,3 @@ export default function DNCScrubPage() {
     </div>
   );
 }
-
