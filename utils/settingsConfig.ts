@@ -105,6 +105,7 @@ export interface SettingsConfig {
   scheduling: Scheduling;
   output: Output;
   notifications: Notifications;
+  ushaTokenOverrideEnabled: boolean;
 }
 
 /**
@@ -151,6 +152,7 @@ export const DEFAULT_SETTINGS: SettingsConfig = {
     jobAutoPaused: true,
     channels: [],
   },
+  ushaTokenOverrideEnabled: false,
 };
 
 const SETTINGS_FILE = 'settings.json';
@@ -379,4 +381,3 @@ export function validateSettings(settings: Partial<SettingsConfig>): { valid: bo
     errors,
   };
 }
-

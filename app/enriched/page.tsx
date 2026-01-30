@@ -371,14 +371,14 @@ export default function EnrichedLeadsPage() {
               
               // Check if it's a token error
               if (errorMessage.includes('USHA JWT token') || errorMessage.includes('token is required')) {
-                setDncError('USHA JWT token not configured. Please add USHA_JWT_TOKEN to your .env.local file and restart the server.');
+                setDncError('USHA JWT token not configured. Add a manual token in Settings → API Controls (USHA Token Override) or set USHA_JWT_TOKEN in .env.local and restart the server.');
                 console.error('\n⚠️  [FRONTEND DNC] ============================================');
                 console.error('⚠️  [FRONTEND DNC] CONFIGURATION ERROR:');
-                console.error('⚠️  [FRONTEND DNC] USHA_JWT_TOKEN is missing from .env.local');
+                console.error('⚠️  [FRONTEND DNC] USHA JWT token is missing');
                 console.error('⚠️  [FRONTEND DNC]');
                 console.error('⚠️  [FRONTEND DNC] To fix:');
-                console.error('⚠️  [FRONTEND DNC] 1. Create/edit .env.local in project root');
-                console.error('⚠️  [FRONTEND DNC] 2. Add: USHA_JWT_TOKEN=your_token_here');
+                console.error('⚠️  [FRONTEND DNC] 1. Use Settings → API Controls → USHA Token Override to save a manual token');
+                console.error('⚠️  [FRONTEND DNC] 2. Or create/edit .env.local and add: USHA_JWT_TOKEN=your_token_here');
                 console.error('⚠️  [FRONTEND DNC] 3. Restart your Next.js server');
                 console.error('⚠️  [FRONTEND DNC] ============================================\n');
                 break; // Stop processing more batches
