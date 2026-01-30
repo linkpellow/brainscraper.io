@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getUshaToken, clearTokenCache } from '@/utils/getUshaToken';
-import { listSessionsFromServer, getSessionFromServer } from '@/app/auth-workers/utils/authWorkerServerStorage';
-import { getValidToken } from '@/app/auth-workers/utils/tokenRefreshService';
+import { getDncToken } from '@/utils/dncToken';
+import { incrementMetric } from '@/utils/dncMetrics';
 
 function getCorsHeaders(origin: string | null) {
   return {
@@ -50,64 +49,6 @@ async function retryWithBackoff<T>(
 }
 
 /**
- * Get USHA JWT token from auth worker (preferred) or fallback to getUshaToken
- * 
- * Priority:
- * 1. Auth worker for agent.ushadvisors.com (auto-refreshes, 24/7)
- * 2. Fallback to getUshaToken() (legacy method)
- */
-async function getUshaTokenForDNC(): Promise<string | null> {
-  try {
-    // Try to get token from auth worker for any USHA domain
-    // Priority: api-business-agent.ushadvisors.com > agent.ushadvisors.com > any ushadvisors.com
-    // (api-business-agent is preferred because it's more reliable for DNC API)
-    const sessions = listSessionsFromServer();
-    const ushaSessions = sessions
-      .filter(s => s.targetDomain.includes('ushadvisors.com'))
-      .sort((a, b) => {
-        // Prefer api-business-agent.ushadvisors.com (most reliable for DNC API)
-        const aIsApiBusiness = a.targetDomain === 'api-business-agent.ushadvisors.com';
-        const bIsApiBusiness = b.targetDomain === 'api-business-agent.ushadvisors.com';
-        if (aIsApiBusiness && !bIsApiBusiness) return -1;
-        if (!aIsApiBusiness && bIsApiBusiness) return 1;
-        
-        // Then prefer agent.ushadvisors.com
-        const aIsAgent = a.targetDomain === 'agent.ushadvisors.com';
-        const bIsAgent = b.targetDomain === 'agent.ushadvisors.com';
-        if (aIsAgent && !bIsAgent) return -1;
-        if (!aIsAgent && bIsAgent) return 1;
-        
-        // Finally, most recent
-        return b.stabilizedAt - a.stabilizedAt;
-      });
-    
-    // Try sessions in priority order until we get a valid token
-    for (const ushaSession of ushaSessions) {
-      const session = getSessionFromServer(ushaSession.sessionId);
-      if (session) {
-        try {
-          const tokenResult = await getValidToken(session.sessionId);
-          if (tokenResult?.token) {
-            console.log(`🔑 [DNC SCRUB] Using auth worker token from ${session.targetDomain} (auto-refreshes, 24/7)`);
-            return tokenResult.token;
-          }
-        } catch (error) {
-          // This session failed, try next one
-          console.warn(`⚠️ [DNC SCRUB] Session ${ushaSession.sessionId} failed, trying next...`);
-          continue;
-        }
-      }
-    }
-  } catch (error) {
-    console.warn('⚠️ [DNC SCRUB] Auth worker token fetch failed, falling back to getUshaToken:', error instanceof Error ? error.message : 'Unknown error');
-  }
-  
-  // Fallback to legacy method
-  console.log('🔑 [DNC SCRUB] Using getUshaToken() fallback');
-  return await getUshaToken();
-}
-
-/**
  * USHA Batch Phone Number Scrub API endpoint
  * Checks multiple phone numbers for DNC status in parallel
  * 
@@ -127,29 +68,17 @@ export async function POST(request: NextRequest) {
     
     console.log(`📞 [DNC SCRUB] Received ${phoneNumbers?.length || 0} phone numbers to scrub`);
     
-    // Get USHA JWT token (required for USHA DNC API)
-    // Priority: Auth worker (auto-refreshes) → getUshaToken (fallback)
-    let token: string | null = null;
-    try {
-      token = await getUshaTokenForDNC();
-      if (token) {
-        console.log('✅ [DNC SCRUB] Using USHA JWT token for DNC API');
-      }
-    } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : 'Token fetch failed';
-      console.error(`❌ [DNC SCRUB] USHA token fetch failed: ${errorMsg}`);
-    }
+    const token = getDncToken();
     
     if (!token) {
-      console.error('❌ [DNC SCRUB] Token is null/undefined');
-      console.error(`❌ [DNC SCRUB] CRITICAL: The USHA DNC API requires a valid USHA JWT token.`);
-      console.error(`❌ [DNC SCRUB] Please ensure you have an auth worker for agent.ushadvisors.com or USHA_JWT_TOKEN is set in environment variables.`);
+      incrementMetric('dnc.token.missing');
+      console.info('[DNC SCRUB] DNC token missing; configure in Lead Generation settings.');
       return NextResponse.json(
         { 
           success: false,
-          error: 'Token is required. Failed to obtain USHA JWT token from auth worker or environment. Please create an auth worker for agent.ushadvisors.com or set USHA_JWT_TOKEN in environment variables.' 
+          error: 'DNC token not configured. Add token in Lead Generation > Settings.' 
         },
-        { status: 401, headers: getCorsHeaders(origin) }
+        { status: 400, headers: getCorsHeaders(origin) }
       );
     }
 
@@ -199,10 +128,9 @@ export async function POST(request: NextRequest) {
             ? cleanedPhone.substring(1) 
             : cleanedPhone;
 
-          // Use USHA DNC API directly (requires USHA JWT token)
-          // Token is already from auth worker (auto-refreshes) or getUshaToken fallback
+          // Use USHA DNC API directly (requires manual token)
           const url = `https://api-business-agent.ushadvisors.com/Leads/api/leads/scrubphonenumber?currentContextAgentNumber=${encodeURIComponent(currentContextAgentNumber)}&phone=${encodeURIComponent(normalizedPhone)}`;
-          let headers: Record<string, string> = {
+          const headers: Record<string, string> = {
             'Authorization': `Bearer ${token}`,
             'accept': 'application/json, text/plain, */*',
             'Referer': 'https://agent.ushadvisors.com/',
@@ -213,25 +141,10 @@ export async function POST(request: NextRequest) {
           
           // Wrap API call in retry logic with exponential backoff
           const result = await retryWithBackoff(async () => {
-            let response = await fetch(url, {
+            const response = await fetch(url, {
               method: 'GET',
               headers,
             });
-
-            // Retry once on auth failure (automatic token refresh via auth worker or getUshaToken)
-            if (response.status === 401 || response.status === 403) {
-              console.log(`  🔄 [DNC SCRUB] ${normalizedPhone}: Token expired (${response.status}), refreshing token and retrying...`);
-              clearTokenCache();
-              const freshToken = await getUshaTokenForDNC();
-              if (freshToken) {
-                headers = { ...headers, 'Authorization': `Bearer ${freshToken}` };
-                token = freshToken; // Update token for subsequent requests
-                response = await fetch(url, {
-                  method: 'GET',
-                  headers,
-                });
-              }
-            }
             
             if (!response.ok) {
               const errorText = await response.text().catch(() => 'Unknown error');
@@ -240,6 +153,9 @@ export async function POST(request: NextRequest) {
                 throw new Error(`API error: ${response.status} ${response.statusText} - ${errorText.substring(0, 100)}`);
               }
               // Don't retry client errors (4xx except 429, 401, 403)
+              if (response.status === 401 || response.status === 403) {
+                incrementMetric('dnc.api.unauthorized');
+              }
               console.log(`  ❌ [DNC SCRUB] ${normalizedPhone}: API error ${response.status}: ${errorText.substring(0, 100)}`);
               return { error: `API error: ${response.status} ${response.statusText}`, status: response.status };
             }
