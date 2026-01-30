@@ -11,6 +11,13 @@ function getCorsHeaders(origin: string | null) {
   };
 }
 
+function extractBearerToken(request: NextRequest): string | null {
+  const authHeader = request.headers.get('authorization');
+  if (!authHeader) return null;
+  const match = authHeader.match(/^Bearer\s+(.+)$/i);
+  return match ? match[1].trim() : null;
+}
+
 export async function OPTIONS(request: NextRequest) {
   const origin = request.headers.get('origin');
   return NextResponse.json({}, { headers: getCorsHeaders(origin) });
