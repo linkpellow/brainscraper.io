@@ -12,6 +12,7 @@
  * - Clock skew detection
  */
 
+import { allowExpiredRefresh, REFRESH_PREEMPT_MIN } from '@/src/auth/config';
 import type { PersistedAuthWorkerState } from './authWorkerPersistence';
 import { getSessionById, persistAuthWorkerState, updateSessionTokens } from './authWorkerPersistence';
 
@@ -77,6 +78,19 @@ function extractOriginFromUrl(url: string): string {
     // Fallback: try to extract domain from common patterns
     const match = url.match(/https?:\/\/([^\/]+)/);
     return match ? `https://${match[1]}` : 'https://agent.ushadvisors.com';
+  }
+}
+
+/**
+ * Extract provider host from refresh URL for provider-specific behavior.
+ */
+function extractProviderHost(url: string): string | null {
+  try {
+    return new URL(url).host;
+  } catch {
+    const trimmed = url.trim();
+    if (!trimmed) return null;
+    return trimmed.split('/')[0] || null;
   }
 }
 
@@ -240,8 +254,14 @@ export async function refreshBearerToken(
     : null;
   const isExpired = expiresAt ? Date.now() > expiresAt : false;
 
+  const providerHost = extractProviderHost(refreshUrl);
+  const canUseExpiredToken = allowExpiredRefresh(providerHost || '');
+
   if (isExpired) {
-    console.log('[TokenRefresh] Token is expired, attempting refresh with expired token (some endpoints allow this)');
+    const expiredNote = canUseExpiredToken
+      ? 'attempting refresh with expired token (provider allows expired refresh)'
+      : 'attempting refresh with expired token (provider not allowlisted)';
+    console.log(`[TokenRefresh] Token is expired, ${expiredNote}`);
   }
 
   // Request deduplication: Check if refresh is already in-flight
@@ -298,7 +318,7 @@ export async function refreshBearerToken(
           }
           
           // If token is expired and we get 401/403, provide helpful error
-          if (isExpired && (response.status === 401 || response.status === 403)) {
+          if (isExpired && (response.status === 401 || response.status === 403) && !canUseExpiredToken) {
             throw new Error(
               `Bearer token refresh failed: Token is expired and endpoint does not accept expired tokens for refresh. ` +
               `Status: ${response.status} ${response.statusText}. ` +
@@ -781,9 +801,9 @@ export function needsTokenRefresh(session: PersistedAuthWorkerState): boolean {
   const clockSkew = detectClockSkew(session);
   const now = Date.now() + clockSkew; // Adjust for clock skew
   
-  // Base refresh buffer: 2 HOURS before expiration (MUST match server.js)
-  // This aggressive buffer accounts for: Railway deployments, network issues, retry delays
-  let PROACTIVE_REFRESH_BUFFER_MS = 2 * 60 * 60 * 1000; // 2 hours
+  // Base refresh buffer (configurable) before expiration.
+  // This aggressive buffer accounts for: Railway deployments, network issues, retry delays.
+  let PROACTIVE_REFRESH_BUFFER_MS = REFRESH_PREEMPT_MIN * 60 * 1000;
   
   // Add clock skew tolerance to buffer
   if (Math.abs(clockSkew) > CLOCK_SKEW_TOLERANCE_MS) {
