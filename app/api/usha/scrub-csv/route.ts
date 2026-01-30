@@ -3,6 +3,13 @@ import { getUshaToken, clearTokenCache } from '@/utils/getUshaToken';
 import { listSessionsFromServer, getSessionFromServer } from '@/app/auth-workers/utils/authWorkerServerStorage';
 import { getValidToken } from '@/app/auth-workers/utils/tokenRefreshService';
 
+function extractBearerToken(request: NextRequest): string | null {
+  const authHeader = request.headers.get('authorization');
+  if (!authHeader) return null;
+  const match = authHeader.match(/^Bearer\s+(.+)$/i);
+  return match ? match[1].trim() : null;
+}
+
 /**
  * Get USHA JWT token from auth worker (preferred) or fallback to getUshaToken
  * 
@@ -210,6 +217,7 @@ export async function POST(request: NextRequest) {
   console.log('🔍 [DNC CSV SCRUB] ============================================\n');
 
   try {
+    const providedToken = extractBearerToken(request);
     const formData = await request.formData();
     const file = formData.get('file') as File;
 
@@ -229,9 +237,11 @@ export async function POST(request: NextRequest) {
 
     // Get USHA token (Priority: Auth worker → getUshaToken fallback)
     console.log(`🔑 [DNC CSV SCRUB] Getting USHA JWT token...`);
-    let token: string | null = null;
+    let token: string | null = providedToken;
     try {
-      token = await getUshaTokenForDNC();
+      if (!token) {
+        token = await getUshaTokenForDNC();
+      }
       if (token) {
         console.log(`✅ [DNC CSV SCRUB] Token obtained successfully\n`);
       }
@@ -243,24 +253,26 @@ export async function POST(request: NextRequest) {
     if (!token) {
       console.error(`❌ [DNC CSV SCRUB] Token is null/undefined`);
       return NextResponse.json(
-        { error: `Failed to get USHA token. Please ensure you have an auth worker for agent.ushadvisors.com or USHA_JWT_TOKEN is set in environment variables.` },
+        { error: `Failed to get USHA token. Provide a manual Authorization header, ensure you have an auth worker for agent.ushadvisors.com, or set USHA_JWT_TOKEN in environment variables.` },
         { status: 500 }
       );
     }
 
     // Create a function to get fresh token (for retry on 401/403)
     // This will update the token variable for subsequent batches
-    const getFreshToken = async (): Promise<string> => {
-      console.log(`🔄 [DNC CSV SCRUB] Refreshing token for subsequent requests...`);
-      clearTokenCache();
-      const freshToken = await getUshaTokenForDNC(); // Uses auth worker (auto-refreshes) or getUshaToken
-      if (!freshToken) {
-        throw new Error('Failed to refresh USHA token');
-      }
-      token = freshToken; // Update token for subsequent batches
-      console.log(`✅ [DNC CSV SCRUB] Token refreshed, using for remaining requests`);
-      return freshToken;
-    };
+    const getFreshToken = providedToken
+      ? undefined
+      : async (): Promise<string> => {
+          console.log(`🔄 [DNC CSV SCRUB] Refreshing token for subsequent requests...`);
+          clearTokenCache();
+          const freshToken = await getUshaTokenForDNC(); // Uses auth worker (auto-refreshes) or getUshaToken
+          if (!freshToken) {
+            throw new Error('Failed to refresh USHA token');
+          }
+          token = freshToken; // Update token for subsequent batches
+          console.log(`✅ [DNC CSV SCRUB] Token refreshed, using for remaining requests`);
+          return freshToken;
+        };
 
     // Parse CSV
     console.log(`📖 [DNC CSV SCRUB] Parsing CSV file...`);
@@ -373,4 +385,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-

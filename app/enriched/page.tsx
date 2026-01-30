@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { LeadSummary, leadSummariesToCSV, formatPhoneNumber } from '@/utils/extractLeadSummary';
 import AppLayout from '../components/AppLayout';
 import DatePickerModal from '../components/DatePickerModal';
+import { scrubDnc } from '@/src/lib/dncClient';
 
 // State name to abbreviation mapping
 const stateToAbbreviation: Record<string, string> = {
@@ -334,11 +335,7 @@ export default function EnrichedLeadsPage() {
           
           try {
             const batchStart = Date.now();
-            const response = await fetch('/api/usha/scrub-batch', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ phoneNumbers }),
-            });
+            const response = await scrubDnc({ phoneNumbers });
             
             const batchTime = Date.now() - batchStart;
             
@@ -371,13 +368,13 @@ export default function EnrichedLeadsPage() {
               
               // Check if it's a token error
               if (errorMessage.includes('USHA JWT token') || errorMessage.includes('token is required')) {
-                setDncError('USHA JWT token not configured. Add a manual token in Settings → API Controls (USHA Token Override) or set USHA_JWT_TOKEN in .env.local and restart the server.');
+                setDncError('USHA JWT token not configured. Add a manual token in Settings → Manual DNC JWT or set USHA_JWT_TOKEN in .env.local and restart the server.');
                 console.error('\n⚠️  [FRONTEND DNC] ============================================');
                 console.error('⚠️  [FRONTEND DNC] CONFIGURATION ERROR:');
                 console.error('⚠️  [FRONTEND DNC] USHA JWT token is missing');
                 console.error('⚠️  [FRONTEND DNC]');
                 console.error('⚠️  [FRONTEND DNC] To fix:');
-                console.error('⚠️  [FRONTEND DNC] 1. Use Settings → API Controls → USHA Token Override to save a manual token');
+                console.error('⚠️  [FRONTEND DNC] 1. Use Settings → Manual DNC JWT to save a manual token');
                 console.error('⚠️  [FRONTEND DNC] 2. Or create/edit .env.local and add: USHA_JWT_TOKEN=your_token_here');
                 console.error('⚠️  [FRONTEND DNC] 3. Restart your Next.js server');
                 console.error('⚠️  [FRONTEND DNC] ============================================\n');
@@ -422,11 +419,7 @@ export default function EnrichedLeadsPage() {
             console.log(`🔄 [FRONTEND DNC] Retry batch ${retryBatchNum}/${totalRetryBatches} (${retryBatch.length} numbers)...`);
             
             try {
-              const response = await fetch('/api/usha/scrub-batch', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ phoneNumbers: retryBatch }),
-              });
+              const response = await scrubDnc({ phoneNumbers: retryBatch });
               
               if (response.ok) {
                 const result = await response.json();
