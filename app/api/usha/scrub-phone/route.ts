@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getUshaToken, clearTokenCache } from '@/utils/getUshaToken';
-import { listSessionsFromServer, getSessionFromServer } from '@/app/auth-workers/utils/authWorkerServerStorage';
-import { getValidToken } from '@/app/auth-workers/utils/tokenRefreshService';
+import { getDncToken } from '@/utils/dncToken';
+import { incrementMetric } from '@/utils/dncMetrics';
 
 // CORS headers helper - allows requests from any origin
 function getCorsHeaders(origin: string | null) {
@@ -16,67 +15,6 @@ function getCorsHeaders(origin: string | null) {
 export async function OPTIONS(request: NextRequest) {
   const origin = request.headers.get('origin');
   return NextResponse.json({}, { headers: getCorsHeaders(origin) });
-}
-
-/**
- * Get USHA JWT token from auth worker (preferred) or fallback to getUshaToken
- * 
- * Priority:
- * 1. Auth worker for agent.ushadvisors.com (auto-refreshes, 24/7)
- * 2. Fallback to getUshaToken() (legacy method)
- */
-async function getUshaTokenForDNC(providedToken?: string | null): Promise<string | null> {
-  // If token provided, use it
-  if (providedToken) {
-    return await getUshaToken(providedToken);
-  }
-  
-  try {
-    // Try to get token from auth worker for any USHA domain
-    // Priority: api-business-agent.ushadvisors.com > agent.ushadvisors.com > any ushadvisors.com
-    const sessions = listSessionsFromServer();
-    const ushaSessions = sessions
-      .filter(s => s.targetDomain.includes('ushadvisors.com'))
-      .sort((a, b) => {
-        // Prefer api-business-agent.ushadvisors.com (most reliable for DNC API)
-        const aIsApiBusiness = a.targetDomain === 'api-business-agent.ushadvisors.com';
-        const bIsApiBusiness = b.targetDomain === 'api-business-agent.ushadvisors.com';
-        if (aIsApiBusiness && !bIsApiBusiness) return -1;
-        if (!aIsApiBusiness && bIsApiBusiness) return 1;
-        
-        // Then prefer agent.ushadvisors.com
-        const aIsAgent = a.targetDomain === 'agent.ushadvisors.com';
-        const bIsAgent = b.targetDomain === 'agent.ushadvisors.com';
-        if (aIsAgent && !bIsAgent) return -1;
-        if (!aIsAgent && bIsAgent) return 1;
-        
-        // Finally, most recent
-        return b.stabilizedAt - a.stabilizedAt;
-      });
-    
-    // Try sessions in priority order until we get a valid token
-    for (const ushaSession of ushaSessions) {
-      const session = getSessionFromServer(ushaSession.sessionId);
-      if (session) {
-        try {
-          const tokenResult = await getValidToken(session.sessionId);
-          if (tokenResult?.token) {
-            console.log(`🔑 [SCRUB_PHONE] Using auth worker token from ${session.targetDomain} (auto-refreshes, 24/7)`);
-            return tokenResult.token;
-          }
-        } catch (error) {
-          // This session failed, try next one
-          continue;
-        }
-      }
-    }
-  } catch (error) {
-    console.warn('⚠️ [SCRUB_PHONE] Auth worker token fetch failed, falling back to getUshaToken:', error instanceof Error ? error.message : 'Unknown error');
-  }
-  
-  // Fallback to legacy method
-  console.log('🔑 [SCRUB_PHONE] Using getUshaToken() fallback');
-  return await getUshaToken();
 }
 
 /**
@@ -96,16 +34,15 @@ export async function GET(request: NextRequest) {
     const phone = searchParams.get('phone');
     const currentContextAgentNumber = searchParams.get('currentContextAgentNumber') || '00044447';
     
-    // Get JWT token (Priority: Auth worker → getUshaToken fallback)
-    const providedToken = searchParams.get('token');
-    const token = await getUshaTokenForDNC(providedToken);
+    const token = getDncToken();
     
     const origin = request.headers.get('origin');
     
     if (!token) {
+      incrementMetric('dnc.token.missing');
       return NextResponse.json(
-        { error: 'USHA JWT token is required. Failed to obtain token from auth worker or environment.' },
-        { status: 401, headers: getCorsHeaders(origin) }
+        { error: 'DNC token not configured. Add token in Lead Generation > Settings.' },
+        { status: 400, headers: getCorsHeaders(origin) }
       );
     }
 
@@ -138,22 +75,16 @@ export async function GET(request: NextRequest) {
       'x-domain': 'app.tampausha.com',
     };
 
-    let response = await fetch(url, {
+    const response = await fetch(url, {
       method: 'GET',
       headers,
     });
-
-    // Retry once on auth failure (automatic token refresh via auth worker or getUshaToken)
     if (response.status === 401 || response.status === 403) {
-      console.log(`🔄 [SCRUB_PHONE] Token expired (${response.status}), refreshing and retrying...`);
-      clearTokenCache();
-      const freshToken = await getUshaTokenForDNC();
-      if (freshToken) {
-        response = await fetch(url, {
-          method: 'GET',
-          headers: { ...headers, 'Authorization': `Bearer ${freshToken}` },
-        });
-      }
+      incrementMetric('dnc.api.unauthorized');
+      return NextResponse.json(
+        { error: 'DNC request unauthorized (invalid manual token). Update token in Lead Generation settings.' },
+        { status: 401, headers: getCorsHeaders(origin) }
+      );
     }
 
     if (!response.ok) {

@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getDncToken } from '@/utils/dncToken';
+import { incrementMetric } from '@/utils/dncMetrics';
 
 function getCorsHeaders(origin: string | null) {
   return {
@@ -16,12 +18,12 @@ export async function OPTIONS(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   const origin = request.headers.get('origin');
-  const authHeader = request.headers.get('authorization');
-
-  if (!authHeader) {
+  const token = getDncToken();
+  if (!token) {
+    incrementMetric('dnc.token.missing');
     return NextResponse.json(
-      { error: 'Authorization token required for DNC scrubbing.' },
-      { status: 401, headers: getCorsHeaders(origin) },
+      { error: 'DNC token not configured. Add token in Lead Generation > Settings.' },
+      { status: 400, headers: getCorsHeaders(origin) },
     );
   }
 
@@ -38,7 +40,7 @@ export async function POST(request: NextRequest) {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: authHeader,
+      Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify(body),
   });

@@ -252,7 +252,12 @@ export default function LinkedInLeadGenerator() {
   const [apiProgress, setApiProgress] = useState<APIProgress[]>([]);
   const [isScrubbing, setIsScrubbing] = useState(false);
   const [dncResults, setDncResults] = useState<DNCResult[]>([]);
-  const [ushaToken, setUshaToken] = useState<string>('');
+  const [dncTokenInput, setDncTokenInput] = useState<string>('');
+  const [dncTokenMasked, setDncTokenMasked] = useState<string | null>(null);
+  const [showDncToken, setShowDncToken] = useState(false);
+  const [dncTokenStatus, setDncTokenStatus] = useState<string | null>(null);
+  const [isSavingDncToken, setIsSavingDncToken] = useState(false);
+  const [isTestingDncToken, setIsTestingDncToken] = useState(false);
   const [jobLogID, setJobLogID] = useState<string | null>(null);
   const [leadSummaries, setLeadSummaries] = useState<LeadSummary[]>([]);
   const [sortField, setSortField] = useState<'state' | 'income' | 'none'>('none');
@@ -264,6 +269,60 @@ export default function LinkedInLeadGenerator() {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [leadList, setLeadList] = useState<LeadListItem[]>([]);
   const [showLeadList, setShowLeadList] = useState<boolean>(false);
+  useEffect(() => {
+    const loadTokenMeta = async () => {
+      try {
+        const response = await fetch('/api/settings/dnc/token');
+        const data = await response.json();
+        if (data.success) {
+          setDncTokenMasked(data.masked ?? null);
+        }
+      } catch (error) {
+        console.warn('[LeadGen] Failed to load DNC token metadata:', error);
+      }
+    };
+    loadTokenMeta();
+  }, []);
+
+  const handleSaveDncToken = async () => {
+    try {
+      setIsSavingDncToken(true);
+      setDncTokenStatus(null);
+      const response = await fetch('/api/settings/dnc/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: dncTokenInput }),
+      });
+      const data = await response.json();
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || 'Failed to save DNC token');
+      }
+      setDncTokenMasked(data.masked ?? null);
+      setDncTokenInput('');
+      setDncTokenStatus('Saved token.');
+    } catch (error) {
+      setDncTokenStatus(error instanceof Error ? error.message : 'Failed to save DNC token');
+    } finally {
+      setIsSavingDncToken(false);
+    }
+  };
+
+  const handleTestDncToken = async () => {
+    try {
+      setIsTestingDncToken(true);
+      setDncTokenStatus(null);
+      const response = await fetch('/api/settings/dnc/token/test', { method: 'POST' });
+      const data = await response.json();
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || 'DNC token test failed');
+      }
+      setDncTokenStatus('DNC token is valid.');
+    } catch (error) {
+      setDncTokenStatus(error instanceof Error ? error.message : 'DNC token test failed');
+    } finally {
+      setIsTestingDncToken(false);
+    }
+  };
 
   // Update elapsed time every second when searching
   useEffect(() => {
@@ -2135,7 +2194,7 @@ export default function LinkedInLeadGenerator() {
             
             // Check if it's a token error - stop all batches if so
             if (errorMessage.includes('USHA JWT token') || errorMessage.includes('token is required')) {
-              throw new Error(`Token error: ${errorMessage}. Configure a token in Settings → Manual DNC JWT or set USHA_JWT_TOKEN.`);
+              throw new Error(`Token error: ${errorMessage}. Configure a token in Lead Generation > Settings.`);
             }
             // For other errors, continue processing remaining batches
           }
@@ -2276,7 +2335,6 @@ export default function LinkedInLeadGenerator() {
       const file = new File([blob], 'leads.csv', { type: 'text/csv' });
       const formData = new FormData();
       formData.append('file', file);
-      if (ushaToken.trim()) formData.append('token', ushaToken);
       formData.append('ScrubList', 'true');
       formData.append('ImportLeads', 'false');
 
@@ -2287,7 +2345,7 @@ export default function LinkedInLeadGenerator() {
         const errorMsg = result.error || 'Failed to scrub leads';
         // Provide more helpful error message for 401
         if (response.status === 401) {
-          throw new Error(`${errorMsg}. Please add USHA_JWT_TOKEN to .env.local or enter it in the token field above.`);
+          throw new Error(`${errorMsg}. Please add the token in Lead Generation > Settings.`);
         }
         throw new Error(errorMsg);
       }
@@ -2306,8 +2364,7 @@ export default function LinkedInLeadGenerator() {
 
   const fetchDNCResults = async (jobId: string) => {
     try {
-      const tokenParam = ushaToken.trim() ? `&token=${encodeURIComponent(ushaToken)}` : '';
-      const response = await fetch(`/api/usha/import-log?JobLogID=${jobId}${tokenParam}`);
+      const response = await fetch(`/api/usha/import-log?JobLogID=${jobId}`);
       const result = await response.json();
 
       if (response.ok && result.data) {
@@ -3119,6 +3176,49 @@ export default function LinkedInLeadGenerator() {
                 {results.length > 0 ? `${results.length} leads found` : error ? 'Search failed' : 'No leads found'}
               </p>
             </div>
+            {results.length > 0 && (
+              <div className="rounded-xl border border-slate-700/50 bg-slate-800/40 px-4 py-3 text-xs text-slate-200">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-slate-400">DNC token:</span>
+                  <span className="font-mono">{dncTokenMasked || 'not set'}</span>
+                </div>
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  <input
+                    type={showDncToken ? 'text' : 'password'}
+                    value={dncTokenInput}
+                    onChange={(event) => setDncTokenInput(event.target.value)}
+                    placeholder="Enter DNC token"
+                    className="w-64 rounded-lg border border-slate-600 bg-slate-900/60 px-3 py-1.5 text-xs text-slate-100 focus:outline-none focus:ring-2 focus:ring-rose-400"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowDncToken((prev) => !prev)}
+                    className="px-3 py-1.5 rounded-lg border border-slate-600 text-slate-200 text-xs"
+                  >
+                    {showDncToken ? 'Hide' : 'Show'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSaveDncToken}
+                    disabled={isSavingDncToken}
+                    className="px-3 py-1.5 rounded-lg bg-rose-600 text-white text-xs disabled:opacity-50"
+                  >
+                    {isSavingDncToken ? 'Saving...' : 'Save Token'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleTestDncToken}
+                    disabled={isTestingDncToken}
+                    className="px-3 py-1.5 rounded-lg border border-emerald-500 text-emerald-200 text-xs disabled:opacity-50"
+                  >
+                    {isTestingDncToken ? 'Testing...' : 'Test Connection'}
+                  </button>
+                  {dncTokenStatus && (
+                    <span className="text-xs text-slate-300">{dncTokenStatus}</span>
+                  )}
+                </div>
+              </div>
+            )}
             {results.length > 0 && (
               <div className="flex gap-3">
             <button
