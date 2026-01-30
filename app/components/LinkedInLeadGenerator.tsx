@@ -907,8 +907,18 @@ export default function LinkedInLeadGenerator() {
 
       // Check for errors in response body (even if HTTP status is 200)
       // RapidAPI sometimes returns 200 OK with { success: false, error: "..." } in body
-      if (result.error || result.success === false) {
-        const errorMsg = result.message || result.error || 'API request failed';
+      const errorPayload = result.error;
+      const hasErrorPayload = (() => {
+        if (result.success === false) return true;
+        if (!errorPayload) return false;
+        if (typeof errorPayload === 'string') return errorPayload.trim().length > 0;
+        if (Array.isArray(errorPayload)) return errorPayload.length > 0;
+        if (typeof errorPayload === 'object') return Object.keys(errorPayload).length > 0;
+        return Boolean(errorPayload);
+      })();
+
+      if (hasErrorPayload) {
+        const errorMsg = result.message || (typeof errorPayload === 'string' ? errorPayload : undefined) || 'API request failed';
         console.error('🔍 [SEARCH] ❌ Error in response body:', errorMsg);
         setError(errorMsg);
         setScrapingProgress(prev => ({ ...prev, status: 'error', currentOperation: 'Error occurred' }));
