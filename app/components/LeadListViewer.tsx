@@ -33,10 +33,10 @@ export default function LeadListViewer({
   const sortedLeads = [...leads].sort((a, b) => {
     const aVal = a[sortField];
     const bVal = b[sortField];
-    
+
     if (aVal === undefined || aVal === null) return 1;
     if (bVal === undefined || bVal === null) return -1;
-    
+
     const comparison = aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
     return sortDirection === 'asc' ? comparison : -comparison;
   });
@@ -44,6 +44,14 @@ export default function LeadListViewer({
   const enrichedCount = leads.filter(l => l.enriched).length;
   const dncCheckedCount = leads.filter(l => l.dncChecked).length;
   const safeToContactCount = leads.filter(l => l.canContact === true).length;
+  const linkedinCount = leads.filter(l => l.platform === 'linkedin').length;
+  const facebookCount = leads.filter(l => l.platform === 'facebook').length;
+  const instagramCount = leads.filter(l => l.platform === 'instagram').length;
+  const parts: string[] = [];
+  if (linkedinCount > 0) parts.push(`${linkedinCount} from LinkedIn`);
+  if (facebookCount > 0) parts.push(`${facebookCount} from Facebook`);
+  if (instagramCount > 0) parts.push(`${instagramCount} from Instagram`);
+  const sourceSummary = parts.length > 0 ? parts.join(' • ') : leads.length > 0 ? 'Source unknown' : null;
 
   return (
     <div className="modal-overlay">
@@ -56,6 +64,9 @@ export default function LeadListViewer({
               <p className="text-sm text-hacker-text-primary-dim mt-1">
                 {leads.length} total leads • {enrichedCount} enriched • {dncCheckedCount} DNC checked • {safeToContactCount} safe to contact
               </p>
+              {sourceSummary && (
+                <p className="text-xs text-hacker-cyan/80 mt-0.5">{sourceSummary}</p>
+              )}
             </div>
             <button
               onClick={onClose}
@@ -112,6 +123,12 @@ export default function LeadListViewer({
                   }}>
                     Name {sortField === 'name' && (sortDirection === 'asc' ? '↑' : '↓')}
                   </th>
+                  <th className="p-2 text-left cursor-pointer hover:text-hacker-cyan" onClick={() => {
+                    setSortField('platform');
+                    setSortDirection(d => d === 'asc' ? 'desc' : 'asc');
+                  }}>
+                    Source {sortField === 'platform' && (sortDirection === 'asc' ? '↑' : '↓')}
+                  </th>
                   <th className="p-2 text-left">Phone</th>
                   <th className="p-2 text-left">Email</th>
                   <th className="p-2 text-left">DOB</th>
@@ -136,6 +153,23 @@ export default function LeadListViewer({
                     <td className="p-2 font-medium">
                       {lead.name}
                       {lead.enriched && <span className="ml-2 text-xs text-green-400">✓</span>}
+                    </td>
+                    <td className="p-2">
+                      {lead.platform === 'linkedin' ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-white/20 text-white border border-white/30">
+                          LinkedIn
+                        </span>
+                      ) : lead.platform === 'facebook' ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-white/20 text-white border border-white/30">
+                          Facebook
+                        </span>
+                      ) : lead.platform === 'instagram' ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-white/20 text-white border border-white/30">
+                          Instagram
+                        </span>
+                      ) : (
+                        <span className="text-hacker-text-primary-dim italic">-</span>
+                      )}
                     </td>
                     <td className="p-2 font-mono text-xs">
                       {lead.phone || <span className="text-hacker-text-primary-dim italic">-</span>}

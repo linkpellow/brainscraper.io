@@ -1,0 +1,27 @@
+{
+  "records": [
+    {
+      "leadId": "Chris_Koeneman_6145821526",
+      "skipped": true,
+      "reason": "INCOME_BELOW_60K",
+      "reasonCodes": [
+        "INCOME_BELOW_60K"
+      ],
+      "confidence": 67,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-08T02:11:16.176Z"
+    },
+    {
+      "leadId": "Chris_Koeneman_6145821526",
+      "skipped": true,
+      "reason": "INCOME_BELOW_60K",
+      "reasonCodes": [
+        "INCOME_BELOW_60K"
+      ],
+      "confidence": 67,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-08T02:38:36.468Z"
+    }
+  ],
+  "lastUpdated": "2026-03-08T02:38:36.469Z"
+}

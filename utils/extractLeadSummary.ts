@@ -19,6 +19,10 @@ export interface SourceDetails {
   keywords?: string[];
   postId?: string;
   commentId?: string;
+  // Instagram fields
+  username?: string;
+  hashtag?: string;
+  mediaId?: string;
 }
 
 export interface LeadSummary {
@@ -40,7 +44,8 @@ export interface LeadSummary {
   searchFilter?: string; // Search filter summary from LinkedIn search (backward compatibility)
   dateScraped?: string; // Date when the lead was scraped/created
   linkedinUrl?: string; // LinkedIn profile URL
-  platform?: 'linkedin' | 'facebook'; // Platform source identifier
+  instagramUrl?: string; // Instagram profile URL
+  platform?: 'linkedin' | 'facebook' | 'instagram'; // Platform source identifier
   sourceDetails?: SourceDetails; // Structured source information
 }
 
@@ -426,6 +431,8 @@ export function extractLeadSummary(
   
   // Extract LinkedIn URL from row
   const linkedinUrl = row['LinkedIn URL'] || row['LinkedInURL'] || row['linkedin_url'] || row['linkedinUrl'] || row['navigationUrl'] || row['profile_url'] || row['url'] || '';
+  // Extract Instagram URL from row
+  const instagramUrl = row['Instagram URL'] || row['InstagramURL'] || row['instagram_url'] || row['instagramUrl'] || '';
   
   // Extract date scraped from row or use provided date, or current date if not available
   const scrapedDateRaw = dateScraped || row['Date Scraped'] || row['date_scraped'] || row['DateScraped'] || new Date().toISOString().split('T')[0];
@@ -433,7 +440,7 @@ export function extractLeadSummary(
   
   // Extract platform from row
   const platformRaw = row['Platform'] || row['platform'] || '';
-  const platform = (platformRaw === 'linkedin' || platformRaw === 'facebook') ? platformRaw as 'linkedin' | 'facebook' : undefined;
+  const platform = (platformRaw === 'linkedin' || platformRaw === 'facebook' || platformRaw === 'instagram') ? platformRaw as 'linkedin' | 'facebook' | 'instagram' : undefined;
   
   // Extract sourceDetails from row (can be object or JSON string)
   let sourceDetails: SourceDetails | undefined;
@@ -540,6 +547,7 @@ export function extractLeadSummary(
     searchFilter,
     dateScraped: scrapedDate,
     linkedinUrl: linkedinUrl ? String(linkedinUrl) : undefined,
+    instagramUrl: instagramUrl ? String(instagramUrl) : undefined,
     platform,
     sourceDetails,
   };
@@ -578,7 +586,7 @@ export function leadSummariesToCSV(summaries: LeadSummary[]): string {
   if (summaries.length === 0) return '';
   
   // Order: Firstname, Lastname, Phone, Email, State, City, Age, Income, Zipcode, Linetype, Carrier, Platform, Source Details, Search Filter
-  const headers = ['Firstname', 'Lastname', 'Phone', 'Email', 'State', 'City', 'Age', 'Income', 'Zipcode', 'Linetype', 'Carrier', 'Platform', 'Source Details', 'Search Filter'];
+  const headers = ['Firstname', 'Lastname', 'Phone', 'Email', 'State', 'City', 'Age', 'Income', 'Zipcode', 'Linetype', 'Carrier', 'Platform', 'LinkedIn URL', 'Instagram URL', 'Source Details', 'Search Filter'];
   const rows = summaries.map(summary => {
     // Split name into first and last
     const nameParts = (summary.name || '').trim().split(/\s+/);
@@ -624,6 +632,8 @@ export function leadSummariesToCSV(summaries: LeadSummary[]): string {
       if (summary.sourceDetails.keywords && summary.sourceDetails.keywords.length > 0) {
         parts.push(`Keywords: ${summary.sourceDetails.keywords.join(', ')}`);
       }
+      if (summary.sourceDetails.username) parts.push(`Instagram: @${summary.sourceDetails.username}`);
+      if (summary.sourceDetails.hashtag) parts.push(`Hashtag: #${summary.sourceDetails.hashtag}`);
       sourceDetailsStr = parts.join(' | ');
     }
     
@@ -640,6 +650,8 @@ export function leadSummariesToCSV(summaries: LeadSummary[]): string {
       summary.lineType || '',
       summary.carrier || '',
       summary.platform || '',
+      summary.linkedinUrl || '',
+      summary.instagramUrl || '',
       sourceDetailsStr,
       summary.searchFilter || '',
     ];

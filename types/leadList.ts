@@ -18,6 +18,10 @@ export interface SourceDetails {
   keywords?: string[];
   postId?: string;
   commentId?: string;
+  // Instagram fields
+  username?: string;
+  hashtag?: string;
+  mediaId?: string;
 }
 
 export interface LeadListItem {
@@ -32,6 +36,7 @@ export interface LeadListItem {
   company?: string;
   location?: string;
   linkedinUrl?: string;
+  instagramUrl?: string;
   
   // Contact info (empty pre-enrichment, filled post-enrichment)
   phone?: string;
@@ -57,7 +62,7 @@ export interface LeadListItem {
   source: string; // Which search added this lead (backward compatibility)
   enriched: boolean; // Has this lead been enriched?
   dncChecked: boolean; // Has this lead been DNC checked?
-  platform?: 'linkedin' | 'facebook'; // Platform source identifier
+  platform?: 'linkedin' | 'facebook' | 'instagram'; // Platform source identifier
   sourceDetails?: SourceDetails; // Structured source information
 }
 

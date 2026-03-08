@@ -11,7 +11,7 @@ import { withLock } from './fileLock';
 
 export interface JobStatus {
   jobId: string;
-  type: 'enrichment' | 'scraping';
+  type: 'enrichment' | 'scraping' | 'facebook_automated';
   status: 'pending' | 'running' | 'completed' | 'failed' | 'cancelled';
   progress: {
     current: number;
@@ -283,7 +283,7 @@ export async function failJob(jobId: string, error: string): Promise<void> {
 /**
  * Generate unique job ID
  */
-export function generateJobId(type: 'enrichment' | 'scraping'): string {
+export function generateJobId(type: 'enrichment' | 'scraping' | 'facebook_automated'): string {
   const timestamp = Date.now();
   const random = Math.random().toString(36).substring(2, 9);
   return `${type}-${timestamp}-${random}`;

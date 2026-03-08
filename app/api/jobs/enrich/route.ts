@@ -8,13 +8,19 @@ import { NextRequest, NextResponse } from 'next/server';
 import { inngest, enrichmentEvents } from '@/utils/inngest';
 import { generateJobId, saveJobStatus } from '@/utils/jobStatus';
 import type { ParsedData } from '@/utils/parseFile';
+import {
+  normalizeStationId,
+  normalizeStationConfig,
+  type EnrichmentStation,
+} from '@/utils/enrichmentStations';
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { parsedData, metadata } = body as {
+    const { parsedData, metadata, enabledStations } = body as {
       parsedData: ParsedData;
       metadata?: Record<string, unknown>;
+      enabledStations?: unknown;
     };
 
     // Input validation
@@ -52,6 +58,50 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    if (enabledStations !== undefined && !Array.isArray(enabledStations)) {
+      return NextResponse.json(
+        { success: false, error: 'enabledStations must be an array when provided' },
+        { status: 400 }
+      );
+    }
+
+    if (Array.isArray(enabledStations) && enabledStations.some(station => typeof station !== 'string')) {
+      return NextResponse.json(
+        { success: false, error: 'enabledStations must contain only string station ids' },
+        { status: 400 }
+      );
+    }
+
+    const requestedStations = Array.isArray(enabledStations)
+      ? enabledStations as string[]
+      : undefined;
+
+    const invalidStations = requestedStations?.filter(
+      station => !normalizeStationId(station)
+    ) || [];
+
+    if (invalidStations.length > 0) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: `Invalid enabledStations value(s): ${invalidStations.join(', ')}`,
+        },
+        { status: 400 }
+      );
+    }
+
+    const normalizedStationConfig = requestedStations
+      ? normalizeStationConfig(requestedStations)
+      : undefined;
+
+    const effectiveStations = normalizedStationConfig
+      ? Array.from(normalizedStationConfig.stations)
+      : undefined;
+
+    const stationIssues = normalizedStationConfig?.issues.map(issue =>
+      `${issue.station} disabled because ${issue.missingDependencies.join(', ')} ${issue.missingDependencies.length === 1 ? 'is' : 'are'} missing`
+    );
 
     // Check cooldown
     try {
@@ -106,7 +156,14 @@ export async function POST(request: NextRequest) {
         percentage: 0,
       },
       startedAt: new Date().toISOString(),
-      metadata: metadata || {},
+      metadata: {
+        ...(metadata || {}),
+        ...(requestedStations ? {
+          requestedStations,
+          enabledStations: effectiveStations,
+          stationConfigIssues: stationIssues,
+        } : {}),
+      },
     };
     saveJobStatus(initialStatus);
 
@@ -124,7 +181,8 @@ export async function POST(request: NextRequest) {
       data: {
         jobId,
         parsedData,
-        metadata,
+        metadata: initialStatus.metadata,
+        enabledStations: effectiveStations,
       },
     };
 
@@ -143,6 +201,7 @@ export async function POST(request: NextRequest) {
       success: true,
       jobId,
       message: 'Enrichment job started',
+      ...(effectiveStations ? { enabledStations: effectiveStations } : {}),
     });
   } catch (error) {
     console.error('Error starting enrichment job:', error);

@@ -29,3 +29,7 @@ export const jobEvents = {
   jobCompleted: 'jobs/completed',
   jobFailed: 'jobs/failed',
 } as const;
+
+export const facebookEvents = {
+  automatedLeadSearch: 'facebook/automated-lead-search',
+} as const;

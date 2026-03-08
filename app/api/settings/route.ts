@@ -9,6 +9,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { loadSettings, saveSettings, validateSettings, DEFAULT_SETTINGS, type SettingsConfig } from '@/utils/settingsConfig';
 import { API_REGISTRY, getAllAPIKeys } from '@/utils/apiRegistry';
 
+function sanitizeSettingsForClient(settings: SettingsConfig): SettingsConfig {
+  return {
+    ...settings,
+    dncAccessToken: null,
+    dncAccessTokenExpiresAt: null,
+  };
+}
+
 /**
  * GET /api/settings
  * Load current settings
@@ -47,10 +55,10 @@ export async function GET() {
 
     return NextResponse.json({
       success: true,
-      settings: {
+      settings: sanitizeSettingsForClient({
         ...settings,
         apiToggles,
-      },
+      }),
     });
   } catch (error) {
     console.error('[SETTINGS_API] Failed to load settings:', error);
@@ -139,6 +147,8 @@ export async function PUT(request: NextRequest) {
         channels: partialSettings.notifications?.channels ?? currentSettings.notifications.channels,
       },
       scrapeProfiles: partialSettings.scrapeProfiles ?? currentSettings.scrapeProfiles,
+      dncAccessToken: currentSettings.dncAccessToken,
+      dncAccessTokenExpiresAt: currentSettings.dncAccessTokenExpiresAt,
     };
 
     // Ensure API toggles have correct structure
@@ -169,7 +179,7 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({
       success: true,
       message: 'Settings saved successfully',
-      settings: updatedSettings,
+      settings: sanitizeSettingsForClient(updatedSettings),
     });
   } catch (error) {
     console.error('[SETTINGS_API] Failed to save settings:', error);
@@ -183,4 +193,3 @@ export async function PUT(request: NextRequest) {
     );
   }
 }
-

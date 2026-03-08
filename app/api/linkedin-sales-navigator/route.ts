@@ -2159,23 +2159,25 @@ export async function POST(request: NextRequest) {
       }
     }
     
-    // AUTOMATIC SAVE: Save all API results since we're paying for every call
-    try {
-      const { saveApiResults } = await import('@/utils/saveApiResults');
-      
-      const savedPath = await saveApiResults(
-        endpoint || 'unknown',
-        body, // All search params
-        data, // Raw response (may have been filtered)
-        finalResults // Processed and filtered results
-      );
-      
-      if (savedPath) {
-        logger.log(`💾 API results saved to: ${savedPath}`);
+    // AUTOMATIC SAVE: Save all API results (skip when part of a multi-page run; frontend saves once at end)
+    if (!body.runId) {
+      try {
+        const { saveApiResults } = await import('@/utils/saveApiResults');
+        
+        const savedPath = await saveApiResults(
+          endpoint || 'unknown',
+          body, // All search params
+          data, // Raw response (may have been filtered)
+          finalResults // Processed and filtered results
+        );
+        
+        if (savedPath) {
+          logger.log(`💾 API results saved to: ${savedPath}`);
+        }
+      } catch (saveError) {
+        // Don't fail the request if saving fails
+        logger.warn('Failed to save API results:', saveError);
       }
-    } catch (saveError) {
-      // Don't fail the request if saving fails
-      logger.warn('Failed to save API results:', saveError);
     }
 
     // Track scrape usage

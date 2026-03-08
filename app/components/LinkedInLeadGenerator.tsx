@@ -5,16 +5,16 @@ import { useRouter } from 'next/navigation';
 import { 
   Rocket, Users, Building2, Link2, ClipboardList, Eye, Zap, 
   CheckCircle, XCircle, Loader2, Download, DollarSign, Play,
-  Search, Filter, FileDown, ArrowRight, Linkedin, Facebook, Sparkles, X
+  Search, Filter, FileDown, ArrowRight, Linkedin, Facebook, Instagram, X
 } from 'lucide-react';
 import { ParsedData } from '@/utils/parseFile';
 import { enrichData, EnrichedData, EnrichedRow, EnrichmentProgress } from '@/utils/enrichData';
 import { extractLeadSummary, leadSummariesToCSV, LeadSummary } from '@/utils/extractLeadSummary';
-import { DNCResult } from './USHAScrubber';
-import { scrubDnc } from '@/src/lib/dncClient';
 import LeadListViewer from './LeadListViewer';
 import FacebookLeadGenerator from './FacebookLeadGenerator';
+import InstagramLeadGenerator from './InstagramLeadGenerator';
 import EnrichmentStationControl from './EnrichmentStationControl';
+import DncRecoveryForm, { type DncUiStatus } from './DncRecoveryForm';
 import type { LeadListItem, SourceDetails } from '@/types/leadList';
 import type { EnrichmentStation } from '@/utils/enrichmentStations';
 import { getDefaultStationConfig } from '@/utils/enrichmentStations';
@@ -48,7 +48,10 @@ interface ScrapingProgress {
 }
 
 type WorkflowStep = 'search' | 'results' | 'enriching' | 'complete';
-type TabType = 'linkedin' | 'facebook';
+type TabType = 'linkedin' | 'facebook' | 'instagram';
+
+const DEFAULT_DNC_RECOVERY_MESSAGE =
+  'DNC scrubbing could not refresh or validate the current access token. Paste a fresh access token below to re-establish DNC scrubbing.';
 
 /**
  * Normalizes a name by removing credentials and suffixes after commas
@@ -135,6 +138,9 @@ export default function LinkedInLeadGenerator() {
   const [searchParams, setSearchParams] = useState<Record<string, unknown>>({});
   const [isSearching, setIsSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [dncWarningMessage, setDncWarningMessage] = useState<string | null>(null);
+  const [showDncWarningModal, setShowDncWarningModal] = useState(false);
+  const [dncUiState, setDncUiState] = useState<DncUiStatus | null>(null);
   const [results, setResults] = useState<LeadResult[] | null>(null);
   const [retryAfterExpiration, setRetryAfterExpiration] = useState<number | null>(null); // Timestamp when retry is allowed
   const [countdownSeconds, setCountdownSeconds] = useState<number>(0);
@@ -250,81 +256,15 @@ export default function LinkedInLeadGenerator() {
   const [detailedProgress, setDetailedProgress] = useState<EnrichmentProgress | null>(null);
   const [enrichmentErrors, setEnrichmentErrors] = useState<Array<{ lead: string; error: string; timestamp: number }>>([]);
   const [apiProgress, setApiProgress] = useState<APIProgress[]>([]);
-  const [isScrubbing, setIsScrubbing] = useState(false);
-  const [dncResults, setDncResults] = useState<DNCResult[]>([]);
-  const [dncTokenInput, setDncTokenInput] = useState<string>('');
-  const [dncTokenMasked, setDncTokenMasked] = useState<string | null>(null);
-  const [showDncToken, setShowDncToken] = useState(false);
-  const [dncTokenStatus, setDncTokenStatus] = useState<string | null>(null);
-  const [isSavingDncToken, setIsSavingDncToken] = useState(false);
-  const [isTestingDncToken, setIsTestingDncToken] = useState(false);
-  const [jobLogID, setJobLogID] = useState<string | null>(null);
   const [leadSummaries, setLeadSummaries] = useState<LeadSummary[]>([]);
   const [sortField, setSortField] = useState<'state' | 'income' | 'none'>('none');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
-  const [enableDNCScrub, setEnableDNCScrub] = useState<boolean>(false);
   const [locationDiscoveryStatus, setLocationDiscoveryStatus] = useState<string | null>(null);
   const [fetchAllPages, setFetchAllPages] = useState<boolean>(true);
   const [maxPagesToFetch, setMaxPagesToFetch] = useState<number>(100);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [leadList, setLeadList] = useState<LeadListItem[]>([]);
   const [showLeadList, setShowLeadList] = useState<boolean>(false);
-  useEffect(() => {
-    const loadTokenMeta = async () => {
-      try {
-        const response = await fetch('/api/settings/dnc/token');
-        const data = await response.json();
-        if (data.configured) {
-          setDncTokenMasked(data.masked ?? null);
-        } else {
-          setDncTokenMasked(null);
-        }
-      } catch (error) {
-        console.warn('[LeadGen] Failed to load DNC token metadata:', error);
-      }
-    };
-    loadTokenMeta();
-  }, []);
-
-  const handleSaveDncToken = async () => {
-    try {
-      setIsSavingDncToken(true);
-      setDncTokenStatus(null);
-      const response = await fetch('/api/settings/dnc/token', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: dncTokenInput }),
-      });
-      const data = await response.json();
-      if (!response.ok || !data.ok) {
-        throw new Error(data.error || 'Failed to save DNC token');
-      }
-      setDncTokenMasked(data.masked ?? null);
-      setDncTokenInput('');
-      setDncTokenStatus('Saved token.');
-    } catch (error) {
-      setDncTokenStatus(error instanceof Error ? error.message : 'Failed to save DNC token');
-    } finally {
-      setIsSavingDncToken(false);
-    }
-  };
-
-  const handleTestDncToken = async () => {
-    try {
-      setIsTestingDncToken(true);
-      setDncTokenStatus(null);
-      const response = await fetch('/api/settings/dnc/test', { method: 'POST' });
-      const data = await response.json();
-      if (!response.ok || !data.ok) {
-        throw new Error(data.reason || 'DNC token test failed');
-      }
-      setDncTokenStatus('DNC token is valid.');
-    } catch (error) {
-      setDncTokenStatus(error instanceof Error ? error.message : 'DNC token test failed');
-    } finally {
-      setIsTestingDncToken(false);
-    }
-  };
 
   // Update elapsed time every second when searching
   useEffect(() => {
@@ -378,6 +318,51 @@ export default function LinkedInLeadGenerator() {
     setToast({ message, type });
     setTimeout(() => setToast(null), 5000); // Auto-dismiss after 5 seconds
   };
+
+  const openDncWarningModal = (message: string = DEFAULT_DNC_RECOVERY_MESSAGE) => {
+    setDncWarningMessage(message);
+    setShowDncWarningModal(true);
+  };
+
+  const closeDncWarningModal = () => {
+    setShowDncWarningModal(false);
+    setDncWarningMessage(null);
+  };
+
+  const refreshDncUiState = async (message: string = DEFAULT_DNC_RECOVERY_MESSAGE) => {
+    try {
+      const response = await fetch('/api/settings/dnc/token');
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok || !data) {
+        throw new Error('Failed to load DNC UI state');
+      }
+
+      const nextState: DncUiStatus = {
+        uiMode: data.uiMode === 'recovery' ? 'recovery' : 'hidden',
+        configured: Boolean(data.configured),
+        masked: typeof data.masked === 'string' ? data.masked : undefined,
+        expiresAt: typeof data.expiresAt === 'number' ? data.expiresAt : undefined,
+      };
+
+      setDncUiState(nextState);
+
+      if (nextState.uiMode === 'recovery') {
+        openDncWarningModal(message);
+      } else {
+        closeDncWarningModal();
+      }
+
+      return nextState;
+    } catch (loadError) {
+      console.warn('[DNC_UI] Failed to refresh backend DNC UI state:', loadError);
+      return null;
+    }
+  };
+
+  useEffect(() => {
+    refreshDncUiState().catch(() => undefined);
+  }, []);
 
   const initializeAPIProgress = () => {
     const apis: APIProgress[] = [
@@ -489,14 +474,13 @@ export default function LinkedInLeadGenerator() {
     setIsEnriching(true);
     setError(null);
     setEnrichedData(null);
-    setDncResults([]);
     setLeadSummaries([]);
     setWorkflowStep('enriching');
     initializeAPIProgress();
 
     try {
       // Convert single lead to ParsedData format
-      const headers = ['Name', 'Title', 'Company', 'Location', 'LinkedIn URL', 'Email', 'Phone', 'First Name', 'Last Name', 'City', 'State', 'Zip', 'Platform', 'Source Details', 'Search Filter'];
+      const headers = ['Name', 'Title', 'Company', 'Location', 'LinkedIn URL', 'Instagram URL', 'Email', 'Phone', 'First Name', 'Last Name', 'City', 'State', 'Zip', 'Platform', 'Source Details', 'Search Filter'];
       const location = testLead.location || '';
       const locationParts = location.split(',').map((s: string) => s.trim());
       const sourceDetailsStr = testLead.sourceDetails ? JSON.stringify(testLead.sourceDetails) : '';
@@ -507,6 +491,7 @@ export default function LinkedInLeadGenerator() {
         'Company': testLead.company || '',
         'Location': location,
         'LinkedIn URL': testLead.linkedinUrl || '',
+        'Instagram URL': testLead.instagramUrl || '',
         'Email': testLead.email || '',
         'Phone': testLead.phone || '',
         'First Name': testLead.firstName || '',
@@ -590,6 +575,7 @@ export default function LinkedInLeadGenerator() {
       ));
     } finally {
       setIsEnriching(false);
+      await refreshDncUiState();
     }
   };
 
@@ -607,14 +593,13 @@ export default function LinkedInLeadGenerator() {
     setIsEnriching(true);
     setError(null);
     setEnrichedData(null);
-    setDncResults([]);
     setLeadSummaries([]);
     setWorkflowStep('enriching');
     initializeAPIProgress();
 
     try {
       // Convert leadList items to ParsedData format
-      const headers = ['Name', 'Title', 'Company', 'Location', 'LinkedIn URL', 'Email', 'Phone', 'First Name', 'Last Name', 'City', 'State', 'Zip', 'Platform', 'Source Details', 'Search Filter'];
+      const headers = ['Name', 'Title', 'Company', 'Location', 'LinkedIn URL', 'Instagram URL', 'Email', 'Phone', 'First Name', 'Last Name', 'City', 'State', 'Zip', 'Platform', 'Source Details', 'Search Filter'];
       const rows = leadList.map((lead) => {
         const location = lead.location || '';
         const locationParts = location.split(',').map((s: string) => s.trim());
@@ -628,6 +613,7 @@ export default function LinkedInLeadGenerator() {
           'Company': lead.company || '',
           'Location': location,
           'LinkedIn URL': lead.linkedinUrl || '',
+          'Instagram URL': lead.instagramUrl || '',
           'Email': lead.email || '',
           'Phone': lead.phone || '',
           'First Name': lead.firstName || '',
@@ -773,6 +759,7 @@ export default function LinkedInLeadGenerator() {
       ));
     } finally {
       setIsEnriching(false);
+      await refreshDncUiState();
     }
   };
 
@@ -782,12 +769,13 @@ export default function LinkedInLeadGenerator() {
       return;
     }
 
-    const headers = ['Name', 'First Name', 'Last Name', 'Phone', 'Email', 'Date of Birth', 'Age', 'City', 'State', 'Zip Code', 'Income', 'DNC Status', 'Can Contact', 'Title', 'Company', 'LinkedIn URL', 'Added At', 'Source', 'Enriched', 'DNC Checked'];
+    const headers = ['Name', 'First Name', 'Last Name', 'Phone', 'Email', 'Date of Birth', 'Age', 'City', 'State', 'Zip Code', 'Income', 'DNC Status', 'Can Contact', 'Title', 'Company', 'Platform', 'LinkedIn URL', 'Instagram URL', 'Added At', 'Source', 'Enriched', 'DNC Checked'];
     const rows = leadList.map(lead => [
       lead.name, lead.firstName || '', lead.lastName || '', lead.phone || '', lead.email || '',
       lead.dateOfBirth || '', lead.age || '', lead.city || '', lead.state || '', lead.zipCode || '',
       lead.income || '', lead.dncStatus || '', lead.canContact !== undefined ? (lead.canContact ? 'Yes' : 'No') : '',
-      lead.title || '', lead.company || '', lead.linkedinUrl || '', lead.addedAt, lead.source,
+      lead.title || '', lead.company || '', lead.platform || '', lead.linkedinUrl || '', lead.instagramUrl || '',
+      lead.addedAt, lead.source,
       lead.enriched ? 'Yes' : 'No', lead.dncChecked ? 'Yes' : 'No'
     ]);
 
@@ -1120,9 +1108,14 @@ export default function LinkedInLeadGenerator() {
     console.log('📄 [PAGINATION] Max pages to fetch:', maxPagesToFetch);
     console.log('📄 [PAGINATION] Search params limit:', searchParams.limit);
 
+    const runId = typeof crypto !== 'undefined' && crypto.randomUUID
+      ? crypto.randomUUID()
+      : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+
     const allResults: LeadResult[] = [];
     let page = 1;
     let hasMore = true;
+    let lastPagination: { total?: number } | undefined;
     const maxPages = maxPagesToFetch;
     const maxResults = parseInt(String(searchParams.limit || '2500')) || 2500;
     let consecutive429Errors = 0;
@@ -1184,7 +1177,7 @@ export default function LinkedInLeadGenerator() {
         // Retry loop with exponential backoff + jitter (prevents thundering herd problem)
         while (retryCount <= maxRetries) {
           try {
-            pageResults = await fetchSinglePage(page);
+            pageResults = await fetchSinglePage(page, runId);
             
             // Success - reset rate limit tracking (but keep minimum delay)
             if (consecutive429Errors > 0) {
@@ -1390,6 +1383,7 @@ export default function LinkedInLeadGenerator() {
         }));
         
           hasMore = pageResults.pagination?.hasMore || false;
+        lastPagination = pageResults.pagination;
         console.log(`📄 [PAGINATION] Has more after page ${page}: ${hasMore}`);
         console.log(`📄 [PAGINATION] Pagination info:`, JSON.stringify(pageResults.pagination, null, 2));
         
@@ -1404,16 +1398,44 @@ export default function LinkedInLeadGenerator() {
       
       console.log(`📄 [PAGINATION] Processing ${allResults.length} total results`);
       
+      let finalList: LeadResult[] = allResults;
       if (searchParams.location && allResults.length > 0) {
         console.log(`📄 [PAGINATION] Filtering results by location: ${searchParams.location}`);
         const { filterLeadsByLocation } = await import('@/utils/locationValidation');
         const { filtered, stats } = filterLeadsByLocation(allResults, String(searchParams.location));
         console.log(`📄 [PAGINATION] Filtered results: ${filtered.length} of ${allResults.length}`, stats);
+        finalList = filtered;
         setResults(filtered);
         setLocationValidationStats(stats);
-          } else {
+      } else {
         console.log(`📄 [PAGINATION] No location filter, setting all ${allResults.length} results`);
         setResults(allResults);
+      }
+
+      if (finalList.length > 0) {
+        try {
+          const endpoint = searchType === 'person' ? 'premium_search_person' : 'premium_search_company';
+          const { limit: _limit, ...paramsForSave } = searchParams;
+          const saveRes = await fetch('/api/scrape-history/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              runId,
+              endpoint,
+              searchParams: paramsForSave,
+              processedResults: finalList,
+              pagination: lastPagination?.total != null ? { total: lastPagination.total } : undefined,
+            }),
+          });
+          const saveData = await saveRes.json();
+          if (saveData.success) {
+            console.log(`📄 [PAGINATION] 💾 Full run saved to scrape history: ${saveData.filename}`);
+          } else {
+            console.warn('📄 [PAGINATION] Save full run failed:', saveData.error);
+          }
+        } catch (saveErr) {
+          console.warn('📄 [PAGINATION] Failed to save full run to scrape history:', saveErr);
+        }
       }
       
       console.log(`📄 [PAGINATION] Setting workflow step to 'results'`);
@@ -1469,7 +1491,7 @@ export default function LinkedInLeadGenerator() {
     }
   };
 
-  const fetchSinglePage = async (pageNumber: number): Promise<{
+  const fetchSinglePage = async (pageNumber: number, runId?: string): Promise<{
     leads: LeadResult[];
     pagination: any;
   } | null> => {
@@ -1482,7 +1504,8 @@ export default function LinkedInLeadGenerator() {
     // Per-page limit should always be 100 for optimal API usage
     const { limit: totalResultsLimit, ...paramsWithoutLimit } = searchParams;
     const params: Record<string, unknown> = { ...paramsWithoutLimit, page: pageNumber, limit: 100 };
-    const requestBody = { endpoint, ...params };
+    const requestBody: Record<string, unknown> = { endpoint, ...params };
+    if (runId) requestBody.runId = runId;
     
     console.log(`📄 [FETCH_PAGE] Request body:`, JSON.stringify(requestBody, null, 2));
 
@@ -1856,6 +1879,7 @@ export default function LinkedInLeadGenerator() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           parsedData,
+          enabledStations: Array.from(enabledStations),
           metadata: {
             source: 'linkedin-scraper',
             leadCount: results.length,
@@ -1893,7 +1917,6 @@ export default function LinkedInLeadGenerator() {
     setIsEnriching(true);
     setError(null);
     setEnrichedData(null);
-    setDncResults([]);
     setLeadSummaries([]);
     setWorkflowStep('enriching');
     initializeAPIProgress();
@@ -2061,13 +2084,6 @@ export default function LinkedInLeadGenerator() {
         console.error('✨ [ENRICH] Failed to save enriched leads to localStorage:', error);
       }
       
-      // DNC Scrubbing disabled
-      // if (enableDNCScrub) {
-      //   updateAPIProgress('USHA DNC Scrub', { status: 'running', progress: 0, total: enriched.rows.length });
-      //   await handleDNCScrub(enriched);
-      //   updateAPIProgress('USHA DNC Scrub', { status: 'completed', progress: enriched.rows.length, total: enriched.rows.length });
-      // }
-
       // CRITICAL: Aggregate and save enriched leads to server (enriched-all-leads.json)
       // This ensures leads appear on the /enriched page
       // MANDATORY STEP: If aggregation fails, enrichment fails (fail-fast)
@@ -2122,275 +2138,7 @@ export default function LinkedInLeadGenerator() {
     } finally {
       console.log('✨ [ENRICH] Finished handleEnrichAndScrub, setting isEnriching to false');
       setIsEnriching(false);
-    }
-  };
-
-  const handleScrubOnly = async () => {
-    if (leadList.length === 0) {
-      alert('No leads in the list to scrub. Add leads first.');
-      return;
-    }
-
-    // Filter leads with phone numbers
-    const leadsWithPhone = leadList.filter(lead => {
-      const phone = lead.phone?.replace(/\D/g, '');
-      return phone && phone.length >= 10;
-    });
-
-    if (leadsWithPhone.length === 0) {
-      alert('No leads with valid phone numbers to scrub.');
-      return;
-    }
-
-    if (!confirm(`Scrub DNC status for ${leadsWithPhone.length} leads with phone numbers?`)) {
-      return;
-    }
-
-    console.log('🔍 [SCRUB_ONLY] Starting DNC scrub for leadList');
-    setIsScrubbing(true);
-    setError(null);
-
-    try {
-      const phoneNumbers = leadsWithPhone.map(lead => lead.phone?.replace(/\D/g, '')).filter(Boolean) as string[];
-      
-      // Scrub in batches
-      const batchSize = 20;
-      const dncResults = new Map<string, { status: string; isDNC: boolean }>();
-      const totalBatches = Math.ceil(phoneNumbers.length / batchSize);
-
-      let failedBatches = 0;
-      let processedBatches = 0;
-
-      for (let i = 0; i < phoneNumbers.length; i += batchSize) {
-        const batchNum = Math.floor(i / batchSize) + 1;
-        const batch = phoneNumbers.slice(i, i + batchSize);
-        
-        console.log(`📤 [SCRUB_ONLY] Sending batch ${batchNum}/${totalBatches} (${batch.length} numbers)...`);
-        
-        try {
-          const response = await scrubDnc({ phoneNumbers: batch });
-          
-          if (response.ok) {
-            const result = await response.json();
-            if (result.success && result.results && Array.isArray(result.results)) {
-              result.results.forEach((r: any) => {
-                // Normalize phone number for consistent matching
-                const normalizedPhone = String(r.phone || '').replace(/\D/g, '');
-                if (normalizedPhone && normalizedPhone.length >= 10) {
-                  dncResults.set(normalizedPhone, {
-                    status: r.status === 'DNC' ? 'YES' : r.status === 'OK' ? 'NO' : 'UNKNOWN',
-                    isDNC: r.isDNC || r.status === 'DNC'
-                  });
-                }
-              });
-              processedBatches++;
-            } else {
-              console.warn(`⚠️ [SCRUB_ONLY] Batch ${batchNum} returned invalid response structure`);
-              failedBatches++;
-            }
-          } else {
-            const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-            const errorMessage = errorData.error || response.statusText;
-            console.error(`❌ [SCRUB_ONLY] Batch ${batchNum} failed: ${errorMessage}`);
-            failedBatches++;
-            
-            // Check if it's a token error - stop all batches if so
-            if (errorMessage.includes('USHA JWT token') || errorMessage.includes('token is required')) {
-              throw new Error(`Token error: ${errorMessage}. Configure a token in Lead Generation > Settings.`);
-            }
-            // For other errors, continue processing remaining batches
-          }
-        } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-          console.error(`❌ [SCRUB_ONLY] Batch ${batchNum} exception:`, errorMessage);
-          failedBatches++;
-          
-          // Only throw if it's a token error, otherwise continue
-          if (errorMessage.includes('Token error')) {
-            throw error;
-          }
-        }
-        
-        // Small delay between batches
-        if (i + batchSize < phoneNumbers.length) {
-          await new Promise(resolve => setTimeout(resolve, 200));
-        }
-      }
-
-      if (failedBatches > 0) {
-        console.warn(`⚠️ [SCRUB_ONLY] ${failedBatches} batch(es) failed, but continuing with successful results`);
-      }
-
-      // Update leadList with DNC status
-      if (dncResults.size > 0) {
-        const dncCount = Array.from(dncResults.values()).filter(v => v.isDNC).length;
-        const okCount = dncResults.size - dncCount;
-        
-        console.log(`✅ [SCRUB_ONLY] Scrub complete: ${okCount} OK, ${dncCount} DNC`);
-        
-        // Convert status: 'YES' -> 'Do Not Call', 'NO' -> 'Safe', 'UNKNOWN' -> 'Unknown'
-        const convertDNCStatus = (status: string): 'Safe' | 'Do Not Call' | 'Unknown' => {
-          if (status === 'YES') return 'Do Not Call';
-          if (status === 'NO') return 'Safe';
-          return 'Unknown';
-        };
-        
-        // Update leadList with DNC status and capture updated leads for server save
-        let updatedLeadsForServer: LeadSummary[] = [];
-        
-        setLeadList(prev => {
-          const updated = prev.map(lead => {
-            // Normalize phone number for consistent matching
-            const phone = lead.phone?.replace(/\D/g, '');
-            if (phone && phone.length >= 10 && dncResults.has(phone)) {
-              const result = dncResults.get(phone)!;
-              const convertedStatus: 'Safe' | 'Do Not Call' | 'Unknown' = convertDNCStatus(result.status);
-              return {
-                ...lead,
-                dncStatus: convertedStatus,
-                dncChecked: true,
-              };
-            }
-            return lead;
-          });
-
-          // Build server payload from updated leads
-          updatedLeadsForServer = updated.map(lead => {
-            const phone = lead.phone?.replace(/\D/g, '');
-            const baseLead: LeadSummary = {
-              name: lead.name || '',
-              phone: lead.phone || '',
-              email: lead.email || '',
-              dobOrAge: lead.dateOfBirth || lead.age?.toString() || '',
-              zipcode: lead.zipCode || '',
-              state: lead.state || '',
-              city: lead.city || '',
-              dncStatus: 'UNKNOWN',
-              linkedinUrl: lead.linkedinUrl,
-            };
-            
-            if (phone && phone.length >= 10 && dncResults.has(phone)) {
-              const result = dncResults.get(phone)!;
-              baseLead.dncStatus = result.status === 'YES' ? 'YES' : result.status === 'NO' ? 'NO' : 'UNKNOWN';
-              baseLead.dncLastChecked = new Date().toISOString();
-            }
-            
-            return baseLead;
-          });
-
-          return updated;
-        });
-
-        try {
-          const response = await fetch('/api/aggregate-enriched-leads', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ newLeads: updatedLeadsForServer }),
-          });
-          
-          if (response.ok) {
-            console.log('✅ [SCRUB_ONLY] Saved DNC status to server');
-          } else {
-            console.error('❌ [SCRUB_ONLY] Server save failed:', response.statusText);
-          }
-        } catch (error) {
-          console.error('❌ [SCRUB_ONLY] Failed to save to server:', error);
-        }
-
-        const resultMessage = failedBatches > 0 
-          ? `DNC scrub complete!\n${okCount} OK, ${dncCount} DNC\n⚠️ ${failedBatches} batch(es) failed`
-          : `DNC scrub complete!\n${okCount} OK, ${dncCount} DNC`;
-        alert(resultMessage);
-      }
-    } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : 'Failed to scrub leads';
-      setError(errorMsg);
-      alert(`Error: ${errorMsg}`);
-    } finally {
-      setIsScrubbing(false);
-    }
-  };
-
-  const handleDNCScrub = async (data: EnrichedData) => {
-    setIsScrubbing(true);
-    try {
-      const headers = ['First Name', 'Last Name', 'City', 'State', 'Zip', 'Date Of Birth', 'House hold Income', 'Primary Phone'];
-      const csvRows = [
-        headers.join(','),
-        ...data.rows.map((row: EnrichedRow) => {
-          const escapeCSV = (val: string) => val.includes(',') || val.includes('"') ? `"${val.replace(/"/g, '""')}"` : val;
-          return [
-            escapeCSV(String(row['First Name'] || '')),
-            escapeCSV(String(row['Last Name'] || '')),
-            escapeCSV(String(row['City'] || '')),
-            escapeCSV(String(row['State'] || '')),
-            escapeCSV(String(row['Zip'] || '')),
-            escapeCSV(''),
-            escapeCSV(''),
-            escapeCSV(String(row['Phone'] || '')),
-          ].join(',');
-        })
-      ];
-
-      const csv = csvRows.join('\n');
-      const blob = new Blob([csv], { type: 'text/csv' });
-      const file = new File([blob], 'leads.csv', { type: 'text/csv' });
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('ScrubList', 'true');
-      formData.append('ImportLeads', 'false');
-
-      const response = await fetch('/api/usha/scrub', { method: 'POST', body: formData });
-      const result = await response.json();
-
-      if (!response.ok) {
-        const errorMsg = result.error || 'Failed to scrub leads';
-        // Provide more helpful error message for 401
-        if (response.status === 401) {
-          throw new Error(`${errorMsg}. Please add the token in Lead Generation > Settings.`);
-        }
-        throw new Error(errorMsg);
-      }
-
-      const jobId = result.data?.JobLogID || result.data?.jobLogID || result.data?.id;
-      if (jobId) {
-        setJobLogID(String(jobId));
-        setTimeout(() => fetchDNCResults(String(jobId)), 3000);
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to scrub leads');
-    } finally {
-      setIsScrubbing(false);
-    }
-  };
-
-  const fetchDNCResults = async (jobId: string) => {
-    try {
-      const response = await fetch(`/api/usha/import-log?JobLogID=${jobId}`);
-      const result = await response.json();
-
-      if (response.ok && result.data) {
-        const results: DNCResult[] = Array.isArray(result.data) 
-          ? result.data.map((item: any) => ({
-              phone: item.phoneNumber || item.phone || '',
-              isDoNotCall: item.isDoNotCall || item.IsDoNotCall || false,
-              canContact: item.canContact || item.CanContact || false,
-              reason: item.reason || '',
-            }))
-          : [];
-        
-        setDncResults(results);
-        if (enrichedData) {
-          const updatedSummaries = enrichedData.rows.map((row: EnrichedRow) => {
-            const phone = String(row['Phone'] || '');
-            const dncData = results.find(r => r.phone === phone);
-            return extractLeadSummary(row, row._enriched, dncData);
-          });
-          setLeadSummaries(updatedSummaries);
-        }
-      }
-    } catch (err) {
-      console.error('Failed to fetch DNC results:', err);
+      await refreshDncUiState();
     }
   };
 
@@ -2480,26 +2228,34 @@ export default function LinkedInLeadGenerator() {
           <Linkedin className="w-4 h-4" />
           <span>LinkedIn</span>
         </button>
-        {/* Facebook tab hidden */}
-        {/* <button
+        <button
           onClick={() => setActiveTab('facebook')}
           className={`
-            flex items-center gap-2 px-6 py-3 font-medium text-sm transition-all duration-200
+            flex items-center gap-2 px-4 py-2 font-medium text-sm transition-all duration-200
             border-b-2 -mb-[1px]
-            ${
-              activeTab === 'facebook'
-                ? 'border-white text-white'
-                : 'border-transparent text-slate-400 hover:text-slate-200'
-            }
+            ${activeTab === 'facebook' ? 'border-transparent' : 'border-transparent text-slate-400 hover:text-slate-200'}
           `}
+          style={activeTab === 'facebook' ? { color: '#1877f2', borderBottomColor: '#1877f2' } : {}}
         >
-          <Facebook className="w-5 h-5" />
+          <Facebook className="w-4 h-4" />
           <span>Facebook</span>
-        </button> */}
+        </button>
+        <button
+          onClick={() => setActiveTab('instagram')}
+          className={`
+            flex items-center gap-2 px-4 py-2 font-medium text-sm transition-all duration-200
+            border-b-2 -mb-[1px]
+            ${activeTab === 'instagram' ? 'border-transparent' : 'border-transparent text-slate-400 hover:text-slate-200'}
+          `}
+          style={activeTab === 'instagram' ? { color: '#C13584', borderBottomColor: '#C13584' } : {}}
+        >
+          <Instagram className="w-4 h-4" />
+          <span>Instagram</span>
+        </button>
       </div>
         
       {/* Active Progress Dashboard */}
-      {(isSearching || isEnriching || isScrubbing) && (
+      {(isSearching || isEnriching) && (
         <div className="space-y-3 animate-slide-up">
           <div>
             <h2 className="text-base font-semibold mb-0.5" style={{ color: '#ff5757' }}>Progress</h2>
@@ -2808,10 +2564,10 @@ export default function LinkedInLeadGenerator() {
             <p className="text-xs text-slate-400 font-data">Target and scrape leads from linkedin sales navigator.</p>
           </div>
           
-          <div className="space-y-4 panel-inactive rounded-xl p-4">
-            {/* Search Type */}
-            <div className="space-y-3">
-              <label className="block text-xs font-medium text-slate-200 font-data">Search Type</label>
+	          <div className="space-y-4 panel-inactive rounded-xl p-4">
+	            {/* Search Type */}
+	            <div className="space-y-3">
+	              <label className="block text-xs font-medium text-slate-200 font-data">Search Type</label>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <button
@@ -3110,8 +2866,8 @@ export default function LinkedInLeadGenerator() {
               />
             </div>
 
-            {/* Search Button */}
-            <div className="pt-4 border-t border-slate-700/50 space-y-2">
+	            {/* Search Button */}
+	            <div className="pt-4 border-t border-slate-700/50 space-y-2">
               {/* Countdown Timer */}
               {countdownSeconds > 0 && (
                 <div className="flex items-center justify-center px-3 py-2 bg-slate-800/50 border border-slate-700/50 rounded-lg">
@@ -3178,49 +2934,6 @@ export default function LinkedInLeadGenerator() {
                 {results.length > 0 ? `${results.length} leads found` : error ? 'Search failed' : 'No leads found'}
               </p>
             </div>
-            {results.length > 0 && (
-              <div className="rounded-xl border border-slate-700/50 bg-slate-800/40 px-4 py-3 text-xs text-slate-200">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-slate-400">DNC token:</span>
-                  <span className="font-mono">{dncTokenMasked || 'not set'}</span>
-                </div>
-                <div className="mt-2 flex flex-wrap items-center gap-2">
-                  <input
-                    type={showDncToken ? 'text' : 'password'}
-                    value={dncTokenInput}
-                    onChange={(event) => setDncTokenInput(event.target.value)}
-                    placeholder="Enter DNC token"
-                    className="w-64 rounded-lg border border-slate-600 bg-slate-900/60 px-3 py-1.5 text-xs text-slate-100 focus:outline-none focus:ring-2 focus:ring-rose-400"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowDncToken((prev) => !prev)}
-                    className="px-3 py-1.5 rounded-lg border border-slate-600 text-slate-200 text-xs"
-                  >
-                    {showDncToken ? 'Hide' : 'Show'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleSaveDncToken}
-                    disabled={isSavingDncToken}
-                    className="px-3 py-1.5 rounded-lg bg-rose-600 text-white text-xs disabled:opacity-50"
-                  >
-                    {isSavingDncToken ? 'Saving...' : 'Save Token'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleTestDncToken}
-                    disabled={isTestingDncToken}
-                    className="px-3 py-1.5 rounded-lg border border-emerald-500 text-emerald-200 text-xs disabled:opacity-50"
-                  >
-                    {isTestingDncToken ? 'Testing...' : 'Test Connection'}
-                  </button>
-                  {dncTokenStatus && (
-                    <span className="text-xs text-slate-300">{dncTokenStatus}</span>
-                  )}
-                </div>
-              </div>
-            )}
             {results.length > 0 && (
               <div className="flex gap-3">
             <button
@@ -3309,28 +3022,10 @@ export default function LinkedInLeadGenerator() {
                     </>
                   )}
                 </button>
-                <button
-                  onClick={handleScrubOnly}
-                  disabled={isScrubbing || leadList.length === 0}
-                  className="group px-4 py-2.5 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 rounded-xl text-white text-sm font-semibold transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-lg shadow-green-500/30 hover:shadow-xl hover:shadow-green-500/40 hover:scale-105 active:scale-[0.98]"
-                  title={leadList.length === 0 ? "Add at least one lead with a phone number first" : "Scrub DNC status for all leads with phone numbers"}
-                >
-                  {isScrubbing ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Scrubbing...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="w-4 h-4 group-hover:scale-110 group-hover:rotate-12 transition-transform duration-300" />
-                      Scrub DNC
-                    </>
-                  )}
-                </button>
                 <div className="flex items-center gap-2">
                 <button
                   onClick={handleEnrichAndScrub}
-                  disabled={isEnriching || isScrubbing}
+                  disabled={isEnriching}
                   className="group relative px-5 py-2.5 bg-gradient-to-r from-gray-600 via-gray-500 to-gray-600 hover:from-gray-700 hover:via-gray-600 hover:to-gray-700 rounded-xl text-white text-sm font-semibold transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-lg shadow-white/30 hover:shadow-xl hover:shadow-white/40 hover:scale-105 active:scale-[0.98] overflow-hidden"
                 >
                   <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
@@ -3348,7 +3043,7 @@ export default function LinkedInLeadGenerator() {
                 </button>
                   <button
                     onClick={handleEnrichBackground}
-                    disabled={isEnriching || isScrubbing || !results || results.length === 0}
+                    disabled={isEnriching || !results || results.length === 0}
                     className="group relative px-4 py-2.5 bg-slate-700/60 hover:bg-slate-700/80 border border-slate-600/50 hover:border-slate-500/60 rounded-xl text-slate-200 text-sm font-medium transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-lg hover:shadow-xl hover:scale-105 active:scale-[0.98]"
                     title="Run enrichment in the background (non-blocking)"
                   >
@@ -3499,12 +3194,8 @@ export default function LinkedInLeadGenerator() {
                   {getSortedSummaries().map((summary, index) => {
                     // Format platform badge
                     const platformDisplay = summary.platform ? (
-                      <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${
-                        summary.platform === 'linkedin' 
-                          ? 'bg-white/20 text-white border border-white/30' 
-                          : 'bg-white/20 text-white border border-white/30'
-                      }`}>
-                        {summary.platform === 'linkedin' ? 'LinkedIn' : 'Facebook'}
+                      <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-white/20 text-white border border-white/30">
+                        {summary.platform === 'linkedin' ? 'LinkedIn' : summary.platform === 'instagram' ? 'Instagram' : 'Facebook'}
                       </span>
                     ) : 'N/A';
                     
@@ -3569,6 +3260,49 @@ export default function LinkedInLeadGenerator() {
           </div>
         )}
 
+        </>
+      )}
+
+      {activeTab === 'facebook' && (
+        <FacebookLeadGenerator onAddLeads={(leads) => setLeadList(prev => [...prev, ...leads])} />
+      )}
+
+      {activeTab === 'instagram' && (
+        <InstagramLeadGenerator
+          onAddLeads={(leads) => setLeadList(prev => [...prev, ...leads])}
+          existingInstagramUrls={leadList.map(l => l.instagramUrl).filter((u): u is string => !!u)}
+        />
+      )}
+
+      {/* Shared lead list bar (when list has leads, any tab) */}
+      {leadList.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2 mt-4 p-3 panel-inactive rounded-xl">
+          <button
+            onClick={() => setShowLeadList(true)}
+            className="group px-4 py-2.5 btn-inactive rounded-xl text-slate-200 text-sm flex items-center gap-2"
+          >
+            <Eye className="w-4 h-4 group-hover:scale-110 group-hover:text-white transition-transform duration-300" />
+            View List ({leadList.length})
+          </button>
+          <button
+            onClick={testEnrichmentSingleLead}
+            disabled={isEnriching || leadList.length === 0}
+            className="group px-4 py-2.5 bg-gray-600 hover:bg-gray-700 rounded-xl text-white text-sm font-medium transition-all duration-300 disabled:opacity-50 flex items-center gap-2"
+          >
+            {isEnriching ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
+            Test Enrichment (1 lead)
+          </button>
+          <button
+            onClick={handleEnrichAndScrub}
+            disabled={isEnriching}
+            className="group px-5 py-2.5 bg-gradient-to-r from-gray-600 via-gray-500 to-gray-600 hover:from-gray-700 rounded-xl text-white text-sm font-semibold transition-all duration-300 disabled:opacity-50 flex items-center gap-2"
+          >
+            {isEnriching ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Rocket className="w-4 h-4 mr-2" />}
+            Enrich & Scrub
+          </button>
+        </div>
+      )}
+
       {showLeadList && (
         <LeadListViewer
           leads={leadList}
@@ -3579,13 +3313,6 @@ export default function LinkedInLeadGenerator() {
           onEnrichList={enrichAllLeadsFromList}
         />
       )}
-        </>
-      )}
-
-      {/* Facebook Tab - Hidden */}
-      {/* {activeTab === 'facebook' && (
-        <FacebookLeadGenerator />
-      )} */}
 
       {/* Toast Notification */}
       {toast && (
@@ -3607,6 +3334,54 @@ export default function LinkedInLeadGenerator() {
           >
             <X className="w-4 h-4" />
           </button>
+        </div>
+      )}
+
+      {showDncWarningModal && (
+        <div className="modal-overlay z-50">
+          <div className="modal-content w-full max-w-lg">
+            <div className="flex items-start justify-between gap-4">
+              <div className="space-y-2">
+                <span className="badge badge-error text-[10px] font-semibold">DNC Warning</span>
+                <h3 className="text-lg font-semibold text-slate-100">DNC token needs attention</h3>
+                <p className="text-sm text-slate-300">
+                  {dncWarningMessage || DEFAULT_DNC_RECOVERY_MESSAGE}
+                </p>
+                <p className="text-xs text-slate-400">
+                  The enrichment pipeline will continue and skip DNC when token validation fails.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={closeDncWarningModal}
+                className="rounded-lg border border-slate-700 p-2 text-slate-300 transition-colors hover:bg-slate-800/60 hover:text-slate-100"
+                aria-label="Close DNC warning"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {dncUiState?.uiMode === 'recovery' && (
+              <DncRecoveryForm
+                className="mt-6"
+                maskedToken={dncUiState.masked ?? null}
+                expiresAt={dncUiState.expiresAt ?? null}
+                onTokenIssue={openDncWarningModal}
+                onRefreshStatus={refreshDncUiState}
+                onResolved={closeDncWarningModal}
+              />
+            )}
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={closeDncWarningModal}
+                className="rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-200 transition-colors hover:bg-slate-800/60"
+              >
+                Dismiss
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

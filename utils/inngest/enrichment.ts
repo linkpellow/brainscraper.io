@@ -6,9 +6,11 @@
 
 import { inngest, enrichmentEvents } from '../inngest';
 import { enrichData } from '../enrichData';
+import { extractLeadSummary } from '../extractLeadSummary';
 import type { ParsedData } from '../parseFile';
+import { saveJobResults } from '../jobResults';
+import { normalizeStationConfig, type EnrichmentStation } from '../enrichmentStations';
 import {
-  generateJobId,
   saveJobStatus,
   updateJobProgress,
   completeJob,
@@ -28,11 +30,16 @@ export const enrichLeadsFunction = inngest.createFunction(
     event: enrichmentEvents.enrichLeads,
   },
   async ({ event, step }) => {
-    const { jobId, parsedData, metadata } = event.data as {
+    const { jobId, parsedData, metadata, enabledStations } = event.data as {
       jobId: string;
       parsedData: ParsedData;
       metadata?: Record<string, unknown>;
+      enabledStations?: EnrichmentStation[];
     };
+
+    const normalizedStations = enabledStations
+      ? Array.from(normalizeStationConfig(new Set(enabledStations)).stations)
+      : undefined;
 
     try {
       // Update job status to running
@@ -43,7 +50,10 @@ export const enrichLeadsFunction = inngest.createFunction(
           status: 'running' as const,
           progress: { current: 0, total: parsedData.rows.length, percentage: 0 },
           startedAt: new Date().toISOString(),
-          metadata,
+          metadata: {
+            ...metadata,
+            ...(normalizedStations ? { enabledStations: normalizedStations } : {}),
+          },
         };
         saveJobStatus(job);
         return job;
@@ -56,19 +66,18 @@ export const enrichLeadsFunction = inngest.createFunction(
           (current, total) => {
             // Update progress (sync version - errors handled internally)
             updateJobProgress(jobId, { current, total });
-          }
+          },
+          undefined,
+          normalizedStations ? new Set(normalizedStations) : undefined
         );
       });
 
-      // Route enriched leads to configured destination
-      await step.run('route-output', async () => {
-        try {
-          const { routeEnrichedLeads } = await import('../outputRouter');
-          await routeEnrichedLeads(enriched.rows);
-        } catch (routingError) {
-          console.warn('[ENRICHMENT] Failed to route leads:', routingError);
-        }
-        return { success: true };
+      await step.run('save-results', async () => {
+        const leadSummaries = enriched.rows.map(row => extractLeadSummary(row, row._enriched));
+        const result = await saveJobResults(jobId, 'enrichment', leadSummaries);
+        return {
+          count: result.count,
+        };
       });
 
       // Send notification
@@ -87,6 +96,9 @@ export const enrichLeadsFunction = inngest.createFunction(
         await completeJob(jobId, {
           enrichedCount: enriched.rows.length,
           totalLeads: parsedData.rows.length,
+          resultsStored: true,
+          resultCount: enriched.rows.length,
+          ...(normalizedStations ? { enabledStations: normalizedStations } : {}),
         });
         return { success: true };
       });
@@ -144,12 +156,17 @@ export const enrichLeadFunction = inngest.createFunction(
     event: enrichmentEvents.enrichLead,
   },
   async ({ event, step }) => {
-    const { jobId, row, headers, metadata } = event.data as {
+    const { jobId, row, headers, metadata, enabledStations } = event.data as {
       jobId: string;
       row: Record<string, string | number>;
       headers: string[];
       metadata?: Record<string, unknown>;
+      enabledStations?: EnrichmentStation[];
     };
+
+    const normalizedStations = enabledStations
+      ? Array.from(normalizeStationConfig(new Set(enabledStations)).stations)
+      : undefined;
 
     try {
       // Convert single row to ParsedData format
@@ -168,7 +185,10 @@ export const enrichLeadFunction = inngest.createFunction(
           status: 'running' as const,
           progress: { current: 0, total: 1, percentage: 0 },
           startedAt: new Date().toISOString(),
-          metadata,
+          metadata: {
+            ...metadata,
+            ...(normalizedStations ? { enabledStations: normalizedStations } : {}),
+          },
         };
         saveJobStatus(job);
         return job;
@@ -179,24 +199,24 @@ export const enrichLeadFunction = inngest.createFunction(
         return await enrichData(parsedData, (current, total) => {
           // Update progress (sync version)
           updateJobProgress(jobId, { current, total });
-        });
+        }, undefined, normalizedStations ? new Set(normalizedStations) : undefined);
       });
 
-      // Route enriched lead to configured destination
-      await step.run('route-output', async () => {
-        try {
-          const { routeEnrichedLeads } = await import('../outputRouter');
-          await routeEnrichedLeads(enriched.rows);
-        } catch (routingError) {
-          console.warn('[ENRICHMENT] Failed to route lead:', routingError);
-        }
-        return { success: true };
+      await step.run('save-results', async () => {
+        const leadSummaries = enriched.rows.map(resultRow => extractLeadSummary(resultRow, resultRow._enriched));
+        const result = await saveJobResults(jobId, 'enrichment', leadSummaries);
+        return {
+          count: result.count,
+        };
       });
 
       // Mark as completed
       await step.run('complete', async () => {
         await completeJob(jobId, {
           enriched: true,
+          resultsStored: true,
+          resultCount: enriched.rows.length,
+          ...(normalizedStations ? { enabledStations: normalizedStations } : {}),
         });
         return { success: true };
       });

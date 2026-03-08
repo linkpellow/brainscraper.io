@@ -58,6 +58,10 @@ extracted-tokens.json
 
 # Electron apps (quarantined - see .quarantine/electron-apps/)
 .quarantine/
+# Electron desktop build outputs
+electron/dist/
+electron/out/
+electron/node_modules/
 
 # Neural bridge (src/main) build
 /dist/
@@ -70,3 +74,6 @@ extracted-tokens.json
 data/har-data/
 
 *.har
+
+# Generated temp images served through /temp/[filename]
+public/temp/*.png

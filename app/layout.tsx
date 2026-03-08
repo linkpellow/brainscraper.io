@@ -31,8 +31,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" data-scroll-behavior="smooth" className={`${orbitron.variable} ${inter.variable}`}>
-      <body className="font-futuristic antialiased">
+    <html lang="en" data-scroll-behavior="smooth" className={`${orbitron.variable} ${inter.variable}`} suppressHydrationWarning>
+      <body className="font-futuristic antialiased" suppressHydrationWarning>
         <Providers>{children}</Providers>
       </body>
     </html>

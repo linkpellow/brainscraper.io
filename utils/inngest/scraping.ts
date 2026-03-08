@@ -5,8 +5,8 @@
  */
 
 import { inngest, scrapingEvents } from '../inngest';
+import { saveJobResults } from '../jobResults';
 import {
-  generateJobId,
   saveJobStatus,
   updateJobProgress,
   completeJob,
@@ -135,7 +135,7 @@ export const scrapeLinkedInFunction = inngest.createFunction(
       });
 
       // Save scraped results to api-results/ directory
-      await step.run('save-results', async () => {
+      const savedApiResults = await step.run('save-results', async () => {
         try {
           const { saveApiResults } = await import('../saveApiResults');
           const savedPath = await saveApiResults(
@@ -154,6 +154,13 @@ export const scrapeLinkedInFunction = inngest.createFunction(
           // Don't fail the job if saving fails - results are still in memory
           return { saved: false, error: error instanceof Error ? error.message : 'Unknown error' };
         }
+      });
+
+      await step.run('save-job-results', async () => {
+        const result = await saveJobResults(jobId, 'scraping', allLeads);
+        return {
+          count: result.count,
+        };
       });
 
       // Track scrape usage
@@ -187,6 +194,15 @@ export const scrapeLinkedInFunction = inngest.createFunction(
         await completeJob(jobId, {
           leadsCount: allLeads.length,
           pagesScraped,
+          resultsStored: true,
+          resultCount: allLeads.length,
+          ...(
+            savedApiResults.saved &&
+            'path' in savedApiResults &&
+            savedApiResults.path
+              ? { apiResultsPath: savedApiResults.path }
+              : {}
+          ),
         });
         return { success: true };
       });

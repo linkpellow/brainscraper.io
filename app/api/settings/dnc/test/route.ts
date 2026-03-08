@@ -1,42 +1,34 @@
 import { NextResponse } from 'next/server';
-import { getDncToken } from '@/server/settings/dncToken';
+import { DncAuthError, callDncScrub } from '@/server/settings/dncToken';
 import { incrementMetric } from '@/utils/dncMetrics';
 
 const TEST_PHONE = '2025550100';
 
 export async function POST() {
-  const token = await getDncToken();
-  if (!token) {
-    incrementMetric('dnc.token.missing');
-    return NextResponse.json(
-      { ok: false, reason: 'DNC token not configured. Add token in Lead Generation > Settings.' },
-      { status: 400 },
-    );
-  }
+  try {
+    const response = await callDncScrub(TEST_PHONE);
+    if (!response.ok) {
+      incrementMetric('dnc.token.test.failure');
+      return NextResponse.json(
+        {
+          ok: false,
+          reason: `DNC scrub test failed: ${response.status} ${response.statusText}`,
+        },
+        { status: response.status },
+      );
+    }
 
-  const url = `https://api-business-agent.ushadvisors.com/Leads/api/leads/scrubphonenumber?currentContextAgentNumber=00044447&phone=${encodeURIComponent(TEST_PHONE)}`;
-  const response = await fetch(url, {
-    method: 'GET',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      accept: 'application/json, text/plain, */*',
-      Referer: 'https://agent.ushadvisors.com/',
-      'Content-Type': 'application/json',
-    },
-  });
-
-  if (response.status === 401 || response.status === 403) {
+    incrementMetric('dnc.token.test.success');
+    return NextResponse.json({ ok: true });
+  } catch (error) {
     incrementMetric('dnc.token.test.failure');
-    incrementMetric('dnc.api.unauthorized');
+    const status = error instanceof DncAuthError ? error.status : 500;
     return NextResponse.json(
       {
         ok: false,
-        reason: 'DNC request unauthorized (invalid manual token). Update token in Lead Generation settings.',
+        reason: error instanceof Error ? error.message : 'DNC token test failed',
       },
-      { status: 401 },
+      { status },
     );
   }
-
-  incrementMetric('dnc.token.test.success');
-  return NextResponse.json({ ok: true });
 }

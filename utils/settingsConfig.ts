@@ -105,8 +105,27 @@ export interface SettingsConfig {
   scheduling: Scheduling;
   output: Output;
   notifications: Notifications;
-  ushaTokenOverrideEnabled: boolean;
-  dncToken: string | null;
+  dncAccessToken: string | null;
+  dncAccessTokenExpiresAt: number | null;
+}
+
+type LegacySettingsConfig = Partial<SettingsConfig> & {
+  dncToken?: unknown;
+};
+
+type PersistedSettingsConfig = SettingsConfig & {
+  dncToken?: never;
+};
+
+function decodeJwtExpirationSeconds(token: string): number | null {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+    const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf8'));
+    return typeof payload.exp === 'number' ? payload.exp : null;
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -153,8 +172,8 @@ export const DEFAULT_SETTINGS: SettingsConfig = {
     jobAutoPaused: true,
     channels: [],
   },
-  ushaTokenOverrideEnabled: false,
-  dncToken: null,
+  dncAccessToken: null,
+  dncAccessTokenExpiresAt: null,
 };
 
 const SETTINGS_FILE = 'settings.json';
@@ -196,7 +215,22 @@ export function loadSettings(): SettingsConfig {
 
     // Parse JSON
     try {
-      const parsed = JSON.parse(content) as Partial<SettingsConfig>;
+      const parsed = JSON.parse(content) as LegacySettingsConfig;
+      const parsedAccessToken =
+        typeof parsed.dncAccessToken === 'string' && parsed.dncAccessToken.trim()
+          ? parsed.dncAccessToken.trim()
+          : null;
+      const legacyAccessToken =
+        typeof parsed.dncToken === 'string' && parsed.dncToken.trim()
+          ? parsed.dncToken.trim()
+          : null;
+      const effectiveAccessToken = parsedAccessToken || legacyAccessToken;
+      const effectiveExpiresAt =
+        typeof parsed.dncAccessTokenExpiresAt === 'number'
+          ? parsed.dncAccessTokenExpiresAt
+          : effectiveAccessToken
+            ? decodeJwtExpirationSeconds(effectiveAccessToken)
+            : null;
       
       // Merge with defaults to ensure all fields exist
       const merged: SettingsConfig = {
@@ -235,6 +269,8 @@ export function loadSettings(): SettingsConfig {
           ...DEFAULT_SETTINGS.notifications,
           ...parsed.notifications,
         },
+        dncAccessToken: effectiveAccessToken,
+        dncAccessTokenExpiresAt: effectiveExpiresAt,
       };
 
       // CRITICAL: Ensure all locked APIs are enabled (cannot be disabled)
@@ -286,10 +322,11 @@ export async function saveSettings(settings: SettingsConfig): Promise<void> {
     const filePath = getSettingsFilePath();
 
     // Validate settings structure
-    const validated: SettingsConfig = {
+    const validated: PersistedSettingsConfig = {
       ...DEFAULT_SETTINGS,
       ...settings,
     };
+    delete (validated as { dncToken?: unknown }).dncToken;
 
     // CRITICAL: Ensure all locked APIs are enabled (cannot be disabled)
     if (!validated.apiToggles) {
@@ -378,8 +415,20 @@ export function validateSettings(settings: Partial<SettingsConfig>): { valid: bo
     }
   }
 
-  if (settings.dncToken !== undefined && settings.dncToken !== null && typeof settings.dncToken !== 'string') {
-    errors.push('DNC token must be a string');
+  if (
+    settings.dncAccessToken !== undefined &&
+    settings.dncAccessToken !== null &&
+    typeof settings.dncAccessToken !== 'string'
+  ) {
+    errors.push('DNC access token must be a string');
+  }
+
+  if (
+    settings.dncAccessTokenExpiresAt !== undefined &&
+    settings.dncAccessTokenExpiresAt !== null &&
+    typeof settings.dncAccessTokenExpiresAt !== 'number'
+  ) {
+    errors.push('DNC access token expiration must be a number');
   }
 
   return {

@@ -6,11 +6,10 @@ import { ParsedData } from './parseFile';
 import { isLeadProcessed, saveEnrichedLeadImmediate, getLeadKey } from './incrementalSave';
 import { extractLeadSummary } from './extractLeadSummary';
 import { callAPIWithConfig } from './apiToggleMiddleware';
-import { getDncToken } from '@/server/settings/dncToken';
+import { callDncScrub, DncAuthError } from '@/server/settings/dncToken';
 import { incrementMetric } from './dncMetrics';
-import { getCognitoIdToken, clearCognitoTokenCache } from './cognitoAuth';
 import type { EnrichmentStation } from './enrichmentStations';
-import { getDefaultStationConfig } from './enrichmentStations';
+import { getDefaultStationConfig, normalizeStationConfig } from './enrichmentStations';
 import {
   normalizeLeadSignals,
   makeEnrichmentDecision,
@@ -46,10 +45,18 @@ export interface EnrichmentProgress {
   timestamp: number;
 }
 
+/** ZIP source for income gating: only verified_row/verified_skip_trace trigger income-by-zip and can block. */
+export type ZipProvenance = 'verified_row' | 'verified_skip_trace' | 'derived_city_state' | 'missing';
+
+/** Skip-tracing match outcome for strict single-candidate policy. */
+export type SkipTracingDisposition = 'clear_match' | 'ambiguous' | 'no_exact_match' | 'common_name_blocked';
+
 export interface EnrichmentResult {
   email?: string;
   phone?: string;
   zipCode?: string;
+  zipProvenance?: ZipProvenance;
+  skipTracingDisposition?: SkipTracingDisposition;
   domain?: string;
   linkedinUrl?: string;
   linkedinCompanyUrl?: string;
@@ -126,6 +133,83 @@ export interface EnrichedData {
   rows: EnrichedRow[];
   rowCount: number;
   columnCount: number;
+}
+
+/** Optional per-batch memoization to avoid duplicate skip-tracing calls within a batch */
+export interface EnrichmentBatchCache {
+  searchCache: Map<string, { data: any; error?: string }>;
+  personDetailsCache: Map<string, any>;
+}
+
+type DncCheckResult = {
+  status: 'YES' | 'NO' | 'UNKNOWN';
+  checked: boolean;
+  canContact?: boolean;
+  reason?: string;
+};
+
+const zipIncomeCache = new Map<
+  string,
+  Promise<{ incomeData?: unknown; medianIncome?: number } | null>
+>();
+
+function getExecutionStations(enabledStations?: Set<EnrichmentStation>) {
+  return normalizeStationConfig(
+    enabledStations ? new Set(enabledStations) : getDefaultStationConfig()
+  );
+}
+
+async function getCachedZipIncome(
+  zipCode: string
+): Promise<{ incomeData?: unknown; medianIncome?: number } | null> {
+  const zip5 = String(zipCode).match(/\d{5}/)?.[0];
+  if (!zip5) {
+    return null;
+  }
+
+  const cached = zipIncomeCache.get(zip5);
+  if (cached) {
+    return cached;
+  }
+
+  const lookupPromise = (async () => {
+    try {
+      const incomeResponse = await callAPIWithConfig(
+        `/api/income-by-zip?zip=${zip5}`,
+        {},
+        'Income by ZIP',
+        callAPIImpl
+      );
+
+      if (!incomeResponse.data || incomeResponse.error) {
+        return null;
+      }
+
+      const incomeData = incomeResponse.data.data || incomeResponse.data;
+      const medianIncome = incomeData.medianIncome || incomeData.median_income || incomeData.householdIncome;
+
+      if (!medianIncome) {
+        return null;
+      }
+
+      return {
+        incomeData,
+        medianIncome,
+      };
+    } catch (error) {
+      console.log(`[ENRICH_ROW] STEP 2.5: Could not fetch ZIP income (non-fatal):`, error);
+      return null;
+    }
+  })();
+
+  zipIncomeCache.set(zip5, lookupPromise);
+
+  const result = await lookupPromise;
+  if (!result) {
+    zipIncomeCache.delete(zip5);
+  }
+
+  return result;
 }
 
 /**
@@ -1191,45 +1275,6 @@ function shouldContinueEnrichment(
 }
 
 /**
- * Helper: Makes DNC API call with manual token (no refresh)
- * 
- * Uses USHA DNC API which accepts phone numbers directly and requires USHA JWT tokens.
- * 
- * Endpoint: GET https://api-business-agent.ushadvisors.com/Leads/api/leads/scrubphonenumber
- * 
- * Response format:
- * {
- *   "status": "Success",
- *   "data": {
- *     "phoneNumber": "2694621403",
- *     "contactStatus": {
- *       "canContact": false,
- *       "reason": "Federal DNC"
- *     },
- *     "isDoNotCall": true
- *   }
- * }
- * 
- * Manual token only: No refresh attempts.
- */
-async function callDNCAPI(phone: string, token: string): Promise<Response> {
-  const USHA_DNC_API_BASE = 'https://api-business-agent.ushadvisors.com';
-  const currentContextAgentNumber = '00044447';
-  
-  // Use provided token (should be USHA JWT token from getUshaToken())
-  // Call USHA DNC API directly
-  const url = `${USHA_DNC_API_BASE}/Leads/api/leads/scrubphonenumber?currentContextAgentNumber=${encodeURIComponent(currentContextAgentNumber)}&phone=${encodeURIComponent(phone)}`;
-  let headers: Record<string, string> = {
-    'Authorization': `Bearer ${token}`,
-    'accept': 'application/json, text/plain, */*',
-    'Referer': 'https://agent.ushadvisors.com/',
-    'Content-Type': 'application/json',
-  };
-  
-  return await fetch(url, { method: 'GET', headers });
-}
-
-/**
  * Check DNC status for a phone number using USHA API
  * STEP 5.5: DNC Check (FREE - saves money by avoiding age enrichment on DNC numbers)
  * 
@@ -1238,36 +1283,23 @@ async function callDNCAPI(phone: string, token: string): Promise<Response> {
  */
 async function checkDNCStatus(
   phone: string
-): Promise<{ isDNC: boolean; canContact: boolean; reason?: string }> {
+): Promise<DncCheckResult> {
   try {
     // Clean phone number - remove all non-digits
     const cleanedPhone = phone.replace(/\D/g, '');
     
     if (cleanedPhone.length < 10) {
       console.log(`[DNC_CHECK] ⚠️  Invalid phone format: ${phone}`);
-      return { isDNC: false, canContact: true, reason: 'Invalid phone number format' };
+      return { status: 'UNKNOWN', checked: false, reason: 'Invalid phone number format' };
     }
-    
-    const token = await getDncToken();
-    if (!token) {
-      incrementMetric('dnc.token.missing');
-      console.info('[DNC_CHECK] DNC token missing; skip DNC check.');
-      return { isDNC: false, canContact: true, reason: 'DNC token not configured' };
-    }
-    
-    // Call USHA DNC API with manual token
+
     console.log(`[DNC_CHECK] 📞 Calling DNC API for phone: ${cleanedPhone}`);
-    const response = await callDNCAPI(cleanedPhone, token);
+    const response = await callDncScrub(cleanedPhone);
     
-    if (response.status === 401 || response.status === 403) {
-      incrementMetric('dnc.api.unauthorized');
-      return { isDNC: false, canContact: true, reason: 'DNC token unauthorized' };
-    }
     if (!response.ok) {
       const errorText = await response.text().catch(() => 'Could not read error response');
       console.error(`[DNC_CHECK] ❌ API error ${response.status} ${response.statusText}: ${errorText.substring(0, 200)}`);
-      console.error(`[DNC_CHECK] ❌ This might indicate an invalid or expired token`);
-      return { isDNC: false, canContact: true, reason: `API error: ${response.status} ${response.statusText}` };
+      return { status: 'UNKNOWN', checked: false, reason: `API error: ${response.status} ${response.statusText}` };
     }
     
     const result = await response.json();
@@ -1304,14 +1336,26 @@ async function checkDNCStatus(
                   (isDNC ? 'Do Not Call' : undefined);
     
     return {
-      isDNC,
+      status: isDNC ? 'YES' : 'NO',
+      checked: true,
       canContact,
       reason,
     };
   } catch (error) {
+    if (error instanceof DncAuthError) {
+      console.info(`[DNC_CHECK] DNC auth unavailable; skipping DNC check: ${error.message}`);
+      return {
+        status: 'UNKNOWN',
+        checked: false,
+        reason: error.message,
+      };
+    }
     console.error(`[DNC_CHECK] ❌ Error checking DNC status:`, error);
-    // On error, assume not DNC to avoid blocking enrichment
-    return { isDNC: false, canContact: true, reason: error instanceof Error ? error.message : 'Unknown error' };
+    return {
+      status: 'UNKNOWN',
+      checked: false,
+      reason: error instanceof Error ? error.message : 'Unknown error',
+    };
   }
 }
 
@@ -1339,10 +1383,10 @@ export async function enrichRow(
   row: Record<string, string | number>,
   headers: string[],
   onProgress?: (step: EnrichmentProgress['step'], stepDetails?: EnrichmentProgress['stepDetails'], errors?: string[]) => void,
-  enabledStations?: Set<EnrichmentStation>
+  enabledStations?: Set<EnrichmentStation>,
+  batchCache?: EnrichmentBatchCache
 ): Promise<EnrichmentResult> {
-  // Default to all stations enabled if not specified
-  const stations = enabledStations || getDefaultStationConfig();
+  const { stations } = getExecutionStations(enabledStations);
   // DIAGNOSTIC: Log input row data
   const emailColumns = headers.filter(h => isEmailColumn(h));
   const phoneColumns = headers.filter(h => isPhoneColumn(h));
@@ -1385,20 +1429,21 @@ export async function enrichRow(
   });
   
   // STEP 2: Local ZIP lookup (FREE, LOCAL - No API calls)
+  // ZIP provenance: only verified_row or verified_skip_trace trigger income-by-zip and can block phone-discovery
   let zipCode = extractZipCode(row, headers);
+  let zipProvenance: ZipProvenance =
+    zipCode ? 'verified_row' : 'missing';
   if (!zipCode && city && state && stations.has('zip')) {
-    // Only use ZIP lookup on server-side (where fs is available)
-    // On client-side, this will fall back to state centroids which don't need fs
     try {
       const { lookupZipFromCityState } = await import('./zipLookup');
       zipCode = lookupZipFromCityState(city, state);
+      if (zipCode) zipProvenance = 'derived_city_state';
     } catch (error) {
-      // If import fails (client-side), skip ZIP lookup
-      // The state centroids will still work without fs
       console.warn('ZIP lookup not available (client-side):', error);
     }
   }
-  
+  if (!zipCode) zipProvenance = 'missing';
+
   // Report ZIP step progress
   if (zipCode) {
     onProgress?.('zip', {
@@ -1409,18 +1454,15 @@ export async function enrichRow(
   }
 
   // STEP 2.5: INCOME PRE-QUALIFICATION (COST CONTROL GATE - BEFORE PHONE DISCOVERY)
-  // Runs after ZIP lookup, before phone discovery
-  // Purpose: Prevent unnecessary API spend on clearly low-income leads (< $60k)
-  // This is the FIRST cost control gate - filters before any paid API calls
-  let incomePreQualShouldContinue = true; // Default to continue if income pre-qual is disabled
-  let incomePreQualResult: any = undefined; // Will be typed as IncomePreQualResult after import
+  // Only call income-by-zip when ZIP is verified (row or skip-trace). Derived/missing ZIP = advisory only, never block.
+  let incomePreQualShouldContinue = true;
+  let incomePreQualResult: any = undefined;
   let incomeData: any = undefined;
-  
+
   if (stations.has('income-pre-qual')) {
     try {
       const { preQualifyIncome } = await import('./enrichment/incomePreQualifier');
-      
-      // Extract job title and company from row (LinkedIn data)
+
       const jobTitle = (() => {
         for (const header of headers) {
           const lower = header.toLowerCase();
@@ -1431,7 +1473,7 @@ export async function enrichRow(
         }
         return null;
       })();
-      
+
       const company = (() => {
         for (const header of headers) {
           const lower = header.toLowerCase();
@@ -1442,52 +1484,40 @@ export async function enrichRow(
         }
         return null;
       })();
-      
-      // Fetch ZIP median income if ZIP available (one FREE API call)
+
+      // Call income-by-zip only when ZIP provenance is verified (row). Skip-trace ZIP is set later; derived/missing = no API call.
       let zipMedianIncome: number | undefined = undefined;
-      if (zipCode) {
-        try {
-          const zip5 = String(zipCode).match(/\d{5}/)?.[0];
-          if (zip5) {
-            const incomeResponse = await callAPIWithConfig(
-              `/api/income-by-zip?zip=${zip5}`,
-              {},
-              'Income by ZIP',
-              callAPIImpl
-            );
-            
-            if (incomeResponse.data && !incomeResponse.error) {
-              const incomeDataResponse = incomeResponse.data.data || incomeResponse.data;
-              const median = incomeDataResponse.medianIncome || incomeDataResponse.median_income || incomeDataResponse.householdIncome;
-              if (median) {
-                incomeData = incomeDataResponse; // Store for later use
-                zipMedianIncome = median;
-              }
-            }
-          }
-        } catch (incomeError) {
-          // Non-fatal: continue without ZIP income data
-          console.log(`[ENRICH_ROW] STEP 2.5: Could not fetch ZIP income (non-fatal):`, incomeError);
+      const zipVerified = zipProvenance === 'verified_row';
+      if (zipCode && zipVerified) {
+        const cachedIncome = await getCachedZipIncome(zipCode);
+        if (cachedIncome?.medianIncome) {
+          incomeData = cachedIncome.incomeData;
+          zipMedianIncome = cachedIncome.medianIncome;
         }
       }
-      
-      // Run pre-qualification (without age/carrier - those come later)
+
       const preQualResult = preQualifyIncome({
         jobTitle: jobTitle || undefined,
         company: company || undefined,
         city: city || undefined,
         state: state || undefined,
         zipCode: zipCode || undefined,
-        // Note: age, carrierName, lineType not available yet - will improve confidence later
-        zipMedianIncome: zipMedianIncome,
+        zipMedianIncome,
       });
-      
-      // Store result for later attachment to result object
+
       const { cohortKey, ...incomePreQualResultClean } = preQualResult;
       incomePreQualResult = incomePreQualResultClean;
-      
-      // Store decision for later use
-      incomePreQualShouldContinue = preQualResult.decision.shouldContinueEnrichment;
+
+      // When ZIP is derived or missing, income is advisory only: never block; treat tier as unknown downstream
+      if (zipProvenance === 'derived_city_state' || zipProvenance === 'missing') {
+        incomePreQualShouldContinue = true;
+        if (incomePreQualResult) {
+          incomePreQualResult.decision.tier = 'unknown';
+          console.log(`[ENRICH_ROW] STEP 2.5: income_advisory_only (ZIP ${zipProvenance}) - not blocking phone-discovery`);
+        }
+      } else {
+        incomePreQualShouldContinue = preQualResult.decision.shouldContinueEnrichment;
+      }
       
       console.log(`[ENRICH_ROW] STEP 2.5: Income pre-qualification (two-pass):`, {
         tier: incomePreQualResult.decision.tier,
@@ -1584,6 +1614,7 @@ export async function enrichRow(
     firstName: firstName || undefined,
     lastName: lastName || undefined,
     zipCode: zipCode || undefined,
+    zipProvenance,
     gender: gender || undefined,
     genderConfidence: genderConfidence || undefined,
     phone: phone || undefined,
@@ -1643,12 +1674,18 @@ export async function enrichRow(
     console.log(`[ENRICH_ROW] STEP 3: 🚫 Skipping phone discovery - income pre-qualification rejected lead (income < $60k)`);
     onProgress?.('phone-discovery', undefined, ['Skipped: Income < $60k']);
   } else if (!phone && hasName) {
-    // Use GET with name parameter (working API format)
-    // Clean the name to remove emojis and special characters before API call
     const cleanedFirstName = cleanNameForAPI(firstName);
     const cleanedLastName = cleanNameForAPI(lastName);
     const fullName = `${cleanedFirstName} ${cleanedLastName}`.trim();
-    
+    const hasExactCityState = !!(city && state);
+
+    // Strict skip-tracing gate: common name + weak location => do not spend search call
+    const { isCommonName } = await import('./enrichment/commonNameGuard');
+    if (isCommonName(cleanedFirstName, cleanedLastName) && !hasExactCityState) {
+      result.skipTracingDisposition = 'common_name_blocked';
+      console.log(`[ENRICH_ROW] STEP 3: skiptrace_common_name_blocked (no exact city+state) - skipping search`);
+      onProgress?.('phone-discovery', undefined, ['Skipped: Common name without city+state']);
+    } else {
     // Build citystatezip if we have city and state
     let citystatezip = '';
     if (city && state) {
@@ -1657,29 +1694,34 @@ export async function enrichRow(
         citystatezip += ` ${zipCode}`;
       }
     }
-    
+
     console.log(`[ENRICH_ROW] STEP 3: Calling skip-tracing API for phone discovery:`, {
       name: fullName,
       originalName: `${firstName} ${lastName}`.trim(),
       citystatezip: citystatezip || 'none',
     });
-    
-    // Use bynameaddress if we have location, otherwise byname
-    let searchUrl = '';
-    if (citystatezip) {
-      searchUrl = `/api/skip-tracing?name=${encodeURIComponent(fullName)}&citystatezip=${encodeURIComponent(citystatezip)}&page=1`;
+
+    const searchCacheKey = [fullName, city || '', state || '', zipCode || ''].join('|').toLowerCase();
+    let data: any = undefined;
+    let error: string | undefined = undefined;
+    if (batchCache?.searchCache.has(searchCacheKey)) {
+      const cached = batchCache.searchCache.get(searchCacheKey)!;
+      data = cached.data;
+      error = cached.error;
+      console.log(`[ENRICH_ROW] STEP 3: Skip-tracing search cache HIT: ${searchCacheKey.substring(0, 40)}...`);
     } else {
-      searchUrl = `/api/skip-tracing?name=${encodeURIComponent(fullName)}&page=1`;
+      let searchUrl = '';
+      if (citystatezip) {
+        searchUrl = `/api/skip-tracing?name=${encodeURIComponent(fullName)}&citystatezip=${encodeURIComponent(citystatezip)}&page=1`;
+      } else {
+        searchUrl = `/api/skip-tracing?name=${encodeURIComponent(fullName)}&page=1`;
+      }
+      const result_ = await callAPIWithConfig(searchUrl, {}, 'Skip-tracing (Phone Discovery)', callAPIImpl);
+      data = result_.data;
+      error = result_.error;
+      if (batchCache) batchCache.searchCache.set(searchCacheKey, { data, error });
     }
-    
-    // Use GET to call skip-tracing API with name
-      const { data, error } = await callAPIWithConfig(
-      searchUrl,
-        {},
-        'Skip-tracing (Phone Discovery)',
-        callAPIImpl
-      );
-      
+
       console.log(`[ENRICH_ROW] STEP 3: Skip-tracing API response:`, {
         hasData: !!data,
         hasError: !!error,
@@ -1703,20 +1745,31 @@ export async function enrichRow(
           console.log(`[ENRICH_ROW] STEP 3: actualData.PeopleDetails is array:`, Array.isArray(actualData.PeopleDetails));
           console.log(`[ENRICH_ROW] STEP 3: actualData.PeopleDetails length:`, actualData.PeopleDetails?.length || 0);
           
-          // Handle new API response format: { PeopleDetails: [...], Status: 200, ... }
+          // Strict candidate filter: exact name + location match; 0 or 2+ survivors = no spend
           let responseData: any = null;
           if (actualData.PeopleDetails && Array.isArray(actualData.PeopleDetails) && actualData.PeopleDetails.length > 0) {
-            // New API format - use first result
-            responseData = actualData.PeopleDetails[0];
-            console.log(`[ENRICH_ROW] STEP 3: Found ${actualData.PeopleDetails.length} results, using first match`);
-            console.log(`[ENRICH_ROW] STEP 3: First result keys:`, Object.keys(responseData));
-            console.log(`[ENRICH_ROW] STEP 3: First result preview:`, JSON.stringify(responseData).substring(0, 300));
-            
-            // STEP 3: PHONES ONLY - Do NOT extract age here (age comes later in STEP 6, conditionally)
-            // Age extraction removed - will be done conditionally in STEP 6 after Telnyx validation
-            
+            const { filterSkipTracingCandidates } = await import('./enrichment/skipTracingCandidateFilter');
+            const { survivors, disposition } = filterSkipTracingCandidates(
+              actualData.PeopleDetails,
+              cleanedFirstName,
+              cleanedLastName,
+              city || undefined,
+              state || undefined
+            );
+            result.skipTracingDisposition = disposition;
+            if (disposition === 'no_exact_match') {
+              console.log(`[ENRICH_ROW] STEP 3: skiptrace_no_exact_match - no candidate matched name/location`);
+            } else if (disposition === 'ambiguous') {
+              console.log(`[ENRICH_ROW] STEP 3: skiptrace_ambiguous - ${survivors.length} matches, not calling person-details`);
+            } else {
+              responseData = survivors[0];
+              (result.skipTracingData as any).PeopleDetails = [survivors[0]];
+              console.log(`[ENRICH_ROW] STEP 3: clear_match - using single survivor`);
+            }
+          }
+
+          if (responseData) {
             // CRITICAL: Check if search results already have phone number BEFORE making person details call
-            // This saves API calls - we only need person details if search doesn't have phone
             const searchPhone = responseData.Telephone || responseData.phone || responseData.phone_number || 
                                responseData['Phone Number'] || responseData['Phone'];
             
@@ -1750,22 +1803,28 @@ export async function enrichRow(
             }
             
             // ONLY make person details call if we STILL don't have a phone number
-            // This cuts API calls in half for leads where search already has phone
             if (responseData['Person ID'] && !phone) {
-              console.log(`[ENRICH_ROW] STEP 3: No phone in search results, fetching person details for phone via Person ID: ${responseData['Person ID']}...`);
-              
+              const peoId = responseData['Person ID'];
+              console.log(`[ENRICH_ROW] STEP 3: No phone in search results, fetching person details for phone via Person ID: ${peoId}...`);
+
               try {
-                // Call person details API directly
-                // Note: The API endpoint works (tested directly), so we let it complete naturally
-                const personDetailsResult = await callAPIWithConfig(
-                  `/api/skip-tracing?peo_id=${encodeURIComponent(responseData['Person ID'])}`,
-                  {},
-                  'Skip-tracing (Person Details)',
-                  callAPIImpl
-                );
-                
-                const { data: personData, error: personError } = personDetailsResult;
-                
+                let personData: any = undefined;
+                let personError: string | undefined = undefined;
+                if (batchCache?.personDetailsCache.has(peoId)) {
+                  personData = { data: batchCache.personDetailsCache.get(peoId) };
+                  console.log(`[ENRICH_ROW] STEP 3: Person details cache HIT: ${peoId}`);
+                } else {
+                  const personDetailsResult = await callAPIWithConfig(
+                    `/api/skip-tracing?peo_id=${encodeURIComponent(peoId)}`,
+                    {},
+                    'Skip-tracing (Person Details)',
+                    callAPIImpl
+                  );
+                  personData = personDetailsResult.data;
+                  personError = personDetailsResult.error;
+                  if (batchCache && personData?.data) batchCache.personDetailsCache.set(peoId, personData.data);
+                }
+
                 console.log(`[ENRICH_ROW] STEP 3: Person details API call completed:`, {
                   hasData: !!personData,
                   hasError: !!personError,
@@ -1895,8 +1954,10 @@ export async function enrichRow(
                     const skipTracingZip = String(currentAddress.postal_code).trim();
                     if (skipTracingZip && skipTracingZip.length >= 5) {
                       zipCode = skipTracingZip;
+                      zipProvenance = 'verified_skip_trace';
                       result.zipCode = zipCode;
-                      console.log(`[ENRICH_ROW] ✅ STEP 3: Updated ZIP from skip-tracing address: ${zipCode}`);
+                      result.zipProvenance = zipProvenance;
+                      console.log(`[ENRICH_ROW] ✅ STEP 3: Updated ZIP from skip-tracing address: ${zipCode} (verified_skip_trace)`);
                     }
                   }
                 }
@@ -1993,17 +2054,18 @@ export async function enrichRow(
           const addressData = responseData || actualData;
           if (addressData?.address || addressData?.addressLine1) {
             result.addressLine1 = addressData.address || addressData.addressLine1;
-        }
+          }
           if (addressData?.addressLine2) {
             result.addressLine2 = addressData.addressLine2;
           }
-        }
+          }
       } else {
         console.log(`[ENRICH_ROW] ⚠️  STEP 3: Skip-tracing API returned no data`);
       }
       if (error) {
         console.error(`[ENRICH_ROW] ❌ STEP 3: Skip-tracing API error:`, error);
         addError(result, error);
+    }
     }
   } else {
     // We already have phone/email from row - ensure they're in result
@@ -2018,13 +2080,11 @@ export async function enrichRow(
     }
   }
   
-  // AGE FILTER CHECK (COST SAVER - Filter age > 59 immediately after STEP 3)
-  // Check if age is available from STEP 3 results and filter before expensive API calls
+  // AGE FILTER CHECK - only use STEP 3 age when we have a single chosen candidate (clear_match)
   let ageOver59 = false;
   const skipTracingDataForAge = result.skipTracingData as any;
-  
-  // Check for age in STEP 3 search results (PeopleDetails)
-  if (skipTracingDataForAge?.PeopleDetails && Array.isArray(skipTracingDataForAge.PeopleDetails) && skipTracingDataForAge.PeopleDetails.length > 0) {
+
+  if (result.skipTracingDisposition === 'clear_match' && skipTracingDataForAge?.PeopleDetails && Array.isArray(skipTracingDataForAge.PeopleDetails) && skipTracingDataForAge.PeopleDetails.length > 0) {
     const step3Age = skipTracingDataForAge.PeopleDetails[0]?.Age;
     if (step3Age) {
       const ageNum = parseInt(String(step3Age), 10);
@@ -2267,12 +2327,16 @@ export async function enrichRow(
     console.log(`[ENRICH_ROW] STEP 5.5: Checking DNC status for ${phone}...`);
     try {
       const dncResult = await checkDNCStatus(phone);
-      result.dncStatus = dncResult.isDNC ? 'YES' : 'NO';
-      result.canContact = dncResult.canContact;
+      result.dncStatus = dncResult.status;
       result.dncReason = dncResult.reason;
-      result.dncLastChecked = new Date().toISOString();
+      if (dncResult.checked) {
+        result.dncLastChecked = new Date().toISOString();
+      }
+      if (dncResult.canContact !== undefined) {
+        result.canContact = dncResult.canContact;
+      }
       
-      if (dncResult.isDNC) {
+      if (dncResult.status === 'YES') {
         console.log(`[ENRICH_ROW] STEP 5.5: ⚠️  DNC detected - ${dncResult.reason || 'Do Not Call'}`);
         console.log(`[ENRICH_ROW] STEP 5.5: Skipping age enrichment (cost savings)`);
         // Skip age enrichment for DNC numbers
@@ -2280,20 +2344,21 @@ export async function enrichRow(
         onProgress?.('gatekeep', {
           phone: phone || undefined,
         }, [`DNC: ${dncResult.reason || 'Do Not Call'} - skipping age enrichment`]);
-      } else {
+      } else if (dncResult.status === 'NO') {
         console.log(`[ENRICH_ROW] STEP 5.5: ✅ Not DNC - proceeding to age enrichment`);
+      } else {
+        console.log(`[ENRICH_ROW] STEP 5.5: DNC check unavailable - continuing without verified DNC status`);
       }
     } catch (error) {
       console.error(`[ENRICH_ROW] STEP 5.5: ❌ DNC check error:`, error);
-      // On error, assume not DNC to avoid blocking enrichment
       result.dncStatus = 'UNKNOWN';
-      result.canContact = true;
-      // Continue with enrichment
     }
   } else if (phone) {
     const lineTypeLower = result.lineType?.toLowerCase();
     let reason = 'unknown reason';
-    if (lineTypeLower === 'voip') {
+    if (!stations.has('dnc-check')) {
+      reason = 'DNC station disabled';
+    } else if (lineTypeLower === 'voip') {
       reason = 'VoIP';
     } else if (lineTypeLower === 'fixed line' || lineTypeLower === 'landline' || lineTypeLower === 'fixed-line') {
       reason = 'fixed/landline';
@@ -2303,16 +2368,11 @@ export async function enrichRow(
     console.log(`[ENRICH_ROW] STEP 5.5: DNC check skipped - gatekeep failed (${reason})`);
     // Set DNC status to UNKNOWN for consistency
     result.dncStatus = 'UNKNOWN';
-    result.canContact = true;
   }
   
-  // STEP 6: Age (CONDITIONAL - Only if Telnyx confirms valid number AND age not > 59)
-  // Age enrichment ONLY runs on high-quality leads (not VoIP/junk) AND age <= 59
-  // CRITICAL OPTIMIZATION: Reuse STEP 3 search results to avoid duplicate API calls
-  // SKIP if age > 59 (already filtered above, but double-check here)
-  // Only run if station is enabled
-  if (stations.has('age') && shouldContinue && !ageOver59 && !hasDOBOrAge(row, headers) && firstName && lastName && phone) {
-    // First, check if we already have age data from STEP 3 search results
+  // STEP 6: Age (CONDITIONAL - only when we have a single chosen skip-trace candidate)
+  // Never run age enrichment when match was ambiguous or no_exact_match
+  if (stations.has('age') && shouldContinue && !ageOver59 && !hasDOBOrAge(row, headers) && firstName && lastName && phone && result.skipTracingDisposition === 'clear_match') {
     const skipTracingData = result.skipTracingData as any;
     let ageFromStep3: string | null = null;
     
@@ -2348,20 +2408,26 @@ export async function enrichRow(
           console.log(`[ENRICH_ROW] STEP 6: Person details already fetched in STEP 3, but age not found in stored data`);
         }
       } else if (personId) {
-        // We have Person ID but didn't fetch person details in STEP 3 (phone was in search)
-        // Fetch person details now for age
         console.log(`[ENRICH_ROW] STEP 6: Fetching person details for age via Person ID: ${personId}...`);
-        
+
         try {
-          const personDetailsResult = await callAPIWithConfig(
-            `/api/skip-tracing?peo_id=${encodeURIComponent(personId)}`,
-            {},
-            'Skip-tracing (Person Details - Age)',
-            callAPIImpl
-          );
-          
-          const { data: personData, error: personError } = personDetailsResult;
-          
+          let personData: any = undefined;
+          let personError: string | undefined = undefined;
+          if (batchCache?.personDetailsCache.has(personId)) {
+            personData = { data: batchCache.personDetailsCache.get(personId) };
+            console.log(`[ENRICH_ROW] STEP 6: Person details cache HIT: ${personId}`);
+          } else {
+            const personDetailsResult = await callAPIWithConfig(
+              `/api/skip-tracing?peo_id=${encodeURIComponent(personId)}`,
+              {},
+              'Skip-tracing (Person Details - Age)',
+              callAPIImpl
+            );
+            personData = personDetailsResult.data;
+            personError = personDetailsResult.error;
+            if (batchCache && personData?.data) batchCache.personDetailsCache.set(personId, personData.data);
+          }
+
           if (personError) {
             console.log(`[ENRICH_ROW] ⚠️  STEP 6: Person details API error: ${personError}`);
           } else if (personData?.data) {
@@ -2468,7 +2534,23 @@ export async function enrichData(
   onDetailedProgress?: (progress: EnrichmentProgress) => void,
   enabledStations?: Set<EnrichmentStation>
 ): Promise<EnrichedData> {
+  const stationConfig = getExecutionStations(enabledStations);
+  const stations = stationConfig.stations;
+  if (stationConfig.issues.length > 0) {
+    console.warn(
+      '[ENRICH_DATA] Dropping stations with missing dependencies:',
+      stationConfig.issues.map(issue => ({
+        station: issue.station,
+        missingDependencies: issue.missingDependencies,
+      }))
+    );
+  }
+
   const enrichedRows: EnrichedRow[] = [];
+  const batchCache: EnrichmentBatchCache = {
+    searchCache: new Map(),
+    personDetailsCache: new Map(),
+  };
 
   for (let i = 0; i < data.rows.length; i++) {
     const row = data.rows[i];
@@ -2520,8 +2602,7 @@ export async function enrichData(
       }
     };
 
-    // Enrich the row with progress tracking
-    const enrichment = await enrichRow(row, data.headers, reportProgress, enabledStations);
+    const enrichment = await enrichRow(row, data.headers, reportProgress, stations, batchCache);
     enrichedRow._enriched = enrichment;
 
     // Extract and add Telnyx line_type to the row if available
@@ -2705,11 +2786,6 @@ export async function enrichData(
       onProgress(i + 1, data.rows.length);
     }
 
-    // Reduced delay for faster processing (was 100ms, now 50ms)
-    // Only delay if not the last item to avoid unnecessary wait
-    if (i < data.rows.length - 1) {
-      await new Promise((resolve) => setTimeout(resolve, 50));
-    }
   }
 
   // Route enriched leads to configured destination

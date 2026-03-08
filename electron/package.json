@@ -1,0 +1,53 @@
+{
+  "name": "brainscraper-desktop",
+  "version": "1.0.0",
+  "description": "Brainscraper desktop app (Electron)",
+  "private": true,
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "npm run build && electron .",
+    "pack": "npm run build && electron-builder --dir",
+    "dist": "npm run build && electron-builder"
+  },
+  "dependencies": {
+    "dotenv": "^17.2.3"
+  },
+  "devDependencies": {
+    "electron": "^35.7.5",
+    "electron-builder": "^26.8.1",
+    "typescript": "5.9.3"
+  },
+  "build": {
+    "appId": "io.brainscraper.desktop",
+    "productName": "Brainscraper",
+    "directories": {
+      "output": "out"
+    },
+    "files": [
+      "dist/**/*",
+      "node_modules/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "../.next/standalone",
+        "to": "standalone",
+        "filter": ["**/*"]
+      },
+      {
+        "from": "../.env.example",
+        "to": "env.example"
+      }
+    ],
+    "mac": {
+      "category": "public.app-category.developer-tools",
+      "target": ["dmg", "zip"]
+    },
+    "win": {
+      "target": ["nsis", "portable"]
+    },
+    "linux": {
+      "target": ["AppImage"]
+    }
+  }
+}

@@ -156,6 +156,73 @@ export async function saveApiResults(
 }
 
 /**
+ * Save a full multi-page run from the frontend (one file per job).
+ * Uses the same file layout and daily summary as saveApiResults.
+ */
+export async function saveFullRun(
+  metadata: ApiResultMetadata,
+  processedResults: any[],
+  runId?: string
+): Promise<string | null> {
+  try {
+    const { getDataDirectory, ensureDataDirectory } = await import('./dataDirectory');
+    ensureDataDirectory();
+    const dataDir = getDataDirectory();
+    const resultsDir = path.join(dataDir, 'api-results');
+    if (!fs.existsSync(resultsDir)) {
+      fs.mkdirSync(resultsDir, { recursive: true });
+    }
+
+    const rawResponse = { savedFrom: 'frontend-full-run' as const, ...(runId && { runId }) };
+    const savedResult: SavedApiResult = {
+      metadata,
+      rawResponse,
+      processedResults: processedResults.length > 0 ? processedResults : undefined,
+    };
+
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+    const endpointSlug = (metadata.endpoint || 'full-run').replace(/[^a-z0-9]/gi, '-').toLowerCase();
+    const filename = `${timestamp}-${endpointSlug}.json`;
+    const filepath = path.join(resultsDir, filename);
+
+    fs.writeFileSync(filepath, JSON.stringify(savedResult, null, 2), 'utf-8');
+
+    const dateStr = new Date().toISOString().split('T')[0];
+    const summaryFile = path.join(resultsDir, `summary-${dateStr}.json`);
+    let dailySummary: any[] = [];
+    if (fs.existsSync(summaryFile)) {
+      try {
+        const existing = fs.readFileSync(summaryFile, 'utf-8');
+        dailySummary = JSON.parse(existing);
+      } catch {
+        dailySummary = [];
+      }
+    }
+    dailySummary.push({
+      timestamp: metadata.timestamp,
+      endpoint: metadata.endpoint,
+      resultCount: metadata.resultCount,
+      filename,
+      searchParams: {
+        location: metadata.location,
+        keywords: metadata.keywords,
+        filters: metadata.filters ? metadata.filters.map((f: any) => f.type) : undefined,
+      },
+      pagination: metadata.pagination,
+    });
+    if (dailySummary.length > 1000) {
+      dailySummary = dailySummary.slice(-1000);
+    }
+    fs.writeFileSync(summaryFile, JSON.stringify(dailySummary, null, 2), 'utf-8');
+
+    return filepath;
+  } catch (error) {
+    console.error('Error saving full run:', error);
+    return null;
+  }
+}
+
+/**
  * Get all saved API results for a date range
  */
 export function getSavedApiResults(startDate?: Date, endDate?: Date): SavedApiResult[] {

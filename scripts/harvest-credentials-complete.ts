@@ -130,7 +130,7 @@ function harvestFromCode(): Credential[] {
   
   // Check for hardcoded secrets in code
   const codeFiles = [
-    'utils/getUshaToken.ts',
+    'server/settings/dncToken.ts',
     'utils/rapidapi.ts',
     'app/api/**/*.ts'
   ];
@@ -168,7 +168,7 @@ function harvestFromCode(): Credential[] {
 
   // Search specific files
   const filesToCheck = [
-    'utils/getUshaToken.ts'
+    'server/settings/dncToken.ts'
   ];
 
   filesToCheck.forEach(file => {

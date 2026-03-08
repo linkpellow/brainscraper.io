@@ -678,16 +678,6 @@ function EditProfileForm({ profile, onSave, onCancel }: { profile: any; onSave: 
 }
 
 function APIControlsTab({ settings, updateSettings }: any) {
-  const [manualToken, setManualToken] = useState('');
-  const [tokenSaving, setTokenSaving] = useState(false);
-  const [tokenError, setTokenError] = useState<string | null>(null);
-  const [tokenSuccess, setTokenSuccess] = useState<string | null>(null);
-  const [overrideEnabled, setOverrideEnabled] = useState<boolean>(settings.ushaTokenOverrideEnabled ?? false);
-
-  useEffect(() => {
-    setOverrideEnabled(settings.ushaTokenOverrideEnabled ?? false);
-  }, [settings.ushaTokenOverrideEnabled]);
-
   const toggleAPI = (apiKey: string, enabled: boolean) => {
     const metadata = API_REGISTRY[apiKey];
     if (!metadata) return;
@@ -769,89 +759,6 @@ function APIControlsTab({ settings, updateSettings }: any) {
             </div>
           );
         })}
-      </div>
-
-      <div className="panel-inactive rounded-lg p-4 space-y-4">
-        <div>
-          <h3 className="text-lg font-semibold" style={{ color: '#ff5757' }}>USHA Token Override</h3>
-          <p className="text-sm text-slate-400">
-            Save a manual USHA JWT token to use for DNC scrubs. When enabled, this token takes priority over
-            auth-worker or environment tokens.
-          </p>
-        </div>
-        <div className="space-y-2">
-          <label className="block text-sm text-slate-400">USHA JWT Token</label>
-          <input
-            type="password"
-            value={manualToken}
-            onChange={(e) => setManualToken(e.target.value)}
-            placeholder="eyJhbGciOi..."
-            className="w-full px-3 py-2 field-inactive rounded-lg text-slate-200 focus:field-focused"
-          />
-        </div>
-        <label className="flex items-center gap-2 text-sm text-slate-300">
-          <input
-            type="checkbox"
-            checked={overrideEnabled}
-            onChange={(e) => setOverrideEnabled(e.target.checked)}
-            className="w-4 h-4 text-blue-500"
-          />
-          <span>Use manual token override for DNC scrubbing</span>
-        </label>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={async () => {
-              if (!manualToken.trim()) {
-                setTokenError('Please enter a token before saving.');
-                return;
-              }
-              try {
-                setTokenSaving(true);
-                setTokenError(null);
-                setTokenSuccess(null);
-                const response = await fetch('/api/usha-token', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ token: manualToken.trim(), overrideEnabled }),
-                });
-                const data = await response.json();
-                if (!response.ok || !data.success) {
-                  setTokenError(data.error || 'Failed to save token.');
-                  return;
-                }
-                setTokenSuccess('Token saved successfully.');
-                setManualToken('');
-                updateSettings({ ushaTokenOverrideEnabled: data.overrideEnabled });
-                setTimeout(() => setTokenSuccess(null), 3000);
-              } catch (err) {
-                console.error('[SETTINGS] Failed to save USHA token:', err);
-                setTokenError('Failed to save token.');
-              } finally {
-                setTokenSaving(false);
-              }
-            }}
-            disabled={tokenSaving}
-            className="flex items-center gap-2 px-4 py-2 btn-active text-white rounded-lg state-transition disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {tokenSaving ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Saving...
-              </>
-            ) : (
-              <>
-                <Save className="w-4 h-4" />
-                Save token
-              </>
-            )}
-          </button>
-          {tokenError && <span className="text-sm text-red-400">{tokenError}</span>}
-          {tokenSuccess && <span className="text-sm text-green-400">{tokenSuccess}</span>}
-        </div>
-        <p className="text-xs text-slate-500">
-          Tokens are stored server-side in the persistent data directory. Disable the override to fall back to
-          auth-worker or environment tokens.
-        </p>
       </div>
     </div>
   );

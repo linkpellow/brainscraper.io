@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  output: 'standalone',
   // Optimize production builds
   compress: true,
   poweredByHeader: false,

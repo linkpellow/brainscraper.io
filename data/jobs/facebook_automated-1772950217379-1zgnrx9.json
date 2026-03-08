@@ -1,0 +1,20 @@
+{
+  "jobId": "facebook_automated-1772950217379-1zgnrx9",
+  "type": "facebook_automated",
+  "status": "pending",
+  "progress": {
+    "current": 0,
+    "total": 1,
+    "percentage": 0
+  },
+  "startedAt": "2026-03-08T06:10:17.379Z",
+  "metadata": {
+    "queries": [
+      "health insurance"
+    ],
+    "maxPostsPerQuery": 20,
+    "maxCommentsPerPost": 50,
+    "includeAds": true,
+    "country": "US"
+  }
+}

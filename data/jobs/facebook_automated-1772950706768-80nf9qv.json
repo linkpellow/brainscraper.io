@@ -1,0 +1,21 @@
+{
+  "jobId": "facebook_automated-1772950706768-80nf9qv",
+  "type": "facebook_automated",
+  "status": "pending",
+  "progress": {
+    "current": 0,
+    "total": 2,
+    "percentage": 0
+  },
+  "startedAt": "2026-03-08T06:18:26.768Z",
+  "metadata": {
+    "queries": [
+      "health insurance",
+      "COBRA"
+    ],
+    "maxPostsPerQuery": 20,
+    "maxCommentsPerPost": 50,
+    "includeAds": true,
+    "country": "US"
+  }
+}

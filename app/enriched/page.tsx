@@ -6,7 +6,6 @@ import Link from 'next/link';
 import { LeadSummary, leadSummariesToCSV, formatPhoneNumber } from '@/utils/extractLeadSummary';
 import AppLayout from '../components/AppLayout';
 import DatePickerModal from '../components/DatePickerModal';
-import { scrubDnc } from '@/src/lib/dncClient';
 
 // State name to abbreviation mapping
 const stateToAbbreviation: Record<string, string> = {
@@ -52,7 +51,7 @@ function getStateAbbreviation(state: string | undefined | null): string {
   return state;
 }
 
-type SortField = 'name' | 'city' | 'zipcode' | 'age' | 'income' | 'searchFilter' | 'none';
+type SortField = 'name' | 'city' | 'zipcode' | 'age' | 'income' | 'searchFilter' | 'platform' | 'none';
 type SortDirection = 'asc' | 'desc';
 
 type EnrichmentLog = {
@@ -104,9 +103,6 @@ export default function EnrichedLeadsPage() {
     details: any;
   } | null>(null);
   const [autoReenrichStarted, setAutoReenrichStarted] = useState(false);
-  const [isScrubbingDNC, setIsScrubbingDNC] = useState(false);
-  const [dncScrubProgress, setDncScrubProgress] = useState({ current: 0, total: 0 });
-  const [dncError, setDncError] = useState<string | null>(null);
   const [enrichingFields, setEnrichingFields] = useState<Set<string>>(new Set());
   const [enrichmentErrors, setEnrichmentErrors] = useState<Map<string, string>>(new Map());
   const [currentPage, setCurrentPage] = useState(1);
@@ -265,283 +261,6 @@ export default function EnrichedLeadsPage() {
       }
     };
   }, [searchQuery, ageMin, ageMax, mobileOnly, filterDNC, selectedState, selectedDate, currentPage]);
-
-  // Auto-scrub DNC status in background after leads are loaded
-  // Checks DNC status for existing leads that haven't been checked today
-  // Note: This fetches all leads (not paginated) for DNC scrubbing
-  useEffect(() => {
-    if (totalUnfilteredLeads === 0 || isScrubbingDNC) return;
-    
-    // Fetch all leads for DNC scrubbing (not paginated)
-    const fetchAllLeadsForDNC = async () => {
-      try {
-        const response = await fetch(`/api/load-enriched-results?limit=10000&t=${Date.now()}`);
-        if (!response.ok) return;
-        
-        const result = await response.json();
-        if (!result.success || !Array.isArray(result.leads)) return;
-        
-        // Check if any leads need DNC scrubbing
-        // Skip leads that were already checked today
-        const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
-        
-        const leadsToScrub = result.leads.filter((lead: LeadSummary) => {
-          const phone = lead.phone?.replace(/\D/g, '');
-          if (!phone || phone.length < 10) {
-            return false;
-          }
-          
-          // Skip if already checked today (one time daily pass)
-          if (lead.dncLastChecked) {
-            const lastCheckedDate = lead.dncLastChecked.split('T')[0];
-            if (lastCheckedDate === today) {
-              return false; // Already checked today, skip
-            }
-          }
-          
-          // Include all leads that haven't been checked today (regardless of current status)
-          // This ensures every lead gets checked once per day
-          return true;
-        });
-        
-        if (leadsToScrub.length === 0) return;
-        
-        // Wait a bit before starting to avoid blocking initial load
-        setTimeout(async () => {
-          console.log('\n🔍 [FRONTEND DNC] ============================================');
-          console.log(`🔍 [FRONTEND DNC] Starting background DNC scrubbing`);
-          console.log(`🔍 [FRONTEND DNC] Found ${leadsToScrub.length} leads that need DNC checking`);
-          console.log('🔍 [FRONTEND DNC] ============================================\n');
-          
-          setIsScrubbingDNC(true);
-          setDncScrubProgress({ current: 0, total: leadsToScrub.length });
-          
-          const startTime = Date.now();
-      
-      try {
-        // Scrub in batches
-        const batchSize = 20;
-        const dncResults = new Map<string, string>();
-        const totalBatches = Math.ceil(leadsToScrub.length / batchSize);
-        
-        console.log(`📦 [FRONTEND DNC] Processing ${leadsToScrub.length} leads in ${totalBatches} batch(es)\n`);
-        
-        for (let i = 0; i < leadsToScrub.length; i += batchSize) {
-          const batchNum = Math.floor(i / batchSize) + 1;
-          const batch = leadsToScrub.slice(i, i + batchSize);
-          const phoneNumbers = batch.map((lead: LeadSummary) => lead.phone?.replace(/\D/g, '')).filter(Boolean);
-          
-          console.log(`📤 [FRONTEND DNC] Sending batch ${batchNum}/${totalBatches} (${phoneNumbers.length} numbers) to API...`);
-          
-          try {
-            const batchStart = Date.now();
-            const response = await scrubDnc({ phoneNumbers });
-            
-            const batchTime = Date.now() - batchStart;
-            
-            if (response.ok) {
-              const result = await response.json();
-              if (result.success && result.results && Array.isArray(result.results)) {
-                // Get counts from stats object (preferred) or top-level (for backward compatibility)
-                const batchDncCount = result.stats?.dnc || result.dncCount || 0;
-                const batchOkCount = result.stats?.ok || result.okCount || 0;
-                
-                console.log(`📥 [FRONTEND DNC] Batch ${batchNum} received: ${batchOkCount} OK, ${batchDncCount} DNC (${batchTime}ms)`);
-                
-                result.results.forEach((r: any) => {
-                  // Normalize phone number for consistent matching
-                  const normalizedPhone = String(r.phone || '').replace(/\D/g, '');
-                  if (normalizedPhone && normalizedPhone.length >= 10) {
-                    // Map status: 'DNC' → 'YES', 'OK' → 'NO', anything else → 'UNKNOWN'
-                    const dncStatus = r.status === 'DNC' ? 'YES' : r.status === 'OK' ? 'NO' : 'UNKNOWN';
-                    dncResults.set(normalizedPhone, dncStatus);
-                  }
-                });
-                setDncError(null); // Clear any previous errors
-              } else {
-                console.warn(`⚠️ [FRONTEND DNC] Batch ${batchNum} returned invalid response structure`);
-              }
-            } else {
-              const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-              const errorMessage = errorData.error || response.statusText;
-              console.error(`❌ [FRONTEND DNC] Batch ${batchNum} failed:`, errorMessage);
-              
-              // Check if it's a token error
-              if (errorMessage.includes('USHA JWT token') || errorMessage.includes('token is required')) {
-                setDncError('USHA JWT token not configured. Add a manual token in Settings → Manual DNC JWT or set USHA_JWT_TOKEN in .env.local and restart the server.');
-                console.error('\n⚠️  [FRONTEND DNC] ============================================');
-                console.error('⚠️  [FRONTEND DNC] CONFIGURATION ERROR:');
-                console.error('⚠️  [FRONTEND DNC] USHA JWT token is missing');
-                console.error('⚠️  [FRONTEND DNC]');
-                console.error('⚠️  [FRONTEND DNC] To fix:');
-                console.error('⚠️  [FRONTEND DNC] 1. Use Settings → Manual DNC JWT to save a manual token');
-                console.error('⚠️  [FRONTEND DNC] 2. Or create/edit .env.local and add: USHA_JWT_TOKEN=your_token_here');
-                console.error('⚠️  [FRONTEND DNC] 3. Restart your Next.js server');
-                console.error('⚠️  [FRONTEND DNC] ============================================\n');
-                break; // Stop processing more batches
-              }
-              // For other errors, continue processing remaining batches
-            }
-          } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-            console.error(`❌ [FRONTEND DNC] Batch ${batchNum} exception:`, errorMessage);
-            // Continue processing remaining batches unless it's a critical error
-          }
-          
-          const progress = Math.min(i + batchSize, leadsToScrub.length);
-          setDncScrubProgress({ current: progress, total: leadsToScrub.length });
-          console.log(`📊 [FRONTEND DNC] Progress: ${progress}/${leadsToScrub.length} (${Math.round((progress/leadsToScrub.length)*100)}%)\n`);
-          
-          // Small delay between batches
-          if (i + batchSize < leadsToScrub.length) {
-            await new Promise(resolve => setTimeout(resolve, 200));
-          }
-        }
-        
-        // RETRY PASS: Retry failed/unknown leads
-        const failedPhones = Array.from(dncResults.entries())
-          .filter(([_, status]) => status === 'UNKNOWN')
-          .map(([phone]) => phone);
-        
-        if (failedPhones.length > 0) {
-          console.log(`\n🔄 [FRONTEND DNC] Retry Pass: ${failedPhones.length} leads failed, retrying...`);
-          
-          // Wait a bit before retrying
-          await new Promise(resolve => setTimeout(resolve, 2000));
-          
-          // Retry in smaller batches
-          const retryBatchSize = 10;
-          for (let i = 0; i < failedPhones.length; i += retryBatchSize) {
-            const retryBatch = failedPhones.slice(i, i + retryBatchSize);
-            const retryBatchNum = Math.floor(i / retryBatchSize) + 1;
-            const totalRetryBatches = Math.ceil(failedPhones.length / retryBatchSize);
-            
-            console.log(`🔄 [FRONTEND DNC] Retry batch ${retryBatchNum}/${totalRetryBatches} (${retryBatch.length} numbers)...`);
-            
-            try {
-              const response = await scrubDnc({ phoneNumbers: retryBatch });
-              
-              if (response.ok) {
-                const result = await response.json();
-                if (result.success && result.results && Array.isArray(result.results)) {
-                  let retrySuccessCount = 0;
-                  result.results.forEach((r: any) => {
-                    const normalizedPhone = String(r.phone || '').replace(/\D/g, '');
-                    if (normalizedPhone && normalizedPhone.length >= 10) {
-                      const dncStatus = r.status === 'DNC' ? 'YES' : r.status === 'OK' ? 'NO' : 'UNKNOWN';
-                      // Only update if we got a definitive result
-                      if (dncStatus !== 'UNKNOWN') {
-                        dncResults.set(normalizedPhone, dncStatus);
-                        retrySuccessCount++;
-                      }
-                    }
-                  });
-                  console.log(`✅ [FRONTEND DNC] Retry batch ${retryBatchNum}: ${retrySuccessCount} recovered`);
-                }
-              }
-            } catch (error) {
-              console.error(`❌ [FRONTEND DNC] Retry batch ${retryBatchNum} failed:`, error);
-            }
-            
-            // Delay between retry batches
-            if (i + retryBatchSize < failedPhones.length) {
-              await new Promise(resolve => setTimeout(resolve, 500));
-            }
-          }
-          
-          // Check how many are still unknown after retry
-          const stillUnknown = Array.from(dncResults.values()).filter(v => v === 'UNKNOWN').length;
-          if (stillUnknown > 0) {
-            console.warn(`⚠️ [FRONTEND DNC] ${stillUnknown} leads still have UNKNOWN status after retry`);
-          } else {
-            console.log(`✅ [FRONTEND DNC] All failed leads recovered successfully!`);
-          }
-        }
-        
-        // Update leads with DNC status
-        if (dncResults.size > 0) {
-          const totalTime = Date.now() - startTime;
-          const dncCount = Array.from(dncResults.values()).filter(v => v === 'YES').length;
-          const okCount = Array.from(dncResults.values()).filter(v => v === 'NO').length;
-          
-          console.log(`🔄 [FRONTEND DNC] Updating ${dncResults.size} leads with DNC status...`);
-          
-          // Fetch all leads again to update them
-          const allLeadsResponse = await fetch(`/api/load-enriched-results?limit=10000&t=${Date.now()}`);
-          if (allLeadsResponse.ok) {
-            const allLeadsResult = await allLeadsResponse.json();
-            if (allLeadsResult.success && Array.isArray(allLeadsResult.leads)) {
-              const updatedLeads = allLeadsResult.leads.map((lead: LeadSummary) => {
-                // Normalize phone number for consistent matching
-                const phone = lead.phone?.replace(/\D/g, '');
-                if (phone && phone.length >= 10 && dncResults.has(phone)) {
-                  return { 
-                    ...lead, 
-                    dncStatus: dncResults.get(phone) || 'UNKNOWN',
-                    dncLastChecked: new Date().toISOString() // Mark as checked today
-                  };
-                }
-                return lead;
-              });
-              
-              // CRITICAL: Save to server so DNC status persists across page reloads
-              console.log(`💾 [FRONTEND DNC] Saving ${updatedLeads.length} leads to server...`);
-              const saveResponse = await fetch('/api/aggregate-enriched-leads', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ newLeads: updatedLeads }),
-              });
-              
-              const saveResult = await saveResponse.json();
-              if (saveResult.success) {
-                console.log(`✅ [FRONTEND DNC] Saved ${saveResult.totalLeads} leads to server (DNC status persisted)`);
-                
-                // Refetch current page to show updated DNC status
-                if (fetchAbortControllerRef.current) {
-                  fetchAbortControllerRef.current.abort();
-                }
-                fetchAbortControllerRef.current = new AbortController();
-                fetchPaginatedLeads(fetchAbortControllerRef.current.signal);
-              } else {
-                console.error(`❌ [FRONTEND DNC] Failed to save to server:`, saveResult.error);
-              }
-            }
-          }
-          
-          console.log('✅ [FRONTEND DNC] ============================================');
-          console.log(`✅ [FRONTEND DNC] DNC Scrubbing Complete!`);
-          console.log(`✅ [FRONTEND DNC] Updated: ${dncResults.size} leads`);
-          console.log(`✅ [FRONTEND DNC] Results: ${okCount} OK, ${dncCount} DNC`);
-          console.log(`✅ [FRONTEND DNC] Total Time: ${totalTime}ms (${(totalTime / 1000).toFixed(2)}s)`);
-          console.log('✅ [FRONTEND DNC] ============================================\n');
-        } else {
-          console.warn('⚠️  [FRONTEND DNC] No DNC results received from API\n');
-        }
-      } catch (error) {
-        const totalTime = Date.now() - startTime;
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        console.error('❌ [FRONTEND DNC] ============================================');
-        console.error('❌ [FRONTEND DNC] Fatal Error:', errorMessage);
-        console.error(`❌ [FRONTEND DNC] Time before error: ${totalTime}ms`);
-        console.error('❌ [FRONTEND DNC] ============================================\n');
-          setDncError(`DNC scrubbing failed: ${errorMessage}`);
-        } finally {
-          setIsScrubbingDNC(false);
-          setDncScrubProgress({ current: 0, total: 0 });
-        }
-        }, 2000);
-      } catch (error) {
-        console.error('Failed to fetch leads for DNC scrubbing:', error);
-      }
-    };
-    
-    // Wait a bit before starting to avoid blocking initial load
-    const dncTimeout = setTimeout(() => {
-      fetchAllLeadsForDNC();
-    }, 2000);
-    
-    return () => clearTimeout(dncTimeout);
-  }, [totalUnfilteredLeads, isScrubbingDNC]); // Run when total leads change or scrubbing completes
 
   // DISABLED: Auto re-enrichment - removed to prevent automatic API calls
   // Enrichment should only happen when user explicitly clicks "Enrich" or "Re-enrich Existing Leads"
@@ -1389,10 +1108,24 @@ export default function EnrichedLeadsPage() {
                 <>
                   {totalUnfilteredLeads} total enriched leads
                   {totalPages > 1 && ` • Page ${currentPage}/${totalPages}`}
-                  {isScrubbingDNC && ` • Scrubbing DNC: ${dncScrubProgress.current}/${dncScrubProgress.total}`}
                 </>
               )}
             </p>
+            {paginatedLeads.length > 0 && (() => {
+              const linkedin = paginatedLeads.filter(l => l.platform === 'linkedin').length;
+              const facebook = paginatedLeads.filter(l => l.platform === 'facebook').length;
+              const instagram = paginatedLeads.filter(l => l.platform === 'instagram').length;
+              if (linkedin === 0 && facebook === 0 && instagram === 0) return null;
+              const parts = [];
+              if (linkedin > 0) parts.push(`${linkedin} LinkedIn`);
+              if (facebook > 0) parts.push(`${facebook} Facebook`);
+              if (instagram > 0) parts.push(`${instagram} Instagram`);
+              return (
+                <p className="text-[10px] sm:text-xs text-slate-500 mt-0.5 font-data">
+                  This page: {parts.join(' • ')}
+                </p>
+              );
+            })()}
           </div>
           <div className="flex flex-wrap gap-2 sm:gap-3 w-full sm:w-auto">
             <button
@@ -1425,25 +1158,6 @@ export default function EnrichedLeadsPage() {
             </button>
           </div>
         </div>
-
-        {/* DNC Error Banner */}
-        {dncError && (
-          <div className="bg-red-900/20 border border-red-500/50 rounded-xl p-4 mb-4">
-            <div className="flex items-start gap-3">
-              <AlertCircle className="w-5 h-5 text-gray-300 flex-shrink-0 mt-0.5" />
-              <div className="flex-1">
-                <h3 className="text-gray-300 font-semibold mb-1">DNC Scrubbing Configuration Error</h3>
-                <p className="text-gray-400 text-sm mb-2">{dncError}</p>
-                <button
-                  onClick={() => setDncError(null)}
-                  className="text-gray-300 hover:text-gray-400 text-xs underline"
-                >
-                  Dismiss
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Search and Filters */}
         {totalUnfilteredLeads > 0 && (
@@ -1612,6 +1326,17 @@ export default function EnrichedLeadsPage() {
               Name {getSortIcon('name')}
             </button>
             <button
+              onClick={() => handleSort('platform')}
+              className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold state-transition border flex items-center gap-1 sm:gap-2 font-data ${
+                sortField === 'platform'
+                  ? 'btn-active text-white border-transparent'
+                  : 'btn-inactive text-slate-200'
+              }`}
+            >
+              <span className="hidden sm:inline">Source</span>
+              <span className="sm:hidden">Src</span> {getSortIcon('platform')}
+            </button>
+            <button
               onClick={() => handleSort('city')}
               className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold state-transition border flex items-center gap-1 sm:gap-2 font-data ${
                 sortField === 'city'
@@ -1700,7 +1425,8 @@ export default function EnrichedLeadsPage() {
               <table className="w-full text-xs relative z-10 font-data" style={{ tableLayout: 'fixed', width: '100%' }}>
                 <thead>
                   <tr className="table-header">
-                    <th className="px-2 py-2 text-left text-white font-semibold text-[10px] uppercase tracking-wider" style={{ width: '13%' }}>Name</th>
+                    <th className="px-2 py-2 text-left text-white font-semibold text-[10px] uppercase tracking-wider" style={{ width: '11%' }}>Name</th>
+                    <th className="px-2 py-2 text-left text-white font-semibold text-[10px] uppercase tracking-wider" style={{ width: '7%' }}>Source</th>
                     <th className="px-2 py-2 text-left text-white font-semibold text-[10px] uppercase tracking-wider" style={{ width: '10%' }}>Phone</th>
                     <th className="px-2 py-2 text-left text-white font-semibold text-[10px] uppercase tracking-wider" style={{ width: '17%' }}>Email</th>
                     <th className="px-2 py-2 text-left text-white font-semibold text-[10px] uppercase tracking-wider" style={{ width: '9%' }}>City</th>
@@ -1782,6 +1508,23 @@ export default function EnrichedLeadsPage() {
                         </span>
                         {lead.name && (
                           <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 via-purple-500/0 to-pink-500/0 group-hover/name:from-blue-500/5 group-hover/name:via-purple-500/5 group-hover/name:to-pink-500/5 rounded-lg transition-all duration-500 -z-0" />
+                        )}
+                      </td>
+                      <td className="px-2 py-2 relative z-10">
+                        {lead.platform === 'linkedin' ? (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-white/20 text-white border border-white/30">
+                            LinkedIn
+                          </span>
+                        ) : lead.platform === 'facebook' ? (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-white/20 text-white border border-white/30">
+                            Facebook
+                          </span>
+                        ) : lead.platform === 'instagram' ? (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-white/20 text-white border border-white/30">
+                            Instagram
+                          </span>
+                        ) : (
+                          <span className="text-slate-500 italic">-</span>
                         )}
                       </td>
                       <EnrichableCell
@@ -1883,9 +1626,7 @@ export default function EnrichedLeadsPage() {
                         truncate={false}
                       />
                       <td className="px-2 py-2 text-slate-300 relative z-10">
-                        {isScrubbingDNC && (!lead.dncStatus || lead.dncStatus === 'UNKNOWN') ? (
-                          <span className="badge badge-info">...</span>
-                        ) : lead.dncStatus === 'YES' ? (
+                        {lead.dncStatus === 'YES' ? (
                           <span className="badge badge-error">DNC</span>
                         ) : lead.dncStatus === 'NO' ? (
                           <span className="badge badge-success">OK</span>

@@ -28,6 +28,15 @@ export interface StationConfig {
   required: boolean; // If true, cannot be disabled
 }
 
+type StationDependencyIssue = {
+  station: EnrichmentStation;
+  missingDependencies: EnrichmentStation[];
+};
+
+const STATION_ID_ALIASES: Record<string, EnrichmentStation> = {
+  'skip-tracing': 'phone-discovery',
+};
+
 /**
  * Station definitions with dependencies and metadata
  */
@@ -264,16 +273,143 @@ export function validateStationConfig(enabledStations: Set<EnrichmentStation>): 
     const config = STATION_DEFINITIONS[station];
     for (const dep of config.dependencies) {
       if (!enabledStations.has(dep)) {
-        // LinkedIn is always required, so if a station depends on it and it's missing, that's an error
-        // For other dependencies, we allow them to be missing (the station will be skipped)
-        if (dep === 'linkedin') {
-          errors.push(`${config.name} requires LinkedIn station`);
-        }
+        errors.push(`${config.name} requires ${STATION_DEFINITIONS[dep].name}`);
       }
     }
   }
   
   return errors;
+}
+
+export function normalizeStationId(station: string): EnrichmentStation | null {
+  if ((Object.keys(STATION_DEFINITIONS) as EnrichmentStation[]).includes(station as EnrichmentStation)) {
+    return station as EnrichmentStation;
+  }
+
+  return STATION_ID_ALIASES[station] || null;
+}
+
+function getDirectDependents(station: EnrichmentStation): EnrichmentStation[] {
+  return (Object.keys(STATION_DEFINITIONS) as EnrichmentStation[]).filter(candidate =>
+    STATION_DEFINITIONS[candidate].dependencies.includes(station)
+  );
+}
+
+function collectDependencies(
+  station: EnrichmentStation,
+  visited: Set<EnrichmentStation> = new Set()
+): EnrichmentStation[] {
+  if (visited.has(station)) {
+    return [];
+  }
+
+  visited.add(station);
+
+  const dependencies = STATION_DEFINITIONS[station].dependencies;
+  const collected: EnrichmentStation[] = [];
+
+  for (const dependency of dependencies) {
+    collected.push(...collectDependencies(dependency, visited));
+    collected.push(dependency);
+  }
+
+  return Array.from(new Set(collected));
+}
+
+function collectDependents(
+  station: EnrichmentStation,
+  visited: Set<EnrichmentStation> = new Set()
+): EnrichmentStation[] {
+  if (visited.has(station)) {
+    return [];
+  }
+
+  visited.add(station);
+
+  const dependents = getDirectDependents(station);
+  const collected: EnrichmentStation[] = [];
+
+  for (const dependent of dependents) {
+    collected.push(dependent);
+    collected.push(...collectDependents(dependent, visited));
+  }
+
+  return Array.from(new Set(collected));
+}
+
+export function addStationWithDependencies(
+  enabledStations: Set<EnrichmentStation>,
+  station: EnrichmentStation
+): Set<EnrichmentStation> {
+  const next = new Set(enabledStations);
+
+  for (const dependency of collectDependencies(station)) {
+    next.add(dependency);
+  }
+
+  next.add(station);
+  next.add('linkedin');
+
+  return next;
+}
+
+export function removeStationWithDependents(
+  enabledStations: Set<EnrichmentStation>,
+  station: EnrichmentStation
+): Set<EnrichmentStation> {
+  const next = new Set(enabledStations);
+
+  if (STATION_DEFINITIONS[station].required) {
+    return next;
+  }
+
+  next.delete(station);
+
+  for (const dependent of collectDependents(station)) {
+    if (!STATION_DEFINITIONS[dependent].required) {
+      next.delete(dependent);
+    }
+  }
+
+  return next;
+}
+
+export function normalizeStationConfig(
+  enabledStations: Iterable<EnrichmentStation | string>
+): { stations: Set<EnrichmentStation>; issues: StationDependencyIssue[] } {
+  const normalized = new Set<EnrichmentStation>();
+  for (const station of enabledStations) {
+    const normalizedStation = normalizeStationId(String(station));
+    if (normalizedStation) {
+      normalized.add(normalizedStation);
+    }
+  }
+  normalized.add('linkedin');
+
+  const issues: StationDependencyIssue[] = [];
+
+  let changed = true;
+  while (changed) {
+    changed = false;
+
+    for (const station of Array.from(normalized)) {
+      if (station === 'linkedin') {
+        continue;
+      }
+
+      const missingDependencies = STATION_DEFINITIONS[station].dependencies.filter(
+        dependency => !normalized.has(dependency)
+      );
+
+      if (missingDependencies.length > 0) {
+        normalized.delete(station);
+        issues.push({ station, missingDependencies });
+        changed = true;
+      }
+    }
+  }
+
+  return { stations: normalized, issues };
 }
 
 /**
@@ -283,9 +419,10 @@ export function getDefaultStationConfig(): Set<EnrichmentStation> {
   return new Set<EnrichmentStation>([
     'linkedin',
     'zip',
+    'gender',
+    'income-pre-qual',
     'phone-discovery',
     'telnyx',
-    'income-pre-qual',
     'gatekeep',
     'dnc-check',
     'age',

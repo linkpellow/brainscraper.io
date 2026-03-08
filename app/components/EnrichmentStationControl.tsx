@@ -5,9 +5,11 @@ import { Settings, Zap, DollarSign, CheckCircle2, XCircle, Info, ChevronDown, Ch
 import { 
   EnrichmentStation, 
   STATION_DEFINITIONS, 
+  addStationWithDependencies,
   calculateOptimalOrder, 
   validateStationConfig,
-  getDefaultStationConfig 
+  getDefaultStationConfig,
+  removeStationWithDependents,
 } from '@/utils/enrichmentStations';
 
 interface EnrichmentStationControlProps {
@@ -49,12 +51,9 @@ export default function EnrichmentStationControl({
       return;
     }
     
-    const newEnabled = new Set(enabledStations);
-    if (newEnabled.has(station)) {
-      newEnabled.delete(station);
-    } else {
-      newEnabled.add(station);
-    }
+    const newEnabled = enabledStations.has(station)
+      ? removeStationWithDependents(enabledStations, station)
+      : addStationWithDependencies(enabledStations, station);
     
     onStationsChange(newEnabled);
   };

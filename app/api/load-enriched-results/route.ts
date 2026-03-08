@@ -42,7 +42,7 @@ function getStateAbbreviation(state: string | undefined | null): string {
   return state;
 }
 
-type SortField = 'name' | 'city' | 'zipcode' | 'age' | 'income' | 'searchFilter' | 'none';
+type SortField = 'name' | 'city' | 'zipcode' | 'age' | 'income' | 'searchFilter' | 'platform' | 'none';
 type SortDirection = 'asc' | 'desc';
 
 export async function GET(request: NextRequest) {
@@ -236,6 +236,10 @@ export async function GET(request: NextRequest) {
           case 'searchFilter':
             aValue = (a.searchFilter || '').toLowerCase();
             bValue = (b.searchFilter || '').toLowerCase();
+            break;
+          case 'platform':
+            aValue = (a.platform || '').toLowerCase();
+            bValue = (b.platform || '').toLowerCase();
             break;
         }
         

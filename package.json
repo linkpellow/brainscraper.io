@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "postbuild": "tsx scripts/initialize-auth-workers.ts || true",
+    "build:standalone-copy": "node -e \"const fs=require('fs'),path=require('path'); const s='.next/standalone'; const p=path.join(s,'public'); const st=path.join(s,'.next/static'); if(fs.existsSync(s)){ if(fs.existsSync('public'))fs.cpSync('public',p,{recursive:true}); if(fs.existsSync('.next/static'))fs.cpSync('.next/static',st,{recursive:true}); console.log('Standalone: copied public and static'); }\"",
     "start": "node server.js",
     "start:next": "next start",
     "lint": "next lint",
@@ -17,8 +17,10 @@
     "test:single-lead": "tsx scripts/test-single-lead-production.ts",
     "test:scraperapi": "tsx scripts/test-scraperapi-skip-tracing.ts",
     "network-inspector": "tsx src/network-inspector/cli.ts",
-    "sync-auth-worker": "tsx scripts/sync-auth-worker-to-production.ts",
-    "sync-all-auth-workers": "tsx scripts/sync-all-auth-workers.ts"
+    "electron:dev": "npm run build && npm run build:standalone-copy && cd electron && npm run start",
+    "electron:build": "npm run build && npm run build:standalone-copy",
+    "electron:pack": "npm run electron:build && cd electron && npm run pack",
+    "electron:dist": "npm run electron:build && cd electron && npm run dist"
   },
   "keywords": [
     "spreadsheet",
