@@ -51,6 +51,7 @@ export interface LeadSummary {
   skipTracingDisposition?: SkipTracingDisposition;
   enrichmentStopReason?: string;
   reviewBucket?: 'ambiguous_identity' | 'no_exact_match' | 'common_name_blocked';
+  needsVerification?: boolean; // true when skip-tracing match was state_only, name_only, initial_last, or ambiguous_used_first
 }
 
 function getEnrichmentStopReason(enriched: EnrichmentResult | undefined): string | undefined {
@@ -61,6 +62,10 @@ function getEnrichmentStopReason(enriched: EnrichmentResult | undefined): string
       return 'No exact skip-tracing match';
     case 'common_name_blocked':
       return 'Common name requires stronger location';
+    case 'abbreviated_last_common_first_blocked':
+      return 'Common first name with abbreviated last name – skipped';
+    case 'ambiguous_used_first':
+      return 'Ambiguous match – first candidate used (verify before contact)';
     default:
       break;
   }
@@ -84,10 +89,20 @@ function getReviewBucket(disposition: SkipTracingDisposition | undefined): LeadS
     case 'no_exact_match':
       return 'no_exact_match';
     case 'common_name_blocked':
+    case 'abbreviated_last_common_first_blocked':
       return 'common_name_blocked';
+    case 'ambiguous_used_first':
+      return 'ambiguous_identity';
     default:
       return undefined;
   }
+}
+
+function getNeedsVerification(enriched: EnrichmentResult | undefined): boolean {
+  if (!enriched) return false;
+  if (enriched.skipTracingDisposition === 'ambiguous_used_first') return true;
+  const mt = enriched.skipTracingMatchType;
+  return mt === 'state_only' || mt === 'name_only' || mt === 'initial_last';
 }
 
 /**
@@ -572,7 +587,8 @@ export function extractLeadSummary(
   const dncLastChecked = extractedDncLastChecked || row['dncLastChecked'] || row['DNC Last Checked'] || row['dnc_last_checked'] || undefined;
   const enrichmentStopReason = getEnrichmentStopReason(enriched);
   const reviewBucket = getReviewBucket(enriched?.skipTracingDisposition);
-  
+  const needsVerification = getNeedsVerification(enriched);
+
   const summary: LeadSummary = {
     name: extractName(row, enriched),
     phone: extractPhone(row, enriched), // TOP PRIORITY
@@ -597,6 +613,7 @@ export function extractLeadSummary(
     skipTracingDisposition: enriched?.skipTracingDisposition,
     enrichmentStopReason,
     reviewBucket,
+    ...(needsVerification && { needsVerification: true }),
   };
   
   // DIAGNOSTIC: Enhanced debug logging

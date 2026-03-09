@@ -48,8 +48,19 @@ export interface EnrichmentProgress {
 /** ZIP source for income gating: only verified_row/verified_skip_trace trigger income-by-zip and can block. */
 export type ZipProvenance = 'verified_row' | 'verified_skip_trace' | 'derived_city_state' | 'missing';
 
+/** Strictness mode: strict = current behavior; balanced/volume = allow state-only and ambiguous-use-first with review flags. John S always skipped. */
+export type EnrichmentStrictness = 'strict' | 'balanced' | 'volume';
+
+const STRICTNESS_VALID: EnrichmentStrictness[] = ['strict', 'balanced', 'volume'];
+
+export function getStrictness(options?: { strictness?: EnrichmentStrictness }): EnrichmentStrictness {
+  const raw = options?.strictness ?? process.env.ENRICHMENT_STRICTNESS ?? 'strict';
+  const normalized = String(raw).toLowerCase().trim() as EnrichmentStrictness;
+  return STRICTNESS_VALID.includes(normalized) ? normalized : 'strict';
+}
+
 /** Skip-tracing match outcome for strict single-candidate policy. */
-export type SkipTracingDisposition = 'clear_match' | 'ambiguous' | 'no_exact_match' | 'common_name_blocked';
+export type SkipTracingDisposition = 'clear_match' | 'ambiguous' | 'no_exact_match' | 'common_name_blocked' | 'abbreviated_last_common_first_blocked' | 'ambiguous_used_first';
 
 export interface EnrichmentResult {
   email?: string;
@@ -57,6 +68,8 @@ export interface EnrichmentResult {
   zipCode?: string;
   zipProvenance?: ZipProvenance;
   skipTracingDisposition?: SkipTracingDisposition;
+  skipTracingMatchType?: 'exact_location' | 'state_only' | 'name_only' | 'initial_last' | 'ambiguous_used_first';
+  skipTracingLocationStrength?: 'state_only';
   domain?: string;
   linkedinUrl?: string;
   linkedinCompanyUrl?: string;
@@ -143,6 +156,10 @@ function getPhoneDiscoveryFailureMessage(disposition: SkipTracingDisposition | u
       return 'Gatekeep failed: No exact skip-tracing match';
     case 'common_name_blocked':
       return 'Gatekeep failed: Common name requires stronger location';
+    case 'abbreviated_last_common_first_blocked':
+      return 'Gatekeep failed: Common first name with abbreviated last name – skipped';
+    case 'ambiguous_used_first':
+      return 'Gatekeep: Ambiguous match – first candidate used (verify before contact)';
     default:
       return 'Gatekeep failed: No phone number found';
   }
@@ -1392,13 +1409,19 @@ async function checkDNCStatus(
  * MAX: 3-4 calls per lead (typically 2-3, DNC check is FREE)
  * COST SAVINGS: Age enrichment skipped on DNC numbers (saves 1 API call per DNC lead)
  */
+export interface EnrichRowOptions {
+  strictness?: EnrichmentStrictness;
+}
+
 export async function enrichRow(
   row: Record<string, string | number>,
   headers: string[],
   onProgress?: (step: EnrichmentProgress['step'], stepDetails?: EnrichmentProgress['stepDetails'], errors?: string[]) => void,
   enabledStations?: Set<EnrichmentStation>,
-  batchCache?: EnrichmentBatchCache
+  batchCache?: EnrichmentBatchCache,
+  options?: EnrichRowOptions
 ): Promise<EnrichmentResult> {
+  const strictness = getStrictness(options);
   const { stations } = getExecutionStations(enabledStations);
   // DIAGNOSTIC: Log input row data
   const emailColumns = headers.filter(h => isEmailColumn(h));
@@ -1682,6 +1705,7 @@ export async function enrichRow(
     willRunSkipTracing: !phone && (hasEmail || hasName) && incomePreQualShouldContinue,
   });
   
+  // STEP 3: Phone discovery (skip-tracing). Strictness: strict = skip common-name/ambiguous when weak; balanced/volume = allow state-only and ambiguous-use-first with review flags.
   // Skip phone discovery if income pre-qual rejected the lead
   if (!incomePreQualShouldContinue) {
     console.log(`[ENRICH_ROW] STEP 3: 🚫 Skipping phone discovery - income pre-qualification rejected lead (income < $60k)`);
@@ -1692,13 +1716,27 @@ export async function enrichRow(
     const fullName = `${cleanedFirstName} ${cleanedLastName}`.trim();
     const hasExactCityState = !!(city && state);
 
-    // Strict skip-tracing gate: common name + weak location => do not spend search call
-    const { isCommonName } = await import('./enrichment/commonNameGuard');
-    if (isCommonName(cleanedFirstName, cleanedLastName) && !hasExactCityState) {
+    // Strict skip-tracing gate: common name + weak location => do not spend search call. John S always skipped.
+    const { isCommonName, shouldSkipEnrichmentForAbbreviatedLastName } = await import('./enrichment/commonNameGuard');
+    const commonNameNoLocation = isCommonName(cleanedFirstName, cleanedLastName);
+    const skipCommonNameStrict = commonNameNoLocation && !hasExactCityState;
+    const skipCommonNameBalanced = commonNameNoLocation && !state;
+    if (shouldSkipEnrichmentForAbbreviatedLastName(cleanedFirstName, cleanedLastName)) {
+      result.skipTracingDisposition = 'abbreviated_last_common_first_blocked';
+      console.log(`[ENRICH_ROW] STEP 3: skiptrace_abbreviated_last_common_first_blocked - skipping search`);
+      onProgress?.('phone-discovery', undefined, ['Skipped: Common first name with abbreviated last name']);
+    } else if (strictness === 'strict' && skipCommonNameStrict) {
       result.skipTracingDisposition = 'common_name_blocked';
       console.log(`[ENRICH_ROW] STEP 3: skiptrace_common_name_blocked (no exact city+state) - skipping search`);
       onProgress?.('phone-discovery', undefined, ['Skipped: Common name without city+state']);
+    } else if ((strictness === 'balanced' || strictness === 'volume') && skipCommonNameBalanced) {
+      result.skipTracingDisposition = 'common_name_blocked';
+      console.log(`[ENRICH_ROW] STEP 3: skiptrace_common_name_blocked (no state) - skipping search`);
+      onProgress?.('phone-discovery', undefined, ['Skipped: Common name without city+state']);
     } else {
+    if (state && !city && (strictness === 'balanced' || strictness === 'volume')) {
+      result.skipTracingLocationStrength = 'state_only';
+    }
     // Build citystatezip if we have city and state
     let citystatezip = '';
     if (city && state) {
@@ -1762,7 +1800,7 @@ export async function enrichRow(
           let responseData: any = null;
           if (actualData.PeopleDetails && Array.isArray(actualData.PeopleDetails) && actualData.PeopleDetails.length > 0) {
             const { filterSkipTracingCandidates } = await import('./enrichment/skipTracingCandidateFilter');
-            const { survivors, disposition } = filterSkipTracingCandidates(
+            const { survivors, disposition, matchType } = filterSkipTracingCandidates(
               actualData.PeopleDetails,
               cleanedFirstName,
               cleanedLastName,
@@ -1770,6 +1808,7 @@ export async function enrichRow(
               state || undefined
             );
             result.skipTracingDisposition = disposition;
+            if (matchType) result.skipTracingMatchType = matchType;
             if (disposition === 'no_exact_match') {
               console.log(`[ENRICH_ROW] STEP 3: skiptrace_no_exact_match - no candidate matched name/location`);
               onProgress?.('phone-discovery', {
@@ -1777,11 +1816,23 @@ export async function enrichRow(
                 state: state || undefined,
               }, ['No exact skip-tracing match']);
             } else if (disposition === 'ambiguous') {
-              console.log(`[ENRICH_ROW] STEP 3: skiptrace_ambiguous - ${survivors.length} matches, not calling person-details`);
-              onProgress?.('phone-discovery', {
-                city: city || undefined,
-                state: state || undefined,
-              }, ['Ambiguous skip-tracing match']);
+              if (strictness === 'balanced' || strictness === 'volume') {
+                responseData = survivors[0];
+                (result.skipTracingData as any).PeopleDetails = [survivors[0]];
+                result.skipTracingDisposition = 'ambiguous_used_first';
+                result.skipTracingMatchType = 'ambiguous_used_first';
+                console.log(`[ENRICH_ROW] STEP 3: ambiguous_used_first - using first of ${survivors.length} (verify before contact)`);
+                onProgress?.('phone-discovery', {
+                  city: city || undefined,
+                  state: state || undefined,
+                }, ['Ambiguous – first candidate used (verify before contact)']);
+              } else {
+                console.log(`[ENRICH_ROW] STEP 3: skiptrace_ambiguous - ${survivors.length} matches, not calling person-details`);
+                onProgress?.('phone-discovery', {
+                  city: city || undefined,
+                  state: state || undefined,
+                }, ['Ambiguous skip-tracing match']);
+              }
             } else {
               responseData = survivors[0];
               (result.skipTracingData as any).PeopleDetails = [survivors[0]];
@@ -2105,7 +2156,8 @@ export async function enrichRow(
   let ageOver59 = false;
   const skipTracingDataForAge = result.skipTracingData as any;
 
-  if (result.skipTracingDisposition === 'clear_match' && skipTracingDataForAge?.PeopleDetails && Array.isArray(skipTracingDataForAge.PeopleDetails) && skipTracingDataForAge.PeopleDetails.length > 0) {
+  const hasSingleSkipTracingCandidate = (result.skipTracingDisposition === 'clear_match' || result.skipTracingDisposition === 'ambiguous_used_first');
+  if (hasSingleSkipTracingCandidate && skipTracingDataForAge?.PeopleDetails && Array.isArray(skipTracingDataForAge.PeopleDetails) && skipTracingDataForAge.PeopleDetails.length > 0) {
     const step3Age = skipTracingDataForAge.PeopleDetails[0]?.Age;
     if (step3Age) {
       const ageNum = parseInt(String(step3Age), 10);
@@ -2393,7 +2445,7 @@ export async function enrichRow(
   
   // STEP 6: Age (CONDITIONAL - only when we have a single chosen skip-trace candidate)
   // Never run age enrichment when match was ambiguous or no_exact_match
-  if (stations.has('age') && shouldContinue && !ageOver59 && !hasDOBOrAge(row, headers) && firstName && lastName && phone && result.skipTracingDisposition === 'clear_match') {
+  if (stations.has('age') && shouldContinue && !ageOver59 && !hasDOBOrAge(row, headers) && firstName && lastName && phone && hasSingleSkipTracingCandidate) {
     const skipTracingData = result.skipTracingData as any;
     let ageFromStep3: string | null = null;
     
