@@ -10,6 +10,21 @@ try {
   // Cache initialization is optional - continue without it
 }
 
+function sanitizeKeywordTerm(value: string): string {
+  return value.replace(/[,\n\r\t]+/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+function appendKeywordTerm(target: string[], value: unknown): void {
+  if (typeof value !== 'string') {
+    return;
+  }
+
+  const sanitized = sanitizeKeywordTerm(value);
+  if (sanitized.length > 0) {
+    target.push(sanitized);
+  }
+}
+
 /**
  * Realtime LinkedIn Sales Navigator Data API endpoint
  * Uses RapidAPI realtime-linkedin-sales-navigator-data
@@ -168,11 +183,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const isPeopleLeadSearch = endpoint === 'search_person' || endpoint === 'premium_search_person';
+
     // PHASE 3: Auto-use via_url endpoint for location searches (100% accuracy, 0% waste)
     // If location is specified and we have a location ID, use via_url endpoint automatically
     // Track if we attempted via_url so we can fall back properly
     let attemptedViaUrl = false;
-    if (requiresFilters && searchParams.location && RAPIDAPI_KEY) {
+    let appliedCurrentCompanyFilter = false;
+    let appliedPastCompanyFilter = false;
+    if (requiresFilters && !isPeopleLeadSearch && searchParams.location && RAPIDAPI_KEY) {
       const locationText = String(searchParams.location);
       
       try {
@@ -222,10 +241,11 @@ export async function POST(request: NextRequest) {
           
           // Add ALL other filters to via_url for maximum accuracy
           // CRITICAL: Use URN format for companies (verified - normalized names don't work)
+          const keywordTermsForUrl: string[] = [];
+
           if (searchParams.current_company) {
             const companyName = String(searchParams.current_company);
             
-            // Try to get company URN
             try {
               const { getCompanySuggestions } = await import('@/utils/linkedinFilterHelpers');
               const suggestions = await getCompanySuggestions(companyName, RAPIDAPI_KEY);
@@ -233,27 +253,73 @@ export async function POST(request: NextRequest) {
                 s.text.toLowerCase() === companyName.toLowerCase()
               );
               
-              if (exactMatch && exactMatch.fullId) {
-            filtersForUrl.push({
-              type: 'CURRENT_COMPANY',
-              values: [{
+              if (exactMatch?.fullId) {
+                filtersForUrl.push({
+                  type: 'CURRENT_COMPANY',
+                  values: [{
                     id: exactMatch.fullId,
                     text: exactMatch.text,
                     selectionType: 'INCLUDED',
                   }],
                 });
-              } else if (exactMatch && exactMatch.id) {
+                appliedCurrentCompanyFilter = true;
+              } else if (exactMatch?.id) {
                 filtersForUrl.push({
                   type: 'CURRENT_COMPANY',
                   values: [{
                     id: `urn:li:organization:${exactMatch.id}`,
                     text: exactMatch.text,
-                selectionType: 'INCLUDED',
-              }],
-            });
-          }
+                    selectionType: 'INCLUDED',
+                  }],
+                });
+                appliedCurrentCompanyFilter = true;
+              } else {
+                appendKeywordTerm(keywordTermsForUrl, companyName);
+                logger.warn(`⚠️ Company "${companyName}" could not be resolved to a URN for via_url. Falling back to keywords.`);
+              }
             } catch (error) {
+              appendKeywordTerm(keywordTermsForUrl, companyName);
               logger.warn(`Error getting company URN for via_url:`, error);
+            }
+          }
+
+          if (searchParams.past_company) {
+            const companyName = String(searchParams.past_company);
+
+            try {
+              const { getCompanySuggestions } = await import('@/utils/linkedinFilterHelpers');
+              const suggestions = await getCompanySuggestions(companyName, RAPIDAPI_KEY);
+              const exactMatch = suggestions.find(s =>
+                s.text.toLowerCase() === companyName.toLowerCase()
+              );
+
+              if (exactMatch?.fullId) {
+                filtersForUrl.push({
+                  type: 'PAST_COMPANY',
+                  values: [{
+                    id: exactMatch.fullId,
+                    text: exactMatch.text,
+                    selectionType: 'INCLUDED',
+                  }],
+                });
+                appliedPastCompanyFilter = true;
+              } else if (exactMatch?.id) {
+                filtersForUrl.push({
+                  type: 'PAST_COMPANY',
+                  values: [{
+                    id: `urn:li:organization:${exactMatch.id}`,
+                    text: exactMatch.text,
+                    selectionType: 'INCLUDED',
+                  }],
+                });
+                appliedPastCompanyFilter = true;
+              } else {
+                appendKeywordTerm(keywordTermsForUrl, companyName);
+                logger.warn(`⚠️ Past company "${companyName}" could not be resolved to a URN for via_url. Falling back to keywords.`);
+              }
+            } catch (error) {
+              appendKeywordTerm(keywordTermsForUrl, companyName);
+              logger.warn(`Error getting past company URN for via_url:`, error);
             }
           }
           
@@ -429,7 +495,7 @@ export async function POST(request: NextRequest) {
           
           // Handle job titles - use CURRENT_TITLE filter instead of keywords for better compatibility
           // Real LinkedIn URLs use CURRENT_TITLE filter with ID codes, not keywords
-          let keywordsForUrl = '';
+          let keywordsForUrl = sanitizeKeywordTerm(keywordTermsForUrl.join(' '));
           if (searchParams.title_keywords) {
             const titleKeywords = String(searchParams.title_keywords);
             // Check if we should use CURRENT_TITLE filter instead of keywords
@@ -458,7 +524,8 @@ export async function POST(request: NextRequest) {
               logger.log(`📝 Using CURRENT_TITLE filter (id:${commonTitles[matchingTitle]}) instead of keywords for "${matchingTitle}"`);
             } else {
               // Fall back to keywords for less common titles
-              keywordsForUrl = titleKeywords;
+              appendKeywordTerm(keywordTermsForUrl, titleKeywords);
+              keywordsForUrl = sanitizeKeywordTerm(keywordTermsForUrl.join(' '));
               logger.log(`📝 Using keywords for title search: "${titleKeywords.substring(0, 50)}..."`);
             }
           }
@@ -815,7 +882,7 @@ export async function POST(request: NextRequest) {
         // 2. Check cache (fast, previously discovered)
         // 3. Discover via json_to_url API (accurate, slower)
         // 4. Fallback to keywords (always works)
-        if (requestBody.location) {
+        if (requestBody.location && !isPeopleLeadSearch) {
           const locationText = String(requestBody.location);
           
           // Strategy 1: Check static mappings first (fastest)
@@ -966,6 +1033,10 @@ export async function POST(request: NextRequest) {
           }
         }
         
+        if (requestBody.location && isPeopleLeadSearch) {
+          logger.log('📍 People search location is using keyword + post-filter matching to avoid provider filter/via_url throttling');
+        }
+        
         // Changed jobs filter
         if (requestBody.changed_jobs_90_days === 'true' || requestBody.changed_jobs_90_days === true) {
           filters.push({
@@ -981,7 +1052,7 @@ export async function POST(request: NextRequest) {
         // Current company filter
         // CRITICAL FIX: Use URN format (verified - Format B works, Format A returns 0 results)
         // Need to get companyId from filter_company_suggestions and convert to URN
-        if (requestBody.current_company) {
+        if (requestBody.current_company && !isPeopleLeadSearch) {
           const companyName = String(requestBody.current_company);
           
           // Try to get company URN from suggestions API
@@ -997,14 +1068,15 @@ export async function POST(request: NextRequest) {
               
               if (exactMatch && exactMatch.fullId) {
                 // Use URN format from suggestions
-          filters.push({
-            type: 'CURRENT_COMPANY',
-            values: [{
+                filters.push({
+                  type: 'CURRENT_COMPANY',
+                  values: [{
                     id: exactMatch.fullId, // URN format: urn:li:organization:162479
                     text: exactMatch.text,
-              selectionType: 'INCLUDED'
-            }]
-          });
+                    selectionType: 'INCLUDED'
+                  }]
+                });
+                appliedCurrentCompanyFilter = true;
                 logger.log(`🏢 Using company URN from suggestions: ${exactMatch.fullId}`);
               } else if (exactMatch && exactMatch.id) {
                 // Convert companyId to URN format
@@ -1017,16 +1089,14 @@ export async function POST(request: NextRequest) {
                     selectionType: 'INCLUDED'
                   }]
                 });
+                appliedCurrentCompanyFilter = true;
                 logger.log(`🏢 Converted companyId to URN: ${companyUrn}`);
               } else {
-                // Fallback: Try to construct URN if we have a numeric ID
-                // This is a last resort - should use suggestions API
-                logger.warn(`⚠️ Company "${companyName}" not found in suggestions - filter may not work`);
-                // Don't add filter if we can't get URN - it won't work anyway
+                logger.warn(`⚠️ Company "${companyName}" not found in suggestions. Falling back to keyword + post-filter matching.`);
               }
             } catch (error) {
               logger.warn(`Error getting company suggestions for "${companyName}":`, error);
-              // Don't add filter if suggestions fail - normalized names don't work
+              logger.warn(`⚠️ Falling back to keyword + post-filter matching for "${companyName}".`);
             }
           } else {
             logger.warn(`⚠️ RAPIDAPI_KEY not available - cannot get company URN for "${companyName}"`);
@@ -1035,7 +1105,7 @@ export async function POST(request: NextRequest) {
         
         // Past company filter
         // CRITICAL FIX: Use URN format (same as CURRENT_COMPANY)
-        if (requestBody.past_company) {
+        if (requestBody.past_company && !isPeopleLeadSearch) {
           const companyName = String(requestBody.past_company);
           
           // Try to get company URN from suggestions API
@@ -1049,14 +1119,15 @@ export async function POST(request: NextRequest) {
               );
               
               if (exactMatch && exactMatch.fullId) {
-          filters.push({
-            type: 'PAST_COMPANY',
-            values: [{
+                filters.push({
+                  type: 'PAST_COMPANY',
+                  values: [{
                     id: exactMatch.fullId,
                     text: exactMatch.text,
                     selectionType: 'INCLUDED'
                   }]
                 });
+                appliedPastCompanyFilter = true;
               } else if (exactMatch && exactMatch.id) {
                 const companyUrn = `urn:li:organization:${exactMatch.id}`;
                 filters.push({
@@ -1064,12 +1135,16 @@ export async function POST(request: NextRequest) {
                   values: [{
                     id: companyUrn,
                     text: exactMatch.text,
-              selectionType: 'INCLUDED'
-            }]
-          });
+                    selectionType: 'INCLUDED'
+                  }]
+                });
+                appliedPastCompanyFilter = true;
+              } else {
+                logger.warn(`⚠️ Past company "${companyName}" not found in suggestions. Falling back to keyword + post-filter matching.`);
               }
             } catch (error) {
               logger.warn(`Error getting company suggestions for past company "${companyName}":`, error);
+              logger.warn(`⚠️ Falling back to keyword + post-filter matching for past company "${companyName}".`);
             }
           }
         }
@@ -1326,12 +1401,16 @@ export async function POST(request: NextRequest) {
           requestBody.filters = filters;
           // Build keywords from remaining simple parameters (location text added if location ID not found)
           const keywordParts: string[] = [];
-          if (requestBody.first_name) keywordParts.push(String(requestBody.first_name));
-          if (requestBody.last_name) keywordParts.push(String(requestBody.last_name));
-          // Always add title_keywords to keywords (better accuracy than JOB_TITLE filter)
-          if (requestBody.title_keywords) {
-            keywordParts.push(String(requestBody.title_keywords));
+          appendKeywordTerm(keywordParts, requestBody.first_name);
+          appendKeywordTerm(keywordParts, requestBody.last_name);
+          if (requestBody.current_company && !appliedCurrentCompanyFilter) {
+            appendKeywordTerm(keywordParts, requestBody.current_company);
           }
+          if (requestBody.past_company && !appliedPastCompanyFilter) {
+            appendKeywordTerm(keywordParts, requestBody.past_company);
+          }
+          // Always add title_keywords to keywords (better accuracy than JOB_TITLE filter)
+          appendKeywordTerm(keywordParts, requestBody.title_keywords);
           
           // Location filter is now enabled - only add to keywords if location ID not found
           // Post-filtering will still validate results for 100% accuracy
@@ -1341,7 +1420,7 @@ export async function POST(request: NextRequest) {
             const hasLocationFilter = filters.some(f => f.type === 'LOCATION' || f.type === 'REGION');
             if (!hasLocationFilter) {
             if (!keywordParts.includes(locationText)) {
-              keywordParts.push(locationText);
+              appendKeywordTerm(keywordParts, locationText);
             }
               logger.log(`📍 Location "${locationText}" added to keywords (location ID not found - using keywords + post-filtering)`);
             } else {
@@ -1349,7 +1428,7 @@ export async function POST(request: NextRequest) {
             }
           }
           
-          requestBody.keywords = keywordParts.join(' ') || '';
+          requestBody.keywords = sanitizeKeywordTerm(keywordParts.join(' ')) || '';
           
           // EXTENSIVE LOGGING: Log exact filter structure
           logger.log(`📍 Built ${filters.length} filter(s) for request`, {
@@ -1363,10 +1442,16 @@ export async function POST(request: NextRequest) {
           // Build keywords from remaining simple parameters
           // Note: If filters were built above, they're being used. Otherwise, use keywords.
           const keywordParts: string[] = [];
-          if (requestBody.first_name) keywordParts.push(String(requestBody.first_name));
-          if (requestBody.last_name) keywordParts.push(String(requestBody.last_name));
+          appendKeywordTerm(keywordParts, requestBody.first_name);
+          appendKeywordTerm(keywordParts, requestBody.last_name);
+          if (requestBody.current_company && !appliedCurrentCompanyFilter) {
+            appendKeywordTerm(keywordParts, requestBody.current_company);
+          }
+          if (requestBody.past_company && !appliedPastCompanyFilter) {
+            appendKeywordTerm(keywordParts, requestBody.past_company);
+          }
           // Add title_keywords to keywords (no filters in this branch)
-          if (requestBody.title_keywords) keywordParts.push(String(requestBody.title_keywords));
+          appendKeywordTerm(keywordParts, requestBody.title_keywords);
           
           // PHASE 2: Improved keyword strategy for better location matching
           // Add location to keywords with extensive variations for better matching
@@ -1391,87 +1476,48 @@ export async function POST(request: NextRequest) {
               'wisconsin': 'WI', 'wyoming': 'WY', 'district of columbia': 'DC'
             };
             
-            // Major cities by state (to improve keyword matching)
-            const majorCities: Record<string, string[]> = {
-              'maryland': ['Baltimore', 'Annapolis', 'Frederick', 'Rockville', 'Gaithersburg'],
-              'california': ['Los Angeles', 'San Francisco', 'San Diego', 'Sacramento', 'Oakland'],
-              'new york': ['New York', 'Albany', 'Buffalo', 'Rochester', 'Syracuse'],
-              'texas': ['Houston', 'Dallas', 'Austin', 'San Antonio', 'Fort Worth'],
-              'florida': ['Miami', 'Tampa', 'Orlando', 'Jacksonville', 'Tallahassee'],
-              'illinois': ['Chicago', 'Springfield', 'Peoria', 'Rockford', 'Aurora'],
-              'pennsylvania': ['Philadelphia', 'Pittsburgh', 'Harrisburg', 'Allentown', 'Erie'],
-              'ohio': ['Columbus', 'Cleveland', 'Cincinnati', 'Toledo', 'Akron'],
-              'georgia': ['Atlanta', 'Savannah', 'Augusta', 'Columbus', 'Athens'],
-              'north carolina': ['Charlotte', 'Raleigh', 'Greensboro', 'Durham', 'Winston-Salem'],
-              'michigan': ['Detroit', 'Grand Rapids', 'Warren', 'Sterling Heights', 'Lansing'],
-              'new jersey': ['Newark', 'Jersey City', 'Paterson', 'Elizabeth', 'Edison'],
-              'virginia': ['Virginia Beach', 'Norfolk', 'Richmond', 'Newport News', 'Alexandria'],
-              'washington': ['Seattle', 'Spokane', 'Tacoma', 'Vancouver', 'Bellevue'],
-              'massachusetts': ['Boston', 'Worcester', 'Springfield', 'Lowell', 'Cambridge'],
-              'arizona': ['Phoenix', 'Tucson', 'Mesa', 'Chandler', 'Scottsdale'],
-              'tennessee': ['Nashville', 'Memphis', 'Knoxville', 'Chattanooga', 'Murfreesboro'],
-              'indiana': ['Indianapolis', 'Fort Wayne', 'Evansville', 'South Bend', 'Carmel'],
-              'missouri': ['Kansas City', 'St. Louis', 'Springfield', 'Columbia', 'Independence'],
-            };
-            
             // Strategy 1: Add location text (primary)
-            keywordParts.push(locationText);
+            appendKeywordTerm(keywordParts, locationText);
             
-            // Strategy 2: Add state abbreviation if it's a state
+            // Strategy 2: Add the canonical state keyword if it's a state search
             for (const [stateName, abbr] of Object.entries(stateAbbreviations)) {
               if (locationLower.includes(stateName)) {
-                keywordParts.push(abbr);
-                keywordParts.push(stateName); // Add full state name
-                logger.log(`📍 Added state variations for "${locationText}": ${abbr}, ${stateName}`);
-                
-                // Strategy 3: Add major cities for this state (improves keyword matching)
-                const cities = majorCities[stateName] || [];
-                if (cities.length > 0) {
-                  // Add 2-3 major cities to improve matching
-                  keywordParts.push(...cities.slice(0, 3));
-                  logger.log(`📍 Added major cities for "${locationText}": ${cities.slice(0, 3).join(', ')}`);
-                }
+                appendKeywordTerm(keywordParts, stateName); // Add full state name
+                logger.log(`📍 Added state keyword for "${locationText}": ${stateName}`);
                 break;
               }
             }
             
-            // Strategy 4: If it's already an abbreviation, add full state name
+            // Strategy 3: If it's already an abbreviation, add full state name
             for (const [stateName, abbr] of Object.entries(stateAbbreviations)) {
               if (locationLower === abbr.toLowerCase() || locationLower === ` ${abbr.toLowerCase()}`) {
-                keywordParts.push(stateName);
-                const cities = majorCities[stateName] || [];
-                if (cities.length > 0) {
-                  keywordParts.push(...cities.slice(0, 3));
-                }
-                logger.log(`📍 Added full state name and cities for abbreviation "${locationText}": ${stateName}`);
+                appendKeywordTerm(keywordParts, stateName);
+                logger.log(`📍 Added full state name for abbreviation "${locationText}": ${stateName}`);
                 break;
               }
             }
             
-            // Strategy 5: Extract state from "City, State" format
+            // Strategy 4: Extract state from "City, State" format
             const locationParts = locationText.split(',').map(s => s.trim());
             if (locationParts.length > 1) {
               const possibleState = locationParts[1];
               const stateLower = possibleState.toLowerCase();
               
               // Add the city
-              keywordParts.push(locationParts[0]);
+              appendKeywordTerm(keywordParts, locationParts[0]);
               
-              // Add state and abbreviation
+              // Add the state token and normalize abbreviation-only inputs
               if (stateAbbreviations[stateLower]) {
-                keywordParts.push(possibleState);
-                keywordParts.push(stateAbbreviations[stateLower]);
-                
-                // Add other major cities in that state
-                const cities = majorCities[stateLower] || [];
-                if (cities.length > 0) {
-                  keywordParts.push(...cities.slice(0, 2));
+                appendKeywordTerm(keywordParts, possibleState);
+                if (possibleState.length <= 3) {
+                  const fullStateName = Object.entries(stateAbbreviations).find(([, abbr]) => abbr === possibleState.toUpperCase())?.[0];
+                  appendKeywordTerm(keywordParts, fullStateName);
                 }
               }
             }
             
             // Remove duplicates
-            const uniqueKeywords = Array.from(new Set(keywordParts));
+            const uniqueKeywords = Array.from(new Set(keywordParts.map(keyword => sanitizeKeywordTerm(keyword)).filter(Boolean)));
             
             logger.log(`📍 Location "${locationText}" added to keywords with ${uniqueKeywords.length} variations (improved keyword strategy for better matching)`);
             logger.log(`   Keywords: ${uniqueKeywords.join(' ')}`);
@@ -1482,7 +1528,7 @@ export async function POST(request: NextRequest) {
           }
           
           if (keywordParts.length > 0) {
-            requestBody.keywords = keywordParts.join(' ');
+            requestBody.keywords = sanitizeKeywordTerm(keywordParts.join(' '));
             requestBody.filters = [];
           } else {
             // If no parameters at all, the API requires at least filters or keywords
@@ -1745,7 +1791,7 @@ export async function POST(request: NextRequest) {
     });
     
     // Try to parse as JSON, fallback to text
-    let data;
+    let data: any;
     try {
       data = JSON.parse(result);
       logger.log('✅ Successfully parsed JSON response');
@@ -1989,93 +2035,9 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Extract and cache location IDs from lead responses (if available)
-    // Note: Sales Navigator API doesn't return geo IDs in lead data, only geoRegion text
-    // But we can still map geoRegion text to location IDs we've discovered
-    // Handle ALL possible response structures:
-    // 1. data.response.data (top-level response)
-    // 2. data.data.response.data (nested response)
-    // 3. data.data (direct array)
-    // 4. data.response.results/leads
-    const leadsData = 
-      data?.response?.data ||           // Top-level response.data
-      data?.response?.results ||         // Top-level response.results
-      data?.response?.leads ||           // Top-level response.leads
-      data?.data?.response?.data ||      // Nested data.response.data
-      data?.data?.data ||                // Nested data.data
-      (Array.isArray(data?.data) ? data.data : null) || // data.data as array
-      (Array.isArray(data?.response) ? data.response : null); // response as array
-    
-    logger.log('Location ID Extraction from Leads', {
-      hasLeadsData: !!leadsData,
-      leadsDataIsArray: Array.isArray(leadsData),
-      leadsDataLength: Array.isArray(leadsData) ? leadsData.length : undefined,
-      hasLocationParam: !!requestBody.location,
-      locationText: requestBody.location ? String(requestBody.location) : null
-    });
-    
-    if (leadsData && Array.isArray(leadsData) && requestBody.location) {
-      try {
-        const { getLocationId } = await import('@/utils/linkedinLocationDiscovery');
-        const locationText = String(requestBody.location);
-        
-        // Extract unique geoRegion values from leads
-        const geoRegions = new Set<string>();
-        for (const lead of leadsData) {
-          if (lead.geoRegion && typeof lead.geoRegion === 'string') {
-            geoRegions.add(lead.geoRegion);
-          }
-        }
-        
-        logger.log('Extracted geoRegions from leads', {
-          totalLeads: leadsData.length,
-          uniqueGeoRegions: Array.from(geoRegions),
-          geoRegionCount: geoRegions.size
-        });
-        
-        // For each unique geoRegion, try to discover and cache its location ID
-        // This helps build our location database for future searches
-        for (const geoRegion of geoRegions) {
-          if (geoRegion && geoRegion !== locationText) {
-            // Try to discover location ID for this geoRegion (async, don't await)
-            // CRITICAL OPTIMIZATION: Check request cache first to avoid duplicate calls
-            const geoCacheKey = geoRegion.toLowerCase().trim();
-            
-            if (requestCache.locationIds.has(geoCacheKey)) {
-              const cached = requestCache.locationIds.get(geoCacheKey)!;
-              logger.log(`📍 Using request-cached location ID for geoRegion "${geoRegion}"`, {
-                locationId: cached.id,
-                fullId: cached.fullId,
-                source: cached.source
-              });
-            } else {
-              // Not in cache - discover and cache it (async, don't await)
-              getLocationId(geoRegion, RAPIDAPI_KEY || '', true).then(discovery => {
-                if (discovery.fullId && discovery.locationId) {
-                  requestCache.locationIds.set(geoCacheKey, {
-                    id: discovery.locationId,
-                    fullId: discovery.fullId,
-                    source: discovery.source,
-                  });
-                }
-                logger.log(`📍 Discovered location ID for geoRegion "${geoRegion}"`, {
-                  locationId: discovery.locationId,
-                  fullId: discovery.fullId,
-                  source: discovery.source
-                });
-              }).catch((error) => {
-                logger.warn(`Failed to discover location ID for geoRegion "${geoRegion}"`, error);
-              });
-            }
-          }
-        }
-      } catch (error) {
-        logger.warn('Failed to extract location IDs from lead responses', {
-          error: error instanceof Error ? error.message : String(error),
-          stack: error instanceof Error ? error.stack : undefined
-        });
-      }
-    }
+    // Do not perform opportunistic location discovery from returned leads.
+    // It spends extra helper calls after the search is already complete and
+    // can self-trigger throttling on the next page of the same workflow.
 
     // Extract pagination info if available - check all possible locations
     const pagination = 
@@ -2119,43 +2081,63 @@ export async function POST(request: NextRequest) {
     // CRITICAL: API accepts filters but doesn't apply them - post-filtering ensures 100% accuracy
     let finalResults = processedResults;
     let locationValidationStats: any = null;
+    let companyValidationStats: any = null;
+
+    const applyFilteredResults = (filtered: any[], stats: { total: number; kept: number }) => {
+      finalResults = filtered;
+
+      if (data?.response?.data && Array.isArray(data.response.data)) {
+        data.response.data = filtered;
+      } else if (data?.data?.response?.data && Array.isArray(data.data.response.data)) {
+        data.data.response.data = filtered;
+      } else if (Array.isArray(data?.data)) {
+        data.data = filtered;
+      } else if (Array.isArray(data)) {
+        data = filtered;
+      }
+
+      if (pagination) {
+        pagination.count = filtered.length;
+        if (pagination.total) {
+          const filterRate = stats.total > 0 ? stats.kept / stats.total : 0;
+          const estimatedFilteredTotal = Math.floor(pagination.total * filterRate);
+          pagination.hasMore = (pagination.start + filtered.length) < estimatedFilteredTotal;
+        }
+      }
+    };
     
     if (body.location && processedResults && processedResults.length > 0) {
       try {
         const { filterLeadsByLocation } = await import('@/utils/locationValidation');
         const requestedLocation = String(body.location);
-        const { filtered, stats } = filterLeadsByLocation(processedResults, requestedLocation);
-        
-        finalResults = filtered;
+        const { filtered, stats } = filterLeadsByLocation(finalResults || [], requestedLocation);
         locationValidationStats = stats;
         
         logger.log(`📍 Post-filtering applied: ${stats.kept} of ${stats.total} leads match "${requestedLocation}" (${(stats.removalRate).toFixed(1)}% removed)`);
-        
-        // Update the data structure with filtered results
-        if (data?.response?.data && Array.isArray(data.response.data)) {
-          data.response.data = filtered;
-        } else if (data?.data?.response?.data && Array.isArray(data.data.response.data)) {
-          data.data.response.data = filtered;
-        } else if (Array.isArray(data?.data)) {
-          data.data = filtered;
-        } else if (Array.isArray(data)) {
-          data = filtered;
-        }
-        
-        // Update pagination count to reflect filtered results
-        if (pagination) {
-          pagination.count = filtered.length;
-          // Recalculate hasMore based on filtered results
-          if (pagination.total) {
-            // Estimate: if we filtered out X%, the total is also reduced
-            const filterRate = stats.total > 0 ? stats.kept / stats.total : 0;
-            const estimatedFilteredTotal = Math.floor(pagination.total * filterRate);
-            pagination.hasMore = (pagination.start + filtered.length) < estimatedFilteredTotal;
-          }
-        }
+        applyFilteredResults(filtered, stats);
       } catch (filterError) {
         logger.warn('Post-filtering failed, returning all results:', filterError);
         // Continue with unfiltered results if filtering fails
+      }
+    }
+
+    if ((body.current_company || body.past_company) && finalResults && finalResults.length > 0) {
+      try {
+        const { filterLeadsByCompany } = await import('@/utils/linkedinCompanyValidation');
+        const { filtered, stats } = filterLeadsByCompany(finalResults || [], {
+          currentCompany: typeof body.current_company === 'string' ? body.current_company : undefined,
+          pastCompany: typeof body.past_company === 'string' ? body.past_company : undefined,
+        });
+
+        companyValidationStats = stats;
+
+        logger.log(
+          `🏢 Company post-filtering applied: ${stats.kept} of ${stats.total} leads matched requested company filters (${stats.removalRate.toFixed(1)}% removed)`
+        );
+
+        applyFilteredResults(filtered, stats);
+      } catch (filterError) {
+        logger.warn('Company post-filtering failed, returning current results:', filterError);
       }
     }
     
@@ -2222,7 +2204,8 @@ export async function POST(request: NextRequest) {
         start: pagination.start,
         hasMore: pagination.total ? (pagination.start + pagination.count) < pagination.total : false
       } : null,
-      locationValidationStats: locationValidationStats || undefined
+      locationValidationStats: locationValidationStats || undefined,
+      companyValidationStats: companyValidationStats || undefined
     });
   } catch (error) {
     // Record error for cooldown tracking
@@ -2267,4 +2250,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-

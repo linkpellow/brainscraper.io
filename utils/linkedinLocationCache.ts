@@ -23,7 +23,10 @@ if (typeof window === 'undefined') {
 const getCacheFile = (): string | null => {
   if (!path || !fs) return null;
   try {
-    return path.join(process.cwd(), '.cache', 'linkedin-location-ids.json');
+    const baseDir = process.env.DATA_DIR && process.env.DATA_DIR.trim().length > 0
+      ? process.env.DATA_DIR.trim()
+      : process.cwd();
+    return path.join(baseDir, '.cache', 'linkedin-location-ids.json');
   } catch {
     return null;
   }
@@ -118,4 +121,3 @@ if (typeof window === 'undefined' && typeof process !== 'undefined') {
     });
   }
 }
-

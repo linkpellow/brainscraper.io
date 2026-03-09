@@ -11,6 +11,7 @@ import {
   getStandaloneDir,
   startNextServer,
   getAppUrl,
+  waitForServerReady,
 } from './nextRunner';
 
 const PORT = parseInt(process.env.PORT || '3000', 10);
@@ -41,7 +42,7 @@ function createWindow(): void {
   });
 }
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   const userData = app.getPath('userData');
   const dataDir = path.join(userData, 'data');
   ensureDataDir(dataDir);
@@ -64,7 +65,17 @@ app.whenReady().then(() => {
     if (code !== 0 && code !== null) console.error('[Next] exited with code', code);
   });
 
-  setTimeout(() => createWindow(), 1500);
+  try {
+    await waitForServerReady(PORT);
+    createWindow();
+  } catch (error) {
+    console.error('[Next] failed to become ready', error);
+    if (nextProcess) {
+      nextProcess.kill();
+      nextProcess = null;
+    }
+    app.quit();
+  }
 });
 
 app.on('window-all-closed', () => {

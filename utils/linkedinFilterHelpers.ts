@@ -7,6 +7,19 @@
 
 const RAPIDAPI_BASE = 'https://realtime-linkedin-sales-navigator-data.p.rapidapi.com';
 const RAPIDAPI_HOST = 'realtime-linkedin-sales-navigator-data.p.rapidapi.com';
+const COMPANY_SUGGESTION_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+const COMPANY_SUGGESTION_COOLDOWN_MS = 5 * 60 * 1000;
+
+type CompanySuggestion = { id: string; text: string; fullId?: string };
+
+const companySuggestionCache = new Map<
+  string,
+  { suggestions: CompanySuggestion[]; timestamp: number; cooldownUntil?: number }
+>();
+
+function normalizeSuggestionQuery(query: string): string {
+  return query.trim().toLowerCase().replace(/\s+/g, ' ');
+}
 
 /**
  * Generic helper function to call filter suggestion endpoints
@@ -52,26 +65,76 @@ export async function getCompanySuggestions(
   query: string,
   rapidApiKey: string
 ): Promise<Array<{ id: string; text: string; fullId?: string }>> {
-  const result = await callFilterEndpoint('filter_company_suggestions', rapidApiKey, { query });
-  
-  if (!result) return [];
-  
-  // Handle different response structures
-  const suggestions = result.suggestions || result.data || result.results || (Array.isArray(result) ? result : []);
-  
-  return suggestions.map((s: any) => {
-    // Extract companyId from response (verified format: companyId: "162479")
-    const companyId = s.companyId || s.id || '';
-    
-    // Convert to URN format: urn:li:organization:162479
-    const fullId = companyId ? `urn:li:organization:${companyId}` : undefined;
-    
-    return {
-      id: companyId,
-      text: s.displayValue || s.text || s.name || s.headline || String(companyId || ''),
-      fullId: fullId || (s.urn && s.urn.startsWith('urn:') ? s.urn : undefined),
-    };
-  });
+  if (!query || !rapidApiKey) return [];
+
+  const normalizedQuery = normalizeSuggestionQuery(query);
+  const cached = companySuggestionCache.get(normalizedQuery);
+  const now = Date.now();
+
+  if (cached?.cooldownUntil && cached.cooldownUntil > now) {
+    return cached.suggestions;
+  }
+
+  if (cached && now - cached.timestamp < COMPANY_SUGGESTION_TTL_MS) {
+    return cached.suggestions;
+  }
+
+  try {
+    const response = await fetch(`${RAPIDAPI_BASE}/filter_company_suggestions`, {
+      method: 'POST',
+      headers: {
+        'x-rapidapi-key': rapidApiKey,
+        'x-rapidapi-host': RAPIDAPI_HOST,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ query }),
+    });
+
+    if (!response.ok) {
+      console.warn(`Filter endpoint filter_company_suggestions returned ${response.status}`);
+
+      if (response.status === 403 || response.status === 429) {
+        companySuggestionCache.set(normalizedQuery, {
+          suggestions: cached?.suggestions || [],
+          timestamp: now,
+          cooldownUntil: now + COMPANY_SUGGESTION_COOLDOWN_MS,
+        });
+      }
+
+      return cached?.suggestions || [];
+    }
+
+    const result = await response.text();
+    let parsed: any;
+
+    try {
+      parsed = JSON.parse(result);
+    } catch {
+      parsed = { raw: result };
+    }
+
+    const suggestions = parsed.suggestions || parsed.data || parsed.results || (Array.isArray(parsed) ? parsed : []);
+    const normalizedSuggestions = suggestions.map((s: any) => {
+      const companyId = s.companyId || s.id || '';
+      const fullId = companyId ? `urn:li:organization:${companyId}` : undefined;
+
+      return {
+        id: companyId,
+        text: s.displayValue || s.text || s.name || s.headline || String(companyId || ''),
+        fullId: fullId || (s.urn && s.urn.startsWith('urn:') ? s.urn : undefined),
+      };
+    });
+
+    companySuggestionCache.set(normalizedQuery, {
+      suggestions: normalizedSuggestions,
+      timestamp: now,
+    });
+
+    return normalizedSuggestions;
+  } catch (error) {
+    console.error('Error calling filter_company_suggestions:', error);
+    return cached?.suggestions || [];
+  }
 }
 
 /**

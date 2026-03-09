@@ -5,6 +5,7 @@
 import path from 'path';
 import fs from 'fs';
 import { spawn, type ChildProcess } from 'child_process';
+import http from 'http';
 
 const DEFAULT_PORT = 3000;
 
@@ -63,6 +64,7 @@ export function startNextServer(
     env: {
       ...process.env,
       ...envOverrides,
+      ELECTRON_RUN_AS_NODE: '1',
       PORT: String(port),
       HOSTNAME: '127.0.0.1',
       NODE_ENV: 'production',
@@ -74,4 +76,42 @@ export function startNextServer(
 
 export function getAppUrl(port: number = DEFAULT_PORT): string {
   return `http://127.0.0.1:${port}`;
+}
+
+export async function waitForServerReady(
+  port: number = DEFAULT_PORT,
+  timeoutMs: number = 15000
+): Promise<void> {
+  const start = Date.now();
+
+  while (Date.now() - start < timeoutMs) {
+    try {
+      await new Promise<void>((resolve, reject) => {
+        const req = http.get(
+          {
+            hostname: '127.0.0.1',
+            port,
+            path: '/login',
+            timeout: 1000,
+          },
+          (res) => {
+            res.resume();
+            if (res.statusCode && res.statusCode < 500) {
+              resolve();
+              return;
+            }
+            reject(new Error(`Unexpected status ${res.statusCode ?? 'unknown'}`));
+          }
+        );
+
+        req.on('timeout', () => req.destroy(new Error('Timed out waiting for server')));
+        req.on('error', reject);
+      });
+      return;
+    } catch {
+      await new Promise((resolve) => setTimeout(resolve, 250));
+    }
+  }
+
+  throw new Error(`Next.js server did not become ready on port ${port} within ${timeoutMs}ms`);
 }

@@ -9,6 +9,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { loadSettings, saveSettings, validateSettings, DEFAULT_SETTINGS, type SettingsConfig } from '@/utils/settingsConfig';
 import { API_REGISTRY, getAllAPIKeys } from '@/utils/apiRegistry';
 
+function normalizeScrapeLimitForSave(value: number | null | undefined): number {
+  if (value == null) {
+    return Infinity;
+  }
+  return value;
+}
+
 function sanitizeSettingsForClient(settings: SettingsConfig): SettingsConfig {
   return {
     ...settings,
@@ -118,10 +125,14 @@ export async function PUT(request: NextRequest) {
         linkedin: {
           ...currentSettings.scrapeLimits.linkedin,
           ...partialSettings.scrapeLimits?.linkedin,
+          daily: normalizeScrapeLimitForSave(partialSettings.scrapeLimits?.linkedin?.daily ?? currentSettings.scrapeLimits.linkedin.daily),
+          monthly: normalizeScrapeLimitForSave(partialSettings.scrapeLimits?.linkedin?.monthly ?? currentSettings.scrapeLimits.linkedin.monthly),
         },
         facebook: {
           ...currentSettings.scrapeLimits.facebook,
           ...partialSettings.scrapeLimits?.facebook,
+          daily: normalizeScrapeLimitForSave(partialSettings.scrapeLimits?.facebook?.daily ?? currentSettings.scrapeLimits.facebook.daily),
+          monthly: normalizeScrapeLimitForSave(partialSettings.scrapeLimits?.facebook?.monthly ?? currentSettings.scrapeLimits.facebook.monthly),
         },
       },
       cooldownWindows: {

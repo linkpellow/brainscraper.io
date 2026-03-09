@@ -10,12 +10,12 @@
  * 3. Fallback to keywords (always works)
  */
 
-import { LocationMapping } from './linkedinLocationIds';
+import { findLocationId } from './linkedinLocationIds';
 
 export interface DiscoveryResult {
   locationId: string | null;
   fullId: string | null; // urn:li:fs_geo:<id>
-  source: 'cache' | 'discovered' | 'failed';
+  source: 'static' | 'cache' | 'discovered' | 'failed';
   url?: string; // The generated Sales Navigator URL
 }
 
@@ -526,7 +526,17 @@ export async function getLocationId(
     };
   }
 
-  // Strategy 1: Check cache first (if enabled)
+  // Strategy 1: Check static mappings first
+  const staticMapping = findLocationId(locationText);
+  if (staticMapping) {
+    return {
+      locationId: staticMapping.id,
+      fullId: staticMapping.fullId,
+      source: 'static',
+    };
+  }
+
+  // Strategy 2: Check cache (if enabled)
   if (useCache) {
     const cachedId = locationCache.get(locationText);
     if (cachedId) {
@@ -539,10 +549,10 @@ export async function getLocationId(
     }
   }
 
-  // Strategy 2: Discover via API
+  // Strategy 3: Discover via API
   const discovery = await discoverLocationId(locationText, rapidApiKey);
   
-  // Strategy 3: Cache the discovered ID for future use
+  // Strategy 4: Cache the discovered ID for future use
   if (discovery.locationId && discovery.fullId && useCache) {
     locationCache.set(locationText, discovery.locationId, discovery.fullId);
     
@@ -620,4 +630,3 @@ if (typeof setInterval !== 'undefined') {
     locationCache.cleanup();
   }, 60 * 60 * 1000); // Every hour
 }
-

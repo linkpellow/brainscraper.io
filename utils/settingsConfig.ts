@@ -128,6 +128,18 @@ function decodeJwtExpirationSeconds(token: string): number | null {
   }
 }
 
+function normalizeScrapeLimit(value: unknown): number {
+  if (value == null) {
+    return Infinity;
+  }
+
+  if (typeof value === 'number' && Number.isFinite(value) && value >= 0) {
+    return value;
+  }
+
+  return Infinity;
+}
+
 /**
  * Default settings (backward compatible - all features disabled)
  */
@@ -242,10 +254,14 @@ export function loadSettings(): SettingsConfig {
           linkedin: {
             ...DEFAULT_SETTINGS.scrapeLimits.linkedin,
             ...parsed.scrapeLimits?.linkedin,
+            daily: normalizeScrapeLimit(parsed.scrapeLimits?.linkedin?.daily),
+            monthly: normalizeScrapeLimit(parsed.scrapeLimits?.linkedin?.monthly),
           },
           facebook: {
             ...DEFAULT_SETTINGS.scrapeLimits.facebook,
             ...parsed.scrapeLimits?.facebook,
+            daily: normalizeScrapeLimit(parsed.scrapeLimits?.facebook?.daily),
+            monthly: normalizeScrapeLimit(parsed.scrapeLimits?.facebook?.monthly),
           },
         },
         cooldownWindows: {
@@ -375,18 +391,34 @@ export function validateSettings(settings: Partial<SettingsConfig>): { valid: bo
   // Validate scrape limits
   if (settings.scrapeLimits) {
     if (settings.scrapeLimits.linkedin) {
-      if (typeof settings.scrapeLimits.linkedin.daily !== 'number' || settings.scrapeLimits.linkedin.daily < 0) {
+      if (
+        settings.scrapeLimits.linkedin.daily !== null &&
+        settings.scrapeLimits.linkedin.daily !== undefined &&
+        (typeof settings.scrapeLimits.linkedin.daily !== 'number' || settings.scrapeLimits.linkedin.daily < 0)
+      ) {
         errors.push('LinkedIn daily limit must be a non-negative number');
       }
-      if (typeof settings.scrapeLimits.linkedin.monthly !== 'number' || settings.scrapeLimits.linkedin.monthly < 0) {
+      if (
+        settings.scrapeLimits.linkedin.monthly !== null &&
+        settings.scrapeLimits.linkedin.monthly !== undefined &&
+        (typeof settings.scrapeLimits.linkedin.monthly !== 'number' || settings.scrapeLimits.linkedin.monthly < 0)
+      ) {
         errors.push('LinkedIn monthly limit must be a non-negative number');
       }
     }
     if (settings.scrapeLimits.facebook) {
-      if (typeof settings.scrapeLimits.facebook.daily !== 'number' || settings.scrapeLimits.facebook.daily < 0) {
+      if (
+        settings.scrapeLimits.facebook.daily !== null &&
+        settings.scrapeLimits.facebook.daily !== undefined &&
+        (typeof settings.scrapeLimits.facebook.daily !== 'number' || settings.scrapeLimits.facebook.daily < 0)
+      ) {
         errors.push('Facebook daily limit must be a non-negative number');
       }
-      if (typeof settings.scrapeLimits.facebook.monthly !== 'number' || settings.scrapeLimits.facebook.monthly < 0) {
+      if (
+        settings.scrapeLimits.facebook.monthly !== null &&
+        settings.scrapeLimits.facebook.monthly !== undefined &&
+        (typeof settings.scrapeLimits.facebook.monthly !== 'number' || settings.scrapeLimits.facebook.monthly < 0)
+      ) {
         errors.push('Facebook monthly limit must be a non-negative number');
       }
     }
