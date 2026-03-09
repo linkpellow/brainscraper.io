@@ -18,6 +18,7 @@ import DncRecoveryForm, { type DncUiStatus } from './DncRecoveryForm';
 import type { LeadListItem, SourceDetails } from '@/types/leadList';
 import type { EnrichmentStation } from '@/utils/enrichmentStations';
 import { getDefaultStationConfig } from '@/utils/enrichmentStations';
+import { normalizeUsStateCode } from '@/utils/usState';
 
 interface LeadResult {
   [key: string]: unknown;
@@ -1813,6 +1814,8 @@ export default function LinkedInLeadGenerator() {
           state = locationParts[0];
         }
       }
+
+      state = normalizeUsStateCode(state);
       
       // VALIDATION: Never set city to country name
       const cityLower = city.toLowerCase();

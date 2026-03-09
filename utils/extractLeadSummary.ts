@@ -3,7 +3,7 @@
  * Returns: Name, Zip, Age/DOB, City, State, Phone, DNC Status
  */
 
-import { EnrichedRow, EnrichmentResult } from './enrichData';
+import { EnrichedRow, EnrichmentResult, type SkipTracingDisposition, type ZipProvenance } from './enrichData';
 
 export interface SourceDetails {
   // LinkedIn fields
@@ -47,6 +47,47 @@ export interface LeadSummary {
   instagramUrl?: string; // Instagram profile URL
   platform?: 'linkedin' | 'facebook' | 'instagram'; // Platform source identifier
   sourceDetails?: SourceDetails; // Structured source information
+  zipProvenance?: ZipProvenance;
+  skipTracingDisposition?: SkipTracingDisposition;
+  enrichmentStopReason?: string;
+  reviewBucket?: 'ambiguous_identity' | 'no_exact_match' | 'common_name_blocked';
+}
+
+function getEnrichmentStopReason(enriched: EnrichmentResult | undefined): string | undefined {
+  switch (enriched?.skipTracingDisposition) {
+    case 'ambiguous':
+      return 'Ambiguous skip-tracing match';
+    case 'no_exact_match':
+      return 'No exact skip-tracing match';
+    case 'common_name_blocked':
+      return 'Common name requires stronger location';
+    default:
+      break;
+  }
+
+  if (!enriched?.error) {
+    return undefined;
+  }
+
+  const parts = enriched.error
+    .split('|')
+    .map(part => part.trim())
+    .filter(Boolean);
+
+  return parts.length > 0 ? parts[parts.length - 1] : undefined;
+}
+
+function getReviewBucket(disposition: SkipTracingDisposition | undefined): LeadSummary['reviewBucket'] {
+  switch (disposition) {
+    case 'ambiguous':
+      return 'ambiguous_identity';
+    case 'no_exact_match':
+      return 'no_exact_match';
+    case 'common_name_blocked':
+      return 'common_name_blocked';
+    default:
+      return undefined;
+  }
 }
 
 /**
@@ -529,6 +570,8 @@ export function extractLeadSummary(
   
   // Extract dncLastChecked (use from extractDNCStatus if available, otherwise from row)
   const dncLastChecked = extractedDncLastChecked || row['dncLastChecked'] || row['DNC Last Checked'] || row['dnc_last_checked'] || undefined;
+  const enrichmentStopReason = getEnrichmentStopReason(enriched);
+  const reviewBucket = getReviewBucket(enriched?.skipTracingDisposition);
   
   const summary: LeadSummary = {
     name: extractName(row, enriched),
@@ -550,6 +593,10 @@ export function extractLeadSummary(
     instagramUrl: instagramUrl ? String(instagramUrl) : undefined,
     platform,
     sourceDetails,
+    zipProvenance: enriched?.zipProvenance,
+    skipTracingDisposition: enriched?.skipTracingDisposition,
+    enrichmentStopReason,
+    reviewBucket,
   };
   
   // DIAGNOSTIC: Enhanced debug logging
@@ -586,7 +633,7 @@ export function leadSummariesToCSV(summaries: LeadSummary[]): string {
   if (summaries.length === 0) return '';
   
   // Order: Firstname, Lastname, Phone, Email, State, City, Age, Income, Zipcode, Linetype, Carrier, Platform, Source Details, Search Filter
-  const headers = ['Firstname', 'Lastname', 'Phone', 'Email', 'State', 'City', 'Age', 'Income', 'Zipcode', 'Linetype', 'Carrier', 'Platform', 'LinkedIn URL', 'Instagram URL', 'Source Details', 'Search Filter'];
+  const headers = ['Firstname', 'Lastname', 'Phone', 'Email', 'State', 'City', 'Age', 'Income', 'Zipcode', 'Zip Provenance', 'Linetype', 'Carrier', 'Platform', 'LinkedIn URL', 'Instagram URL', 'Review Bucket', 'Enrichment Stop Reason', 'Source Details', 'Search Filter'];
   const rows = summaries.map(summary => {
     // Split name into first and last
     const nameParts = (summary.name || '').trim().split(/\s+/);
@@ -647,11 +694,14 @@ export function leadSummariesToCSV(summaries: LeadSummary[]): string {
       age,
       summary.income ? Math.round(summary.income).toString() : '',  // Income column
       summary.zipcode || '',
+      summary.zipProvenance || '',
       summary.lineType || '',
       summary.carrier || '',
       summary.platform || '',
       summary.linkedinUrl || '',
       summary.instagramUrl || '',
+      summary.reviewBucket || '',
+      summary.enrichmentStopReason || '',
       sourceDetailsStr,
       summary.searchFilter || '',
     ];
@@ -672,4 +722,3 @@ export function leadSummariesToCSV(summaries: LeadSummary[]): string {
   
   return csvRows.join('\n');
 }
-

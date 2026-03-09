@@ -47,6 +47,9 @@ app.whenReady().then(async () => {
   const dataDir = path.join(userData, 'data');
   ensureDataDir(dataDir);
   process.env.DATA_DIR = dataDir;
+  const appUrl = getAppUrl(PORT);
+  process.env.APP_URL = appUrl;
+  process.env.NEXT_PUBLIC_APP_URL = appUrl;
 
   const projectRoot = getProjectRoot(process.cwd(), app.isPackaged);
   const envPath = getEnvFilePath(userData, process.execPath, projectRoot);
@@ -56,7 +59,11 @@ app.whenReady().then(async () => {
 
   const resourcesPath = process.resourcesPath || path.join(app.getAppPath(), '..');
   const standaloneDir = getStandaloneDir(resourcesPath, projectRoot, app.isPackaged);
-  nextProcess = startNextServer(standaloneDir, { DATA_DIR: dataDir }, PORT);
+  nextProcess = startNextServer(standaloneDir, {
+    DATA_DIR: dataDir,
+    APP_URL: appUrl,
+    NEXT_PUBLIC_APP_URL: appUrl,
+  }, PORT);
 
   nextProcess.stdout?.on('data', (d) => process.stdout.write(d));
   nextProcess.stderr?.on('data', (d) => process.stderr.write(d));

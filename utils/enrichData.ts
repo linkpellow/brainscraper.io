@@ -135,6 +135,19 @@ export interface EnrichedData {
   columnCount: number;
 }
 
+function getPhoneDiscoveryFailureMessage(disposition: SkipTracingDisposition | undefined): string {
+  switch (disposition) {
+    case 'ambiguous':
+      return 'Gatekeep failed: Ambiguous skip-tracing match';
+    case 'no_exact_match':
+      return 'Gatekeep failed: No exact skip-tracing match';
+    case 'common_name_blocked':
+      return 'Gatekeep failed: Common name requires stronger location';
+    default:
+      return 'Gatekeep failed: No phone number found';
+  }
+}
+
 /** Optional per-batch memoization to avoid duplicate skip-tracing calls within a batch */
 export interface EnrichmentBatchCache {
   searchCache: Map<string, { data: any; error?: string }>;
@@ -1759,8 +1772,16 @@ export async function enrichRow(
             result.skipTracingDisposition = disposition;
             if (disposition === 'no_exact_match') {
               console.log(`[ENRICH_ROW] STEP 3: skiptrace_no_exact_match - no candidate matched name/location`);
+              onProgress?.('phone-discovery', {
+                city: city || undefined,
+                state: state || undefined,
+              }, ['No exact skip-tracing match']);
             } else if (disposition === 'ambiguous') {
               console.log(`[ENRICH_ROW] STEP 3: skiptrace_ambiguous - ${survivors.length} matches, not calling person-details`);
+              onProgress?.('phone-discovery', {
+                city: city || undefined,
+                state: state || undefined,
+              }, ['Ambiguous skip-tracing match']);
             } else {
               responseData = survivors[0];
               (result.skipTracingData as any).PeopleDetails = [survivors[0]];
@@ -2304,7 +2325,7 @@ export async function enrichRow(
   let gatekeepError: string[] | undefined;
   if (!shouldContinue) {
     if (!phone) {
-      gatekeepError = ['Gatekeep failed: No phone number found'];
+      gatekeepError = [getPhoneDiscoveryFailureMessage(result.skipTracingDisposition)];
     } else if (result.lineType?.toLowerCase() === 'voip') {
       gatekeepError = ['Gatekeep failed: VoIP number (skipping age enrichment)'];
     } else if (result.lineType?.toLowerCase() === 'fixed line' || result.lineType?.toLowerCase() === 'landline' || result.lineType?.toLowerCase() === 'fixed-line') {

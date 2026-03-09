@@ -4,6 +4,7 @@
  */
 
 import { quickNormalize } from '../nameNormalization';
+import { normalizeUsStateCode } from '../usState';
 
 export type SkipTracingFilterDisposition = 'clear_match' | 'ambiguous' | 'no_exact_match';
 
@@ -25,16 +26,13 @@ function parseLivesIn(livesIn: string | undefined): { city: string; state: strin
   const parts = livesIn.split(',').map((p) => p.trim());
   if (parts.length < 2) return { city: normalizeForCompare(parts[0] || ''), state: '' };
   const statePart = parts[parts.length - 1];
-  const state = statePart.length === 2 ? statePart.toUpperCase() : normalizeForCompare(statePart);
+  const state = normalizeUsStateCode(statePart);
   const city = parts.slice(0, -1).join(' ');
   return { city: normalizeForCompare(city), state };
 }
 
 function normalizeState(state: string | undefined): string {
-  if (!state) return '';
-  const s = state.trim();
-  if (s.length === 2) return s.toUpperCase();
-  return normalizeForCompare(s);
+  return normalizeUsStateCode(state);
 }
 
 /**

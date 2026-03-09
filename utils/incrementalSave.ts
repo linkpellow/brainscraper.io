@@ -113,9 +113,14 @@ export function saveEnrichedLeadImmediate(
   enrichedRow: EnrichedRow,
   leadSummary: LeadSummary
 ): void {
-  // Filter out leads that only have email (no phone)
+  // Route reviewable identity failures into a separate bucket instead of dropping them.
   const phone = (leadSummary.phone || '').trim().replace(/\D/g, '');
   if (phone.length < 10) {
+    if (leadSummary.reviewBucket) {
+      saveReviewLeadImmediate(enrichedRow, leadSummary);
+      saveProcessedLeadKey(getLeadKey(enrichedRow));
+      return;
+    }
     console.log(`🚫 [INCREMENTAL_SAVE] Skipping lead "${leadSummary.name}" - no valid phone number (email-only leads excluded)`);
     return; // Don't save leads without phone numbers
   }
@@ -197,6 +202,73 @@ export function saveEnrichedLeadImmediate(
   } catch (error) {
     console.error(`❌ [INCREMENTAL_SAVE] Failed to save lead:`, error);
     // Don't throw - continue processing even if save fails
+  }
+}
+
+function saveReviewLeadImmediate(
+  enrichedRow: EnrichedRow,
+  leadSummary: LeadSummary
+): void {
+  if (!ensureServerModules()) {
+    return;
+  }
+
+  try {
+    dataDirectoryUtils!.ensureDataDirectory();
+    const dataDir = dataDirectoryUtils!.getDataDirectory();
+    const reviewDir = path!.join(dataDir, 'review-leads');
+
+    if (!fs!.existsSync(reviewDir)) {
+      fs!.mkdirSync(reviewDir, { recursive: true });
+    }
+
+    const leadKey = getLeadKey(enrichedRow);
+    const sanitizedKey = leadKey.replace(/[^a-zA-Z0-9:]/g, '_').substring(0, 100);
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+    const filename = `${timestamp}-${sanitizedKey}.json`;
+    const filepath = path!.join(reviewDir, filename);
+
+    const leadData = {
+      metadata: {
+        savedAt: new Date().toISOString(),
+        leadKey,
+        reviewBucket: leadSummary.reviewBucket,
+      },
+      enrichedRow,
+      leadSummary,
+    };
+
+    dataDirectoryUtils!.safeWriteFile(filepath, JSON.stringify(leadData, null, 2));
+
+    const dateStr = new Date().toISOString().split('T')[0];
+    const summaryFile = path!.join(reviewDir, `summary-${dateStr}.json`);
+
+    let dailySummary: any[] = [];
+    if (fs!.existsSync(summaryFile)) {
+      try {
+        const existing = dataDirectoryUtils!.safeReadFile(summaryFile);
+        if (existing) {
+          dailySummary = JSON.parse(existing);
+        }
+      } catch {
+        dailySummary = [];
+      }
+    }
+
+    const existingIndex = dailySummary.findIndex((item: any) =>
+      item.metadata?.leadKey === leadKey
+    );
+
+    if (existingIndex >= 0) {
+      dailySummary[existingIndex] = leadData;
+    } else {
+      dailySummary.push(leadData);
+    }
+
+    dataDirectoryUtils!.safeWriteFile(summaryFile, JSON.stringify(dailySummary, null, 2));
+    console.log(`🗂️ [INCREMENTAL_SAVE] Saved review lead: ${leadSummary.name || 'Unknown'} (${leadSummary.reviewBucket})`);
+  } catch (error) {
+    console.error(`❌ [INCREMENTAL_SAVE] Failed to save review lead:`, error);
   }
 }
 
@@ -283,7 +355,5 @@ export function clearCheckpoint(): void {
     fs!.unlinkSync(checkpointPath);
   }
 }
-
-
 
 
