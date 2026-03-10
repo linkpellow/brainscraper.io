@@ -1,12 +1,16 @@
 /**
  * API Route to Trigger Enrichment Job
- * 
- * Creates a background job for enriching leads
+ *
+ * Creates a background job for enriching leads. For small batches (sync: true, ≤SYNC_MAX rows),
+ * runs enrichment in-process so it does not depend on Inngest.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { inngest, enrichmentEvents } from '@/utils/inngest';
-import { generateJobId, saveJobStatus } from '@/utils/jobStatus';
+import { generateJobId, saveJobStatus, updateJobProgress, completeJob, failJob } from '@/utils/jobStatus';
+import { saveJobResults } from '@/utils/jobResults';
+import { enrichData } from '@/utils/enrichData';
+import { extractLeadSummary } from '@/utils/extractLeadSummary';
 import type { ParsedData } from '@/utils/parseFile';
 import {
   normalizeStationId,
@@ -14,13 +18,16 @@ import {
   type EnrichmentStation,
 } from '@/utils/enrichmentStations';
 
+const SYNC_MAX = 50;
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { parsedData, metadata, enabledStations } = body as {
+    const { parsedData, metadata, enabledStations, sync } = body as {
       parsedData: ParsedData;
       metadata?: Record<string, unknown>;
       enabledStations?: unknown;
+      sync?: boolean;
     };
 
     // Input validation
@@ -142,9 +149,65 @@ export async function POST(request: NextRequest) {
       console.warn('[JOBS_ENRICH] Failed to check schedule:', scheduleError);
     }
 
-    // Generate job ID
+    const useSync = sync === true && parsedData.rows.length <= SYNC_MAX;
     const jobId = generateJobId('enrichment');
 
+    if (useSync) {
+      try {
+        saveJobStatus({
+          jobId,
+          type: 'enrichment',
+          status: 'running',
+          progress: { current: 0, total: parsedData.rows.length, percentage: 0 },
+          startedAt: new Date().toISOString(),
+          metadata: {
+            ...(metadata || {}),
+            ...(requestedStations ? { requestedStations, enabledStations: effectiveStations, stationConfigIssues: stationIssues } : {}),
+            sync: true,
+          },
+        });
+        const enriched = await enrichData(
+          parsedData,
+          (current, total) => updateJobProgress(jobId, { current, total }),
+          undefined,
+          effectiveStations ? new Set(effectiveStations) : undefined
+        );
+        const leadSummaries = enriched.rows.map((row: { _enriched?: unknown }) =>
+          extractLeadSummary(row as Parameters<typeof extractLeadSummary>[0], row._enriched as Parameters<typeof extractLeadSummary>[1])
+        );
+        await saveJobResults(jobId, 'enrichment', leadSummaries);
+        try {
+          const { notifyScrapeCompleted } = await import('@/utils/notifications');
+          await notifyScrapeCompleted(jobId, 'linkedin', enriched.rows.length);
+        } catch {
+          // ignore
+        }
+        await completeJob(jobId, {
+          enrichedCount: enriched.rows.length,
+          totalLeads: parsedData.rows.length,
+          resultsStored: true,
+          resultCount: enriched.rows.length,
+          ...(effectiveStations ? { enabledStations: effectiveStations } : {}),
+        });
+        return NextResponse.json({
+          success: true,
+          jobId,
+          message: 'Enrichment completed',
+          sync: true,
+          enrichedCount: enriched.rows.length,
+        });
+      } catch (syncError) {
+        const errMsg = syncError instanceof Error ? syncError.message : 'Enrichment failed';
+        await failJob(jobId, errMsg);
+        console.error('[JOBS_ENRICH] Sync enrichment failed:', syncError);
+        return NextResponse.json(
+          { success: false, error: errMsg, jobId },
+          { status: 500 }
+        );
+      }
+    }
+
+    // Async path: create pending job and send to Inngest
     // Create initial job status
     const initialStatus = {
       jobId,

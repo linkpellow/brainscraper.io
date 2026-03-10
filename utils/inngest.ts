@@ -33,3 +33,7 @@ export const jobEvents = {
 export const facebookEvents = {
   automatedLeadSearch: 'facebook/automated-lead-search',
 } as const;
+
+export const warnEvents = {
+  warnMatchLinkedIn: 'warn/match-to-linkedin',
+} as const;

@@ -993,6 +993,12 @@ export default function LinkedInLeadGenerator() {
           paginationInfo = result.data.response.pagination || result.pagination;
           console.log('🔍 [SEARCH] Raw results count:', rawResults.length);
           console.log('🔍 [SEARCH] Pagination info:', JSON.stringify(paginationInfo, null, 2));
+        } else if (result.data.data?.response?.data && Array.isArray(result.data.data.response.data)) {
+          console.log('🔍 [SEARCH] Found results in result.data.data.response.data');
+          rawResults = result.data.data.response.data;
+          paginationInfo = result.data.data.response.pagination || result.data.pagination || result.pagination;
+          console.log('🔍 [SEARCH] Raw results count:', rawResults.length);
+          console.log('🔍 [SEARCH] Pagination info:', JSON.stringify(paginationInfo, null, 2));
         } else if (result.data.data && Array.isArray(result.data.data)) {
           console.log('🔍 [SEARCH] Found results in result.data.data');
           rawResults = result.data.data;
@@ -1005,6 +1011,16 @@ export default function LinkedInLeadGenerator() {
           paginationInfo = result.pagination;
           console.log('🔍 [SEARCH] Raw results count:', rawResults.length);
           console.log('🔍 [SEARCH] Pagination info:', JSON.stringify(paginationInfo, null, 2));
+        } else if (result.data.results && Array.isArray(result.data.results)) {
+          console.log('🔍 [SEARCH] Found results in result.data.results');
+          rawResults = result.data.results;
+          paginationInfo = result.data.pagination || result.pagination;
+          console.log('🔍 [SEARCH] Raw results count:', rawResults.length);
+        } else if (result.data.people && Array.isArray(result.data.people)) {
+          console.log('🔍 [SEARCH] Found results in result.data.people');
+          rawResults = result.data.people;
+          paginationInfo = result.data.pagination || result.pagination;
+          console.log('🔍 [SEARCH] Raw results count:', rawResults.length);
         } else {
           console.log('🔍 [SEARCH] ⚠️ No results found in expected locations');
           console.log('🔍 [SEARCH] Result.data structure:', JSON.stringify(result.data, null, 2).substring(0, 500));
@@ -1887,6 +1903,7 @@ export default function LinkedInLeadGenerator() {
             source: 'linkedin-scraper',
             leadCount: results.length,
           },
+          sync: results.length <= 50,
         }),
       });
 
@@ -1894,9 +1911,11 @@ export default function LinkedInLeadGenerator() {
       
       if (data.success) {
         setError(null);
-        // Show success message
-        alert(`✅ Enrichment job started! Job ID: ${data.jobId}\n\nYou can monitor progress in the Background Jobs widget in the sidebar.`);
-        // Optionally redirect or show job status
+        if (data.sync && data.enrichedCount != null) {
+          alert(`✅ Enrichment completed. ${data.enrichedCount} lead(s) enriched. Job ID: ${data.jobId}`);
+        } else {
+          alert(`✅ Enrichment job started! Job ID: ${data.jobId}\n\nYou can monitor progress in the Background Jobs widget in the sidebar.`);
+        }
       } else {
         setError(data.error || 'Failed to start enrichment job');
       }
