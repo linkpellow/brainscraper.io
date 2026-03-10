@@ -46,12 +46,15 @@ export interface LeadSummary {
   linkedinUrl?: string; // LinkedIn profile URL
   instagramUrl?: string; // Instagram profile URL
   platform?: 'linkedin' | 'facebook' | 'instagram'; // Platform source identifier
+  isWarnLead?: boolean; // WARN-origin lead stamp for filtering/workflows
+  warnCompany?: string; // Original WARN company name when available
   sourceDetails?: SourceDetails; // Structured source information
   zipProvenance?: ZipProvenance;
   skipTracingDisposition?: SkipTracingDisposition;
   enrichmentStopReason?: string;
   reviewBucket?: 'ambiguous_identity' | 'no_exact_match' | 'common_name_blocked';
   needsVerification?: boolean; // true when skip-tracing match was state_only, name_only, initial_last, or ambiguous_used_first
+  phoneStateMismatch?: boolean; // true when area code suggests different state than lead (verify before contact)
 }
 
 function getEnrichmentStopReason(enriched: EnrichmentResult | undefined): string | undefined {
@@ -66,6 +69,10 @@ function getEnrichmentStopReason(enriched: EnrichmentResult | undefined): string
       return 'Common first name with abbreviated last name – skipped';
     case 'ambiguous_used_first':
       return 'Ambiguous match – first candidate used (verify before contact)';
+    case 'ambiguous_multiple_states_saved_for_review':
+      return 'Multiple candidates in different states – verify before contact';
+    case 'no_location_skipped':
+      return 'Skipped: No location (state or city) for skip-tracing';
     default:
       break;
   }
@@ -92,7 +99,10 @@ function getReviewBucket(disposition: SkipTracingDisposition | undefined): LeadS
     case 'abbreviated_last_common_first_blocked':
       return 'common_name_blocked';
     case 'ambiguous_used_first':
+    case 'ambiguous_multiple_states_saved_for_review':
       return 'ambiguous_identity';
+    case 'no_location_skipped':
+      return undefined;
     default:
       return undefined;
   }
@@ -101,6 +111,7 @@ function getReviewBucket(disposition: SkipTracingDisposition | undefined): LeadS
 function getNeedsVerification(enriched: EnrichmentResult | undefined): boolean {
   if (!enriched) return false;
   if (enriched.skipTracingDisposition === 'ambiguous_used_first') return true;
+  if (enriched.skipTracingDisposition === 'ambiguous_multiple_states_saved_for_review') return true;
   const mt = enriched.skipTracingMatchType;
   return mt === 'state_only' || mt === 'name_only' || mt === 'initial_last';
 }
@@ -497,6 +508,13 @@ export function extractLeadSummary(
   // Extract platform from row
   const platformRaw = row['Platform'] || row['platform'] || '';
   const platform = (platformRaw === 'linkedin' || platformRaw === 'facebook' || platformRaw === 'instagram') ? platformRaw as 'linkedin' | 'facebook' | 'instagram' : undefined;
+
+  // WARN source stamp (durable marker for WARN-origin lead filtering)
+  const leadSourceRaw = String(row['Lead Source'] || row['leadSource'] || '').toLowerCase().trim();
+  const warnLeadRaw = String(row['WARN Lead'] || row['warnLead'] || '').toLowerCase().trim();
+  const warnCompanyRaw = row['WARN Company'] || row['warnCompany'] || row['_warnSourceCompany'] || '';
+  const isWarnLead = leadSourceRaw === 'warn' || warnLeadRaw === 'true' || !!String(warnCompanyRaw).trim();
+  const warnCompany = String(warnCompanyRaw || '').trim();
   
   // Extract sourceDetails from row (can be object or JSON string)
   let sourceDetails: SourceDetails | undefined;
@@ -608,12 +626,15 @@ export function extractLeadSummary(
     linkedinUrl: linkedinUrl ? String(linkedinUrl) : undefined,
     instagramUrl: instagramUrl ? String(instagramUrl) : undefined,
     platform,
+    ...(isWarnLead && { isWarnLead: true }),
+    ...(warnCompany && { warnCompany }),
     sourceDetails,
     zipProvenance: enriched?.zipProvenance,
     skipTracingDisposition: enriched?.skipTracingDisposition,
     enrichmentStopReason,
     reviewBucket,
     ...(needsVerification && { needsVerification: true }),
+    ...(enriched?.phoneStateMismatch && { phoneStateMismatch: true }),
   };
   
   // DIAGNOSTIC: Enhanced debug logging
@@ -650,7 +671,7 @@ export function leadSummariesToCSV(summaries: LeadSummary[]): string {
   if (summaries.length === 0) return '';
   
   // Order: Firstname, Lastname, Phone, Email, State, City, Age, Income, Zipcode, Linetype, Carrier, Platform, Source Details, Search Filter
-  const headers = ['Firstname', 'Lastname', 'Phone', 'Email', 'State', 'City', 'Age', 'Income', 'Zipcode', 'Zip Provenance', 'Linetype', 'Carrier', 'Platform', 'LinkedIn URL', 'Instagram URL', 'Review Bucket', 'Enrichment Stop Reason', 'Source Details', 'Search Filter'];
+  const headers = ['Firstname', 'Lastname', 'Phone', 'Email', 'State', 'City', 'Age', 'Income', 'Zipcode', 'Zip Provenance', 'Linetype', 'Carrier', 'Platform', 'WARN Lead', 'WARN Company', 'LinkedIn URL', 'Instagram URL', 'Review Bucket', 'Enrichment Stop Reason', 'Source Details', 'Search Filter'];
   const rows = summaries.map(summary => {
     // Split name into first and last
     const nameParts = (summary.name || '').trim().split(/\s+/);
@@ -715,6 +736,8 @@ export function leadSummariesToCSV(summaries: LeadSummary[]): string {
       summary.lineType || '',
       summary.carrier || '',
       summary.platform || '',
+      summary.isWarnLead ? 'true' : '',
+      summary.warnCompany || '',
       summary.linkedinUrl || '',
       summary.instagramUrl || '',
       summary.reviewBucket || '',

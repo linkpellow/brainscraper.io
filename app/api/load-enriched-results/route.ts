@@ -62,6 +62,7 @@ export async function GET(request: NextRequest) {
     const filterDNC = searchParams.get('filterDNC') === 'true';
     const selectedState = searchParams.get('selectedState') || '';
     const selectedDate = searchParams.get('selectedDate') || '';
+    const filterWarn = searchParams.get('filterWarn') === 'true';
     const exportAll = searchParams.get('export') === 'true'; // For CSV export - return all filtered results
     
     // Single source of truth: enriched-all-leads.json
@@ -200,6 +201,15 @@ export async function GET(request: NextRequest) {
         if (!lead.dateScraped) return false;
         const leadDate = lead.dateScraped.split('T')[0]; // Get date part only
         return leadDate === selectedDate;
+      });
+    }
+
+    // WARN leads only filter
+    if (filterWarn) {
+      filteredLeads = filteredLeads.filter((lead) => {
+        if (lead.isWarnLead === true) return true;
+        if (lead.warnCompany && String(lead.warnCompany).trim().length > 0) return true;
+        return false;
       });
     }
     

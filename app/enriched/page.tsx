@@ -79,6 +79,7 @@ export default function EnrichedLeadsPage() {
   const [ageMax, setAgeMax] = useState<number | ''>(64);
   const [mobileOnly, setMobileOnly] = useState<boolean>(false);
   const [filterDNC, setFilterDNC] = useState<boolean>(false);
+  const [filterWarn, setFilterWarn] = useState<boolean>(false);
   const [selectedState, setSelectedState] = useState<string>(''); // State filter: empty = all states
   const [selectedDate, setSelectedDate] = useState<string>(''); // Date filter: empty = all dates
   const [showDatePicker, setShowDatePicker] = useState(false); // Calendar modal visibility
@@ -143,6 +144,9 @@ export default function EnrichedLeadsPage() {
       }
       if (filterDNC) {
         params.set('filterDNC', 'true');
+      }
+      if (filterWarn) {
+        params.set('filterWarn', 'true');
       }
       if (selectedState) {
         params.set('selectedState', selectedState);
@@ -260,7 +264,7 @@ export default function EnrichedLeadsPage() {
         clearTimeout(debounceTimeoutRef.current);
       }
     };
-  }, [searchQuery, ageMin, ageMax, mobileOnly, filterDNC, selectedState, selectedDate, currentPage]);
+  }, [searchQuery, ageMin, ageMax, mobileOnly, filterDNC, filterWarn, selectedState, selectedDate, currentPage]);
 
   // DISABLED: Auto re-enrichment - removed to prevent automatic API calls
   // Enrichment should only happen when user explicitly clicks "Enrich" or "Re-enrich Existing Leads"
@@ -301,6 +305,9 @@ export default function EnrichedLeadsPage() {
       }
       if (filterDNC) {
         params.set('filterDNC', 'true');
+      }
+      if (filterWarn) {
+        params.set('filterWarn', 'true');
       }
       if (selectedState) {
         params.set('selectedState', selectedState);
@@ -1090,7 +1097,7 @@ export default function EnrichedLeadsPage() {
               Enriched Leads
             </h1>
             <p className="text-xs sm:text-sm text-slate-400 mt-1 sm:mt-2 font-medium font-data">
-              {searchQuery || ageMin !== '' || ageMax !== '' || mobileOnly || filterDNC || selectedState || selectedDate ? (
+              {searchQuery || ageMin !== '' || ageMax !== '' || mobileOnly || filterDNC || filterWarn || selectedState || selectedDate ? (
                 <>
                   {totalLeads} of {totalUnfilteredLeads} leads
                   {totalPages > 1 && ` (Page ${currentPage}/${totalPages})`}
@@ -1103,6 +1110,7 @@ export default function EnrichedLeadsPage() {
                   })()}
                   {mobileOnly && ' (mobile only)'}
                   {filterDNC && ' (DNC filtered)'}
+                  {filterWarn && ' (WARN leads only)'}
                 </>
               ) : (
                 <>
@@ -1315,6 +1323,16 @@ export default function EnrichedLeadsPage() {
               <span className="hidden sm:inline text-xs">Filter DNC</span>
               <span className="sm:hidden text-xs">No DNC</span>
             </label>
+            <label className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold btn-inactive text-slate-200 cursor-pointer font-data">
+              <input
+                type="checkbox"
+                checked={filterWarn}
+                onChange={(e) => setFilterWarn(e.target.checked)}
+                className="w-3 h-3 sm:w-4 sm:h-4 text-white bg-slate-700 border-slate-600 rounded focus:ring-2 focus:ring-white/50 cursor-pointer accent-white"
+              />
+              <span className="hidden sm:inline text-xs">WARN Only</span>
+              <span className="sm:hidden text-xs">WARN</span>
+            </label>
             <button
               onClick={() => handleSort('name')}
               className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold state-transition border flex items-center gap-1 sm:gap-2 font-data ${
@@ -1511,21 +1529,32 @@ export default function EnrichedLeadsPage() {
                         )}
                       </td>
                       <td className="px-2 py-2 relative z-10">
-                        {lead.platform === 'linkedin' ? (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-white/20 text-white border border-white/30">
-                            LinkedIn
-                          </span>
-                        ) : lead.platform === 'facebook' ? (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-white/20 text-white border border-white/30">
-                            Facebook
-                          </span>
-                        ) : lead.platform === 'instagram' ? (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-white/20 text-white border border-white/30">
-                            Instagram
-                          </span>
-                        ) : (
-                          <span className="text-slate-500 italic">-</span>
-                        )}
+                        <div className="flex items-center gap-1 flex-wrap">
+                          {lead.platform === 'linkedin' ? (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-white/20 text-white border border-white/30">
+                              LinkedIn
+                            </span>
+                          ) : lead.platform === 'facebook' ? (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-white/20 text-white border border-white/30">
+                              Facebook
+                            </span>
+                          ) : lead.platform === 'instagram' ? (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-white/20 text-white border border-white/30">
+                              Instagram
+                            </span>
+                          ) : (
+                            <span className="text-slate-500 italic">-</span>
+                          )}
+                          {(lead.isWarnLead || (lead.warnCompany && lead.warnCompany.trim().length > 0)) && (
+                            <span
+                              className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold border"
+                              style={{ backgroundColor: 'rgba(255, 87, 87, 0.18)', color: '#ff9f9f', borderColor: 'rgba(255, 87, 87, 0.45)' }}
+                              title={lead.warnCompany ? `WARN: ${lead.warnCompany}` : 'WARN lead'}
+                            >
+                              WARN
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <EnrichableCell
                         value={lead.phone || ''}

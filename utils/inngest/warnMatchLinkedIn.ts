@@ -77,6 +77,8 @@ function toParsedDataForEnrichment(leads: any[]) {
     'LinkedIn URL',
     'Title',
     'Company',
+    'Lead Source',
+    'WARN Lead',
     'WARN Company',
   ];
 
@@ -105,6 +107,8 @@ function toParsedDataForEnrichment(leads: any[]) {
       'LinkedIn URL': linkedinUrl,
       'Title': title,
       'Company': company,
+      'Lead Source': 'warn',
+      'WARN Lead': 'true',
       'WARN Company': lead?._warnSourceCompany || '',
     };
   });
