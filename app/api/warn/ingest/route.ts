@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDataFilePath, ensureDataDirectory, safeWriteFile } from '@/utils/dataDirectory';
-import { parseCSVFromString, parseExcelFromBuffer } from '@/utils/parseFile';
+import { parseFile } from '@/utils/parseFile';
 import { ingestWarnFile } from '@/utils/warn';
 import type { NormalizedWarnRow } from '@/utils/warn';
 
@@ -56,24 +56,16 @@ export async function POST(request: NextRequest) {
         continue;
       }
 
-      let parsed: { headers: string[]; rows: Record<string, string | number>[] };
-      const isExcel = /\.(xlsx|xls|xlsm)$/i.test(file.name);
-      try {
-        if (isExcel) {
-          const buffer = await file.arrayBuffer();
-          parsed = parseExcelFromBuffer(buffer);
-        } else {
-          const text = await file.text();
-          parsed = parseCSVFromString(text);
-        }
-      } catch (err) {
+      const result = await parseFile(file);
+      if (!result.success || !result.data) {
         results.push({
           fileName: file.name,
           rows: [],
-          warnings: [err instanceof Error ? err.message : 'Parse error'],
+          warnings: [result.error ?? 'Parse error'],
         });
         continue;
       }
+      const parsed = result.data;
 
       if (!parsed.headers?.length) {
         results.push({
