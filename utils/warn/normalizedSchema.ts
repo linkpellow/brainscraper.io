@@ -13,7 +13,7 @@ export const normalizedWarnRowSchema = z.object({
   noticeDate: z.string().nullable(),
   sourceFile: z.string(),
   sourceState: z.string().optional(),
-  raw: z.record(z.unknown()).optional(),
+  raw: z.record(z.string(), z.unknown()).optional(),
 });
 
 export type NormalizedWarnRow = z.infer<typeof normalizedWarnRowSchema>;
