@@ -59,4 +59,27 @@ describe('ingestWarnFile', () => {
     const result = ingestWarnFile(data, 'layoffs_2025_2026_michigan.csv');
     expect(result.rows[0].sourceState).toBe('MI');
   });
+
+  it('ingests scraper-normalized WARN rows without dropping companyName', () => {
+    const data: ParsedData = {
+      headers: ['companyName', 'city', 'stateOrCounty', 'layoffCount', 'layoffDate', 'noticeDate'],
+      rows: [
+        {
+          companyName: 'Acme Corp',
+          city: 'Austin',
+          stateOrCounty: 'TX',
+          layoffCount: '120',
+          layoffDate: '2026-03-01',
+          noticeDate: '2026-02-15',
+        },
+      ],
+      rowCount: 1,
+      columnCount: 6,
+    };
+    const result = ingestWarnFile(data, 'scraped-example.json');
+    expect(result.rows).toHaveLength(1);
+    expect(result.rows[0].companyName).toBe('Acme Corp');
+    expect(result.rows[0].layoffCount).toBe(120);
+    expect(result.warnings).not.toContain('No company/employer column detected; no rows produced.');
+  });
 });

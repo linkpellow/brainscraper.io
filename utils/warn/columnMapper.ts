@@ -12,6 +12,7 @@ const normalizeHeader = (h: string) => h.trim().toLowerCase();
 /** Generic alias map: normalized field → possible header names (first match wins). */
 const genericAliases: Record<NormalizedField, string[]> = {
   companyName: [
+    'companyname',
     'employer',
     'company',
     'company name',
@@ -24,6 +25,7 @@ const genericAliases: Record<NormalizedField, string[]> = {
   ],
   city: ['city', 'city name', 'location', 'job site city'],
   stateOrCounty: [
+    'stateorcounty',
     'county',
     'state',
     'county name',
@@ -33,6 +35,7 @@ const genericAliases: Record<NormalizedField, string[]> = {
     'state or county',
   ],
   layoffCount: [
+    'layoffcount',
     'number of jobs impacted',
     'total layoff number',
     'layoffs',
@@ -43,6 +46,7 @@ const genericAliases: Record<NormalizedField, string[]> = {
     'workers affected',
   ],
   layoffDate: [
+    'layoffdate',
     'layoff date',
     'layoff dates',
     'effective date',
@@ -51,6 +55,7 @@ const genericAliases: Record<NormalizedField, string[]> = {
     'date',
   ],
   noticeDate: [
+    'noticedate',
     'notice date',
     'received date',
     'filed',

@@ -68,6 +68,25 @@ describe('columnMapper', () => {
     expect(map.layoffDate).toBe('Date');
   });
 
+  it('maps scraper-normalized WARN headers', () => {
+    const headers = [
+      'companyName',
+      'city',
+      'stateOrCounty',
+      'layoffCount',
+      'layoffDate',
+      'noticeDate',
+    ];
+    const { map, profileId } = resolveColumnMap(headers);
+    expect(profileId).toBe(null);
+    expect(map.companyName).toBe('companyName');
+    expect(map.city).toBe('city');
+    expect(map.stateOrCounty).toBe('stateOrCounty');
+    expect(map.layoffCount).toBe('layoffCount');
+    expect(map.layoffDate).toBe('layoffDate');
+    expect(map.noticeDate).toBe('noticeDate');
+  });
+
   it('parses numeric layoff count from string', () => {
     const columnMap: ColumnMap = { companyName: 'Company', layoffCount: 'Count' };
     const row = mapRow({ Company: 'Acme', Count: '42' }, columnMap, 'test.csv');
