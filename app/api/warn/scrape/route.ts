@@ -8,6 +8,8 @@ import type { NormalizedWarnRow } from '@/utils/warn';
 const SCRAPE_TIMEOUT_MS = 120_000;
 const SCRAPEGRAPH_DIR = process.env.SCRAPEGRAPH_PROJECT_PATH || '.cache/Scrapegraph-ai';
 
+export const maxDuration = 120;
+
 function shortId(): string {
   return Math.random().toString(36).slice(2, 10);
 }

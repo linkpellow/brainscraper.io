@@ -27,10 +27,13 @@ const handle = app.getRequestHandler();
 
 app.prepare().then(async () => {
   const server = createServer(async (req, res) => {
-    // Set timeouts to prevent hanging connections
-    req.setTimeout(30000); // 30 second request timeout
-    res.setTimeout(30000); // 30 second response timeout
-    
+    const parsedUrl = parse(req.url || '', true);
+    const pathname = parsedUrl.pathname || '';
+    const isWarnScrape = pathname === '/api/warn/scrape';
+    const timeoutMs = isWarnScrape ? 130000 : 30000; // 130s for WARN scrape (Python subprocess), 30s for others
+    req.setTimeout(timeoutMs);
+    res.setTimeout(timeoutMs);
+
     // Handle connection errors gracefully
     req.on('error', (err) => {
       if (err.code !== 'ECONNRESET' && err.code !== 'EPIPE') {
@@ -49,7 +52,6 @@ app.prepare().then(async () => {
     });
 
     try {
-      const parsedUrl = parse(req.url, true);
       await handle(req, res, parsedUrl);
     } catch (err) {
       // Don't log connection reset errors as they're common and expected
