@@ -23,6 +23,27 @@ function domainFromUrl(url: string): string {
   }
 }
 
+function parseJsonSafe(str: string): unknown | undefined {
+  try {
+    return JSON.parse(str);
+  } catch {
+    return undefined;
+  }
+}
+
+/** Scrapegraph/libs may print to stdout; our script prints a single JSON array line. Extract it. */
+function extractJsonArrayFromStdout(stdout: string): unknown | undefined {
+  const lines = stdout.split('\n').map((s) => s.trim()).filter(Boolean);
+  for (let i = lines.length - 1; i >= 0; i--) {
+    const line = lines[i];
+    if (line.startsWith('[')) {
+      const parsed = parseJsonSafe(line);
+      if (Array.isArray(parsed)) return parsed;
+    }
+  }
+  return undefined;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json().catch(() => ({}));
@@ -70,7 +91,12 @@ export async function POST(request: NextRequest) {
     const stderr = Buffer.concat(stderrChunks).toString('utf-8').trim();
 
     if (exitCode !== 0) {
-      const errMsg = stdout ? (JSON.parse(stdout).error || stdout) : stderr || 'Scrape failed';
+      const parsedErr = parseJsonSafe(stdout);
+      const errMsg = stdout
+        ? (parsedErr && typeof parsedErr === 'object' && 'error' in parsedErr
+            ? (parsedErr as { error: string }).error
+            : stdout)
+        : stderr || 'Scrape failed';
       console.error('[warn/scrape]', stderr || errMsg);
       return NextResponse.json(
         { success: false, error: typeof errMsg === 'string' ? errMsg : 'Scrape failed' },
@@ -78,10 +104,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    let data: unknown;
-    try {
-      data = JSON.parse(stdout);
-    } catch {
+    let data: unknown = parseJsonSafe(stdout);
+    if (data === undefined) {
+      data = extractJsonArrayFromStdout(stdout);
+    }
+    if (data === undefined) {
       return NextResponse.json(
         { success: false, error: 'Scraper did not return valid JSON' },
         { status: 500 }

@@ -14,12 +14,13 @@ const genericAliases: Record<NormalizedField, string[]> = {
   companyName: [
     'employer',
     'company',
+    'company name',
+    'employer name',
+    'name',
     'job site name',
     'job site',
     'business name',
     'business',
-    'company name',
-    'employer name',
   ],
   city: ['city', 'city name', 'location', 'job site city'],
   stateOrCounty: [
