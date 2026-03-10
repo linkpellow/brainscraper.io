@@ -27,9 +27,52 @@ Used for up-to-date browser baseline data. Data can go stale after a couple of m
 - **Update:** `npm i baseline-browser-mapping@latest -D`
 - **Pin:** Keep a specific or caret range in `package.json`; update periodically and run tests.
 
-## WARN and Scrapegraph
+## WARN scraping
 
-- **Single backend:** Scrapegraph is integrated into BrainScraper. Use **WARN Lists** in the app: upload CSV/Excel or use **Scrape from URL** to scrape a WARN page (runs Scrapegraph via subprocess; requires Ollama with phi3:mini when using default model). No separate Streamlit app or port 8501.
+- Use **WARN Lists** in the app:
+  - Upload CSV/Excel files to `/api/warn/ingest`, or
+  - Use **Scrape from URL** in `/warn`, which runs a Node-based parser through `/api/warn/scrape`.
+- No Python or Ollama runtime is required.
+
+## External scraper handoff (enrichment API)
+
+Use this flow when scraping leads externally and enriching in BrainScraper:
+
+1. Start enrichment:
+   - `POST /api/jobs/enrich`
+   - Body shape:
+     - `parsedData.headers`: string[]
+     - `parsedData.rows`: object[]
+     - optional `metadata`, optional `enabledStations`, optional `sync`
+2. Poll job status:
+   - `GET /api/jobs/status?jobId=<jobId>`
+3. Get completed results:
+   - `GET /api/jobs/results?jobId=<jobId>`
+
+Example:
+
+```bash
+curl -X POST "https://<your-domain>/api/jobs/enrich" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "sync": true,
+    "enabledStations": ["linkedin"],
+    "parsedData": {
+      "headers": ["Name", "City", "State", "LinkedIn URL"],
+      "rows": [
+        {
+          "Name": "Jane Doe",
+          "City": "Austin",
+          "State": "TX",
+          "LinkedIn URL": "https://www.linkedin.com/in/janedoe"
+        }
+      ]
+    },
+    "metadata": {
+      "source": "external-scraper"
+    }
+  }'
+```
 
 ## Inngest (background jobs)
 

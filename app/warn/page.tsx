@@ -101,13 +101,22 @@ export default function WarnPage() {
     setError(null);
     setScrapeWarnings([]);
     setIngestResult(null);
+    // #region agent log
+    fetch('http://127.0.0.1:7820/ingest/fdb61876-992c-4620-8677-59e336c96a1e',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'9905c3'},body:JSON.stringify({sessionId:'9905c3',location:'app/warn/page.tsx:handleScrape',message:'scrape_start',data:{url},hypothesisId:'H1',timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
     try {
       const res = await fetch('/api/warn/scrape', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url }),
       });
+      // #region agent log
+      fetch('http://127.0.0.1:7820/ingest/fdb61876-992c-4620-8677-59e336c96a1e',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'9905c3'},body:JSON.stringify({sessionId:'9905c3',location:'app/warn/page.tsx:response',message:'scrape_response',data:{resOk:res.ok,resStatus:res.status},hypothesisId:'H1,H2',timestamp:Date.now()})}).catch(()=>{});
+      // #endregion
       const data = await res.json();
+      // #region agent log
+      fetch('http://127.0.0.1:7820/ingest/fdb61876-992c-4620-8677-59e336c96a1e',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'9905c3'},body:JSON.stringify({sessionId:'9905c3',location:'app/warn/page.tsx:body_parsed',message:'scrape_body_parsed',data:{success:data?.success,hasRows:Array.isArray(data?.rows),rowsLen:data?.rows?.length},hypothesisId:'H2,H3,H4',timestamp:Date.now()})}).catch(()=>{});
+      // #endregion
       if (!res.ok) throw new Error(data.error || 'Scrape failed');
       if (!data.success) throw new Error(data.error || 'Scrape failed');
       setLoadedRows(data.rows ?? []);
@@ -117,6 +126,9 @@ export default function WarnPage() {
       setPage(0);
       loadLists();
     } catch (err) {
+      // #region agent log
+      fetch('http://127.0.0.1:7820/ingest/fdb61876-992c-4620-8677-59e336c96a1e',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'9905c3'},body:JSON.stringify({sessionId:'9905c3',location:'app/warn/page.tsx:catch',message:'scrape_catch',data:{error:err instanceof Error ? err.message : String(err)},hypothesisId:'H1,H2,H3,H4',timestamp:Date.now()})}).catch(()=>{});
+      // #endregion
       setError(err instanceof Error ? err.message : 'Scrape failed');
     } finally {
       setScraping(false);
@@ -204,7 +216,7 @@ export default function WarnPage() {
             Scrape WARN from URL
           </h2>
           <p className="text-slate-400 text-sm mb-3">
-            Scrape a state WARN or layoff notice page with Scrapegraph (runs locally; may take a minute).
+            Scrape a state WARN or layoff notice page directly from URL (may take a minute).
           </p>
           <div className="flex flex-wrap items-center gap-3">
             <input
@@ -222,7 +234,7 @@ export default function WarnPage() {
               style={{ background: '#ff5757' }}
             >
               {scraping ? <Loader2 className="w-4 h-4 animate-spin" /> : <Globe className="w-4 h-4" />}
-              {scraping ? 'Scraping…' : 'Scrape with Scrapegraph'}
+              {scraping ? 'Scraping…' : 'Scrape from URL'}
             </button>
           </div>
           {scraping && (

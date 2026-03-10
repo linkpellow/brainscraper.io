@@ -3,7 +3,7 @@
  * For each WARN row: company search then people search; aggregate leads and save.
  */
 
-import { inngest, warnEvents } from '../inngest';
+import { inngest, warnEvents, enrichmentEvents } from '../inngest';
 import type { NormalizedWarnRow } from '../warn';
 import { saveJobResults } from '../jobResults';
 import {
@@ -11,7 +11,9 @@ import {
   updateJobProgress,
   completeJob,
   failJob,
+  generateJobId,
 } from '../jobStatus';
+import { normalizeStationConfig } from '../enrichmentStations';
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
 const DELAY_BETWEEN_COMPANIES_MS = 2000;
@@ -35,6 +37,86 @@ function getFirstCompanyName(row: NormalizedWarnRow, companies: any[]): string |
   return typeof name === 'string' && name.trim() ? name.trim() : null;
 }
 
+function parseLocation(location: string | null | undefined): { city?: string; state?: string } {
+  if (!location) return {};
+  const parts = String(location)
+    .split(',')
+    .map((p) => p.trim())
+    .filter(Boolean);
+  if (parts.length === 0) return {};
+  const city = parts[0];
+  const statePart = parts.find((p) => /^[A-Z]{2}$/.test(p)) || parts[1];
+  const state = statePart ? statePart.trim() : undefined;
+  return { city, state };
+}
+
+function buildName(person: any): { fullName: string; firstName: string; lastName: string } {
+  const fullName =
+    (typeof person?.fullName === 'string' && person.fullName.trim()) ||
+    (typeof person?.name === 'string' && person.name.trim()) ||
+    `${person?.firstName || ''} ${person?.lastName || ''}`.trim() ||
+    'Unknown';
+
+  const firstName =
+    (typeof person?.firstName === 'string' && person.firstName.trim()) || fullName.split(' ')[0] || '';
+  const lastName =
+    (typeof person?.lastName === 'string' && person.lastName.trim()) ||
+    fullName.split(' ').slice(1).join(' ') ||
+    '';
+
+  return { fullName, firstName, lastName };
+}
+
+function toParsedDataForEnrichment(leads: any[]) {
+  const headers = [
+    'Name',
+    'First Name',
+    'Last Name',
+    'City',
+    'State',
+    'LinkedIn URL',
+    'Title',
+    'Company',
+    'WARN Company',
+  ];
+
+  const rows = leads.map((lead) => {
+    const { fullName, firstName, lastName } = buildName(lead);
+    const location = parseLocation(
+      lead?.geoRegion || lead?.location || lead?.region || lead?.cityState || null
+    );
+    const linkedinUrl =
+      lead?.profileUrl || lead?.navigationUrl || lead?.url || lead?.linkedinUrl || '';
+    const title =
+      lead?.currentPosition?.title || lead?.title || lead?.headline || lead?.jobTitle || '';
+    const company =
+      lead?.currentPosition?.companyName ||
+      lead?.companyName ||
+      lead?.company ||
+      lead?._warnMatchedCompany ||
+      '';
+
+    return {
+      'Name': fullName,
+      'First Name': firstName,
+      'Last Name': lastName,
+      'City': location.city || '',
+      'State': location.state || '',
+      'LinkedIn URL': linkedinUrl,
+      'Title': title,
+      'Company': company,
+      'WARN Company': lead?._warnSourceCompany || '',
+    };
+  });
+
+  return {
+    headers,
+    rows,
+    rowCount: rows.length,
+    columnCount: headers.length,
+  };
+}
+
 export const warnMatchLinkedInFunction = inngest.createFunction(
   {
     id: 'warn-match-linkedin',
@@ -48,15 +130,22 @@ export const warnMatchLinkedInFunction = inngest.createFunction(
       warnRows,
       maxCompanies = DEFAULT_MAX_COMPANIES,
       maxLeadsPerCompany = DEFAULT_MAX_LEADS_PER_COMPANY,
+      autoEnrich = true,
+      enabledStations,
     } = event.data as {
       jobId: string;
       warnRows: NormalizedWarnRow[];
       maxCompanies?: number;
       maxLeadsPerCompany?: number;
+      autoEnrich?: boolean;
+      enabledStations?: string[];
     };
 
     const capped = Math.min(Math.max(1, maxCompanies), MAX_COMPANIES_CAP);
     const rowsToProcess = warnRows.slice(0, capped);
+    const normalizedStations = enabledStations
+      ? Array.from(normalizeStationConfig(enabledStations).stations)
+      : undefined;
 
     try {
       await step.run('set-running', async () => {
@@ -136,9 +225,17 @@ export const warnMatchLinkedInFunction = inngest.createFunction(
               const url = p?.profileUrl ?? p?.url ?? p?.linkedinUrl;
               if (url && !seenUrls.has(url)) {
                 seenUrls.add(url);
-                leads.push(p);
+                leads.push({
+                  ...p,
+                  _warnSourceCompany: row.companyName,
+                  _warnMatchedCompany: companyName,
+                });
               } else if (!url) {
-                leads.push(p);
+                leads.push({
+                  ...p,
+                  _warnSourceCompany: row.companyName,
+                  _warnMatchedCompany: companyName,
+                });
               }
             }
 
@@ -188,6 +285,44 @@ export const warnMatchLinkedInFunction = inngest.createFunction(
         return { count: allLeads.length };
       });
 
+      const enrichmentJobId = await step.run('trigger-enrichment', async () => {
+        if (!autoEnrich || allLeads.length === 0) {
+          return null;
+        }
+
+        const enrichJobId = generateJobId('enrichment');
+        const parsedData = toParsedDataForEnrichment(allLeads);
+
+        saveJobStatus({
+          jobId: enrichJobId,
+          type: 'enrichment',
+          status: 'pending',
+          progress: { current: 0, total: parsedData.rows.length, percentage: 0 },
+          startedAt: new Date().toISOString(),
+          metadata: {
+            source: 'warn-auto-enrich',
+            parentJobId: jobId,
+            ...(normalizedStations ? { enabledStations: normalizedStations } : {}),
+          },
+        });
+
+        await inngest.send({
+          name: enrichmentEvents.enrichLeads,
+          data: {
+            jobId: enrichJobId,
+            parsedData,
+            metadata: {
+              source: 'warn-auto-enrich',
+              parentJobId: jobId,
+              ...(normalizedStations ? { enabledStations: normalizedStations } : {}),
+            },
+            ...(normalizedStations ? { enabledStations: normalizedStations } : {}),
+          },
+        });
+
+        return enrichJobId;
+      });
+
       await step.run('track-usage', async () => {
         try {
           const { incrementScrapeCount } = await import('../scrapeUsageTracker');
@@ -212,6 +347,8 @@ export const warnMatchLinkedInFunction = inngest.createFunction(
           companiesMatched,
           resultCount: allLeads.length,
           source: 'warn',
+          autoEnrich,
+          ...(enrichmentJobId ? { enrichmentJobId } : {}),
         });
         return { success: true };
       });
@@ -221,6 +358,8 @@ export const warnMatchLinkedInFunction = inngest.createFunction(
         jobId,
         leadsCount: allLeads.length,
         companiesMatched,
+        autoEnrich,
+        enrichmentJobId: enrichmentJobId || undefined,
       };
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';

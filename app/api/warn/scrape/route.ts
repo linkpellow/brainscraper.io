@@ -1,12 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import * as path from 'path';
-import { spawn } from 'child_process';
 import { getDataFilePath, ensureDataDirectory, safeWriteFile } from '@/utils/dataDirectory';
 import { ingestWarnFile } from '@/utils/warn';
-import type { NormalizedWarnRow } from '@/utils/warn';
-
-const SCRAPE_TIMEOUT_MS = 120_000;
-const SCRAPEGRAPH_DIR = process.env.SCRAPEGRAPH_PROJECT_PATH || '.cache/Scrapegraph-ai';
+import { scrapeWarnFromUrl } from '@/utils/warn/scrapeWarnFromUrl';
 
 export const maxDuration = 120;
 
@@ -23,32 +18,10 @@ function domainFromUrl(url: string): string {
   }
 }
 
-function parseJsonSafe(str: string): unknown | undefined {
-  try {
-    return JSON.parse(str);
-  } catch {
-    return undefined;
-  }
-}
-
-/** Scrapegraph/libs may print to stdout; our script prints a single JSON array line. Extract it. */
-function extractJsonArrayFromStdout(stdout: string): unknown | undefined {
-  const lines = stdout.split('\n').map((s) => s.trim()).filter(Boolean);
-  for (let i = lines.length - 1; i >= 0; i--) {
-    const line = lines[i];
-    if (line.startsWith('[')) {
-      const parsed = parseJsonSafe(line);
-      if (Array.isArray(parsed)) return parsed;
-    }
-  }
-  return undefined;
-}
-
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json().catch(() => ({}));
     const url = typeof body.url === 'string' ? body.url.trim() : '';
-    const prompt = typeof body.prompt === 'string' ? body.prompt.trim() : undefined;
 
     if (!url || (!url.startsWith('http://') && !url.startsWith('https://'))) {
       return NextResponse.json(
@@ -57,70 +30,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const projectRoot = process.cwd();
-    const scriptPath = path.join(projectRoot, 'scripts', 'scrape_warn_url.py');
-    const scrapegraphDir = path.isAbsolute(SCRAPEGRAPH_DIR)
-      ? SCRAPEGRAPH_DIR
-      : path.join(projectRoot, SCRAPEGRAPH_DIR);
+    // #region agent log
+    fetch('http://127.0.0.1:7820/ingest/fdb61876-992c-4620-8677-59e336c96a1e',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'9905c3'},body:JSON.stringify({sessionId:'9905c3',location:'app/api/warn/scrape/route.ts:start',message:'scrape_api_start',data:{url},hypothesisId:'H5',timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
 
-    const args = ['run', 'python', scriptPath, '--url', url];
-    if (prompt) args.push('--prompt', prompt);
-
-    const stdoutChunks: Buffer[] = [];
-    const stderrChunks: Buffer[] = [];
-    const child = spawn('uv', args, {
-      cwd: scrapegraphDir,
-      stdio: ['ignore', 'pipe', 'pipe'],
-    });
-
-    child.stdout?.on('data', (chunk: Buffer) => stdoutChunks.push(chunk));
-    child.stderr?.on('data', (chunk: Buffer) => stderrChunks.push(chunk));
-
-    const timeout = setTimeout(() => {
-      child.kill('SIGKILL');
-    }, SCRAPE_TIMEOUT_MS);
-
-    const exitCode = await new Promise<number>((resolve) => {
-      child.on('close', (code) => {
-        clearTimeout(timeout);
-        resolve(code ?? -1);
-      });
-    });
-
-    const stdout = Buffer.concat(stdoutChunks).toString('utf-8').trim();
-    const stderr = Buffer.concat(stderrChunks).toString('utf-8').trim();
-
-    if (exitCode !== 0) {
-      const parsedErr = parseJsonSafe(stdout);
-      const errMsg = stdout
-        ? (parsedErr && typeof parsedErr === 'object' && 'error' in parsedErr
-            ? (parsedErr as { error: string }).error
-            : stdout)
-        : stderr || 'Scrape failed';
-      console.error('[warn/scrape]', stderr || errMsg);
-      return NextResponse.json(
-        { success: false, error: typeof errMsg === 'string' ? errMsg : 'Scrape failed' },
-        { status: 500 }
-      );
-    }
-
-    let data: unknown = parseJsonSafe(stdout);
-    if (data === undefined) {
-      data = extractJsonArrayFromStdout(stdout);
-    }
-    if (data === undefined) {
-      return NextResponse.json(
-        { success: false, error: 'Scraper did not return valid JSON' },
-        { status: 500 }
-      );
-    }
-
-    if (data !== null && typeof data === 'object' && 'error' in data) {
-      const err = (data as { error: string }).error;
-      return NextResponse.json({ success: false, error: err }, { status: 500 });
-    }
-
-    const rows = Array.isArray(data) ? data : [];
+    const scraped = await scrapeWarnFromUrl(url);
+    const rows = scraped.rows;
+    const scrapeWarnings = scraped.warnings;
+    // #region agent log
+    fetch('http://127.0.0.1:7820/ingest/fdb61876-992c-4620-8677-59e336c96a1e',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'9905c3'},body:JSON.stringify({sessionId:'9905c3',location:'app/api/warn/scrape/route.ts:parsed',message:'scrape_api_parsed',data:{rowsLength:rows.length},hypothesisId:'H4,H5',timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
     if (rows.length === 0) {
       ensureDataDirectory();
       const timestamp = Date.now();
@@ -137,7 +56,7 @@ export async function POST(request: NextRequest) {
         rows: [],
         totalRows: 0,
         savedPath: relativePath,
-        warnings: ['No rows extracted from page'],
+        warnings: [...scrapeWarnings, 'No rows extracted from page'],
       });
     }
 
@@ -180,7 +99,7 @@ export async function POST(request: NextRequest) {
       rows: normalizedRows,
       totalRows: normalizedRows.length,
       savedPath: relativePath,
-      warnings,
+      warnings: [...scrapeWarnings, ...warnings],
     });
   } catch (error) {
     console.error('[warn/scrape]', error);
