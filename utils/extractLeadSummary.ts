@@ -58,7 +58,8 @@ export interface LeadSummary {
 }
 
 function getEnrichmentStopReason(enriched: EnrichmentResult | undefined): string | undefined {
-  switch (enriched?.skipTracingDisposition) {
+  const disposition = enriched?.skipTracingDisposition as string | undefined;
+  switch (disposition) {
     case 'ambiguous':
       return 'Ambiguous skip-tracing match';
     case 'no_exact_match':
@@ -90,7 +91,7 @@ function getEnrichmentStopReason(enriched: EnrichmentResult | undefined): string
 }
 
 function getReviewBucket(disposition: SkipTracingDisposition | undefined): LeadSummary['reviewBucket'] {
-  switch (disposition) {
+  switch (disposition as string | undefined) {
     case 'ambiguous':
       return 'ambiguous_identity';
     case 'no_exact_match':
@@ -110,8 +111,9 @@ function getReviewBucket(disposition: SkipTracingDisposition | undefined): LeadS
 
 function getNeedsVerification(enriched: EnrichmentResult | undefined): boolean {
   if (!enriched) return false;
-  if (enriched.skipTracingDisposition === 'ambiguous_used_first') return true;
-  if (enriched.skipTracingDisposition === 'ambiguous_multiple_states_saved_for_review') return true;
+  const disposition = enriched.skipTracingDisposition as string | undefined;
+  if (disposition === 'ambiguous_used_first') return true;
+  if (disposition === 'ambiguous_multiple_states_saved_for_review') return true;
   const mt = enriched.skipTracingMatchType;
   return mt === 'state_only' || mt === 'name_only' || mt === 'initial_last';
 }
