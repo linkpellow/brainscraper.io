@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { locationToFilter } from '@/utils/linkedinLocationIds';
 import { getLocationId } from '@/utils/linkedinLocationDiscovery';
 import { fetchWithTimeout, retryWithBackoff, logger, rateLimiter, validateRequestSize } from '@/utils/apiHelpers';
-import { getLinkedinFreezeStatus, setLinkedinFreezeState } from '@/utils/linkedinFreezeGuard';
+import { getLinkedinFreezeStatus, parseFreezeDurationSeconds, setLinkedinFreezeState } from '@/utils/linkedinFreezeGuard';
 
 // Initialize cache on server startup (runs once when module loads)
 try {
@@ -40,6 +40,13 @@ function isAccountFrozenError(rawError: string): boolean {
   const hasAccountWord = normalized.includes('account');
 
   return explicitFreezePhrase || (hasFrozenWord && hasAccountWord);
+}
+
+function getClientRateLimitKey(request: NextRequest, endpoint: string): string {
+  const forwardedFor = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim();
+  const realIp = request.headers.get('x-real-ip')?.trim();
+  const clientId = forwardedFor || realIp || 'unknown-client';
+  return `linkedin-sales-navigator-${endpoint}-${clientId}`;
 }
 
 /**
@@ -1643,7 +1650,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check rate limiting
-    const rateLimitKey = `linkedin-sales-navigator-${endpoint}`;
+    const rateLimitKey = getClientRateLimitKey(request, endpoint);
     const isAllowed = rateLimiter.isAllowed(rateLimitKey);
     
     if (!isAllowed) {
@@ -1773,7 +1780,9 @@ export async function POST(request: NextRequest) {
         }
         // Extract retry-after from headers if available
         const retryAfter = response.headers.get('Retry-After') || response.headers.get('retry-after');
-        const retryAfterSeconds = retryAfter ? parseInt(retryAfter, 10) : 60; // Default to 60 seconds
+        const retryAfterSeconds = isAccountFrozen
+          ? parseFreezeDurationSeconds(errorStr)
+          : (retryAfter ? parseInt(retryAfter, 10) : 60);
         
         logger.error('LinkedIn Sales Navigator API Rate Limited - STOPPING', {
           httpStatus: response.status,

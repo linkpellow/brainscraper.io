@@ -82,6 +82,19 @@ function isAccountFrozenMessage(message: string): boolean {
   return explicitFreezePhrase || (hasFrozenWord && hasAccountWord);
 }
 
+function parseCooldownSecondsFromMessage(message: string, fallbackSeconds: number = 3600): number {
+  const match = message.match(/(\d+)\s*(secs?|seconds?|mins?|minutes?|hrs?|hours?)/i);
+  if (!match) return fallbackSeconds;
+
+  const value = parseInt(match[1], 10);
+  if (!Number.isFinite(value) || value <= 0) return fallbackSeconds;
+  const unit = match[2].toLowerCase();
+
+  if (unit.startsWith('sec')) return value;
+  if (unit.startsWith('hr') || unit.startsWith('hour')) return value * 3600;
+  return value * 60;
+}
+
 function isDefinitiveFilterError(message: string): boolean {
   const normalized = message.toLowerCase();
 
@@ -1008,22 +1021,12 @@ export default function LinkedInLeadGenerator() {
         console.error('🔍 [SEARCH] ❌ API response not ok');
         console.error('🔍 [SEARCH] Response status:', response.status);
         console.error('🔍 [SEARCH] Response result:', JSON.stringify(result, null, 2));
-        
-        if (response.status === 429 || result.isRateLimit) {
-          const retryAfter = result.retryAfter || 60;
-          console.error('🔍 [SEARCH] Rate limit exceeded, retry after:', retryAfter);
-          setError(`Rate limit exceeded. Please wait ${retryAfter} seconds.`);
-          // Set retry expiration time for countdown
-          setRetryAfterExpiration(Date.now() + (retryAfter * 1000));
-          setScrapingProgress(prev => ({ ...prev, status: 'error', currentOperation: 'Rate limited' }));
-          return;
-        }
-        
-        // Check for account freeze in error message
+
         const errorMsg = result.message || result.error || 'Failed to process request';
+
+        // Account freeze must be handled before generic rate-limit handling.
         if (isAccountFrozenMessage(errorMsg)) {
-          const freezeMatch = errorMsg.match(/(\d+)\s*(mins?|minutes?|hours?)/i);
-          const freezeDuration = freezeMatch ? parseInt(freezeMatch[1], 10) * 60 : 3600; // Convert to seconds
+          const freezeDuration = parseCooldownSecondsFromMessage(errorMsg, 3600);
           const freezeDurationMinutes = Math.ceil(freezeDuration / 60);
           
           // Log freeze with timestamps
@@ -1040,6 +1043,16 @@ export default function LinkedInLeadGenerator() {
           // Set retry expiration time for countdown
           setRetryAfterExpiration(Date.now() + (freezeDuration * 1000));
           setScrapingProgress(prev => ({ ...prev, status: 'error', currentOperation: 'Account frozen' }));
+          return;
+        }
+        
+        if (response.status === 429 || result.isRateLimit) {
+          const retryAfter = result.retryAfter || 60;
+          console.error('🔍 [SEARCH] Rate limit exceeded, retry after:', retryAfter);
+          setError(errorMsg || `Rate limit exceeded. Please wait ${retryAfter} seconds.`);
+          // Set retry expiration time for countdown
+          setRetryAfterExpiration(Date.now() + (retryAfter * 1000));
+          setScrapingProgress(prev => ({ ...prev, status: 'error', currentOperation: 'Rate limited' }));
           return;
         }
         
@@ -1373,7 +1386,7 @@ export default function LinkedInLeadGenerator() {
 	              consecutive429Errors++;
 	              const match = errorMessage.match(/RATE_LIMIT:(\d+):/);
 	              const retryAfterSeconds = match ? parseInt(match[1], 10) : 60;
-                const LONG_WAIT_THRESHOLD_SECONDS = 10;
+                const LONG_WAIT_THRESHOLD_SECONDS = 120;
               
               // Circuit breaker: if too many consecutive 429s across pages, stop early
 	              if (consecutive429Errors >= CIRCUIT_BREAKER_THRESHOLD) {
@@ -1665,8 +1678,7 @@ export default function LinkedInLeadGenerator() {
       
       if (isAccountFrozen) {
         // Account freeze - stop immediately, don't retry
-        const freezeMatch = errorMessage.match(/(\d+)\s*(mins?|minutes?|hours?)/i);
-        const freezeDuration = freezeMatch ? parseInt(freezeMatch[1], 10) * 60 : 3600; // Convert to seconds
+        const freezeDuration = parseCooldownSecondsFromMessage(errorMessage, 3600);
         const freezeDurationMinutes = Math.ceil(freezeDuration / 60);
         
         // Log freeze with timestamps
@@ -1699,8 +1711,7 @@ export default function LinkedInLeadGenerator() {
       const isAccountFrozen = isAccountFrozenMessage(errorMessage);
       
       if (isAccountFrozen) {
-        const freezeMatch = errorMessage.match(/(\d+)\s*(mins?|minutes?|hours?)/i);
-        const freezeDuration = freezeMatch ? parseInt(freezeMatch[1], 10) * 60 : 3600; // Convert to seconds
+        const freezeDuration = parseCooldownSecondsFromMessage(errorMessage, 3600);
         const freezeDurationMinutes = Math.ceil(freezeDuration / 60);
         
         // Log freeze with timestamps
