@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { locationToFilter } from '@/utils/linkedinLocationIds';
 import { getLocationId } from '@/utils/linkedinLocationDiscovery';
 import { fetchWithTimeout, retryWithBackoff, logger, rateLimiter, validateRequestSize } from '@/utils/apiHelpers';
+import { getLinkedinFreezeStatus, setLinkedinFreezeState } from '@/utils/linkedinFreezeGuard';
 
 // Initialize cache on server startup (runs once when module loads)
 try {
@@ -109,6 +110,34 @@ export async function POST(request: NextRequest) {
     } catch (limitError) {
       // If limit check fails, log but continue (backward compatible)
       console.warn('[LINKEDIN_SCRAPER] Failed to check scrape limits:', limitError);
+    }
+
+    // Global provider freeze guard: if RapidAPI account pool is frozen, fail fast
+    try {
+      const freeze = await getLinkedinFreezeStatus();
+      if (freeze.isFrozen) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Rate limit exceeded',
+            message: `Account frozen for ${Math.ceil(freeze.remainingSeconds / 60)} mins due to too many requests. Please wait before trying again.`,
+            isRateLimit: true,
+            retryAfter: freeze.remainingSeconds,
+            details: {
+              rapidApiError: freeze.sourceMessage || 'Provider account freeze active',
+              freezeGuardActive: true,
+            },
+          },
+          {
+            status: 429,
+            headers: {
+              'Retry-After': String(freeze.remainingSeconds),
+            },
+          }
+        );
+      }
+    } catch (freezeGuardError) {
+      console.warn('[LINKEDIN_SCRAPER] Failed to read freeze guard state:', freezeGuardError);
     }
 
     const body = await request.json();
@@ -1738,6 +1767,10 @@ export async function POST(request: NextRequest) {
          'error' in errorDetails && String(errorDetails.error).includes('429'));
       
       if (isRateLimit) {
+        const isAccountFrozen = isAccountFrozenError(errorStr);
+        if (isAccountFrozen) {
+          await setLinkedinFreezeState(errorStr);
+        }
         // Extract retry-after from headers if available
         const retryAfter = response.headers.get('Retry-After') || response.headers.get('retry-after');
         const retryAfterSeconds = retryAfter ? parseInt(retryAfter, 10) : 60; // Default to 60 seconds
@@ -1752,7 +1785,9 @@ export async function POST(request: NextRequest) {
         return NextResponse.json(
           { 
             error: 'Rate limit exceeded',
-            message: `Too many requests. Please wait ${retryAfterSeconds} seconds before trying again.`,
+            message: isAccountFrozen
+              ? `Account frozen for ${Math.ceil(retryAfterSeconds / 60)} mins due to too many requests. Please wait before trying again.`
+              : `Too many requests. Please wait ${retryAfterSeconds} seconds before trying again.`,
             retryAfter: retryAfterSeconds,
             isRateLimit: true, // Flag for frontend to stop immediately
             rapidApiError: typeof errorDetails === 'object' && errorDetails !== null && 'rapidApiError' in errorDetails 
@@ -1847,6 +1882,9 @@ export async function POST(request: NextRequest) {
           
           // Detect only explicit account-freeze signals.
           const isAccountFrozen = isAccountFrozenError(errorMessage);
+          if (isAccountFrozen) {
+            await setLinkedinFreezeState(errorMessage);
+          }
           
           // Log account freeze with detailed timestamps
           if (isAccountFrozen) {
@@ -1943,6 +1981,9 @@ export async function POST(request: NextRequest) {
           
           // Detect only explicit account-freeze signals.
           const isAccountFrozen = isAccountFrozenError(errorMessage);
+          if (isAccountFrozen) {
+            await setLinkedinFreezeState(errorMessage);
+          }
           
           // Check if this is a 403 error, rate limit, or account freeze
           const is403Error = errorMessage.includes('403') || 
