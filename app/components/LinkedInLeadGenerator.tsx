@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
   Rocket, Users, Building2, Link2, ClipboardList, Eye, Zap, 
@@ -80,6 +80,27 @@ function isAccountFrozenMessage(message: string): boolean {
   const hasAccountWord = normalized.includes('account');
 
   return explicitFreezePhrase || (hasFrozenWord && hasAccountWord);
+}
+
+function isDefinitiveFilterError(message: string): boolean {
+  const normalized = message.toLowerCase();
+
+  // Advisory warnings should not count as filtered.
+  if (normalized.includes('verify before contact')) return false;
+  if (normalized.includes('verify campaign fit')) return false;
+  if (normalized.includes('ambiguous') && normalized.includes('first candidate used')) return false;
+
+  return (
+    normalized.includes('gatekeep failed') ||
+    normalized.includes('filtered out') ||
+    normalized.includes('no exact skip-tracing match') ||
+    normalized.includes('common first name with abbreviated last name') ||
+    normalized.includes('income below') ||
+    normalized.includes('income <') ||
+    normalized.includes('dnc:') ||
+    normalized.includes('no location') ||
+    normalized.includes('no phone number found')
+  );
 }
 
 /**
@@ -272,6 +293,7 @@ export default function LinkedInLeadGenerator() {
   const [enrichmentErrors, setEnrichmentErrors] = useState<Array<{ lead: string; error: string; timestamp: number }>>([]);
   const [apiProgress, setApiProgress] = useState<APIProgress[]>([]);
   const [leadSummaries, setLeadSummaries] = useState<LeadSummary[]>([]);
+  const [batchOutcome, setBatchOutcome] = useState<{ total: number; successful: number; filtered: number } | null>(null);
   const [sortField, setSortField] = useState<'state' | 'income' | 'none'>('none');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [locationDiscoveryStatus, setLocationDiscoveryStatus] = useState<string | null>(null);
@@ -280,6 +302,24 @@ export default function LinkedInLeadGenerator() {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [leadList, setLeadList] = useState<LeadListItem[]>([]);
   const [showLeadList, setShowLeadList] = useState<boolean>(false);
+
+  const confirmedFilteredLeadCount = useMemo(() => {
+    const filteredLeads = new Set<string>();
+    for (const item of enrichmentErrors) {
+      if (isDefinitiveFilterError(item.error)) {
+        filteredLeads.add(item.lead);
+      }
+    }
+    return filteredLeads.size;
+  }, [enrichmentErrors]);
+
+  const processedLeadCount = detailedProgress?.current ?? enrichmentProgress.current ?? 0;
+  const successfulLeadCount = !isEnriching && batchOutcome
+    ? batchOutcome.successful
+    : Math.max(processedLeadCount - confirmedFilteredLeadCount, 0);
+  const filteredLeadCount = !isEnriching && batchOutcome
+    ? batchOutcome.filtered
+    : confirmedFilteredLeadCount;
 
   // Update elapsed time every second when searching
   useEffect(() => {
@@ -490,6 +530,7 @@ export default function LinkedInLeadGenerator() {
     setError(null);
     setEnrichedData(null);
     setLeadSummaries([]);
+    setBatchOutcome({ total: 1, successful: 0, filtered: 0 });
     setWorkflowStep('enriching');
     initializeAPIProgress();
 
@@ -693,6 +734,11 @@ export default function LinkedInLeadGenerator() {
       });
       console.log(`✨ [ENRICH_LIST] Filtered to ${summaries.length} leads with phone (removed ${allSummaries.length - summaries.length} email-only leads)`);
       setLeadSummaries(summaries);
+      setBatchOutcome({
+        total: allSummaries.length,
+        successful: summaries.length,
+        filtered: allSummaries.length - summaries.length,
+      });
 
       // Save enriched leads to localStorage for the enriched leads page
       try {
@@ -1965,6 +2011,7 @@ export default function LinkedInLeadGenerator() {
     setError(null);
     setEnrichedData(null);
     setLeadSummaries([]);
+    setBatchOutcome({ total: results.length, successful: 0, filtered: 0 });
     setWorkflowStep('enriching');
     initializeAPIProgress();
 
@@ -2043,6 +2090,11 @@ export default function LinkedInLeadGenerator() {
       });
       console.log(`✨ [ENRICH] Lead summaries: ${summaries.length} (filtered from ${allSummaries.length} - removed ${allSummaries.length - summaries.length} email-only leads)`);
       setLeadSummaries(summaries);
+      setBatchOutcome({
+        total: allSummaries.length,
+        successful: summaries.length,
+        filtered: allSummaries.length - summaries.length,
+      });
       
       // Load existing enriched leads from disk (incremental saves)
       try {
@@ -2430,8 +2482,23 @@ export default function LinkedInLeadGenerator() {
               <div className="w-full progress-bar-container h-2">
                 <div 
                   className="progress-bar-fill h-2 rounded-full"
-                  style={{ width: `${(enrichmentProgress.current / enrichmentProgress.total) * 100}%` }}
+                  style={{ width: `${enrichmentProgress.total > 0 ? (enrichmentProgress.current / enrichmentProgress.total) * 100 : 0}%` }}
                 />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                <div className="panel-inactive rounded-lg p-2">
+                  <div className="text-xs text-slate-400">Outcome</div>
+                  <div className="text-sm font-semibold text-emerald-300">
+                    SUCCESSFUL: {successfulLeadCount} Leads
+                  </div>
+                </div>
+                <div className="panel-inactive rounded-lg p-2">
+                  <div className="text-xs text-slate-400">Outcome</div>
+                  <div className="text-sm font-semibold text-amber-300">
+                    FILTERED: {filteredLeadCount} Leads
+                  </div>
+                </div>
               </div>
 
               {/* Real-time Detailed Progress */}
