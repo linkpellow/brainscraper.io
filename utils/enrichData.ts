@@ -60,6 +60,27 @@ export function getStrictness(options?: { strictness?: EnrichmentStrictness }): 
   return STRICTNESS_VALID.includes(normalized) ? normalized : 'volume';
 }
 
+export function buildSkipTracingCityStateZip(
+  city: string | null,
+  state: string | null,
+  zipCode: string | null,
+  zipProvenance: ZipProvenance
+): string {
+  if (!city || !state) {
+    return '';
+  }
+
+  const parts = [`${city}, ${state}`];
+  const canUseZipInQuery =
+    !!zipCode && (zipProvenance === 'verified_row' || zipProvenance === 'verified_skip_trace');
+
+  if (canUseZipInQuery) {
+    parts.push(zipCode);
+  }
+
+  return parts.join(' ');
+}
+
 /** Skip-tracing match outcome for strict single-candidate policy. */
 export type SkipTracingDisposition = 'clear_match' | 'ambiguous' | 'no_exact_match' | 'common_name_blocked' | 'abbreviated_last_common_first_blocked' | 'ambiguous_used_first' | 'ambiguous_multiple_states_saved_for_review' | 'no_location_skipped';
 
@@ -1767,14 +1788,11 @@ export async function enrichRow(
     if (state && !city && (strictness === 'balanced' || strictness === 'volume')) {
       result.skipTracingLocationStrength = 'state_only';
     }
-    // Build citystatezip if we have city and state
-    let citystatezip = '';
-    if (city && state) {
-      citystatezip = `${city}, ${state}`;
-      if (zipCode) {
-        citystatezip += ` ${zipCode}`;
-      }
-    }
+    const citystatezip = buildSkipTracingCityStateZip(city, state, zipCode, zipProvenance);
+    const zipForSearchCache =
+      zipCode && zipProvenance === 'verified_row'
+        ? zipCode
+        : '';
 
     console.log(`[ENRICH_ROW] STEP 3: Calling skip-tracing API for phone discovery:`, {
       name: fullName,
@@ -1782,7 +1800,7 @@ export async function enrichRow(
       citystatezip: citystatezip || 'none',
     });
 
-    const searchCacheKey = [fullName, city || '', state || '', zipCode || ''].join('|').toLowerCase();
+    const searchCacheKey = [fullName, city || '', state || '', zipForSearchCache].join('|').toLowerCase();
     let data: any = undefined;
     let error: string | undefined = undefined;
     if (batchCache?.searchCache.has(searchCacheKey)) {
