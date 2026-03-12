@@ -1,0 +1,164 @@
+{
+  "metadata": {
+    "savedAt": "2026-03-10T02:04:20.905Z",
+    "leadKey": "linkedin:https://www.linkedin.com/in/ACwAAAa2fH0BKAewbtq02VeawMklYhDU__v0UPE"
+  },
+  "enrichedRow": {
+    "Name": "Danny Kelley",
+    "Title": "Independent Writer / Author",
+    "Company": "XNS Solutions, LLC",
+    "Location": "Tampa, Florida, United States",
+    "LinkedIn URL": "https://www.linkedin.com/in/ACwAAAa2fH0BKAewbtq02VeawMklYhDU__v0UPE",
+    "Email": "dlkdesertrose@yahoo.com",
+    "Phone": "9318011500",
+    "First Name": "Danny",
+    "Last Name": "Kelley",
+    "City": "Tampa",
+    "State": "FL",
+    "Zip": "33626",
+    "Search Filter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+    "_enriched": {
+      "firstName": "Danny",
+      "lastName": "Kelley",
+      "zipCode": "33626",
+      "zipProvenance": "verified_skip_trace",
+      "gender": "male",
+      "genderConfidence": 98,
+      "phone": "9318011500",
+      "email": "dlkdesertrose@yahoo.com",
+      "addressLine2": "FL",
+      "incomePreQual": {
+        "conservative": {
+          "min": 45000,
+          "max": 135000,
+          "p50": 90000
+        },
+        "upside": {
+          "min": 50000,
+          "max": 148000,
+          "p50": 99000
+        },
+        "estimate": {
+          "range": {
+            "min": 45000,
+            "max": 148000
+          },
+          "p50": 94000,
+          "confidence": 0.33,
+          "primaryDrivers": [
+            "company: XNS Solutions, LLC"
+          ],
+          "riskFlags": [
+            "Job title seniority unclear"
+          ]
+        },
+        "decision": {
+          "tier": "unknown",
+          "shouldContinueEnrichment": true,
+          "reason": "Income meets $60k threshold: Upside p50 ($99k) >= $60k minimum",
+          "band": "high",
+          "requiresStrongPositives": false,
+          "reasonCode": "INCOME_ABOVE_60K"
+        }
+      },
+      "skipTracingData": {
+        "Status": 200,
+        "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+        "Source": "tps_fsh_438_cch",
+        "Records": 3,
+        "Page": 1,
+        "PeopleDetails": [
+          {
+            "Name": "Danny Kelley Jr",
+            "Link": "https://www.truepeoplesearch.com/find/person/pr4r9nl6u2480rll86n",
+            "Age": 55,
+            "Person ID": "pr4r9nl6u2480rll86n",
+            "Lives in": "Tampa, FL",
+            "Used to live in": "Adams TN, Knoxville TN, Savannah GA, Rive...",
+            "Related to": "Jennifer Tekstar, Danny Kelley, Deborah Ke..."
+          }
+        ],
+        "ageFromPersonDetails": "55"
+      },
+      "skipTracingDisposition": "clear_match",
+      "skipTracingMatchType": "exact_location",
+      "telnyxLookupData": {
+        "success": true,
+        "data": {
+          "data": {
+            "country_code": "US",
+            "national_format": "(931) 801-1500",
+            "phone_number": "+19318011500",
+            "fraud": null,
+            "carrier": {
+              "mobile_country_code": "",
+              "mobile_network_code": "",
+              "name": "T-Mobile US-SVR-10X/2",
+              "type": "mobile",
+              "error_code": null,
+              "normalized_carrier": ""
+            },
+            "caller_name": null,
+            "nnid_override": null,
+            "portability": {
+              "lrn": "615481XXXX",
+              "ported_status": "",
+              "ported_date": "",
+              "ocn": "7476",
+              "line_type": "mobile",
+              "spid": "",
+              "spid_carrier_name": "POWERTEL NASHVILLE LICENSES, I",
+              "spid_carrier_type": "",
+              "altspid": "",
+              "altspid_carrier_name": "",
+              "altspid_carrier_type": "",
+              "city": "NASHVILLE",
+              "state": "Tennessee"
+            },
+            "valid_number": true,
+            "record_type": "number_lookup"
+          }
+        }
+      },
+      "lineType": "mobile",
+      "carrierName": "T-Mobile US-SVR-10X/2",
+      "carrierType": "mobile",
+      "normalizedCarrier": "",
+      "decisionReason": "PARTIAL_ENRICHMENT",
+      "decisionCodes": [
+        "PARTIAL_ENRICHMENT",
+        "SOFT_DOWNGRADE_FREE_EMAIL"
+      ],
+      "decisionConfidence": 43,
+      "decisionAction": "partial",
+      "enrichmentLevel": "partial",
+      "dncStatus": "UNKNOWN",
+      "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+      "age": "55"
+    },
+    "Line Type": "mobile",
+    "Carrier": "T-Mobile US-SVR-10X/2",
+    "Age": "55",
+    "Gender": "male",
+    "Gender Confidence": 98
+  },
+  "leadSummary": {
+    "name": "Danny Kelley",
+    "phone": "9318011500",
+    "dobOrAge": "55",
+    "zipcode": "33626",
+    "state": "FL",
+    "city": "Tampa",
+    "email": "dlkdesertrose@yahoo.com",
+    "dncStatus": "UNKNOWN",
+    "income": 94000,
+    "lineType": "mobile",
+    "carrier": "T-Mobile US-SVR-10X/2",
+    "normalizedCarrier": "",
+    "searchFilter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+    "dateScraped": "2026-03-10",
+    "linkedinUrl": "https://www.linkedin.com/in/ACwAAAa2fH0BKAewbtq02VeawMklYhDU__v0UPE",
+    "zipProvenance": "verified_skip_trace",
+    "skipTracingDisposition": "clear_match"
+  }
+}

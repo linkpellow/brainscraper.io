@@ -1,0 +1,160 @@
+{
+  "metadata": {
+    "savedAt": "2026-03-09T19:49:40.841Z",
+    "leadKey": "linkedin:https://www.linkedin.com/in/ACwAAA_PCooBUvVRnTpRNio-i_dhXP6mWWXK4Xw"
+  },
+  "enrichedRow": {
+    "Name": "Asif Bhavnagri",
+    "Title": "Assistant Secretary of Labor",
+    "Company": "Commonwealth of Virginia",
+    "Location": "Richmond, Virginia, United States",
+    "LinkedIn URL": "https://www.linkedin.com/in/ACwAAA_PCooBUvVRnTpRNio-i_dhXP6mWWXK4Xw",
+    "Email": "aadil3@hotmail.com",
+    "Phone": "8042394434",
+    "First Name": "Asif",
+    "Last Name": "Bhavnagri",
+    "City": "Richmond",
+    "State": "VA",
+    "Zip": "23222",
+    "Search Filter": "Location: Alexandria, Virginia | Changed Jobs (90 days)",
+    "_enriched": {
+      "firstName": "Asif",
+      "lastName": "Bhavnagri",
+      "zipCode": "23222",
+      "zipProvenance": "verified_skip_trace",
+      "phone": "8042394434",
+      "email": "aadil3@hotmail.com",
+      "addressLine2": "VA",
+      "incomePreQual": {
+        "conservative": {
+          "min": 31000,
+          "max": 109000,
+          "p50": 70000
+        },
+        "upside": {
+          "min": 28000,
+          "max": 112000,
+          "p50": 70000
+        },
+        "estimate": {
+          "range": {
+            "min": 31000,
+            "max": 112000
+          },
+          "p50": 70000,
+          "confidence": 0.82,
+          "primaryDrivers": [
+            "career ladder: ic",
+            "assistant role",
+            "company: Commonwealth of Virginia"
+          ],
+          "riskFlags": []
+        },
+        "decision": {
+          "tier": "unknown",
+          "shouldContinueEnrichment": true,
+          "reason": "Income meets $60k threshold: Upside p50 ($70k) >= $60k minimum",
+          "band": "high",
+          "requiresStrongPositives": false,
+          "reasonCode": "INCOME_ABOVE_60K"
+        }
+      },
+      "skipTracingData": {
+        "Status": 200,
+        "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+        "Source": "tps_fsh_478_cch",
+        "Records": 1,
+        "Page": 1,
+        "PeopleDetails": [
+          {
+            "Name": "Asif Bhavnagri",
+            "Link": "https://www.truepeoplesearch.com/find/person/pl4n2u66l60lluu2nn62",
+            "Age": 35,
+            "Person ID": "pl4n2u66l60lluu2nn62",
+            "Lives in": "Richmond, VA",
+            "Used to live in": "Midlothian VA, North Chesterfield VA",
+            "Related to": "Aadil Bhavnagri, Rashid Bhavnagri, Rehana ..."
+          }
+        ],
+        "ageFromPersonDetails": "35"
+      },
+      "skipTracingDisposition": "clear_match",
+      "telnyxLookupData": {
+        "success": true,
+        "data": {
+          "data": {
+            "country_code": "US",
+            "national_format": "(804) 239-4434",
+            "phone_number": "+18042394434",
+            "fraud": null,
+            "carrier": {
+              "mobile_country_code": "",
+              "mobile_network_code": "",
+              "name": "Verizon Wireless:6006 - SVR/2",
+              "type": "mobile",
+              "error_code": null,
+              "normalized_carrier": "Verizon Wireless"
+            },
+            "caller_name": null,
+            "nnid_override": null,
+            "portability": {
+              "lrn": "804398XXXX",
+              "ported_status": "",
+              "ported_date": "",
+              "ocn": "6827",
+              "line_type": "mobile",
+              "spid": "",
+              "spid_carrier_name": "CELLCO PARTNERSHIP DBA VERIZON",
+              "spid_carrier_type": "",
+              "altspid": "",
+              "altspid_carrier_name": "",
+              "altspid_carrier_type": "",
+              "city": "RICHMOND",
+              "state": "Virginia"
+            },
+            "valid_number": true,
+            "record_type": "number_lookup"
+          }
+        }
+      },
+      "lineType": "mobile",
+      "carrierName": "Verizon Wireless:6006 - SVR/2",
+      "carrierType": "mobile",
+      "normalizedCarrier": "Verizon Wireless",
+      "decisionReason": "PARTIAL_ENRICHMENT",
+      "decisionCodes": [
+        "PARTIAL_ENRICHMENT",
+        "SOFT_DOWNGRADE_FREE_EMAIL"
+      ],
+      "decisionConfidence": 36,
+      "decisionAction": "partial",
+      "enrichmentLevel": "partial",
+      "dncStatus": "UNKNOWN",
+      "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+      "age": "35"
+    },
+    "Line Type": "mobile",
+    "Carrier": "Verizon Wireless:6006 - SVR/2",
+    "Normalized Carrier": "Verizon Wireless",
+    "Age": "35"
+  },
+  "leadSummary": {
+    "name": "Asif Bhavnagri",
+    "phone": "8042394434",
+    "dobOrAge": "35",
+    "zipcode": "23222",
+    "state": "VA",
+    "city": "Richmond",
+    "email": "aadil3@hotmail.com",
+    "dncStatus": "UNKNOWN",
+    "income": 70000,
+    "lineType": "mobile",
+    "carrier": "Verizon Wireless:6006 - SVR/2",
+    "normalizedCarrier": "Verizon Wireless",
+    "searchFilter": "Location: Alexandria, Virginia | Changed Jobs (90 days)",
+    "dateScraped": "2026-03-09",
+    "linkedinUrl": "https://www.linkedin.com/in/ACwAAA_PCooBUvVRnTpRNio-i_dhXP6mWWXK4Xw",
+    "zipProvenance": "verified_skip_trace",
+    "skipTracingDisposition": "clear_match"
+  }
+}

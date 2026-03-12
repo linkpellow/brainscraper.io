@@ -1,0 +1,5284 @@
+[
+  {
+    "metadata": {
+      "savedAt": "2026-03-10T02:04:06.254Z",
+      "leadKey": "linkedin:https://www.linkedin.com/in/ACwAAAIcihYBQMXHQAaHQekZN2PJjt6Uf7Pl80g"
+    },
+    "enrichedRow": {
+      "Name": "Ryan Canavan",
+      "Title": "Vice President of Sales",
+      "Company": "FairCode",
+      "Location": "Inlet Beach, Florida, United States",
+      "LinkedIn URL": "https://www.linkedin.com/in/ACwAAAIcihYBQMXHQAaHQekZN2PJjt6Uf7Pl80g",
+      "Email": "ryan.canavan@hotmail.com",
+      "Phone": "4048032847",
+      "First Name": "Ryan",
+      "Last Name": "Canavan",
+      "City": "Inlet Beach",
+      "State": "FL",
+      "Zip": "32461",
+      "Search Filter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+      "_enriched": {
+        "firstName": "Ryan",
+        "lastName": "Canavan",
+        "zipCode": "32461",
+        "zipProvenance": "verified_skip_trace",
+        "gender": "male",
+        "genderConfidence": 98,
+        "phone": "4048032847",
+        "email": "ryan.canavan@hotmail.com",
+        "addressLine2": "FL",
+        "incomePreQual": {
+          "conservative": {
+            "min": 78000,
+            "max": 378000,
+            "p50": 228000
+          },
+          "upside": {
+            "min": 103000,
+            "max": 345000,
+            "p50": 265000
+          },
+          "estimate": {
+            "range": {
+              "min": 78000,
+              "max": 345000
+            },
+            "p50": 247000,
+            "confidence": 0.7,
+            "primaryDrivers": [
+              "career ladder: exec",
+              "sales role",
+              "company: FairCode"
+            ],
+            "riskFlags": [
+              "High-level title but company type may not support it"
+            ]
+          },
+          "decision": {
+            "tier": "unknown",
+            "shouldContinueEnrichment": true,
+            "reason": "Income meets $60k threshold: Upside p50 ($265k) >= $60k minimum",
+            "band": "high",
+            "requiresStrongPositives": false,
+            "reasonCode": "INCOME_ABOVE_60K"
+          }
+        },
+        "skipTracingData": {
+          "Status": 200,
+          "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+          "Source": "tps_fsh_368_cch",
+          "Records": 1,
+          "Page": 1,
+          "PeopleDetails": [
+            {
+              "Name": "Ryan Canavan",
+              "Link": "https://www.truepeoplesearch.com/find/person/pu22uur0ru8l4ln49r2l",
+              "Age": 58,
+              "Person ID": "pu22uur0ru8l4ln49r2l",
+              "Lives in": "Inlet Beach, FL",
+              "Used to live in": "Atlanta GA, Brookhaven GA, Roswell GA, Ba...",
+              "Related to": "Karen Canavan, Adason Canavan, Addy Canava..."
+            }
+          ],
+          "ageFromPersonDetails": "58"
+        },
+        "skipTracingDisposition": "clear_match",
+        "skipTracingMatchType": "exact_location",
+        "telnyxLookupData": {
+          "success": true,
+          "data": {
+            "data": {
+              "country_code": "US",
+              "national_format": "(404) 803-2847",
+              "phone_number": "+14048032847",
+              "fraud": null,
+              "carrier": {
+                "mobile_country_code": "",
+                "mobile_network_code": "",
+                "name": "CELLCO PARTNERSHIP DBA VERIZON WIRELESS - GA",
+                "type": "mobile",
+                "error_code": null,
+                "normalized_carrier": "Verizon Wireless"
+              },
+              "caller_name": null,
+              "nnid_override": null,
+              "portability": {
+                "lrn": null,
+                "ported_status": "",
+                "ported_date": "",
+                "ocn": "6540",
+                "line_type": "mobile",
+                "spid": "",
+                "spid_carrier_name": "CELLCO PARTNERSHIP DBA VERIZON",
+                "spid_carrier_type": "",
+                "altspid": "",
+                "altspid_carrier_name": "",
+                "altspid_carrier_type": "",
+                "city": "ATLANTA",
+                "state": "Georgia"
+              },
+              "valid_number": true,
+              "record_type": "number_lookup"
+            }
+          }
+        },
+        "lineType": "mobile",
+        "carrierName": "CELLCO PARTNERSHIP DBA VERIZON WIRELESS - GA",
+        "carrierType": "mobile",
+        "normalizedCarrier": "Verizon Wireless",
+        "decisionReason": "PARTIAL_ENRICHMENT",
+        "decisionCodes": [
+          "PARTIAL_ENRICHMENT",
+          "SOFT_DOWNGRADE_FREE_EMAIL"
+        ],
+        "decisionConfidence": 36,
+        "decisionAction": "partial",
+        "enrichmentLevel": "partial",
+        "dncStatus": "UNKNOWN",
+        "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+        "age": "58"
+      },
+      "Line Type": "mobile",
+      "Carrier": "CELLCO PARTNERSHIP DBA VERIZON WIRELESS - GA",
+      "Normalized Carrier": "Verizon Wireless",
+      "Age": "58",
+      "Gender": "male",
+      "Gender Confidence": 98
+    },
+    "leadSummary": {
+      "name": "Ryan Canavan",
+      "phone": "4048032847",
+      "dobOrAge": "58",
+      "zipcode": "32461",
+      "state": "FL",
+      "city": "Inlet Beach",
+      "email": "ryan.canavan@hotmail.com",
+      "dncStatus": "UNKNOWN",
+      "income": 247000,
+      "lineType": "mobile",
+      "carrier": "CELLCO PARTNERSHIP DBA VERIZON WIRELESS - GA",
+      "normalizedCarrier": "Verizon Wireless",
+      "searchFilter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+      "dateScraped": "2026-03-10",
+      "linkedinUrl": "https://www.linkedin.com/in/ACwAAAIcihYBQMXHQAaHQekZN2PJjt6Uf7Pl80g",
+      "zipProvenance": "verified_skip_trace",
+      "skipTracingDisposition": "clear_match"
+    }
+  },
+  {
+    "metadata": {
+      "savedAt": "2026-03-10T02:04:09.799Z",
+      "leadKey": "linkedin:https://www.linkedin.com/in/ACwAADy8soYBU1KJn1KN0fQtahMnJ-jCsYTsiBk"
+    },
+    "enrichedRow": {
+      "Name": "Engin Ayaz",
+      "Title": "President",
+      "Company": "Palm Beach Elevator",
+      "Location": "North Palm Beach, Florida, United States",
+      "LinkedIn URL": "https://www.linkedin.com/in/ACwAADy8soYBU1KJn1KN0fQtahMnJ-jCsYTsiBk",
+      "Email": "eayaz1@gmail.com",
+      "Phone": "5613174039",
+      "First Name": "Engin",
+      "Last Name": "Ayaz",
+      "City": "North Palm Beach",
+      "State": "FL",
+      "Zip": "33408",
+      "Search Filter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+      "_enriched": {
+        "firstName": "Engin",
+        "lastName": "Ayaz",
+        "zipCode": "33408",
+        "zipProvenance": "verified_skip_trace",
+        "phone": "5613174039",
+        "email": "eayaz1@gmail.com",
+        "addressLine2": "FL",
+        "incomePreQual": {
+          "conservative": {
+            "min": 115000,
+            "max": 415000,
+            "p50": 265000
+          },
+          "upside": {
+            "min": 130000,
+            "max": 380000,
+            "p50": 292000
+          },
+          "estimate": {
+            "range": {
+              "min": 115000,
+              "max": 380000
+            },
+            "p50": 279000,
+            "confidence": 0.48,
+            "primaryDrivers": [
+              "career ladder: exec",
+              "company: Palm Beach Elevator"
+            ],
+            "riskFlags": [
+              "High-level title but company type may not support it"
+            ]
+          },
+          "decision": {
+            "tier": "unknown",
+            "shouldContinueEnrichment": true,
+            "reason": "Income meets $60k threshold: Upside p50 ($292k) >= $60k minimum",
+            "band": "high",
+            "requiresStrongPositives": false,
+            "reasonCode": "INCOME_ABOVE_60K"
+          }
+        },
+        "skipTracingData": {
+          "Status": 200,
+          "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+          "Source": "tps_fsh_724_cch",
+          "Records": 1,
+          "Page": 1,
+          "PeopleDetails": [
+            {
+              "Name": "Engin Ayaz",
+              "Link": "https://www.truepeoplesearch.com/find/person/pu2629nl8uu2nu40n04",
+              "Age": 37,
+              "Person ID": "pu2629nl8uu2nu40n04",
+              "Lives in": "North Palm Beach, FL",
+              "Used to live in": "Suwanee GA, Orlando FL, Fort Pierce FL, B...",
+              "Related to": "Cafer Ayaz, Cigdem Gali, Danielle Usiadek,..."
+            }
+          ],
+          "ageFromPersonDetails": "37"
+        },
+        "skipTracingDisposition": "clear_match",
+        "skipTracingMatchType": "exact_location",
+        "telnyxLookupData": {
+          "success": true,
+          "data": {
+            "data": {
+              "country_code": "US",
+              "national_format": "(561) 317-4039",
+              "phone_number": "+15613174039",
+              "fraud": null,
+              "carrier": {
+                "mobile_country_code": "",
+                "mobile_network_code": "",
+                "name": "T-Mobile US-SVR-10X/2",
+                "type": "mobile",
+                "error_code": null,
+                "normalized_carrier": ""
+              },
+              "caller_name": null,
+              "nnid_override": null,
+              "portability": {
+                "lrn": "561827XXXX",
+                "ported_status": "",
+                "ported_date": "",
+                "ocn": "6889",
+                "line_type": "mobile",
+                "spid": "",
+                "spid_carrier_name": "OMNIPOINT MIAMI E LICENSE, LLC",
+                "spid_carrier_type": "",
+                "altspid": "",
+                "altspid_carrier_name": "",
+                "altspid_carrier_type": "",
+                "city": "WPALMBEACH",
+                "state": "Florida"
+              },
+              "valid_number": true,
+              "record_type": "number_lookup"
+            }
+          }
+        },
+        "lineType": "mobile",
+        "carrierName": "T-Mobile US-SVR-10X/2",
+        "carrierType": "mobile",
+        "normalizedCarrier": "",
+        "decisionReason": "PARTIAL_ENRICHMENT",
+        "decisionCodes": [
+          "PARTIAL_ENRICHMENT",
+          "SOFT_DOWNGRADE_FREE_EMAIL"
+        ],
+        "decisionConfidence": 36,
+        "decisionAction": "partial",
+        "enrichmentLevel": "partial",
+        "dncStatus": "UNKNOWN",
+        "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+        "age": "37"
+      },
+      "Line Type": "mobile",
+      "Carrier": "T-Mobile US-SVR-10X/2",
+      "Age": "37"
+    },
+    "leadSummary": {
+      "name": "Engin Ayaz",
+      "phone": "5613174039",
+      "dobOrAge": "37",
+      "zipcode": "33408",
+      "state": "FL",
+      "city": "North Palm Beach",
+      "email": "eayaz1@gmail.com",
+      "dncStatus": "UNKNOWN",
+      "income": 279000,
+      "lineType": "mobile",
+      "carrier": "T-Mobile US-SVR-10X/2",
+      "normalizedCarrier": "",
+      "searchFilter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+      "dateScraped": "2026-03-10",
+      "linkedinUrl": "https://www.linkedin.com/in/ACwAADy8soYBU1KJn1KN0fQtahMnJ-jCsYTsiBk",
+      "zipProvenance": "verified_skip_trace",
+      "skipTracingDisposition": "clear_match"
+    }
+  },
+  {
+    "metadata": {
+      "savedAt": "2026-03-10T02:04:12.056Z",
+      "leadKey": "linkedin:https://www.linkedin.com/in/ACwAAAZ8lIoBTrk0HBdbbIulIZ__-p9Xv0cNLg0"
+    },
+    "enrichedRow": {
+      "Name": "Pedro Caramuru",
+      "Title": "Chief Operating Officer",
+      "Company": "Stealth Startup",
+      "Location": "Miami, Florida, United States",
+      "LinkedIn URL": "https://www.linkedin.com/in/ACwAAAZ8lIoBTrk0HBdbbIulIZ__-p9Xv0cNLg0",
+      "Email": "pedro.caramuru85@gmail.com",
+      "Phone": "6507665768",
+      "First Name": "Pedro",
+      "Last Name": "Caramuru",
+      "City": "Miami",
+      "State": "FL",
+      "Zip": "33157",
+      "Search Filter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+      "_enriched": {
+        "firstName": "Pedro",
+        "lastName": "Caramuru",
+        "zipCode": "33157",
+        "zipProvenance": "verified_skip_trace",
+        "gender": "male",
+        "genderConfidence": 98,
+        "phone": "6507665768",
+        "email": "pedro.caramuru85@gmail.com",
+        "addressLine2": "FL",
+        "incomePreQual": {
+          "conservative": {
+            "min": 130000,
+            "max": 430000,
+            "p50": 280000
+          },
+          "upside": {
+            "min": 130000,
+            "max": 381000,
+            "p50": 293000
+          },
+          "estimate": {
+            "range": {
+              "min": 130000,
+              "max": 381000
+            },
+            "p50": 287000,
+            "confidence": 0.48,
+            "primaryDrivers": [
+              "career ladder: exec",
+              "company: Stealth Startup"
+            ],
+            "riskFlags": [
+              "High-level title but company type may not support it"
+            ]
+          },
+          "decision": {
+            "tier": "unknown",
+            "shouldContinueEnrichment": true,
+            "reason": "Income meets $60k threshold: Upside p50 ($293k) >= $60k minimum",
+            "band": "high",
+            "requiresStrongPositives": false,
+            "reasonCode": "INCOME_ABOVE_60K"
+          }
+        },
+        "skipTracingData": {
+          "Status": 200,
+          "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+          "Source": "tps_fsh_380_cch",
+          "Records": 1,
+          "Page": 1,
+          "PeopleDetails": [
+            {
+              "Name": "Pedro Caramuru",
+              "Link": "https://www.truepeoplesearch.com/find/person/px90rnn0u0l0802n40269",
+              "Age": 41,
+              "Person ID": "px90rnn0u0l0802n40269",
+              "Lives in": "Palmetto Bay, FL",
+              "Used to live in": "Miami FL, San Mateo CA, Burlingame CA",
+              "Related to": ""
+            }
+          ],
+          "ageFromPersonDetails": "41"
+        },
+        "skipTracingDisposition": "clear_match",
+        "skipTracingMatchType": "name_only",
+        "telnyxLookupData": {
+          "success": true,
+          "data": {
+            "data": {
+              "country_code": "US",
+              "national_format": "(650) 766-5768",
+              "phone_number": "+16507665768",
+              "fraud": null,
+              "carrier": {
+                "mobile_country_code": "",
+                "mobile_network_code": "",
+                "name": "NEW CINGULAR WIRELESS PCS, LLC",
+                "type": "mobile",
+                "error_code": null,
+                "normalized_carrier": "AT&T"
+              },
+              "caller_name": null,
+              "nnid_override": null,
+              "portability": {
+                "lrn": null,
+                "ported_status": "",
+                "ported_date": "",
+                "ocn": "6010",
+                "line_type": "mobile",
+                "spid": "",
+                "spid_carrier_name": "NEW CINGULAR WIRELESS PCS, LLC",
+                "spid_carrier_type": "",
+                "altspid": "",
+                "altspid_carrier_name": "",
+                "altspid_carrier_type": "",
+                "city": "SAN MATEO",
+                "state": "California"
+              },
+              "valid_number": true,
+              "record_type": "number_lookup"
+            }
+          }
+        },
+        "lineType": "mobile",
+        "carrierName": "NEW CINGULAR WIRELESS PCS, LLC",
+        "carrierType": "mobile",
+        "normalizedCarrier": "AT&T",
+        "decisionReason": "PARTIAL_ENRICHMENT",
+        "decisionCodes": [
+          "PARTIAL_ENRICHMENT",
+          "SOFT_DOWNGRADE_FREE_EMAIL"
+        ],
+        "decisionConfidence": 32,
+        "decisionAction": "partial",
+        "enrichmentLevel": "partial",
+        "dncStatus": "UNKNOWN",
+        "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+        "age": "41"
+      },
+      "Line Type": "mobile",
+      "Carrier": "NEW CINGULAR WIRELESS PCS, LLC",
+      "Normalized Carrier": "AT&T",
+      "Age": "41",
+      "Gender": "male",
+      "Gender Confidence": 98
+    },
+    "leadSummary": {
+      "name": "Pedro Caramuru",
+      "phone": "6507665768",
+      "dobOrAge": "41",
+      "zipcode": "33157",
+      "state": "FL",
+      "city": "Miami",
+      "email": "pedro.caramuru85@gmail.com",
+      "dncStatus": "UNKNOWN",
+      "income": 287000,
+      "lineType": "mobile",
+      "carrier": "NEW CINGULAR WIRELESS PCS, LLC",
+      "normalizedCarrier": "AT&T",
+      "searchFilter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+      "dateScraped": "2026-03-10",
+      "linkedinUrl": "https://www.linkedin.com/in/ACwAAAZ8lIoBTrk0HBdbbIulIZ__-p9Xv0cNLg0",
+      "zipProvenance": "verified_skip_trace",
+      "skipTracingDisposition": "clear_match",
+      "needsVerification": true
+    }
+  },
+  {
+    "metadata": {
+      "savedAt": "2026-03-10T02:04:13.321Z",
+      "leadKey": "linkedin:https://www.linkedin.com/in/ACwAAEGxQiQB76TU6h-kNsrdUgi5bbddSCHPpmg"
+    },
+    "enrichedRow": {
+      "Name": "Drew Ruchim",
+      "Title": "Co-Founder",
+      "Company": "Aditt",
+      "Location": "Miami, Florida, United States",
+      "LinkedIn URL": "https://www.linkedin.com/in/ACwAAEGxQiQB76TU6h-kNsrdUgi5bbddSCHPpmg",
+      "Email": "druchim@gmail.com",
+      "Phone": "8478226980",
+      "First Name": "Drew",
+      "Last Name": "Ruchim",
+      "City": "Miami",
+      "State": "FL",
+      "Zip": "60089",
+      "Search Filter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+      "_enriched": {
+        "firstName": "Drew",
+        "lastName": "Ruchim",
+        "zipCode": "60089",
+        "zipProvenance": "verified_skip_trace",
+        "gender": "male",
+        "genderConfidence": 98,
+        "phone": "8478226980",
+        "email": "druchim@gmail.com",
+        "addressLine2": "FL",
+        "incomePreQual": {
+          "conservative": {
+            "min": 143000,
+            "max": 443000,
+            "p50": 293000
+          },
+          "upside": {
+            "min": 160000,
+            "max": 419000,
+            "p50": 322000
+          },
+          "estimate": {
+            "range": {
+              "min": 143000,
+              "max": 419000
+            },
+            "p50": 308000,
+            "confidence": 0.48,
+            "primaryDrivers": [
+              "career ladder: exec",
+              "company: Aditt"
+            ],
+            "riskFlags": [
+              "High-level title but company type may not support it"
+            ]
+          },
+          "decision": {
+            "tier": "unknown",
+            "shouldContinueEnrichment": true,
+            "reason": "Income meets $60k threshold: Upside p50 ($322k) >= $60k minimum",
+            "band": "high",
+            "requiresStrongPositives": false,
+            "reasonCode": "INCOME_ABOVE_60K"
+          }
+        },
+        "skipTracingData": {
+          "Status": 200,
+          "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+          "Source": "tps_fsh_544_cch",
+          "Records": 1,
+          "Page": 1,
+          "PeopleDetails": [
+            {
+              "Name": "Drew Ruchim",
+              "Link": "https://www.truepeoplesearch.com/find/person/px22u6889n0l64lr0rl80",
+              "Age": 24,
+              "Person ID": "px22u6889n0l64lr0rl80",
+              "Lives in": "Buffalo Grove, IL",
+              "Used to live in": "",
+              "Related to": "Cindi Ruchim, Elle Ruchim, Heather Ruchim,..."
+            }
+          ],
+          "ageFromPersonDetails": "24"
+        },
+        "skipTracingDisposition": "clear_match",
+        "skipTracingMatchType": "name_only",
+        "telnyxLookupData": {
+          "success": true,
+          "data": {
+            "data": {
+              "country_code": "US",
+              "national_format": "(847) 822-6980",
+              "phone_number": "+18478226980",
+              "fraud": null,
+              "carrier": {
+                "mobile_country_code": "",
+                "mobile_network_code": "",
+                "name": "NEW CINGULAR WIRELESS PCS, LLC - IL",
+                "type": "mobile",
+                "error_code": null,
+                "normalized_carrier": "AT&T"
+              },
+              "caller_name": null,
+              "nnid_override": null,
+              "portability": {
+                "lrn": null,
+                "ported_status": "",
+                "ported_date": "",
+                "ocn": "6534",
+                "line_type": "mobile",
+                "spid": "",
+                "spid_carrier_name": "NEW CINGULAR WIRELESS PCS, LLC",
+                "spid_carrier_type": "",
+                "altspid": "",
+                "altspid_carrier_name": "",
+                "altspid_carrier_type": "",
+                "city": "HINSDALE",
+                "state": "Illinois"
+              },
+              "valid_number": true,
+              "record_type": "number_lookup"
+            }
+          }
+        },
+        "lineType": "mobile",
+        "carrierName": "NEW CINGULAR WIRELESS PCS, LLC - IL",
+        "carrierType": "mobile",
+        "normalizedCarrier": "AT&T",
+        "decisionReason": "PARTIAL_ENRICHMENT",
+        "decisionCodes": [
+          "PARTIAL_ENRICHMENT",
+          "SOFT_DOWNGRADE_FREE_EMAIL"
+        ],
+        "decisionConfidence": 36,
+        "decisionAction": "partial",
+        "enrichmentLevel": "partial",
+        "dncStatus": "UNKNOWN",
+        "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+        "age": "24"
+      },
+      "Line Type": "mobile",
+      "Carrier": "NEW CINGULAR WIRELESS PCS, LLC - IL",
+      "Normalized Carrier": "AT&T",
+      "Age": "24",
+      "Gender": "male",
+      "Gender Confidence": 98
+    },
+    "leadSummary": {
+      "name": "Drew Ruchim",
+      "phone": "8478226980",
+      "dobOrAge": "24",
+      "zipcode": "60089",
+      "state": "FL",
+      "city": "Miami",
+      "email": "druchim@gmail.com",
+      "dncStatus": "UNKNOWN",
+      "income": 308000,
+      "lineType": "mobile",
+      "carrier": "NEW CINGULAR WIRELESS PCS, LLC - IL",
+      "normalizedCarrier": "AT&T",
+      "searchFilter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+      "dateScraped": "2026-03-10",
+      "linkedinUrl": "https://www.linkedin.com/in/ACwAAEGxQiQB76TU6h-kNsrdUgi5bbddSCHPpmg",
+      "zipProvenance": "verified_skip_trace",
+      "skipTracingDisposition": "clear_match",
+      "needsVerification": true
+    }
+  },
+  {
+    "metadata": {
+      "savedAt": "2026-03-10T02:04:15.261Z",
+      "leadKey": "linkedin:https://www.linkedin.com/in/ACwAAACvcSEBU_QjEag4OJXyx5DVf6YocsXy5Pk"
+    },
+    "enrichedRow": {
+      "Name": "Jen Ramey",
+      "Title": "VP of Customer Acquisition",
+      "Company": "Caesars Sportsbook & Casino",
+      "Location": "Tampa, Florida, United States",
+      "LinkedIn URL": "https://www.linkedin.com/in/ACwAAACvcSEBU_QjEag4OJXyx5DVf6YocsXy5Pk",
+      "Email": "lezhot69@msn.com",
+      "Phone": "9109340444",
+      "First Name": "Jen",
+      "Last Name": "Ramey",
+      "City": "Tampa",
+      "State": "FL",
+      "Zip": "28460",
+      "Search Filter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+      "_enriched": {
+        "firstName": "Jen",
+        "lastName": "Ramey",
+        "zipCode": "28460",
+        "zipProvenance": "verified_skip_trace",
+        "gender": "female",
+        "genderConfidence": 98,
+        "phone": "9109340444",
+        "email": "lezhot69@msn.com",
+        "addressLine2": "FL",
+        "incomePreQual": {
+          "conservative": {
+            "min": 172000,
+            "max": 472000,
+            "p50": 322000
+          },
+          "upside": {
+            "min": 192000,
+            "max": 461000,
+            "p50": 355000
+          },
+          "estimate": {
+            "range": {
+              "min": 172000,
+              "max": 461000
+            },
+            "p50": 338000,
+            "confidence": 0.7,
+            "primaryDrivers": [
+              "career ladder: exec",
+              "customer role",
+              "company: Caesars Sportsbook & Casino"
+            ],
+            "riskFlags": [
+              "High-level title but company type may not support it"
+            ]
+          },
+          "decision": {
+            "tier": "unknown",
+            "shouldContinueEnrichment": true,
+            "reason": "Income meets $60k threshold: Upside p50 ($355k) >= $60k minimum",
+            "band": "high",
+            "requiresStrongPositives": false,
+            "reasonCode": "INCOME_ABOVE_60K"
+          }
+        },
+        "skipTracingData": {
+          "Status": 200,
+          "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+          "Source": "tps_fsh_481_cch",
+          "Records": 8,
+          "Page": 1,
+          "PeopleDetails": [
+            {
+              "Name": "Jen Ramey",
+              "Link": "https://www.truepeoplesearch.com/find/person/px9l66n0n8980nnl48u0l",
+              "Age": 53,
+              "Person ID": "px9l66n0n8980nnl48u0l",
+              "Lives in": "Sneads Ferry, NC",
+              "Used to live in": "Tampa, FL, Ayden NC, Winterville NC, Rale...",
+              "Related to": "Chance Ricks, Everett Ricks, James Ricks, ..."
+            }
+          ],
+          "ageFromPersonDetails": "53"
+        },
+        "skipTracingDisposition": "clear_match",
+        "skipTracingMatchType": "name_only",
+        "telnyxLookupData": {
+          "success": true,
+          "data": {
+            "data": {
+              "country_code": "US",
+              "national_format": "(910) 934-0444",
+              "phone_number": "+19109340444",
+              "fraud": null,
+              "carrier": {
+                "mobile_country_code": "",
+                "mobile_network_code": "",
+                "name": "UNITED STATES CELLULAR - NC",
+                "type": "mobile",
+                "error_code": null,
+                "normalized_carrier": "U.S. Cellular"
+              },
+              "caller_name": null,
+              "nnid_override": null,
+              "portability": {
+                "lrn": null,
+                "ported_status": "",
+                "ported_date": "",
+                "ocn": "6282",
+                "line_type": "mobile",
+                "spid": "",
+                "spid_carrier_name": "UNITED STATES CELLULAR CORP. -",
+                "spid_carrier_type": "",
+                "altspid": "",
+                "altspid_carrier_name": "",
+                "altspid_carrier_type": "",
+                "city": "JACKSONVL",
+                "state": "North Carolina"
+              },
+              "valid_number": true,
+              "record_type": "number_lookup"
+            }
+          }
+        },
+        "lineType": "mobile",
+        "carrierName": "UNITED STATES CELLULAR - NC",
+        "carrierType": "mobile",
+        "normalizedCarrier": "U.S. Cellular",
+        "decisionReason": "FULL_ENRICHMENT",
+        "decisionCodes": [
+          "FULL_ENRICHMENT"
+        ],
+        "decisionConfidence": 87,
+        "decisionAction": "full",
+        "enrichmentLevel": "full",
+        "dncStatus": "UNKNOWN",
+        "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+        "age": "53"
+      },
+      "Line Type": "mobile",
+      "Carrier": "UNITED STATES CELLULAR - NC",
+      "Normalized Carrier": "U.S. Cellular",
+      "Age": "53",
+      "Gender": "female",
+      "Gender Confidence": 98
+    },
+    "leadSummary": {
+      "name": "Jen Ramey",
+      "phone": "9109340444",
+      "dobOrAge": "53",
+      "zipcode": "28460",
+      "state": "FL",
+      "city": "Tampa",
+      "email": "lezhot69@msn.com",
+      "dncStatus": "UNKNOWN",
+      "income": 338000,
+      "lineType": "mobile",
+      "carrier": "UNITED STATES CELLULAR - NC",
+      "normalizedCarrier": "U.S. Cellular",
+      "searchFilter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+      "dateScraped": "2026-03-10",
+      "linkedinUrl": "https://www.linkedin.com/in/ACwAAACvcSEBU_QjEag4OJXyx5DVf6YocsXy5Pk",
+      "zipProvenance": "verified_skip_trace",
+      "skipTracingDisposition": "clear_match",
+      "needsVerification": true
+    }
+  },
+  {
+    "metadata": {
+      "savedAt": "2026-03-10T02:04:18.342Z",
+      "leadKey": "linkedin:https://www.linkedin.com/in/ACwAAAa6i-kBmXmnGg8QOeSinYvLBF4nxjm4D_w"
+    },
+    "enrichedRow": {
+      "Name": "Edmund (Ed) Rakowski",
+      "Title": "Regional Sales Manager ",
+      "Company": "Taiwan Semiconductor",
+      "Location": "Oldsmar, Florida, United States",
+      "LinkedIn URL": "https://www.linkedin.com/in/ACwAAAa6i-kBmXmnGg8QOeSinYvLBF4nxjm4D_w",
+      "Email": "ed.rakowski3@gmail.com",
+      "Phone": "7738605815",
+      "First Name": "Edmund",
+      "Last Name": "(Ed) Rakowski",
+      "City": "Oldsmar",
+      "State": "FL",
+      "Zip": "34677",
+      "Search Filter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+      "_enriched": {
+        "firstName": "Edmund",
+        "lastName": "Rakowski",
+        "zipCode": "34677",
+        "zipProvenance": "verified_skip_trace",
+        "phone": "7738605815",
+        "email": "ed.rakowski3@gmail.com",
+        "addressLine2": "FL",
+        "incomePreQual": {
+          "conservative": {
+            "min": 60000,
+            "max": 180000,
+            "p50": 120000
+          },
+          "upside": {
+            "min": 55000,
+            "max": 156000,
+            "p50": 120000
+          },
+          "estimate": {
+            "range": {
+              "min": 60000,
+              "max": 156000
+            },
+            "p50": 120000,
+            "confidence": 0.55,
+            "primaryDrivers": [
+              "career ladder: manager",
+              "manager role",
+              "company: Taiwan Semiconductor"
+            ],
+            "riskFlags": [
+              "Job title seniority unclear"
+            ]
+          },
+          "decision": {
+            "tier": "unknown",
+            "shouldContinueEnrichment": true,
+            "reason": "Income meets $60k threshold: Upside p50 ($120k) >= $60k minimum",
+            "band": "high",
+            "requiresStrongPositives": false,
+            "reasonCode": "INCOME_ABOVE_60K"
+          }
+        },
+        "skipTracingData": {
+          "Status": 200,
+          "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+          "Source": "tps_fsh_362_cch",
+          "Records": 2,
+          "Page": 1,
+          "PeopleDetails": [
+            {
+              "Name": "Edmund Rakowski Jr",
+              "Link": "https://www.truepeoplesearch.com/find/person/p26nl28u846nnu42u0n2",
+              "Age": 55,
+              "Person ID": "p26nl28u846nnu42u0n2",
+              "Lives in": "Oldsmar, FL",
+              "Used to live in": "Cape Coral FL, Chicago IL, Palm Harbor FL...",
+              "Related to": "Tracy Baldwin, Debra Colby, Edmund Rakowsk..."
+            }
+          ],
+          "ageFromPersonDetails": "55"
+        },
+        "skipTracingDisposition": "clear_match",
+        "skipTracingMatchType": "exact_location",
+        "telnyxLookupData": {
+          "success": true,
+          "data": {
+            "data": {
+              "country_code": "US",
+              "national_format": "(773) 860-5815",
+              "phone_number": "+17738605815",
+              "fraud": null,
+              "carrier": {
+                "mobile_country_code": "",
+                "mobile_network_code": "",
+                "name": "NEW CINGULAR WIRELESS PCS, LLC - IL",
+                "type": "mobile",
+                "error_code": null,
+                "normalized_carrier": "AT&T"
+              },
+              "caller_name": null,
+              "nnid_override": null,
+              "portability": {
+                "lrn": null,
+                "ported_status": "",
+                "ported_date": "",
+                "ocn": "6534",
+                "line_type": "mobile",
+                "spid": "",
+                "spid_carrier_name": "NEW CINGULAR WIRELESS PCS, LLC",
+                "spid_carrier_type": "",
+                "altspid": "",
+                "altspid_carrier_name": "",
+                "altspid_carrier_type": "",
+                "city": "CHICGOZN01",
+                "state": "Illinois"
+              },
+              "valid_number": true,
+              "record_type": "number_lookup"
+            }
+          }
+        },
+        "lineType": "mobile",
+        "carrierName": "NEW CINGULAR WIRELESS PCS, LLC - IL",
+        "carrierType": "mobile",
+        "normalizedCarrier": "AT&T",
+        "decisionReason": "FULL_ENRICHMENT",
+        "decisionCodes": [
+          "FULL_ENRICHMENT",
+          "SOFT_DOWNGRADE_FREE_EMAIL"
+        ],
+        "decisionConfidence": 63,
+        "decisionAction": "full",
+        "enrichmentLevel": "full",
+        "dncStatus": "UNKNOWN",
+        "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+        "age": "55"
+      },
+      "Line Type": "mobile",
+      "Carrier": "NEW CINGULAR WIRELESS PCS, LLC - IL",
+      "Normalized Carrier": "AT&T",
+      "Age": "55"
+    },
+    "leadSummary": {
+      "name": "Edmund (Ed) Rakowski",
+      "phone": "7738605815",
+      "dobOrAge": "55",
+      "zipcode": "34677",
+      "state": "FL",
+      "city": "Oldsmar",
+      "email": "ed.rakowski3@gmail.com",
+      "dncStatus": "UNKNOWN",
+      "income": 120000,
+      "lineType": "mobile",
+      "carrier": "NEW CINGULAR WIRELESS PCS, LLC - IL",
+      "normalizedCarrier": "AT&T",
+      "searchFilter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+      "dateScraped": "2026-03-10",
+      "linkedinUrl": "https://www.linkedin.com/in/ACwAAAa6i-kBmXmnGg8QOeSinYvLBF4nxjm4D_w",
+      "zipProvenance": "verified_skip_trace",
+      "skipTracingDisposition": "clear_match"
+    }
+  },
+  {
+    "metadata": {
+      "savedAt": "2026-03-10T02:04:19.604Z",
+      "leadKey": "linkedin:https://www.linkedin.com/in/ACwAABv67bUB7ZJx00bIq_wFZ3dfSKdgE3Knpfk"
+    },
+    "enrichedRow": {
+      "Name": "Viviana Pichardo",
+      "Title": "School Based Behavioral Health Counselor",
+      "Company": "Drug Abuse Treatment Association, Inc",
+      "Location": "Boca Raton, Florida, United States",
+      "LinkedIn URL": "https://www.linkedin.com/in/ACwAABv67bUB7ZJx00bIq_wFZ3dfSKdgE3Knpfk",
+      "Email": "pichivv@gmail.com",
+      "Phone": "3057538219",
+      "First Name": "Viviana",
+      "Last Name": "Pichardo",
+      "City": "Boca Raton",
+      "State": "FL",
+      "Zip": "33433",
+      "Search Filter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+      "_enriched": {
+        "firstName": "Viviana",
+        "lastName": "Pichardo",
+        "zipCode": "33433",
+        "zipProvenance": "verified_skip_trace",
+        "gender": "female",
+        "genderConfidence": 90,
+        "phone": "3057538219",
+        "email": "pichivv@gmail.com",
+        "addressLine2": "FL",
+        "incomePreQual": {
+          "conservative": {
+            "min": 38000,
+            "max": 128000,
+            "p50": 83000
+          },
+          "upside": {
+            "min": 34000,
+            "max": 132000,
+            "p50": 83000
+          },
+          "estimate": {
+            "range": {
+              "min": 38000,
+              "max": 132000
+            },
+            "p50": 83000,
+            "confidence": 0.33,
+            "primaryDrivers": [
+              "company: Drug Abuse Treatment Association, Inc"
+            ],
+            "riskFlags": [
+              "Job title seniority unclear"
+            ]
+          },
+          "decision": {
+            "tier": "unknown",
+            "shouldContinueEnrichment": true,
+            "reason": "Income meets $60k threshold: Upside p50 ($83k) >= $60k minimum",
+            "band": "high",
+            "requiresStrongPositives": false,
+            "reasonCode": "INCOME_ABOVE_60K"
+          }
+        },
+        "skipTracingData": {
+          "Status": 200,
+          "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+          "Source": "tps_fsh_364_cch",
+          "Records": 1,
+          "Page": 1,
+          "PeopleDetails": [
+            {
+              "Name": "Viviana Pichardo",
+              "Link": "https://www.truepeoplesearch.com/find/person/pxn4lurn28r8n9489296l",
+              "Age": 34,
+              "Person ID": "pxn4lurn28r8n9489296l",
+              "Lives in": "Boca Raton, FL",
+              "Used to live in": "Coconut Creek FL, Miami Lakes FL, Halland...",
+              "Related to": "Jose Pichardo, Scott Rockwell, Stefania Pi..."
+            }
+          ],
+          "ageFromPersonDetails": "34"
+        },
+        "skipTracingDisposition": "clear_match",
+        "skipTracingMatchType": "exact_location",
+        "telnyxLookupData": {
+          "success": true,
+          "data": {
+            "data": {
+              "country_code": "US",
+              "national_format": "(305) 753-8219",
+              "phone_number": "+13057538219",
+              "fraud": null,
+              "carrier": {
+                "mobile_country_code": "",
+                "mobile_network_code": "",
+                "name": "T-Mobile US-SVR-10X/2",
+                "type": "mobile",
+                "error_code": null,
+                "normalized_carrier": ""
+              },
+              "caller_name": null,
+              "nnid_override": null,
+              "portability": {
+                "lrn": "786281XXXX",
+                "ported_status": "",
+                "ported_date": "",
+                "ocn": "6889",
+                "line_type": "mobile",
+                "spid": "",
+                "spid_carrier_name": "OMNIPOINT MIAMI E LICENSE, LLC",
+                "spid_carrier_type": "",
+                "altspid": "",
+                "altspid_carrier_name": "",
+                "altspid_carrier_type": "",
+                "city": "MIAMI",
+                "state": "Florida"
+              },
+              "valid_number": true,
+              "record_type": "number_lookup"
+            }
+          }
+        },
+        "lineType": "mobile",
+        "carrierName": "T-Mobile US-SVR-10X/2",
+        "carrierType": "mobile",
+        "normalizedCarrier": "",
+        "decisionReason": "PARTIAL_ENRICHMENT",
+        "decisionCodes": [
+          "PARTIAL_ENRICHMENT",
+          "SOFT_DOWNGRADE_FREE_EMAIL"
+        ],
+        "decisionConfidence": 43,
+        "decisionAction": "partial",
+        "enrichmentLevel": "partial",
+        "dncStatus": "UNKNOWN",
+        "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+        "age": "34"
+      },
+      "Line Type": "mobile",
+      "Carrier": "T-Mobile US-SVR-10X/2",
+      "Age": "34",
+      "Gender": "female",
+      "Gender Confidence": 90
+    },
+    "leadSummary": {
+      "name": "Viviana Pichardo",
+      "phone": "3057538219",
+      "dobOrAge": "34",
+      "zipcode": "33433",
+      "state": "FL",
+      "city": "Boca Raton",
+      "email": "pichivv@gmail.com",
+      "dncStatus": "UNKNOWN",
+      "income": 83000,
+      "lineType": "mobile",
+      "carrier": "T-Mobile US-SVR-10X/2",
+      "normalizedCarrier": "",
+      "searchFilter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+      "dateScraped": "2026-03-10",
+      "linkedinUrl": "https://www.linkedin.com/in/ACwAABv67bUB7ZJx00bIq_wFZ3dfSKdgE3Knpfk",
+      "zipProvenance": "verified_skip_trace",
+      "skipTracingDisposition": "clear_match"
+    }
+  },
+  {
+    "metadata": {
+      "savedAt": "2026-03-10T02:04:20.905Z",
+      "leadKey": "linkedin:https://www.linkedin.com/in/ACwAAAa2fH0BKAewbtq02VeawMklYhDU__v0UPE"
+    },
+    "enrichedRow": {
+      "Name": "Danny Kelley",
+      "Title": "Independent Writer / Author",
+      "Company": "XNS Solutions, LLC",
+      "Location": "Tampa, Florida, United States",
+      "LinkedIn URL": "https://www.linkedin.com/in/ACwAAAa2fH0BKAewbtq02VeawMklYhDU__v0UPE",
+      "Email": "dlkdesertrose@yahoo.com",
+      "Phone": "9318011500",
+      "First Name": "Danny",
+      "Last Name": "Kelley",
+      "City": "Tampa",
+      "State": "FL",
+      "Zip": "33626",
+      "Search Filter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+      "_enriched": {
+        "firstName": "Danny",
+        "lastName": "Kelley",
+        "zipCode": "33626",
+        "zipProvenance": "verified_skip_trace",
+        "gender": "male",
+        "genderConfidence": 98,
+        "phone": "9318011500",
+        "email": "dlkdesertrose@yahoo.com",
+        "addressLine2": "FL",
+        "incomePreQual": {
+          "conservative": {
+            "min": 45000,
+            "max": 135000,
+            "p50": 90000
+          },
+          "upside": {
+            "min": 50000,
+            "max": 148000,
+            "p50": 99000
+          },
+          "estimate": {
+            "range": {
+              "min": 45000,
+              "max": 148000
+            },
+            "p50": 94000,
+            "confidence": 0.33,
+            "primaryDrivers": [
+              "company: XNS Solutions, LLC"
+            ],
+            "riskFlags": [
+              "Job title seniority unclear"
+            ]
+          },
+          "decision": {
+            "tier": "unknown",
+            "shouldContinueEnrichment": true,
+            "reason": "Income meets $60k threshold: Upside p50 ($99k) >= $60k minimum",
+            "band": "high",
+            "requiresStrongPositives": false,
+            "reasonCode": "INCOME_ABOVE_60K"
+          }
+        },
+        "skipTracingData": {
+          "Status": 200,
+          "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+          "Source": "tps_fsh_438_cch",
+          "Records": 3,
+          "Page": 1,
+          "PeopleDetails": [
+            {
+              "Name": "Danny Kelley Jr",
+              "Link": "https://www.truepeoplesearch.com/find/person/pr4r9nl6u2480rll86n",
+              "Age": 55,
+              "Person ID": "pr4r9nl6u2480rll86n",
+              "Lives in": "Tampa, FL",
+              "Used to live in": "Adams TN, Knoxville TN, Savannah GA, Rive...",
+              "Related to": "Jennifer Tekstar, Danny Kelley, Deborah Ke..."
+            }
+          ],
+          "ageFromPersonDetails": "55"
+        },
+        "skipTracingDisposition": "clear_match",
+        "skipTracingMatchType": "exact_location",
+        "telnyxLookupData": {
+          "success": true,
+          "data": {
+            "data": {
+              "country_code": "US",
+              "national_format": "(931) 801-1500",
+              "phone_number": "+19318011500",
+              "fraud": null,
+              "carrier": {
+                "mobile_country_code": "",
+                "mobile_network_code": "",
+                "name": "T-Mobile US-SVR-10X/2",
+                "type": "mobile",
+                "error_code": null,
+                "normalized_carrier": ""
+              },
+              "caller_name": null,
+              "nnid_override": null,
+              "portability": {
+                "lrn": "615481XXXX",
+                "ported_status": "",
+                "ported_date": "",
+                "ocn": "7476",
+                "line_type": "mobile",
+                "spid": "",
+                "spid_carrier_name": "POWERTEL NASHVILLE LICENSES, I",
+                "spid_carrier_type": "",
+                "altspid": "",
+                "altspid_carrier_name": "",
+                "altspid_carrier_type": "",
+                "city": "NASHVILLE",
+                "state": "Tennessee"
+              },
+              "valid_number": true,
+              "record_type": "number_lookup"
+            }
+          }
+        },
+        "lineType": "mobile",
+        "carrierName": "T-Mobile US-SVR-10X/2",
+        "carrierType": "mobile",
+        "normalizedCarrier": "",
+        "decisionReason": "PARTIAL_ENRICHMENT",
+        "decisionCodes": [
+          "PARTIAL_ENRICHMENT",
+          "SOFT_DOWNGRADE_FREE_EMAIL"
+        ],
+        "decisionConfidence": 43,
+        "decisionAction": "partial",
+        "enrichmentLevel": "partial",
+        "dncStatus": "UNKNOWN",
+        "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+        "age": "55"
+      },
+      "Line Type": "mobile",
+      "Carrier": "T-Mobile US-SVR-10X/2",
+      "Age": "55",
+      "Gender": "male",
+      "Gender Confidence": 98
+    },
+    "leadSummary": {
+      "name": "Danny Kelley",
+      "phone": "9318011500",
+      "dobOrAge": "55",
+      "zipcode": "33626",
+      "state": "FL",
+      "city": "Tampa",
+      "email": "dlkdesertrose@yahoo.com",
+      "dncStatus": "UNKNOWN",
+      "income": 94000,
+      "lineType": "mobile",
+      "carrier": "T-Mobile US-SVR-10X/2",
+      "normalizedCarrier": "",
+      "searchFilter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+      "dateScraped": "2026-03-10",
+      "linkedinUrl": "https://www.linkedin.com/in/ACwAAAa2fH0BKAewbtq02VeawMklYhDU__v0UPE",
+      "zipProvenance": "verified_skip_trace",
+      "skipTracingDisposition": "clear_match"
+    }
+  },
+  {
+    "metadata": {
+      "savedAt": "2026-03-10T02:04:22.869Z",
+      "leadKey": "linkedin:https://www.linkedin.com/in/ACwAAAZen50Bger9gdY8TchPrc172UwIe-dQ0yM"
+    },
+    "enrichedRow": {
+      "Name": "Joseph Toodzio",
+      "Title": "General Manager of Route Verticals",
+      "Company": "Cents",
+      "Location": "Coral Springs, Florida, United States",
+      "LinkedIn URL": "https://www.linkedin.com/in/ACwAAAZen50Bger9gdY8TchPrc172UwIe-dQ0yM",
+      "Email": "jtoodzio@aol.com",
+      "Phone": "5617035515",
+      "First Name": "Joseph",
+      "Last Name": "Toodzio",
+      "City": "Coral Springs",
+      "State": "FL",
+      "Zip": "33065",
+      "Search Filter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+      "_enriched": {
+        "firstName": "Joseph",
+        "lastName": "Toodzio",
+        "zipCode": "33065",
+        "zipProvenance": "verified_skip_trace",
+        "gender": "male",
+        "genderConfidence": 98,
+        "phone": "5617035515",
+        "email": "jtoodzio@aol.com",
+        "addressLine2": "FL",
+        "incomePreQual": {
+          "conservative": {
+            "min": 72000,
+            "max": 192000,
+            "p50": 132000
+          },
+          "upside": {
+            "min": 67000,
+            "max": 172000,
+            "p50": 132000
+          },
+          "estimate": {
+            "range": {
+              "min": 72000,
+              "max": 172000
+            },
+            "p50": 132000,
+            "confidence": 0.55,
+            "primaryDrivers": [
+              "career ladder: manager",
+              "manager role",
+              "company: Cents"
+            ],
+            "riskFlags": [
+              "Job title seniority unclear"
+            ]
+          },
+          "decision": {
+            "tier": "unknown",
+            "shouldContinueEnrichment": true,
+            "reason": "Income meets $60k threshold: Upside p50 ($132k) >= $60k minimum",
+            "band": "high",
+            "requiresStrongPositives": false,
+            "reasonCode": "INCOME_ABOVE_60K"
+          }
+        },
+        "skipTracingData": {
+          "Status": 200,
+          "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+          "Source": "tps_fsh_255_cch",
+          "Records": 1,
+          "Page": 1,
+          "PeopleDetails": [
+            {
+              "Name": "Joseph Toodzio",
+              "Link": "https://www.truepeoplesearch.com/find/person/pu6060n686ul4u946006",
+              "Age": 50,
+              "Person ID": "pu6060n686ul4u946006",
+              "Lives in": "Coral Springs, FL",
+              "Used to live in": "Boynton Beach FL, Delray Beach FL, Boca R...",
+              "Related to": "Andrew Toodzio, Emil Toodzio, Jennifer Too..."
+            }
+          ],
+          "ageFromPersonDetails": "50"
+        },
+        "skipTracingDisposition": "clear_match",
+        "skipTracingMatchType": "exact_location",
+        "telnyxLookupData": {
+          "success": true,
+          "data": {
+            "data": {
+              "country_code": "US",
+              "national_format": "(561) 703-5515",
+              "phone_number": "+15617035515",
+              "fraud": null,
+              "carrier": {
+                "mobile_country_code": "",
+                "mobile_network_code": "",
+                "name": "Verizon Wireless:6006 - SVR/2",
+                "type": "mobile",
+                "error_code": null,
+                "normalized_carrier": "Verizon Wireless"
+              },
+              "caller_name": null,
+              "nnid_override": null,
+              "portability": {
+                "lrn": "954270XXXX",
+                "ported_status": "",
+                "ported_date": "",
+                "ocn": "6502",
+                "line_type": "mobile",
+                "spid": "",
+                "spid_carrier_name": "CELLCO PARTNERSHIP DBA VERIZON",
+                "spid_carrier_type": "",
+                "altspid": "",
+                "altspid_carrier_name": "",
+                "altspid_carrier_type": "",
+                "city": "FTLAUDERDL",
+                "state": "Florida"
+              },
+              "valid_number": true,
+              "record_type": "number_lookup"
+            }
+          }
+        },
+        "lineType": "mobile",
+        "carrierName": "Verizon Wireless:6006 - SVR/2",
+        "carrierType": "mobile",
+        "normalizedCarrier": "Verizon Wireless",
+        "decisionReason": "FULL_ENRICHMENT",
+        "decisionCodes": [
+          "FULL_ENRICHMENT",
+          "SOFT_DOWNGRADE_FREE_EMAIL"
+        ],
+        "decisionConfidence": 63,
+        "decisionAction": "full",
+        "enrichmentLevel": "full",
+        "dncStatus": "UNKNOWN",
+        "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+        "age": "50"
+      },
+      "Line Type": "mobile",
+      "Carrier": "Verizon Wireless:6006 - SVR/2",
+      "Normalized Carrier": "Verizon Wireless",
+      "Age": "50",
+      "Gender": "male",
+      "Gender Confidence": 98
+    },
+    "leadSummary": {
+      "name": "Joseph Toodzio",
+      "phone": "5617035515",
+      "dobOrAge": "50",
+      "zipcode": "33065",
+      "state": "FL",
+      "city": "Coral Springs",
+      "email": "jtoodzio@aol.com",
+      "dncStatus": "UNKNOWN",
+      "income": 132000,
+      "lineType": "mobile",
+      "carrier": "Verizon Wireless:6006 - SVR/2",
+      "normalizedCarrier": "Verizon Wireless",
+      "searchFilter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+      "dateScraped": "2026-03-10",
+      "linkedinUrl": "https://www.linkedin.com/in/ACwAAAZen50Bger9gdY8TchPrc172UwIe-dQ0yM",
+      "zipProvenance": "verified_skip_trace",
+      "skipTracingDisposition": "clear_match"
+    }
+  },
+  {
+    "metadata": {
+      "savedAt": "2026-03-10T02:04:26.313Z",
+      "leadKey": "linkedin:https://www.linkedin.com/in/ACwAABUTTuYBHo_IP0l9kNGKoehzcxC-aK3RCNM"
+    },
+    "enrichedRow": {
+      "Name": "Melissa Racicot",
+      "Title": "Senior Director of Credentialing",
+      "Company": "MedPro Healthcare Staffing",
+      "Location": "Fort Lauderdale, Florida, United States",
+      "LinkedIn URL": "https://www.linkedin.com/in/ACwAABUTTuYBHo_IP0l9kNGKoehzcxC-aK3RCNM",
+      "Email": "melfladhammer@gmail.com",
+      "Phone": "6087995325",
+      "First Name": "Melissa",
+      "Last Name": "Racicot",
+      "City": "Fort Lauderdale",
+      "State": "FL",
+      "Zip": "33308",
+      "Search Filter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+      "_enriched": {
+        "firstName": "Melissa",
+        "lastName": "Racicot",
+        "zipCode": "33308",
+        "zipProvenance": "verified_skip_trace",
+        "gender": "female",
+        "genderConfidence": 98,
+        "phone": "6087995325",
+        "email": "melfladhammer@gmail.com",
+        "addressLine2": "FL",
+        "incomePreQual": {
+          "conservative": {
+            "min": 98000,
+            "max": 266000,
+            "p50": 182000
+          },
+          "upside": {
+            "min": 113000,
+            "max": 265000,
+            "p50": 204000
+          },
+          "estimate": {
+            "range": {
+              "min": 98000,
+              "max": 265000
+            },
+            "p50": 193000,
+            "confidence": 0.7,
+            "primaryDrivers": [
+              "career ladder: director",
+              "director role",
+              "company: MedPro Healthcare Staffing"
+            ],
+            "riskFlags": [
+              "High-level title but company type may not support it"
+            ]
+          },
+          "decision": {
+            "tier": "unknown",
+            "shouldContinueEnrichment": true,
+            "reason": "Income meets $60k threshold: Upside p50 ($204k) >= $60k minimum",
+            "band": "high",
+            "requiresStrongPositives": false,
+            "reasonCode": "INCOME_ABOVE_60K"
+          }
+        },
+        "skipTracingData": {
+          "Status": 200,
+          "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+          "Source": "tps_fsh_374_cch",
+          "Records": 1,
+          "Page": 1,
+          "PeopleDetails": [
+            {
+              "Name": "Melissa Racicot",
+              "Link": "https://www.truepeoplesearch.com/find/person/pxl84066n4092u0nn8u9r",
+              "Age": 44,
+              "Person ID": "pxl84066n4092u0nn8u9r",
+              "Lives in": "Fort Lauderdale, FL",
+              "Used to live in": "Holmen WI, West Salem WI, Onalaska WI, La...",
+              "Related to": "Joseph Racicot, Lynne Racicot, Marsha Wohl..."
+            }
+          ],
+          "ageFromPersonDetails": "44"
+        },
+        "skipTracingDisposition": "clear_match",
+        "skipTracingMatchType": "exact_location",
+        "telnyxLookupData": {
+          "success": true,
+          "data": {
+            "data": {
+              "country_code": "US",
+              "national_format": "(608) 799-5325",
+              "phone_number": "+16087995325",
+              "fraud": null,
+              "carrier": {
+                "mobile_country_code": "",
+                "mobile_network_code": "",
+                "name": "T-Mobile US-SVR-10X/2",
+                "type": "mobile",
+                "error_code": null,
+                "normalized_carrier": ""
+              },
+              "caller_name": null,
+              "nnid_override": null,
+              "portability": {
+                "lrn": "608515XXXX",
+                "ported_status": "",
+                "ported_date": "",
+                "ocn": "6529",
+                "line_type": "mobile",
+                "spid": "",
+                "spid_carrier_name": "T-MOBILE USA, INC.",
+                "spid_carrier_type": "",
+                "altspid": "",
+                "altspid_carrier_name": "",
+                "altspid_carrier_type": "",
+                "city": "MADISON",
+                "state": "Wisconsin"
+              },
+              "valid_number": true,
+              "record_type": "number_lookup"
+            }
+          }
+        },
+        "lineType": "mobile",
+        "carrierName": "T-Mobile US-SVR-10X/2",
+        "carrierType": "mobile",
+        "normalizedCarrier": "",
+        "decisionReason": "FULL_ENRICHMENT",
+        "decisionCodes": [
+          "FULL_ENRICHMENT",
+          "SOFT_DOWNGRADE_FREE_EMAIL"
+        ],
+        "decisionConfidence": 63,
+        "decisionAction": "full",
+        "enrichmentLevel": "full",
+        "dncStatus": "UNKNOWN",
+        "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+        "age": "44"
+      },
+      "Line Type": "mobile",
+      "Carrier": "T-Mobile US-SVR-10X/2",
+      "Age": "44",
+      "Gender": "female",
+      "Gender Confidence": 98
+    },
+    "leadSummary": {
+      "name": "Melissa Racicot",
+      "phone": "6087995325",
+      "dobOrAge": "44",
+      "zipcode": "33308",
+      "state": "FL",
+      "city": "Fort Lauderdale",
+      "email": "melfladhammer@gmail.com",
+      "dncStatus": "UNKNOWN",
+      "income": 193000,
+      "lineType": "mobile",
+      "carrier": "T-Mobile US-SVR-10X/2",
+      "normalizedCarrier": "",
+      "searchFilter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+      "dateScraped": "2026-03-10",
+      "linkedinUrl": "https://www.linkedin.com/in/ACwAABUTTuYBHo_IP0l9kNGKoehzcxC-aK3RCNM",
+      "zipProvenance": "verified_skip_trace",
+      "skipTracingDisposition": "clear_match"
+    }
+  },
+  {
+    "metadata": {
+      "savedAt": "2026-03-10T02:04:27.637Z",
+      "leadKey": "linkedin:https://www.linkedin.com/in/ACwAAAZhFwUBkdJWIlbh5tW3t0nKSRu37_AU2Dc"
+    },
+    "enrichedRow": {
+      "Name": "AJ Giordano",
+      "Title": "Consultant - Chief Operating Officer",
+      "Company": "Dr. Pryor",
+      "Location": "Fort Lauderdale, Florida, United States",
+      "LinkedIn URL": "https://www.linkedin.com/in/ACwAAAZhFwUBkdJWIlbh5tW3t0nKSRu37_AU2Dc",
+      "Email": "species1@optonline.net",
+      "Phone": "5169826554",
+      "First Name": "AJ",
+      "Last Name": "Giordano",
+      "City": "Fort Lauderdale",
+      "State": "FL",
+      "Zip": "80524",
+      "Search Filter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+      "_enriched": {
+        "firstName": "AJ",
+        "lastName": "Giordano",
+        "zipCode": "80524",
+        "zipProvenance": "verified_skip_trace",
+        "phone": "5169826554",
+        "email": "species1@optonline.net",
+        "addressLine2": "FL",
+        "incomePreQual": {
+          "conservative": {
+            "min": 465000,
+            "max": 765000,
+            "p50": 615000
+          },
+          "upside": {
+            "min": 514000,
+            "max": 839000,
+            "p50": 676000
+          },
+          "estimate": {
+            "range": {
+              "min": 465000,
+              "max": 839000
+            },
+            "p50": 646000,
+            "confidence": 0.7,
+            "primaryDrivers": [
+              "career ladder: exec",
+              "consultant role",
+              "company: Dr. Pryor"
+            ],
+            "riskFlags": [
+              "High-level title but company type may not support it"
+            ]
+          },
+          "decision": {
+            "tier": "unknown",
+            "shouldContinueEnrichment": true,
+            "reason": "Income meets $60k threshold: Upside p50 ($676k) >= $60k minimum",
+            "band": "high",
+            "requiresStrongPositives": false,
+            "reasonCode": "INCOME_ABOVE_60K"
+          }
+        },
+        "skipTracingData": {
+          "Status": 200,
+          "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+          "Source": "tps_fsh_451_cch",
+          "Records": 1,
+          "Page": 1,
+          "PeopleDetails": [
+            {
+              "Name": "Aj Giordano",
+              "Link": "https://www.truepeoplesearch.com/find/person/p482ru862u0l64684448",
+              "Age": 53,
+              "Person ID": "p482ru862u0l64684448",
+              "Lives in": "Fort Collins, CO",
+              "Used to live in": "Salinas CA, Ventura CA, Lindenhurst NY, T...",
+              "Related to": "Anthony Giordano, Anthony Giordano, Joan V..."
+            }
+          ],
+          "ageFromPersonDetails": "53"
+        },
+        "skipTracingDisposition": "clear_match",
+        "skipTracingMatchType": "initial_last",
+        "telnyxLookupData": {
+          "success": true,
+          "data": {
+            "data": {
+              "country_code": "US",
+              "national_format": "(516) 982-6554",
+              "phone_number": "+15169826554",
+              "fraud": null,
+              "carrier": {
+                "mobile_country_code": "",
+                "mobile_network_code": "",
+                "name": "Verizon Wireless:6006 - SVR/2",
+                "type": "mobile",
+                "error_code": null,
+                "normalized_carrier": "Verizon Wireless"
+              },
+              "caller_name": null,
+              "nnid_override": null,
+              "portability": {
+                "lrn": "631599XXXX",
+                "ported_status": "",
+                "ported_date": "",
+                "ocn": "6959",
+                "line_type": "mobile",
+                "spid": "",
+                "spid_carrier_name": "CELLCO PARTNERSHIP DBA VERIZON",
+                "spid_carrier_type": "",
+                "altspid": "",
+                "altspid_carrier_name": "",
+                "altspid_carrier_type": "",
+                "city": "RIVERHEAD",
+                "state": "New York"
+              },
+              "valid_number": true,
+              "record_type": "number_lookup"
+            }
+          }
+        },
+        "lineType": "mobile",
+        "carrierName": "Verizon Wireless:6006 - SVR/2",
+        "carrierType": "mobile",
+        "normalizedCarrier": "Verizon Wireless",
+        "decisionReason": "FULL_ENRICHMENT",
+        "decisionCodes": [
+          "FULL_ENRICHMENT"
+        ],
+        "decisionConfidence": 60,
+        "decisionAction": "full",
+        "enrichmentLevel": "full",
+        "dncStatus": "UNKNOWN",
+        "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+        "age": "53"
+      },
+      "Line Type": "mobile",
+      "Carrier": "Verizon Wireless:6006 - SVR/2",
+      "Normalized Carrier": "Verizon Wireless",
+      "Age": "53"
+    },
+    "leadSummary": {
+      "name": "AJ Giordano",
+      "phone": "5169826554",
+      "dobOrAge": "53",
+      "zipcode": "80524",
+      "state": "FL",
+      "city": "Fort Lauderdale",
+      "email": "species1@optonline.net",
+      "dncStatus": "UNKNOWN",
+      "income": 646000,
+      "lineType": "mobile",
+      "carrier": "Verizon Wireless:6006 - SVR/2",
+      "normalizedCarrier": "Verizon Wireless",
+      "searchFilter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+      "dateScraped": "2026-03-10",
+      "linkedinUrl": "https://www.linkedin.com/in/ACwAAAZhFwUBkdJWIlbh5tW3t0nKSRu37_AU2Dc",
+      "zipProvenance": "verified_skip_trace",
+      "skipTracingDisposition": "clear_match",
+      "needsVerification": true
+    }
+  },
+  {
+    "metadata": {
+      "savedAt": "2026-03-10T02:04:28.727Z",
+      "leadKey": "linkedin:https://www.linkedin.com/in/ACwAAAEWh9EBZAR5vW74uJlNa_cHyy5a3ZntfCs"
+    },
+    "enrichedRow": {
+      "Name": "Stephanie Daniels",
+      "Title": "Senior Vice President, Enterprise Operations",
+      "Company": "Ovation Healthcare",
+      "Location": "North Port, Florida, United States",
+      "LinkedIn URL": "https://www.linkedin.com/in/ACwAAAEWh9EBZAR5vW74uJlNa_cHyy5a3ZntfCs",
+      "Email": "stephmj7@gmail.com",
+      "Phone": "6157677189",
+      "First Name": "Stephanie",
+      "Last Name": "Daniels",
+      "City": "North Port",
+      "State": "FL",
+      "Zip": "37167",
+      "Search Filter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+      "_enriched": {
+        "firstName": "Stephanie",
+        "lastName": "Daniels",
+        "zipCode": "37167",
+        "zipProvenance": "verified_skip_trace",
+        "gender": "female",
+        "genderConfidence": 98,
+        "phone": "6157677189",
+        "email": "stephmj7@gmail.com",
+        "addressLine2": "FL",
+        "incomePreQual": {
+          "conservative": {
+            "min": 526000,
+            "max": 826000,
+            "p50": 676000
+          },
+          "upside": {
+            "min": 582000,
+            "max": 907000,
+            "p50": 744000
+          },
+          "estimate": {
+            "range": {
+              "min": 526000,
+              "max": 907000
+            },
+            "p50": 710000,
+            "confidence": 0.7,
+            "primaryDrivers": [
+              "career ladder: exec",
+              "operations role",
+              "company: Ovation Healthcare"
+            ],
+            "riskFlags": [
+              "High-level title but company type may not support it"
+            ]
+          },
+          "decision": {
+            "tier": "unknown",
+            "shouldContinueEnrichment": true,
+            "reason": "Income meets $60k threshold: Upside p50 ($744k) >= $60k minimum",
+            "band": "high",
+            "requiresStrongPositives": false,
+            "reasonCode": "INCOME_ABOVE_60K"
+          }
+        },
+        "skipTracingData": {
+          "Status": 200,
+          "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+          "Source": "tps_fsh_366_cch",
+          "Records": 1,
+          "Page": 1,
+          "PeopleDetails": [
+            {
+              "Name": "Stephanie Daniels",
+              "Link": "https://www.truepeoplesearch.com/find/person/pxnull298l66869060r6",
+              "Age": 56,
+              "Person ID": "pxnull298l66869060r6",
+              "Lives in": "Smyrna, TN",
+              "Used to live in": "North Port FL, Milan TN, Franklin TN, Dal...",
+              "Related to": "Anthony Martin, Carl Daniels, Ethan Martin..."
+            }
+          ],
+          "ageFromPersonDetails": "56"
+        },
+        "skipTracingDisposition": "clear_match",
+        "skipTracingMatchType": "name_only",
+        "telnyxLookupData": {
+          "success": true,
+          "data": {
+            "data": {
+              "country_code": "US",
+              "national_format": "(615) 767-7189",
+              "phone_number": "+16157677189",
+              "fraud": null,
+              "carrier": {
+                "mobile_country_code": "",
+                "mobile_network_code": "",
+                "name": "Cingular Wireless/2",
+                "type": "mobile",
+                "error_code": null,
+                "normalized_carrier": "AT&T"
+              },
+              "caller_name": null,
+              "nnid_override": null,
+              "portability": {
+                "lrn": "615502XXXX",
+                "ported_status": "",
+                "ported_date": "",
+                "ocn": "6214",
+                "line_type": "mobile",
+                "spid": "",
+                "spid_carrier_name": "NEW CINGULAR WIRELESS PCS, LLC",
+                "spid_carrier_type": "",
+                "altspid": "",
+                "altspid_carrier_name": "",
+                "altspid_carrier_type": "",
+                "city": "GALLATIN",
+                "state": "Tennessee"
+              },
+              "valid_number": true,
+              "record_type": "number_lookup"
+            }
+          }
+        },
+        "lineType": "mobile",
+        "carrierName": "Cingular Wireless/2",
+        "carrierType": "mobile",
+        "normalizedCarrier": "AT&T",
+        "decisionReason": "FULL_ENRICHMENT",
+        "decisionCodes": [
+          "FULL_ENRICHMENT",
+          "SOFT_DOWNGRADE_FREE_EMAIL"
+        ],
+        "decisionConfidence": 63,
+        "decisionAction": "full",
+        "enrichmentLevel": "full",
+        "dncStatus": "UNKNOWN",
+        "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+        "age": "56"
+      },
+      "Line Type": "mobile",
+      "Carrier": "Cingular Wireless/2",
+      "Normalized Carrier": "AT&T",
+      "Age": "56",
+      "Gender": "female",
+      "Gender Confidence": 98
+    },
+    "leadSummary": {
+      "name": "Stephanie Daniels",
+      "phone": "6157677189",
+      "dobOrAge": "56",
+      "zipcode": "37167",
+      "state": "FL",
+      "city": "North Port",
+      "email": "stephmj7@gmail.com",
+      "dncStatus": "UNKNOWN",
+      "income": 710000,
+      "lineType": "mobile",
+      "carrier": "Cingular Wireless/2",
+      "normalizedCarrier": "AT&T",
+      "searchFilter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+      "dateScraped": "2026-03-10",
+      "linkedinUrl": "https://www.linkedin.com/in/ACwAAAEWh9EBZAR5vW74uJlNa_cHyy5a3ZntfCs",
+      "zipProvenance": "verified_skip_trace",
+      "skipTracingDisposition": "clear_match",
+      "needsVerification": true
+    }
+  },
+  {
+    "metadata": {
+      "savedAt": "2026-03-10T02:04:29.936Z",
+      "leadKey": "linkedin:https://www.linkedin.com/in/ACwAABW86QcBWrkWxxGV5vdcG1ryEINuh5_xXsc"
+    },
+    "enrichedRow": {
+      "Name": "Monica Ruscalleda",
+      "Title": "Chief Executive Officer",
+      "Company": "Complere Credentialing LLC",
+      "Location": "Deltona, Florida, United States",
+      "LinkedIn URL": "https://www.linkedin.com/in/ACwAABW86QcBWrkWxxGV5vdcG1ryEINuh5_xXsc",
+      "Email": "mruscalleda77@gmail.com",
+      "Phone": "3865620951",
+      "First Name": "Monica",
+      "Last Name": "Ruscalleda",
+      "City": "Deltona",
+      "State": "FL",
+      "Zip": "32738",
+      "Search Filter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+      "_enriched": {
+        "firstName": "Monica",
+        "lastName": "Ruscalleda",
+        "zipCode": "32738",
+        "zipProvenance": "verified_skip_trace",
+        "gender": "female",
+        "genderConfidence": 98,
+        "phone": "3865620951",
+        "email": "mruscalleda77@gmail.com",
+        "addressLine2": "FL",
+        "incomePreQual": {
+          "conservative": {
+            "min": 103000,
+            "max": 271000,
+            "p50": 187000
+          },
+          "upside": {
+            "min": 507000,
+            "max": 288000,
+            "p50": 221000
+          },
+          "estimate": {
+            "range": {
+              "min": 103000,
+              "max": 288000
+            },
+            "p50": 204000,
+            "confidence": 0.48,
+            "primaryDrivers": [
+              "career ladder: exec",
+              "executive role",
+              "company: Complere Credentialing LLC"
+            ],
+            "riskFlags": [
+              "Title appears aspirational for company type",
+              "High-level title but company type may not support it"
+            ]
+          },
+          "decision": {
+            "tier": "unknown",
+            "shouldContinueEnrichment": true,
+            "reason": "Income meets $60k threshold: Upside p50 ($221k) >= $60k minimum",
+            "band": "high",
+            "requiresStrongPositives": false,
+            "reasonCode": "INCOME_ABOVE_60K"
+          }
+        },
+        "skipTracingData": {
+          "Status": 200,
+          "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+          "Source": "tps_fsh_419_cch",
+          "Records": 1,
+          "Page": 1,
+          "PeopleDetails": [
+            {
+              "Name": "Monica Ruscalleda",
+              "Link": "https://www.truepeoplesearch.com/find/person/px6r282l668n48nu4848r",
+              "Age": 48,
+              "Person ID": "px6r282l668n48nu4848r",
+              "Lives in": "Deltona, FL",
+              "Used to live in": "Ridgewood NY, Islip NY, Brooklyn NY, Cass...",
+              "Related to": "Angel Mera, Chelsea Mera, Damian Ruscalled..."
+            }
+          ],
+          "ageFromPersonDetails": "48"
+        },
+        "skipTracingDisposition": "clear_match",
+        "skipTracingMatchType": "exact_location",
+        "telnyxLookupData": {
+          "success": true,
+          "data": {
+            "data": {
+              "country_code": "US",
+              "national_format": "(386) 562-0951",
+              "phone_number": "+13865620951",
+              "fraud": null,
+              "carrier": {
+                "mobile_country_code": "",
+                "mobile_network_code": "",
+                "name": "Verizon Wireless:6006 - SVR/2",
+                "type": "mobile",
+                "error_code": null,
+                "normalized_carrier": "Verizon Wireless"
+              },
+              "caller_name": null,
+              "nnid_override": null,
+              "portability": {
+                "lrn": "386846XXXX",
+                "ported_status": "",
+                "ported_date": "",
+                "ocn": "6502",
+                "line_type": "mobile",
+                "spid": "",
+                "spid_carrier_name": "CELLCO PARTNERSHIP DBA VERIZON",
+                "spid_carrier_type": "",
+                "altspid": "",
+                "altspid_carrier_name": "",
+                "altspid_carrier_type": "",
+                "city": "DAYTONABCH",
+                "state": "Florida"
+              },
+              "valid_number": true,
+              "record_type": "number_lookup"
+            }
+          }
+        },
+        "lineType": "mobile",
+        "carrierName": "Verizon Wireless:6006 - SVR/2",
+        "carrierType": "mobile",
+        "normalizedCarrier": "Verizon Wireless",
+        "decisionReason": "FULL_ENRICHMENT",
+        "decisionCodes": [
+          "FULL_ENRICHMENT",
+          "SOFT_DOWNGRADE_FREE_EMAIL"
+        ],
+        "decisionConfidence": 70,
+        "decisionAction": "full",
+        "enrichmentLevel": "full",
+        "dncStatus": "UNKNOWN",
+        "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+        "age": "48"
+      },
+      "Line Type": "mobile",
+      "Carrier": "Verizon Wireless:6006 - SVR/2",
+      "Normalized Carrier": "Verizon Wireless",
+      "Age": "48",
+      "Gender": "female",
+      "Gender Confidence": 98
+    },
+    "leadSummary": {
+      "name": "Monica Ruscalleda",
+      "phone": "3865620951",
+      "dobOrAge": "48",
+      "zipcode": "32738",
+      "state": "FL",
+      "city": "Deltona",
+      "email": "mruscalleda77@gmail.com",
+      "dncStatus": "UNKNOWN",
+      "income": 204000,
+      "lineType": "mobile",
+      "carrier": "Verizon Wireless:6006 - SVR/2",
+      "normalizedCarrier": "Verizon Wireless",
+      "searchFilter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+      "dateScraped": "2026-03-10",
+      "linkedinUrl": "https://www.linkedin.com/in/ACwAABW86QcBWrkWxxGV5vdcG1ryEINuh5_xXsc",
+      "zipProvenance": "verified_skip_trace",
+      "skipTracingDisposition": "clear_match"
+    }
+  },
+  {
+    "metadata": {
+      "savedAt": "2026-03-10T02:04:32.338Z",
+      "leadKey": "linkedin:https://www.linkedin.com/in/ACwAAAbJb8ABYJw2E4LTiVoLCUigR8Ltzx4KiRk"
+    },
+    "enrichedRow": {
+      "Name": "James Lawes",
+      "Title": "Director | Talent Strategy & Structured Hiring Engagements Velocity Resource Group",
+      "Company": "Velocity Resource Group",
+      "Location": "Tampa, Florida, United States",
+      "LinkedIn URL": "https://www.linkedin.com/in/ACwAAAbJb8ABYJw2E4LTiVoLCUigR8Ltzx4KiRk",
+      "Email": "",
+      "Phone": "8133735673",
+      "First Name": "James",
+      "Last Name": "Lawes",
+      "City": "Tampa",
+      "State": "FL",
+      "Zip": "33610",
+      "Search Filter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+      "_enriched": {
+        "firstName": "James",
+        "lastName": "Lawes",
+        "zipCode": "33610",
+        "zipProvenance": "verified_skip_trace",
+        "gender": "male",
+        "genderConfidence": 98,
+        "phone": "8133735673",
+        "addressLine2": "FL",
+        "incomePreQual": {
+          "conservative": {
+            "min": 117000,
+            "max": 285000,
+            "p50": 201000
+          },
+          "upside": {
+            "min": 134000,
+            "max": 292000,
+            "p50": 225000
+          },
+          "estimate": {
+            "range": {
+              "min": 117000,
+              "max": 292000
+            },
+            "p50": 213000,
+            "confidence": 0.43,
+            "primaryDrivers": [
+              "career ladder: director",
+              "director role",
+              "company: Velocity Resource Group"
+            ],
+            "riskFlags": [
+              "High-level title but company type may not support it",
+              "Job title seniority unclear"
+            ]
+          },
+          "decision": {
+            "tier": "unknown",
+            "shouldContinueEnrichment": true,
+            "reason": "Income meets $60k threshold: Upside p50 ($225k) >= $60k minimum",
+            "band": "high",
+            "requiresStrongPositives": false,
+            "reasonCode": "INCOME_ABOVE_60K"
+          }
+        },
+        "skipTracingData": {
+          "Status": 200,
+          "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+          "Source": "tps_fsh_577_cch",
+          "Records": 5,
+          "Page": 1,
+          "PeopleDetails": [
+            {
+              "Name": "James Lawes",
+              "Link": "https://www.truepeoplesearch.com/find/person/p8l4800r0nlu8ur24u2u",
+              "Age": 46,
+              "Person ID": "p8l4800r0nlu8ur24u2u",
+              "Lives in": "Tampa, FL",
+              "Used to live in": "Temple Terrace FL, Brandon FL, Miami FL, ...",
+              "Related to": "Donna Wright, Jameez Lawes, James Lawes, S..."
+            }
+          ],
+          "ageFromPersonDetails": "46"
+        },
+        "skipTracingDisposition": "clear_match",
+        "skipTracingMatchType": "exact_location",
+        "telnyxLookupData": {
+          "success": true,
+          "data": {
+            "data": {
+              "country_code": "US",
+              "national_format": "(813) 373-5673",
+              "phone_number": "+18133735673",
+              "fraud": null,
+              "carrier": {
+                "mobile_country_code": "",
+                "mobile_network_code": "",
+                "name": "BHNIS - Florida, LLC: 927D - NSR/1",
+                "type": "fixed line",
+                "error_code": null,
+                "normalized_carrier": ""
+              },
+              "caller_name": null,
+              "nnid_override": null,
+              "portability": {
+                "lrn": "813938XXXX",
+                "ported_status": "",
+                "ported_date": "",
+                "ocn": "927D",
+                "line_type": "fixed line",
+                "spid": "",
+                "spid_carrier_name": "BRIGHT HOUSE NTWS INFORMATION ",
+                "spid_carrier_type": "",
+                "altspid": "",
+                "altspid_carrier_name": "",
+                "altspid_carrier_type": "",
+                "city": "TAMPASTH",
+                "state": "Florida"
+              },
+              "valid_number": true,
+              "record_type": "number_lookup"
+            }
+          }
+        },
+        "lineType": "fixed line",
+        "carrierName": "BHNIS - Florida, LLC: 927D - NSR/1",
+        "carrierType": "fixed line",
+        "normalizedCarrier": "",
+        "decisionReason": "FULL_ENRICHMENT",
+        "decisionCodes": [
+          "FULL_ENRICHMENT"
+        ],
+        "decisionConfidence": 84,
+        "decisionAction": "full",
+        "enrichmentLevel": "full",
+        "dncStatus": "UNKNOWN"
+      },
+      "Line Type": "fixed line",
+      "Carrier": "BHNIS - Florida, LLC: 927D - NSR/1",
+      "Gender": "male",
+      "Gender Confidence": 98
+    },
+    "leadSummary": {
+      "name": "James Lawes",
+      "phone": "8133735673",
+      "dobOrAge": "",
+      "zipcode": "33610",
+      "state": "FL",
+      "city": "Tampa",
+      "email": "",
+      "dncStatus": "UNKNOWN",
+      "income": 213000,
+      "lineType": "fixed line",
+      "carrier": "BHNIS - Florida, LLC: 927D - NSR/1",
+      "normalizedCarrier": "",
+      "searchFilter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+      "dateScraped": "2026-03-10",
+      "linkedinUrl": "https://www.linkedin.com/in/ACwAAAbJb8ABYJw2E4LTiVoLCUigR8Ltzx4KiRk",
+      "zipProvenance": "verified_skip_trace",
+      "skipTracingDisposition": "clear_match"
+    }
+  },
+  {
+    "metadata": {
+      "savedAt": "2026-03-10T02:04:34.473Z",
+      "leadKey": "linkedin:https://www.linkedin.com/in/ACwAAAbF06YBeGOlHP7MBCbQyIu5rY0sowas_Kw"
+    },
+    "enrichedRow": {
+      "Name": "Blaine Patterson",
+      "Title": "Vice President of Business Development",
+      "Company": "Teamworks",
+      "Location": "Tampa, Florida, United States",
+      "LinkedIn URL": "https://www.linkedin.com/in/ACwAAAbF06YBeGOlHP7MBCbQyIu5rY0sowas_Kw",
+      "Email": "blainep22@gmail.com",
+      "Phone": "4129530526",
+      "First Name": "Blaine",
+      "Last Name": "Patterson",
+      "City": "Tampa",
+      "State": "FL",
+      "Zip": "33602",
+      "Search Filter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+      "_enriched": {
+        "firstName": "Blaine",
+        "lastName": "Patterson",
+        "zipCode": "33602",
+        "zipProvenance": "verified_skip_trace",
+        "gender": "female",
+        "genderConfidence": 92,
+        "phone": "4129530526",
+        "email": "blainep22@gmail.com",
+        "addressLine2": "FL",
+        "incomePreQual": {
+          "conservative": {
+            "min": 520000,
+            "max": 820000,
+            "p50": 670000
+          },
+          "upside": {
+            "min": 574000,
+            "max": 899000,
+            "p50": 737000
+          },
+          "estimate": {
+            "range": {
+              "min": 520000,
+              "max": 899000
+            },
+            "p50": 703000,
+            "confidence": 0.48,
+            "primaryDrivers": [
+              "career ladder: exec",
+              "company: Teamworks"
+            ],
+            "riskFlags": [
+              "High-level title but company type may not support it"
+            ]
+          },
+          "decision": {
+            "tier": "unknown",
+            "shouldContinueEnrichment": true,
+            "reason": "Income meets $60k threshold: Upside p50 ($737k) >= $60k minimum",
+            "band": "high",
+            "requiresStrongPositives": false,
+            "reasonCode": "INCOME_ABOVE_60K"
+          }
+        },
+        "skipTracingData": {
+          "Status": 200,
+          "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+          "Source": "tps_fsh_471_cch",
+          "Records": 1,
+          "Page": 1,
+          "PeopleDetails": [
+            {
+              "Name": "Blaine Patterson",
+              "Link": "https://www.truepeoplesearch.com/find/person/px286nnl984248n4n984u",
+              "Age": 48,
+              "Person ID": "px286nnl984248n4n984u",
+              "Lives in": "Tampa, FL",
+              "Used to live in": "Brookhaven GA, Dallas TX, Wexford PA, Sav...",
+              "Related to": "Carol Patterson, Darrell Patterson, Giovan..."
+            }
+          ],
+          "ageFromPersonDetails": "48"
+        },
+        "skipTracingDisposition": "clear_match",
+        "skipTracingMatchType": "exact_location",
+        "telnyxLookupData": {
+          "success": true,
+          "data": {
+            "data": {
+              "country_code": "US",
+              "national_format": "(412) 953-0526",
+              "phone_number": "+14129530526",
+              "fraud": null,
+              "carrier": {
+                "mobile_country_code": "",
+                "mobile_network_code": "",
+                "name": "NEW CINGULAR WIRELESS PCS, LLC - IL",
+                "type": "mobile",
+                "error_code": null,
+                "normalized_carrier": "AT&T"
+              },
+              "caller_name": null,
+              "nnid_override": null,
+              "portability": {
+                "lrn": null,
+                "ported_status": "",
+                "ported_date": "",
+                "ocn": "6534",
+                "line_type": "mobile",
+                "spid": "",
+                "spid_carrier_name": "NEW CINGULAR WIRELESS PCS, LLC",
+                "spid_carrier_type": "",
+                "altspid": "",
+                "altspid_carrier_name": "",
+                "altspid_carrier_type": "",
+                "city": "PTTSBGZON1",
+                "state": "Pennsylvania"
+              },
+              "valid_number": true,
+              "record_type": "number_lookup"
+            }
+          }
+        },
+        "lineType": "mobile",
+        "carrierName": "NEW CINGULAR WIRELESS PCS, LLC - IL",
+        "carrierType": "mobile",
+        "normalizedCarrier": "AT&T",
+        "decisionReason": "PARTIAL_ENRICHMENT",
+        "decisionCodes": [
+          "PARTIAL_ENRICHMENT",
+          "SOFT_DOWNGRADE_FREE_EMAIL"
+        ],
+        "decisionConfidence": 36,
+        "decisionAction": "partial",
+        "enrichmentLevel": "partial",
+        "dncStatus": "UNKNOWN",
+        "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+        "age": "48"
+      },
+      "Line Type": "mobile",
+      "Carrier": "NEW CINGULAR WIRELESS PCS, LLC - IL",
+      "Normalized Carrier": "AT&T",
+      "Age": "48",
+      "Gender": "female",
+      "Gender Confidence": 92
+    },
+    "leadSummary": {
+      "name": "Blaine Patterson",
+      "phone": "4129530526",
+      "dobOrAge": "48",
+      "zipcode": "33602",
+      "state": "FL",
+      "city": "Tampa",
+      "email": "blainep22@gmail.com",
+      "dncStatus": "UNKNOWN",
+      "income": 703000,
+      "lineType": "mobile",
+      "carrier": "NEW CINGULAR WIRELESS PCS, LLC - IL",
+      "normalizedCarrier": "AT&T",
+      "searchFilter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+      "dateScraped": "2026-03-10",
+      "linkedinUrl": "https://www.linkedin.com/in/ACwAAAbF06YBeGOlHP7MBCbQyIu5rY0sowas_Kw",
+      "zipProvenance": "verified_skip_trace",
+      "skipTracingDisposition": "clear_match"
+    }
+  },
+  {
+    "metadata": {
+      "savedAt": "2026-03-10T02:04:36.931Z",
+      "leadKey": "linkedin:https://www.linkedin.com/in/ACwAAExE_OIBa9RT8IzVy_RcvYPXzXcaCgOW8RM"
+    },
+    "enrichedRow": {
+      "Name": "Emmygell Recarte MBA",
+      "Title": "Admissions Director/ External Marketing",
+      "Company": "St. Andrew",
+      "Location": "Land O' Lakes, Florida, United States",
+      "LinkedIn URL": "https://www.linkedin.com/in/ACwAAExE_OIBa9RT8IzVy_RcvYPXzXcaCgOW8RM",
+      "Email": "emmygellrct8@gmail.com",
+      "Phone": "7863070541",
+      "First Name": "Emmygell",
+      "Last Name": "Recarte MBA",
+      "City": "Land O' Lakes",
+      "State": "FL",
+      "Zip": "33189",
+      "Search Filter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+      "_enriched": {
+        "firstName": "Emmygell",
+        "lastName": "Recarte",
+        "zipCode": "33189",
+        "zipProvenance": "verified_skip_trace",
+        "phone": "7863070541",
+        "email": "emmygellrct8@gmail.com",
+        "addressLine2": "FL",
+        "incomePreQual": {
+          "conservative": {
+            "min": 156000,
+            "max": 324000,
+            "p50": 240000
+          },
+          "upside": {
+            "min": 178000,
+            "max": 350000,
+            "p50": 269000
+          },
+          "estimate": {
+            "range": {
+              "min": 156000,
+              "max": 350000
+            },
+            "p50": 255000,
+            "confidence": 0.43,
+            "primaryDrivers": [
+              "career ladder: director",
+              "director role",
+              "company: St. Andrew"
+            ],
+            "riskFlags": [
+              "High-level title but company type may not support it",
+              "Job title seniority unclear"
+            ]
+          },
+          "decision": {
+            "tier": "unknown",
+            "shouldContinueEnrichment": true,
+            "reason": "Income meets $60k threshold: Upside p50 ($269k) >= $60k minimum",
+            "band": "high",
+            "requiresStrongPositives": false,
+            "reasonCode": "INCOME_ABOVE_60K"
+          }
+        },
+        "skipTracingData": {
+          "Status": 200,
+          "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+          "Source": "tps_fsh_272_cch",
+          "Records": 1,
+          "Page": 1,
+          "PeopleDetails": [
+            {
+              "Name": "Emmygell Recarte",
+              "Link": "https://www.truepeoplesearch.com/find/person/pxl86n826ur2u8u66r6nu",
+              "Age": 31,
+              "Person ID": "pxl86n826ur2u8u66r6nu",
+              "Lives in": "Cutler Bay, FL",
+              "Used to live in": "Land O Lakes FL",
+              "Related to": "Luz Recarte, Marco Recarte, Norma Recarte,..."
+            }
+          ],
+          "ageFromPersonDetails": "31"
+        },
+        "skipTracingDisposition": "clear_match",
+        "skipTracingMatchType": "name_only",
+        "telnyxLookupData": {
+          "success": true,
+          "data": {
+            "data": {
+              "country_code": "US",
+              "national_format": "(786) 307-0541",
+              "phone_number": "+17863070541",
+              "fraud": null,
+              "carrier": {
+                "mobile_country_code": "",
+                "mobile_network_code": "",
+                "name": "Cingular Wireless/2",
+                "type": "mobile",
+                "error_code": null,
+                "normalized_carrier": "AT&T"
+              },
+              "caller_name": null,
+              "nnid_override": null,
+              "portability": {
+                "lrn": "786266XXXX",
+                "ported_status": "",
+                "ported_date": "",
+                "ocn": "6214",
+                "line_type": "mobile",
+                "spid": "",
+                "spid_carrier_name": "NEW CINGULAR WIRELESS PCS, LLC",
+                "spid_carrier_type": "",
+                "altspid": "",
+                "altspid_carrier_name": "",
+                "altspid_carrier_type": "",
+                "city": "MIAMI",
+                "state": "Florida"
+              },
+              "valid_number": true,
+              "record_type": "number_lookup"
+            }
+          }
+        },
+        "lineType": "mobile",
+        "carrierName": "Cingular Wireless/2",
+        "carrierType": "mobile",
+        "normalizedCarrier": "AT&T",
+        "decisionReason": "FULL_ENRICHMENT",
+        "decisionCodes": [
+          "FULL_ENRICHMENT",
+          "SOFT_DOWNGRADE_FREE_EMAIL"
+        ],
+        "decisionConfidence": 63,
+        "decisionAction": "full",
+        "enrichmentLevel": "full",
+        "dncStatus": "UNKNOWN",
+        "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+        "age": "31"
+      },
+      "Line Type": "mobile",
+      "Carrier": "Cingular Wireless/2",
+      "Normalized Carrier": "AT&T",
+      "Age": "31"
+    },
+    "leadSummary": {
+      "name": "Emmygell Recarte MBA",
+      "phone": "7863070541",
+      "dobOrAge": "31",
+      "zipcode": "33189",
+      "state": "FL",
+      "city": "Land O' Lakes",
+      "email": "emmygellrct8@gmail.com",
+      "dncStatus": "UNKNOWN",
+      "income": 255000,
+      "lineType": "mobile",
+      "carrier": "Cingular Wireless/2",
+      "normalizedCarrier": "AT&T",
+      "searchFilter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+      "dateScraped": "2026-03-10",
+      "linkedinUrl": "https://www.linkedin.com/in/ACwAAExE_OIBa9RT8IzVy_RcvYPXzXcaCgOW8RM",
+      "zipProvenance": "verified_skip_trace",
+      "skipTracingDisposition": "clear_match",
+      "needsVerification": true
+    }
+  },
+  {
+    "metadata": {
+      "savedAt": "2026-03-10T02:04:38.328Z",
+      "leadKey": "linkedin:https://www.linkedin.com/in/ACwAAAYH5-UBip62Z59m2J_U_1lhvEZwRHyN7do"
+    },
+    "enrichedRow": {
+      "Name": "Ben Galin",
+      "Title": "Sr. Product Strategy Director- Coordinated Care",
+      "Company": "Bamboo Health",
+      "Location": "Estero, Florida, United States",
+      "LinkedIn URL": "https://www.linkedin.com/in/ACwAAAYH5-UBip62Z59m2J_U_1lhvEZwRHyN7do",
+      "Email": "bgalin@hotmail.com",
+      "Phone": "5616854444",
+      "First Name": "Ben",
+      "Last Name": "Galin",
+      "City": "Estero",
+      "State": "FL",
+      "Zip": "33928",
+      "Search Filter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+      "_enriched": {
+        "firstName": "Ben",
+        "lastName": "Galin",
+        "zipCode": "33928",
+        "zipProvenance": "verified_skip_trace",
+        "gender": "male",
+        "genderConfidence": 98,
+        "phone": "5616854444",
+        "email": "bgalin@hotmail.com",
+        "addressLine2": "FL",
+        "incomePreQual": {
+          "conservative": {
+            "min": 204000,
+            "max": 372000,
+            "p50": 288000
+          },
+          "upside": {
+            "min": 232000,
+            "max": 414000,
+            "p50": 323000
+          },
+          "estimate": {
+            "range": {
+              "min": 204000,
+              "max": 414000
+            },
+            "p50": 305000,
+            "confidence": 0.7,
+            "primaryDrivers": [
+              "career ladder: director",
+              "director role",
+              "company: Bamboo Health"
+            ],
+            "riskFlags": [
+              "High-level title but company type may not support it"
+            ]
+          },
+          "decision": {
+            "tier": "unknown",
+            "shouldContinueEnrichment": true,
+            "reason": "Income meets $60k threshold: Upside p50 ($323k) >= $60k minimum",
+            "band": "high",
+            "requiresStrongPositives": false,
+            "reasonCode": "INCOME_ABOVE_60K"
+          }
+        },
+        "skipTracingData": {
+          "Status": 200,
+          "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+          "Source": "tps_fsh_668_cch",
+          "Records": 1,
+          "Page": 1,
+          "PeopleDetails": [
+            {
+              "Name": "Ben Galin",
+              "Link": "https://www.truepeoplesearch.com/find/person/p4l0r2n694292rr492r0",
+              "Age": 48,
+              "Person ID": "p4l0r2n694292rr492r0",
+              "Lives in": "Estero, FL",
+              "Used to live in": "Boynton Beach FL, Wellington FL, Harrison...",
+              "Related to": "Alene Galin, Ira Galin, Jesus Mora, Kami G..."
+            }
+          ],
+          "ageFromPersonDetails": "48"
+        },
+        "skipTracingDisposition": "clear_match",
+        "skipTracingMatchType": "exact_location",
+        "telnyxLookupData": {
+          "success": true,
+          "data": {
+            "data": {
+              "country_code": "US",
+              "national_format": "(561) 685-4444",
+              "phone_number": "+15616854444",
+              "fraud": null,
+              "carrier": {
+                "mobile_country_code": "",
+                "mobile_network_code": "",
+                "name": "Verizon Wireless:6006 - SVR/2",
+                "type": "mobile",
+                "error_code": null,
+                "normalized_carrier": "Verizon Wireless"
+              },
+              "caller_name": null,
+              "nnid_override": null,
+              "portability": {
+                "lrn": "561676XXXX",
+                "ported_status": "",
+                "ported_date": "",
+                "ocn": "6502",
+                "line_type": "mobile",
+                "spid": "",
+                "spid_carrier_name": "CELLCO PARTNERSHIP DBA VERIZON",
+                "spid_carrier_type": "",
+                "altspid": "",
+                "altspid_carrier_name": "",
+                "altspid_carrier_type": "",
+                "city": "WPALMBEACH",
+                "state": "Florida"
+              },
+              "valid_number": true,
+              "record_type": "number_lookup"
+            }
+          }
+        },
+        "lineType": "mobile",
+        "carrierName": "Verizon Wireless:6006 - SVR/2",
+        "carrierType": "mobile",
+        "normalizedCarrier": "Verizon Wireless",
+        "decisionReason": "FULL_ENRICHMENT",
+        "decisionCodes": [
+          "FULL_ENRICHMENT",
+          "SOFT_DOWNGRADE_FREE_EMAIL"
+        ],
+        "decisionConfidence": 63,
+        "decisionAction": "full",
+        "enrichmentLevel": "full",
+        "dncStatus": "UNKNOWN",
+        "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+        "age": "48"
+      },
+      "Line Type": "mobile",
+      "Carrier": "Verizon Wireless:6006 - SVR/2",
+      "Normalized Carrier": "Verizon Wireless",
+      "Age": "48",
+      "Gender": "male",
+      "Gender Confidence": 98
+    },
+    "leadSummary": {
+      "name": "Ben Galin",
+      "phone": "5616854444",
+      "dobOrAge": "48",
+      "zipcode": "33928",
+      "state": "FL",
+      "city": "Estero",
+      "email": "bgalin@hotmail.com",
+      "dncStatus": "UNKNOWN",
+      "income": 305000,
+      "lineType": "mobile",
+      "carrier": "Verizon Wireless:6006 - SVR/2",
+      "normalizedCarrier": "Verizon Wireless",
+      "searchFilter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+      "dateScraped": "2026-03-10",
+      "linkedinUrl": "https://www.linkedin.com/in/ACwAAAYH5-UBip62Z59m2J_U_1lhvEZwRHyN7do",
+      "zipProvenance": "verified_skip_trace",
+      "skipTracingDisposition": "clear_match"
+    }
+  },
+  {
+    "metadata": {
+      "savedAt": "2026-03-10T02:04:39.635Z",
+      "leadKey": "linkedin:https://www.linkedin.com/in/ACwAAAdGU38BYiws28SK0HuGqLFN2dmCq52uwtc"
+    },
+    "enrichedRow": {
+      "Name": "Rachel Vinciguerra",
+      "Title": "Clinical Specialist III",
+      "Company": "Abbott",
+      "Location": "West Palm Beach, Florida, United States",
+      "LinkedIn URL": "https://www.linkedin.com/in/ACwAAAdGU38BYiws28SK0HuGqLFN2dmCq52uwtc",
+      "Email": "rvinciguerra306@gmail.com",
+      "Phone": "5514276797",
+      "First Name": "Rachel",
+      "Last Name": "Vinciguerra",
+      "City": "West Palm Beach",
+      "State": "FL",
+      "Zip": "33478",
+      "Search Filter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+      "_enriched": {
+        "firstName": "Rachel",
+        "lastName": "Vinciguerra",
+        "zipCode": "33478",
+        "zipProvenance": "verified_skip_trace",
+        "gender": "female",
+        "genderConfidence": 98,
+        "phone": "5514276797",
+        "email": "rvinciguerra306@gmail.com",
+        "addressLine2": "FL",
+        "incomePreQual": {
+          "conservative": {
+            "min": 31000,
+            "max": 109000,
+            "p50": 70000
+          },
+          "upside": {
+            "min": 28000,
+            "max": 112000,
+            "p50": 70000
+          },
+          "estimate": {
+            "range": {
+              "min": 31000,
+              "max": 112000
+            },
+            "p50": 70000,
+            "confidence": 0.82,
+            "primaryDrivers": [
+              "career ladder: ic",
+              "specialist role",
+              "company: Abbott"
+            ],
+            "riskFlags": []
+          },
+          "decision": {
+            "tier": "unknown",
+            "shouldContinueEnrichment": true,
+            "reason": "Income meets $60k threshold: Upside p50 ($70k) >= $60k minimum",
+            "band": "high",
+            "requiresStrongPositives": false,
+            "reasonCode": "INCOME_ABOVE_60K"
+          }
+        },
+        "skipTracingData": {
+          "Status": 200,
+          "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+          "Source": "tps_fsh_504_cch",
+          "Records": 1,
+          "Page": 1,
+          "PeopleDetails": [
+            {
+              "Name": "Rachel Vinciguerra",
+              "Link": "https://www.truepeoplesearch.com/find/person/p2r8rnl2l92nurunul06",
+              "Age": 34,
+              "Person ID": "p2r8rnl2l92nurunul06",
+              "Lives in": "Jupiter, FL",
+              "Used to live in": "Boynton Beach FL, Upper Saddle River NJ",
+              "Related to": "Donna Mastrocco, Jaclyn Vinciguerra, Krist..."
+            }
+          ],
+          "ageFromPersonDetails": "34"
+        },
+        "skipTracingDisposition": "clear_match",
+        "skipTracingMatchType": "name_only",
+        "telnyxLookupData": {
+          "success": true,
+          "data": {
+            "data": {
+              "country_code": "US",
+              "national_format": "(551) 427-6797",
+              "phone_number": "+15514276797",
+              "fraud": null,
+              "carrier": {
+                "mobile_country_code": "",
+                "mobile_network_code": "",
+                "name": "CELLCO PARTNERSHIP DBA VERIZON WIRELESS - NJ",
+                "type": "mobile",
+                "error_code": null,
+                "normalized_carrier": "Verizon Wireless"
+              },
+              "caller_name": null,
+              "nnid_override": null,
+              "portability": {
+                "lrn": null,
+                "ported_status": "",
+                "ported_date": "",
+                "ocn": "6391",
+                "line_type": "mobile",
+                "spid": "",
+                "spid_carrier_name": "CELLCO PARTNERSHIP DBA VERIZON",
+                "spid_carrier_type": "",
+                "altspid": "",
+                "altspid_carrier_name": "",
+                "altspid_carrier_type": "",
+                "city": "RAMSEY",
+                "state": "New Jersey"
+              },
+              "valid_number": true,
+              "record_type": "number_lookup"
+            }
+          }
+        },
+        "lineType": "mobile",
+        "carrierName": "CELLCO PARTNERSHIP DBA VERIZON WIRELESS - NJ",
+        "carrierType": "mobile",
+        "normalizedCarrier": "Verizon Wireless",
+        "decisionReason": "FULL_ENRICHMENT",
+        "decisionCodes": [
+          "FULL_ENRICHMENT",
+          "SOFT_DOWNGRADE_FREE_EMAIL"
+        ],
+        "decisionConfidence": 50,
+        "decisionAction": "full",
+        "enrichmentLevel": "full",
+        "dncStatus": "UNKNOWN",
+        "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+        "age": "34"
+      },
+      "Line Type": "mobile",
+      "Carrier": "CELLCO PARTNERSHIP DBA VERIZON WIRELESS - NJ",
+      "Normalized Carrier": "Verizon Wireless",
+      "Age": "34",
+      "Gender": "female",
+      "Gender Confidence": 98
+    },
+    "leadSummary": {
+      "name": "Rachel Vinciguerra",
+      "phone": "5514276797",
+      "dobOrAge": "34",
+      "zipcode": "33478",
+      "state": "FL",
+      "city": "West Palm Beach",
+      "email": "rvinciguerra306@gmail.com",
+      "dncStatus": "UNKNOWN",
+      "income": 70000,
+      "lineType": "mobile",
+      "carrier": "CELLCO PARTNERSHIP DBA VERIZON WIRELESS - NJ",
+      "normalizedCarrier": "Verizon Wireless",
+      "searchFilter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+      "dateScraped": "2026-03-10",
+      "linkedinUrl": "https://www.linkedin.com/in/ACwAAAdGU38BYiws28SK0HuGqLFN2dmCq52uwtc",
+      "zipProvenance": "verified_skip_trace",
+      "skipTracingDisposition": "clear_match",
+      "needsVerification": true
+    }
+  },
+  {
+    "metadata": {
+      "savedAt": "2026-03-10T02:04:42.894Z",
+      "leadKey": "linkedin:https://www.linkedin.com/in/ACwAAAZM_RwBwm4JsuwXs5bEcYz4pEJSrivjv7E"
+    },
+    "enrichedRow": {
+      "Name": "Serge Logan",
+      "Title": "Chief Executive Officer",
+      "Company": "Maatdesk",
+      "Location": "Miami, Florida, United States",
+      "LinkedIn URL": "https://www.linkedin.com/in/ACwAAAZM_RwBwm4JsuwXs5bEcYz4pEJSrivjv7E",
+      "Email": "mr_loginov@yahoo.com",
+      "Phone": "9546461908",
+      "First Name": "Serge",
+      "Last Name": "Logan",
+      "City": "Miami",
+      "State": "FL",
+      "Zip": "33180",
+      "Search Filter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+      "_enriched": {
+        "firstName": "Serge",
+        "lastName": "Logan",
+        "zipCode": "33180",
+        "zipProvenance": "verified_skip_trace",
+        "phone": "9546461908",
+        "email": "mr_loginov@yahoo.com",
+        "addressLine2": "FL",
+        "incomePreQual": {
+          "conservative": {
+            "min": 587000,
+            "max": 887000,
+            "p50": 737000
+          },
+          "upside": {
+            "min": 648000,
+            "max": 973000,
+            "p50": 810000
+          },
+          "estimate": {
+            "range": {
+              "min": 587000,
+              "max": 973000
+            },
+            "p50": 774000,
+            "confidence": 0.7,
+            "primaryDrivers": [
+              "career ladder: exec",
+              "executive role",
+              "company: Maatdesk"
+            ],
+            "riskFlags": [
+              "High-level title but company type may not support it"
+            ]
+          },
+          "decision": {
+            "tier": "unknown",
+            "shouldContinueEnrichment": true,
+            "reason": "Income meets $60k threshold: Upside p50 ($810k) >= $60k minimum",
+            "band": "high",
+            "requiresStrongPositives": false,
+            "reasonCode": "INCOME_ABOVE_60K"
+          }
+        },
+        "skipTracingData": {
+          "Status": 200,
+          "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+          "Source": "tps_fsh_532_cch",
+          "Records": 2,
+          "Page": 1,
+          "PeopleDetails": [
+            {
+              "Name": "Serge Logan",
+              "Link": "https://www.truepeoplesearch.com/find/person/p6268490ru0u22nuu260",
+              "Age": 38,
+              "Person ID": "p6268490ru0u22nuu260",
+              "Lives in": "Miami, FL",
+              "Used to live in": "Hallandale Beach FL, Miami Beach FL, Aven...",
+              "Related to": "Leonda Logan, Svetlana Kandeeva, Brenda Lo..."
+            }
+          ],
+          "ageFromPersonDetails": "38"
+        },
+        "skipTracingDisposition": "clear_match",
+        "skipTracingMatchType": "exact_location",
+        "telnyxLookupData": {
+          "success": true,
+          "data": {
+            "data": {
+              "country_code": "US",
+              "national_format": "(954) 646-1908",
+              "phone_number": "+19546461908",
+              "fraud": null,
+              "carrier": {
+                "mobile_country_code": "",
+                "mobile_network_code": "",
+                "name": "T-Mobile US-SVR-10X/2",
+                "type": "mobile",
+                "error_code": null,
+                "normalized_carrier": ""
+              },
+              "caller_name": null,
+              "nnid_override": null,
+              "portability": {
+                "lrn": "305490XXXX",
+                "ported_status": "",
+                "ported_date": "",
+                "ocn": "6889",
+                "line_type": "mobile",
+                "spid": "",
+                "spid_carrier_name": "OMNIPOINT MIAMI E LICENSE, LLC",
+                "spid_carrier_type": "",
+                "altspid": "",
+                "altspid_carrier_name": "",
+                "altspid_carrier_type": "",
+                "city": "MIAMI",
+                "state": "Florida"
+              },
+              "valid_number": true,
+              "record_type": "number_lookup"
+            }
+          }
+        },
+        "lineType": "mobile",
+        "carrierName": "T-Mobile US-SVR-10X/2",
+        "carrierType": "mobile",
+        "normalizedCarrier": "",
+        "decisionReason": "FULL_ENRICHMENT",
+        "decisionCodes": [
+          "FULL_ENRICHMENT",
+          "SOFT_DOWNGRADE_FREE_EMAIL"
+        ],
+        "decisionConfidence": 63,
+        "decisionAction": "full",
+        "enrichmentLevel": "full",
+        "dncStatus": "UNKNOWN",
+        "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+        "age": "38"
+      },
+      "Line Type": "mobile",
+      "Carrier": "T-Mobile US-SVR-10X/2",
+      "Age": "38"
+    },
+    "leadSummary": {
+      "name": "Serge Logan",
+      "phone": "9546461908",
+      "dobOrAge": "38",
+      "zipcode": "33180",
+      "state": "FL",
+      "city": "Miami",
+      "email": "mr_loginov@yahoo.com",
+      "dncStatus": "UNKNOWN",
+      "income": 774000,
+      "lineType": "mobile",
+      "carrier": "T-Mobile US-SVR-10X/2",
+      "normalizedCarrier": "",
+      "searchFilter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+      "dateScraped": "2026-03-10",
+      "linkedinUrl": "https://www.linkedin.com/in/ACwAAAZM_RwBwm4JsuwXs5bEcYz4pEJSrivjv7E",
+      "zipProvenance": "verified_skip_trace",
+      "skipTracingDisposition": "clear_match"
+    }
+  },
+  {
+    "metadata": {
+      "savedAt": "2026-03-10T02:04:45.821Z",
+      "leadKey": "linkedin:https://www.linkedin.com/in/ACwAAAbSQNYBJx6TfG1zxtaLehDOqvuzsuHiB00"
+    },
+    "enrichedRow": {
+      "Name": "Kyle Newton",
+      "Title": "Account Executive",
+      "Company": "Basis Theory",
+      "Location": "Tampa, Florida, United States",
+      "LinkedIn URL": "https://www.linkedin.com/in/ACwAAAbSQNYBJx6TfG1zxtaLehDOqvuzsuHiB00",
+      "Email": "anabaez2616@gmail.com",
+      "Phone": "9043152498",
+      "First Name": "Kyle",
+      "Last Name": "Newton",
+      "City": "Tampa",
+      "State": "FL",
+      "Zip": "33610",
+      "Search Filter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+      "_enriched": {
+        "firstName": "Kyle",
+        "lastName": "Newton",
+        "zipCode": "33610",
+        "zipProvenance": "verified_skip_trace",
+        "gender": "male",
+        "genderConfidence": 98,
+        "phone": "9043152498",
+        "email": "anabaez2616@gmail.com",
+        "addressLine2": "FL",
+        "incomePreQual": {
+          "conservative": {
+            "min": 660000,
+            "max": 960000,
+            "p50": 810000
+          },
+          "upside": {
+            "min": 729000,
+            "max": 1054000,
+            "p50": 891000
+          },
+          "estimate": {
+            "range": {
+              "min": 660000,
+              "max": 1054000
+            },
+            "p50": 851000,
+            "confidence": 0.7,
+            "primaryDrivers": [
+              "career ladder: exec",
+              "executive role",
+              "company: Basis Theory"
+            ],
+            "riskFlags": [
+              "High-level title but company type may not support it"
+            ]
+          },
+          "decision": {
+            "tier": "unknown",
+            "shouldContinueEnrichment": true,
+            "reason": "Income meets $60k threshold: Upside p50 ($891k) >= $60k minimum",
+            "band": "high",
+            "requiresStrongPositives": false,
+            "reasonCode": "INCOME_ABOVE_60K"
+          }
+        },
+        "skipTracingData": {
+          "Status": 200,
+          "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+          "Source": "tps_fsh_338_cch",
+          "Records": 1,
+          "Page": 1,
+          "PeopleDetails": [
+            {
+              "Name": "Kyle Newton",
+              "Link": "https://www.truepeoplesearch.com/find/person/pxr8l9unl48l8u269rn00",
+              "Age": 35,
+              "Person ID": "pxr8l9unl48l8u269rn00",
+              "Lives in": "Tampa, FL",
+              "Used to live in": "",
+              "Related to": "Victoria Newton"
+            }
+          ],
+          "ageFromPersonDetails": "35"
+        },
+        "skipTracingDisposition": "clear_match",
+        "skipTracingMatchType": "exact_location",
+        "telnyxLookupData": {
+          "success": true,
+          "data": {
+            "data": {
+              "country_code": "US",
+              "national_format": "(904) 315-2498",
+              "phone_number": "+19043152498",
+              "fraud": null,
+              "carrier": {
+                "mobile_country_code": "",
+                "mobile_network_code": "",
+                "name": "Verizon Wireless:6006 - SVR/2",
+                "type": "mobile",
+                "error_code": null,
+                "normalized_carrier": "Verizon Wireless"
+              },
+              "caller_name": null,
+              "nnid_override": null,
+              "portability": {
+                "lrn": "904477XXXX",
+                "ported_status": "",
+                "ported_date": "",
+                "ocn": "6502",
+                "line_type": "mobile",
+                "spid": "",
+                "spid_carrier_name": "CELLCO PARTNERSHIP DBA VERIZON",
+                "spid_carrier_type": "",
+                "altspid": "",
+                "altspid_carrier_name": "",
+                "altspid_carrier_type": "",
+                "city": "JACKSONVL",
+                "state": "Florida"
+              },
+              "valid_number": true,
+              "record_type": "number_lookup"
+            }
+          }
+        },
+        "lineType": "mobile",
+        "carrierName": "Verizon Wireless:6006 - SVR/2",
+        "carrierType": "mobile",
+        "normalizedCarrier": "Verizon Wireless",
+        "decisionReason": "FULL_ENRICHMENT",
+        "decisionCodes": [
+          "FULL_ENRICHMENT",
+          "SOFT_DOWNGRADE_FREE_EMAIL"
+        ],
+        "decisionConfidence": 63,
+        "decisionAction": "full",
+        "enrichmentLevel": "full",
+        "dncStatus": "UNKNOWN",
+        "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+        "age": "35"
+      },
+      "Line Type": "mobile",
+      "Carrier": "Verizon Wireless:6006 - SVR/2",
+      "Normalized Carrier": "Verizon Wireless",
+      "Age": "35",
+      "Gender": "male",
+      "Gender Confidence": 98
+    },
+    "leadSummary": {
+      "name": "Kyle Newton",
+      "phone": "9043152498",
+      "dobOrAge": "35",
+      "zipcode": "33610",
+      "state": "FL",
+      "city": "Tampa",
+      "email": "anabaez2616@gmail.com",
+      "dncStatus": "UNKNOWN",
+      "income": 851000,
+      "lineType": "mobile",
+      "carrier": "Verizon Wireless:6006 - SVR/2",
+      "normalizedCarrier": "Verizon Wireless",
+      "searchFilter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+      "dateScraped": "2026-03-10",
+      "linkedinUrl": "https://www.linkedin.com/in/ACwAAAbSQNYBJx6TfG1zxtaLehDOqvuzsuHiB00",
+      "zipProvenance": "verified_skip_trace",
+      "skipTracingDisposition": "clear_match"
+    }
+  },
+  {
+    "metadata": {
+      "savedAt": "2026-03-10T02:04:48.156Z",
+      "leadKey": "linkedin:https://www.linkedin.com/in/ACwAAACa11QB-AahQ3nfzJcsdCEhra74DOykdOA"
+    },
+    "enrichedRow": {
+      "Name": "Kurt Bender",
+      "Title": "SVP and Chief Digital Officer",
+      "Company": "BWXT",
+      "Location": "Melbourne, Florida, United States",
+      "LinkedIn URL": "https://www.linkedin.com/in/ACwAAACa11QB-AahQ3nfzJcsdCEhra74DOykdOA",
+      "Email": "kurtanthony8769@yahoo.com",
+      "Phone": "2605829059",
+      "First Name": "Kurt",
+      "Last Name": "Bender",
+      "City": "Melbourne",
+      "State": "FL",
+      "Zip": "32940",
+      "Search Filter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+      "_enriched": {
+        "firstName": "Kurt",
+        "lastName": "Bender",
+        "zipCode": "32940",
+        "zipProvenance": "verified_skip_trace",
+        "phone": "2605829059",
+        "email": "kurtanthony8769@yahoo.com",
+        "addressLine2": "FL",
+        "incomePreQual": {
+          "conservative": {
+            "min": 926000,
+            "max": 1226000,
+            "p50": 1076000
+          },
+          "upside": {
+            "min": 1021000,
+            "max": 1346000,
+            "p50": 1183000
+          },
+          "estimate": {
+            "range": {
+              "min": 926000,
+              "max": 1346000
+            },
+            "p50": 1130000,
+            "confidence": 0.48,
+            "primaryDrivers": [
+              "career ladder: exec",
+              "company: BWXT"
+            ],
+            "riskFlags": [
+              "High-level title but company type may not support it"
+            ]
+          },
+          "decision": {
+            "tier": "unknown",
+            "shouldContinueEnrichment": true,
+            "reason": "Income meets $60k threshold: Upside p50 ($1183k) >= $60k minimum",
+            "band": "high",
+            "requiresStrongPositives": false,
+            "reasonCode": "INCOME_ABOVE_60K"
+          }
+        },
+        "skipTracingData": {
+          "Status": 200,
+          "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+          "Source": "tps_fsh_280_cch",
+          "Records": 1,
+          "Page": 1,
+          "PeopleDetails": [
+            {
+              "Name": "Kurt Bender",
+              "Link": "https://www.truepeoplesearch.com/find/person/pxrr48nr4r06802269ru9",
+              "Age": 48,
+              "Person ID": "pxrr48nr4r06802269ru9",
+              "Lives in": "Melbourne, FL",
+              "Used to live in": "Fort Wayne IN, Avilla IN, Kendallville IN",
+              "Related to": "Andrea Winkle, Cheryl Bender, John Bender,..."
+            }
+          ],
+          "ageFromPersonDetails": "48"
+        },
+        "skipTracingDisposition": "clear_match",
+        "skipTracingMatchType": "exact_location",
+        "telnyxLookupData": {
+          "success": true,
+          "data": {
+            "data": {
+              "country_code": "US",
+              "national_format": "(260) 582-9059",
+              "phone_number": "+12605829059",
+              "fraud": null,
+              "carrier": {
+                "mobile_country_code": "",
+                "mobile_network_code": "",
+                "name": "Cingular Wireless/2",
+                "type": "mobile",
+                "error_code": null,
+                "normalized_carrier": "AT&T"
+              },
+              "caller_name": null,
+              "nnid_override": null,
+              "portability": {
+                "lrn": "260249XXXX",
+                "ported_status": "",
+                "ported_date": "",
+                "ocn": "6534",
+                "line_type": "mobile",
+                "spid": "",
+                "spid_carrier_name": "NEW CINGULAR WIRELESS PCS, LLC",
+                "spid_carrier_type": "",
+                "altspid": "",
+                "altspid_carrier_name": "",
+                "altspid_carrier_type": "",
+                "city": "FORT WAYNE",
+                "state": "Indiana"
+              },
+              "valid_number": true,
+              "record_type": "number_lookup"
+            }
+          }
+        },
+        "lineType": "mobile",
+        "carrierName": "Cingular Wireless/2",
+        "carrierType": "mobile",
+        "normalizedCarrier": "AT&T",
+        "decisionReason": "FULL_ENRICHMENT",
+        "decisionCodes": [
+          "FULL_ENRICHMENT",
+          "SOFT_DOWNGRADE_FREE_EMAIL",
+          "SOFT_DOWNGRADE_SMALL_COMPANY"
+        ],
+        "decisionConfidence": 58,
+        "decisionAction": "full",
+        "enrichmentLevel": "full",
+        "dncStatus": "UNKNOWN",
+        "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+        "age": "48"
+      },
+      "Line Type": "mobile",
+      "Carrier": "Cingular Wireless/2",
+      "Normalized Carrier": "AT&T",
+      "Age": "48"
+    },
+    "leadSummary": {
+      "name": "Kurt Bender",
+      "phone": "2605829059",
+      "dobOrAge": "48",
+      "zipcode": "32940",
+      "state": "FL",
+      "city": "Melbourne",
+      "email": "kurtanthony8769@yahoo.com",
+      "dncStatus": "UNKNOWN",
+      "income": 1130000,
+      "lineType": "mobile",
+      "carrier": "Cingular Wireless/2",
+      "normalizedCarrier": "AT&T",
+      "searchFilter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+      "dateScraped": "2026-03-10",
+      "linkedinUrl": "https://www.linkedin.com/in/ACwAAACa11QB-AahQ3nfzJcsdCEhra74DOykdOA",
+      "zipProvenance": "verified_skip_trace",
+      "skipTracingDisposition": "clear_match"
+    }
+  },
+  {
+    "metadata": {
+      "savedAt": "2026-03-10T02:04:59.172Z",
+      "leadKey": "linkedin:https://www.linkedin.com/in/ACwAAACutj8B67pH966-Tg4K4UUHyMQaMMzU0IE"
+    },
+    "enrichedRow": {
+      "Name": "Bryan Gould",
+      "Title": "Chief Revenue Officer",
+      "Company": "Jax Consulting",
+      "Location": "Lake Worth, Florida, United States",
+      "LinkedIn URL": "https://www.linkedin.com/in/ACwAAACutj8B67pH966-Tg4K4UUHyMQaMMzU0IE",
+      "Email": "aagould@bellsouth.net",
+      "Phone": "5615962177",
+      "First Name": "Bryan",
+      "Last Name": "Gould",
+      "City": "Lake Worth",
+      "State": "FL",
+      "Zip": "33467",
+      "Search Filter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+      "_enriched": {
+        "firstName": "Bryan",
+        "lastName": "Gould",
+        "zipCode": "33467",
+        "zipProvenance": "verified_skip_trace",
+        "gender": "male",
+        "genderConfidence": 98,
+        "phone": "5615962177",
+        "email": "aagould@bellsouth.net",
+        "addressLine2": "FL",
+        "incomePreQual": {
+          "conservative": {
+            "min": 2809000,
+            "max": 3109000,
+            "p50": 2959000
+          },
+          "upside": {
+            "min": 3092000,
+            "max": 3417000,
+            "p50": 3255000
+          },
+          "estimate": {
+            "range": {
+              "min": 2809000,
+              "max": 3417000
+            },
+            "p50": 3107000,
+            "confidence": 0.48,
+            "primaryDrivers": [
+              "career ladder: exec",
+              "company: Jax Consulting"
+            ],
+            "riskFlags": [
+              "High-level title but company type may not support it"
+            ]
+          },
+          "decision": {
+            "tier": "unknown",
+            "shouldContinueEnrichment": true,
+            "reason": "Income meets $60k threshold: Upside p50 ($3255k) >= $60k minimum",
+            "band": "high",
+            "requiresStrongPositives": false,
+            "reasonCode": "INCOME_ABOVE_60K"
+          }
+        },
+        "skipTracingData": {
+          "Status": 200,
+          "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+          "Source": "tps_fsh_478_cch",
+          "Records": 3,
+          "Page": 1,
+          "PeopleDetails": [
+            {
+              "Name": "Bryan Gould",
+              "Link": "https://www.truepeoplesearch.com/find/person/pu90rllnunnu9uu9rrl2",
+              "Age": 48,
+              "Person ID": "pu90rllnunnu9uu9rrl2",
+              "Lives in": "Lake Worth, FL",
+              "Used to live in": "Boynton Beach FL, Port Charlotte FL, Well...",
+              "Related to": "Alan Gould, Alan Gould, Alan Gould, Angela..."
+            }
+          ],
+          "ageFromPersonDetails": "48"
+        },
+        "skipTracingDisposition": "clear_match",
+        "skipTracingMatchType": "exact_location",
+        "telnyxLookupData": {
+          "success": true,
+          "data": {
+            "data": {
+              "country_code": "US",
+              "national_format": "(561) 596-2177",
+              "phone_number": "+15615962177",
+              "fraud": null,
+              "carrier": {
+                "mobile_country_code": "",
+                "mobile_network_code": "",
+                "name": "CELLCO PARTNERSHIP DBA VERIZON WIRELESS - FL",
+                "type": "mobile",
+                "error_code": null,
+                "normalized_carrier": "Verizon Wireless"
+              },
+              "caller_name": null,
+              "nnid_override": null,
+              "portability": {
+                "lrn": null,
+                "ported_status": "",
+                "ported_date": "",
+                "ocn": "6502",
+                "line_type": "mobile",
+                "spid": "",
+                "spid_carrier_name": "CELLCO PARTNERSHIP DBA VERIZON",
+                "spid_carrier_type": "",
+                "altspid": "",
+                "altspid_carrier_name": "",
+                "altspid_carrier_type": "",
+                "city": "WPALMBEACH",
+                "state": "Florida"
+              },
+              "valid_number": true,
+              "record_type": "number_lookup"
+            }
+          }
+        },
+        "lineType": "mobile",
+        "carrierName": "CELLCO PARTNERSHIP DBA VERIZON WIRELESS - FL",
+        "carrierType": "mobile",
+        "normalizedCarrier": "Verizon Wireless",
+        "decisionReason": "FULL_ENRICHMENT",
+        "decisionCodes": [
+          "FULL_ENRICHMENT"
+        ],
+        "decisionConfidence": 60,
+        "decisionAction": "full",
+        "enrichmentLevel": "full",
+        "dncStatus": "UNKNOWN",
+        "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+        "age": "48"
+      },
+      "Line Type": "mobile",
+      "Carrier": "CELLCO PARTNERSHIP DBA VERIZON WIRELESS - FL",
+      "Normalized Carrier": "Verizon Wireless",
+      "Age": "48",
+      "Gender": "male",
+      "Gender Confidence": 98
+    },
+    "leadSummary": {
+      "name": "Bryan Gould",
+      "phone": "5615962177",
+      "dobOrAge": "48",
+      "zipcode": "33467",
+      "state": "FL",
+      "city": "Lake Worth",
+      "email": "aagould@bellsouth.net",
+      "dncStatus": "UNKNOWN",
+      "income": 3107000,
+      "lineType": "mobile",
+      "carrier": "CELLCO PARTNERSHIP DBA VERIZON WIRELESS - FL",
+      "normalizedCarrier": "Verizon Wireless",
+      "searchFilter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+      "dateScraped": "2026-03-10",
+      "linkedinUrl": "https://www.linkedin.com/in/ACwAAACutj8B67pH966-Tg4K4UUHyMQaMMzU0IE",
+      "zipProvenance": "verified_skip_trace",
+      "skipTracingDisposition": "clear_match"
+    }
+  },
+  {
+    "metadata": {
+      "savedAt": "2026-03-10T02:05:00.779Z",
+      "leadKey": "linkedin:https://www.linkedin.com/in/ACwAAAZyq88Bo6R8cMQqw0FzRlSjLSyzdadAUAU"
+    },
+    "enrichedRow": {
+      "Name": "Yael Sasonov",
+      "Title": "Community Hospitality Manager",
+      "Company": "EXPANSIVE",
+      "Location": "Miami, Florida, United States",
+      "LinkedIn URL": "https://www.linkedin.com/in/ACwAAAZyq88Bo6R8cMQqw0FzRlSjLSyzdadAUAU",
+      "Email": "ysasonov@gmail.com",
+      "Phone": "8608337050",
+      "First Name": "Yael",
+      "Last Name": "Sasonov",
+      "City": "Miami",
+      "State": "FL",
+      "Zip": "06117",
+      "Search Filter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+      "_enriched": {
+        "firstName": "Yael",
+        "lastName": "Sasonov",
+        "zipCode": "06117",
+        "zipProvenance": "verified_skip_trace",
+        "phone": "8608337050",
+        "email": "ysasonov@gmail.com",
+        "addressLine2": "FL",
+        "incomePreQual": {
+          "conservative": {
+            "min": 72000,
+            "max": 192000,
+            "p50": 132000
+          },
+          "upside": {
+            "min": 67000,
+            "max": 172000,
+            "p50": 132000
+          },
+          "estimate": {
+            "range": {
+              "min": 72000,
+              "max": 172000
+            },
+            "p50": 132000,
+            "confidence": 0.55,
+            "primaryDrivers": [
+              "career ladder: manager",
+              "manager role",
+              "company: EXPANSIVE"
+            ],
+            "riskFlags": [
+              "Job title seniority unclear"
+            ]
+          },
+          "decision": {
+            "tier": "unknown",
+            "shouldContinueEnrichment": true,
+            "reason": "Income meets $60k threshold: Upside p50 ($132k) >= $60k minimum",
+            "band": "high",
+            "requiresStrongPositives": false,
+            "reasonCode": "INCOME_ABOVE_60K"
+          }
+        },
+        "skipTracingData": {
+          "Status": 200,
+          "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+          "Source": "tps_fsh_400_cch",
+          "Records": 1,
+          "Page": 1,
+          "PeopleDetails": [
+            {
+              "Name": "Yael Sasonov",
+              "Link": "https://www.truepeoplesearch.com/find/person/pxl0ru04n2nrrn88l2229",
+              "Age": 37,
+              "Person ID": "pxl0ru04n2nrrn88l2229",
+              "Lives in": "North Miami, FL",
+              "Used to live in": "West Hartford CT, Los Angeles CA",
+              "Related to": "Emma Sasonov, Leon Sasonov, Marina Sasonov..."
+            }
+          ],
+          "ageFromPersonDetails": "37"
+        },
+        "skipTracingDisposition": "clear_match",
+        "skipTracingMatchType": "name_only",
+        "telnyxLookupData": {
+          "success": true,
+          "data": {
+            "data": {
+              "country_code": "US",
+              "national_format": "(860) 833-7050",
+              "phone_number": "+18608337050",
+              "fraud": null,
+              "carrier": {
+                "mobile_country_code": "",
+                "mobile_network_code": "",
+                "name": "METROPCS, INC.",
+                "type": "mobile",
+                "error_code": null,
+                "normalized_carrier": ""
+              },
+              "caller_name": null,
+              "nnid_override": null,
+              "portability": {
+                "lrn": null,
+                "ported_status": "",
+                "ported_date": "",
+                "ocn": "6664",
+                "line_type": "mobile",
+                "spid": "",
+                "spid_carrier_name": "SPRINT SPECTRUM L.P.",
+                "spid_carrier_type": "",
+                "altspid": "",
+                "altspid_carrier_name": "",
+                "altspid_carrier_type": "",
+                "city": "HARTFORD",
+                "state": "Connecticut"
+              },
+              "valid_number": true,
+              "record_type": "number_lookup"
+            }
+          }
+        },
+        "lineType": "mobile",
+        "carrierName": "METROPCS, INC.",
+        "carrierType": "mobile",
+        "normalizedCarrier": "",
+        "decisionReason": "FULL_ENRICHMENT",
+        "decisionCodes": [
+          "FULL_ENRICHMENT",
+          "SOFT_DOWNGRADE_FREE_EMAIL"
+        ],
+        "decisionConfidence": 63,
+        "decisionAction": "full",
+        "enrichmentLevel": "full",
+        "dncStatus": "UNKNOWN",
+        "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+        "age": "37"
+      },
+      "Line Type": "mobile",
+      "Carrier": "METROPCS, INC.",
+      "Age": "37"
+    },
+    "leadSummary": {
+      "name": "Yael Sasonov",
+      "phone": "8608337050",
+      "dobOrAge": "37",
+      "zipcode": "06117",
+      "state": "FL",
+      "city": "Miami",
+      "email": "ysasonov@gmail.com",
+      "dncStatus": "UNKNOWN",
+      "income": 132000,
+      "lineType": "mobile",
+      "carrier": "METROPCS, INC.",
+      "normalizedCarrier": "",
+      "searchFilter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+      "dateScraped": "2026-03-10",
+      "linkedinUrl": "https://www.linkedin.com/in/ACwAAAZyq88Bo6R8cMQqw0FzRlSjLSyzdadAUAU",
+      "zipProvenance": "verified_skip_trace",
+      "skipTracingDisposition": "clear_match",
+      "needsVerification": true
+    }
+  },
+  {
+    "metadata": {
+      "savedAt": "2026-03-10T02:05:03.740Z",
+      "leadKey": "linkedin:https://www.linkedin.com/in/ACwAAAaxtwoB86TDFCyt94WQPEiM0TcbuGMuvpk"
+    },
+    "enrichedRow": {
+      "Name": "Keith Holland",
+      "Title": "Senior Vice President",
+      "Company": "SouthernTier Telecom",
+      "Location": "West Palm Beach, Florida, United States",
+      "LinkedIn URL": "https://www.linkedin.com/in/ACwAAAaxtwoB86TDFCyt94WQPEiM0TcbuGMuvpk",
+      "Email": "slotline21@mail.com",
+      "Phone": "5612996246",
+      "First Name": "Keith",
+      "Last Name": "Holland",
+      "City": "West Palm Beach",
+      "State": "FL",
+      "Zip": "33411",
+      "Search Filter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+      "_enriched": {
+        "firstName": "Keith",
+        "lastName": "Holland",
+        "zipCode": "33411",
+        "zipProvenance": "verified_skip_trace",
+        "phone": "5612996246",
+        "email": "slotline21@mail.com",
+        "addressLine2": "FL",
+        "incomePreQual": {
+          "conservative": {
+            "min": 3788000,
+            "max": 4088000,
+            "p50": 3938000
+          },
+          "upside": {
+            "min": 4169000,
+            "max": 4494000,
+            "p50": 4332000
+          },
+          "estimate": {
+            "range": {
+              "min": 3788000,
+              "max": 4494000
+            },
+            "p50": 4135000,
+            "confidence": 0.48,
+            "primaryDrivers": [
+              "career ladder: exec",
+              "company: SouthernTier Telecom"
+            ],
+            "riskFlags": [
+              "High-level title but company type may not support it"
+            ]
+          },
+          "decision": {
+            "tier": "unknown",
+            "shouldContinueEnrichment": true,
+            "reason": "Income meets $60k threshold: Upside p50 ($4332k) >= $60k minimum",
+            "band": "high",
+            "requiresStrongPositives": false,
+            "reasonCode": "INCOME_ABOVE_60K"
+          }
+        },
+        "skipTracingData": {
+          "Status": 200,
+          "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+          "Source": "tps_fsh_427_cch",
+          "Records": 4,
+          "Page": 1,
+          "PeopleDetails": [
+            {
+              "Name": "Keith Holland Sr",
+              "Link": "https://www.truepeoplesearch.com/find/person/px62n8r2r692n80r402u0",
+              "Age": 56,
+              "Person ID": "px62n8r2r692n80r402u0",
+              "Lives in": "West Palm Beach, FL",
+              "Used to live in": "Loxahatchee FL, Spring TX, Pompano Beach ...",
+              "Related to": "Shirley Holland, Andrew Grant, Arlene Holl..."
+            }
+          ],
+          "ageFromPersonDetails": "56"
+        },
+        "skipTracingDisposition": "clear_match",
+        "skipTracingMatchType": "exact_location",
+        "telnyxLookupData": {
+          "success": true,
+          "data": {
+            "data": {
+              "country_code": "US",
+              "national_format": "(561) 299-6246",
+              "phone_number": "+15612996246",
+              "fraud": null,
+              "carrier": {
+                "mobile_country_code": "",
+                "mobile_network_code": "",
+                "name": "T-Mobile US-SVR-10X/2",
+                "type": "mobile",
+                "error_code": null,
+                "normalized_carrier": ""
+              },
+              "caller_name": null,
+              "nnid_override": null,
+              "portability": {
+                "lrn": "561306XXXX",
+                "ported_status": "",
+                "ported_date": "",
+                "ocn": "6889",
+                "line_type": "mobile",
+                "spid": "",
+                "spid_carrier_name": "OMNIPOINT MIAMI E LICENSE, LLC",
+                "spid_carrier_type": "",
+                "altspid": "",
+                "altspid_carrier_name": "",
+                "altspid_carrier_type": "",
+                "city": "DELRAY BCH",
+                "state": "Florida"
+              },
+              "valid_number": true,
+              "record_type": "number_lookup"
+            }
+          }
+        },
+        "lineType": "mobile",
+        "carrierName": "T-Mobile US-SVR-10X/2",
+        "carrierType": "mobile",
+        "normalizedCarrier": "",
+        "decisionReason": "FULL_ENRICHMENT",
+        "decisionCodes": [
+          "FULL_ENRICHMENT"
+        ],
+        "decisionConfidence": 87,
+        "decisionAction": "full",
+        "enrichmentLevel": "full",
+        "dncStatus": "UNKNOWN",
+        "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+        "age": "56"
+      },
+      "Line Type": "mobile",
+      "Carrier": "T-Mobile US-SVR-10X/2",
+      "Age": "56"
+    },
+    "leadSummary": {
+      "name": "Keith Holland",
+      "phone": "5612996246",
+      "dobOrAge": "56",
+      "zipcode": "33411",
+      "state": "FL",
+      "city": "West Palm Beach",
+      "email": "slotline21@mail.com",
+      "dncStatus": "UNKNOWN",
+      "income": 4135000,
+      "lineType": "mobile",
+      "carrier": "T-Mobile US-SVR-10X/2",
+      "normalizedCarrier": "",
+      "searchFilter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+      "dateScraped": "2026-03-10",
+      "linkedinUrl": "https://www.linkedin.com/in/ACwAAAaxtwoB86TDFCyt94WQPEiM0TcbuGMuvpk",
+      "zipProvenance": "verified_skip_trace",
+      "skipTracingDisposition": "clear_match"
+    }
+  },
+  {
+    "metadata": {
+      "savedAt": "2026-03-10T02:05:07.687Z",
+      "leadKey": "linkedin:https://www.linkedin.com/in/ACwAAAYRUL0BP2Y6tfgubBxIfRsMho97JPFK2dE"
+    },
+    "enrichedRow": {
+      "Name": "Tony Chidiac",
+      "Title": "Chief Revenue Officer (CRO)",
+      "Company": "Diskover Data",
+      "Location": "West Palm Beach, Florida, United States",
+      "LinkedIn URL": "https://www.linkedin.com/in/ACwAAAYRUL0BP2Y6tfgubBxIfRsMho97JPFK2dE",
+      "Email": "t.chidiac@live.com",
+      "Phone": "2066019287",
+      "First Name": "Tony",
+      "Last Name": "Chidiac",
+      "City": "West Palm Beach",
+      "State": "FL",
+      "Zip": "33414",
+      "Search Filter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+      "_enriched": {
+        "firstName": "Tony",
+        "lastName": "Chidiac",
+        "zipCode": "33414",
+        "zipProvenance": "verified_skip_trace",
+        "gender": "male",
+        "genderConfidence": 98,
+        "phone": "2066019287",
+        "email": "t.chidiac@live.com",
+        "addressLine2": "FL",
+        "incomePreQual": {
+          "conservative": {
+            "min": 5078000,
+            "max": 5378000,
+            "p50": 5228000
+          },
+          "upside": {
+            "min": 5588000,
+            "max": 5913000,
+            "p50": 5750000
+          },
+          "estimate": {
+            "range": {
+              "min": 5078000,
+              "max": 5913000
+            },
+            "p50": 5489000,
+            "confidence": 0.48,
+            "primaryDrivers": [
+              "career ladder: exec",
+              "company: Diskover Data"
+            ],
+            "riskFlags": [
+              "High-level title but company type may not support it"
+            ]
+          },
+          "decision": {
+            "tier": "unknown",
+            "shouldContinueEnrichment": true,
+            "reason": "Income meets $60k threshold: Upside p50 ($5750k) >= $60k minimum",
+            "band": "high",
+            "requiresStrongPositives": false,
+            "reasonCode": "INCOME_ABOVE_60K"
+          }
+        },
+        "skipTracingData": {
+          "Status": 200,
+          "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+          "Source": "tps_fsh_273_cch",
+          "Records": 1,
+          "Page": 1,
+          "PeopleDetails": [
+            {
+              "Name": "Tony Chidiac",
+              "Link": "https://www.truepeoplesearch.com/find/person/pr08r809n6r9nn608689",
+              "Age": 37,
+              "Person ID": "pr08r809n6r9nn608689",
+              "Lives in": "Wellington, FL",
+              "Used to live in": "Sandpoint ID, West Palm Beach FL, Renton ...",
+              "Related to": "Carl Chidiac, Jean Chidiac, Joseph Chidiac..."
+            }
+          ],
+          "ageFromPersonDetails": "37"
+        },
+        "skipTracingDisposition": "clear_match",
+        "skipTracingMatchType": "name_only",
+        "telnyxLookupData": {
+          "success": true,
+          "data": {
+            "data": {
+              "country_code": "US",
+              "national_format": "(206) 601-9287",
+              "phone_number": "+12066019287",
+              "fraud": null,
+              "carrier": {
+                "mobile_country_code": "",
+                "mobile_network_code": "",
+                "name": "Verizon Wireless:6006 - SVR/2",
+                "type": "mobile",
+                "error_code": null,
+                "normalized_carrier": "Verizon Wireless"
+              },
+              "caller_name": null,
+              "nnid_override": null,
+              "portability": {
+                "lrn": "206920XXXX",
+                "ported_status": "",
+                "ported_date": "",
+                "ocn": "5812",
+                "line_type": "mobile",
+                "spid": "",
+                "spid_carrier_name": "CELLCO PARTNERSHIP DBA VERIZON",
+                "spid_carrier_type": "",
+                "altspid": "",
+                "altspid_carrier_name": "",
+                "altspid_carrier_type": "",
+                "city": "SEATTLE",
+                "state": "Washington"
+              },
+              "valid_number": true,
+              "record_type": "number_lookup"
+            }
+          }
+        },
+        "lineType": "mobile",
+        "carrierName": "Verizon Wireless:6006 - SVR/2",
+        "carrierType": "mobile",
+        "normalizedCarrier": "Verizon Wireless",
+        "decisionReason": "FULL_ENRICHMENT",
+        "decisionCodes": [
+          "FULL_ENRICHMENT"
+        ],
+        "decisionConfidence": 60,
+        "decisionAction": "full",
+        "enrichmentLevel": "full",
+        "dncStatus": "UNKNOWN",
+        "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+        "age": "37"
+      },
+      "Line Type": "mobile",
+      "Carrier": "Verizon Wireless:6006 - SVR/2",
+      "Normalized Carrier": "Verizon Wireless",
+      "Age": "37",
+      "Gender": "male",
+      "Gender Confidence": 98
+    },
+    "leadSummary": {
+      "name": "Tony Chidiac",
+      "phone": "2066019287",
+      "dobOrAge": "37",
+      "zipcode": "33414",
+      "state": "FL",
+      "city": "West Palm Beach",
+      "email": "t.chidiac@live.com",
+      "dncStatus": "UNKNOWN",
+      "income": 5489000,
+      "lineType": "mobile",
+      "carrier": "Verizon Wireless:6006 - SVR/2",
+      "normalizedCarrier": "Verizon Wireless",
+      "searchFilter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+      "dateScraped": "2026-03-10",
+      "linkedinUrl": "https://www.linkedin.com/in/ACwAAAYRUL0BP2Y6tfgubBxIfRsMho97JPFK2dE",
+      "zipProvenance": "verified_skip_trace",
+      "skipTracingDisposition": "clear_match",
+      "needsVerification": true
+    }
+  },
+  {
+    "metadata": {
+      "savedAt": "2026-03-10T19:09:07.152Z",
+      "leadKey": "linkedin:https://www.linkedin.com/in/ACwAAAX-MhsByZDSDoV3KjqXnJSwZWJvlTikSBg"
+    },
+    "enrichedRow": {
+      "Name": "Greg Scaffidi",
+      "Title": "Construction Consulting; Project Management, Finance & Operations",
+      "Company": "Self-employed",
+      "Location": "Ponte Vedra Beach, Florida, United States",
+      "LinkedIn URL": "https://www.linkedin.com/in/ACwAAAX-MhsByZDSDoV3KjqXnJSwZWJvlTikSBg",
+      "Email": "athlete_girl81@yahoo.com",
+      "Phone": "8137853350",
+      "First Name": "Greg",
+      "Last Name": "Scaffidi",
+      "City": "Ponte Vedra Beach",
+      "State": "FL",
+      "Zip": "32081",
+      "Search Filter": "Location: Miami, FL | Industry: Real Estate",
+      "_enriched": {
+        "firstName": "Greg",
+        "lastName": "Scaffidi",
+        "zipCode": "32081",
+        "zipProvenance": "verified_skip_trace",
+        "gender": "male",
+        "genderConfidence": 98,
+        "phone": "8137853350",
+        "email": "athlete_girl81@yahoo.com",
+        "addressLine2": "FL",
+        "incomePreQual": {
+          "conservative": {
+            "min": 30000,
+            "max": 115000,
+            "p50": 70000
+          },
+          "upside": {
+            "min": 21000,
+            "max": 119000,
+            "p50": 70000
+          },
+          "estimate": {
+            "range": {
+              "min": 30000,
+              "max": 119000
+            },
+            "p50": 70000,
+            "confidence": 0.55,
+            "primaryDrivers": [
+              "operations role",
+              "company: Self-employed"
+            ],
+            "riskFlags": [
+              "Job title seniority unclear"
+            ]
+          },
+          "decision": {
+            "tier": "unknown",
+            "shouldContinueEnrichment": true,
+            "reason": "Income meets $60k threshold: Upside p50 ($70k) >= $60k minimum",
+            "band": "high",
+            "requiresStrongPositives": false,
+            "reasonCode": "INCOME_ABOVE_60K"
+          }
+        },
+        "skipTracingData": {
+          "Status": 200,
+          "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+          "Source": "tps_fsh_216_cch",
+          "Records": 1,
+          "Page": 1,
+          "PeopleDetails": [
+            {
+              "Name": "Greg Scaffidi",
+              "Link": "https://www.truepeoplesearch.com/find/person/px60n2l9lnn6r69r62284",
+              "Age": 44,
+              "Person ID": "px60n2l9lnn6r69r62284",
+              "Lives in": "Ponte Vedra, FL",
+              "Used to live in": "Ponte Vedra Beach FL, Jacksonville FL, Sa...",
+              "Related to": "Benedict Scaffidi, Carl Scaffidi, Charles ..."
+            }
+          ],
+          "ageFromPersonDetails": "44"
+        },
+        "skipTracingDisposition": "clear_match",
+        "skipTracingMatchType": "name_only",
+        "telnyxLookupData": {
+          "success": true,
+          "data": {
+            "data": {
+              "country_code": "US",
+              "national_format": "(813) 785-3350",
+              "phone_number": "+18137853350",
+              "fraud": null,
+              "carrier": {
+                "mobile_country_code": "",
+                "mobile_network_code": "",
+                "name": "AERIAL COMMUNICATIONS, INC.",
+                "type": "mobile",
+                "error_code": null,
+                "normalized_carrier": "T-Mobile USA"
+              },
+              "caller_name": null,
+              "nnid_override": null,
+              "portability": {
+                "lrn": null,
+                "ported_status": "",
+                "ported_date": "",
+                "ocn": "6664",
+                "line_type": "mobile",
+                "spid": "",
+                "spid_carrier_name": "SPRINT SPECTRUM L.P.",
+                "spid_carrier_type": "",
+                "altspid": "",
+                "altspid_carrier_name": "",
+                "altspid_carrier_type": "",
+                "city": "TAMPA",
+                "state": "Florida"
+              },
+              "valid_number": true,
+              "record_type": "number_lookup"
+            }
+          }
+        },
+        "lineType": "mobile",
+        "carrierName": "AERIAL COMMUNICATIONS, INC.",
+        "carrierType": "mobile",
+        "normalizedCarrier": "T-Mobile USA",
+        "decisionReason": "PARTIAL_ENRICHMENT",
+        "decisionCodes": [
+          "PARTIAL_ENRICHMENT",
+          "SOFT_DOWNGRADE_FREE_EMAIL"
+        ],
+        "decisionConfidence": 36,
+        "decisionAction": "partial",
+        "enrichmentLevel": "partial",
+        "dncStatus": "UNKNOWN",
+        "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+        "age": "44"
+      },
+      "Line Type": "mobile",
+      "Carrier": "AERIAL COMMUNICATIONS, INC.",
+      "Normalized Carrier": "T-Mobile USA",
+      "Age": "44",
+      "Gender": "male",
+      "Gender Confidence": 98
+    },
+    "leadSummary": {
+      "name": "Greg Scaffidi",
+      "phone": "8137853350",
+      "dobOrAge": "44",
+      "zipcode": "32081",
+      "state": "FL",
+      "city": "Ponte Vedra Beach",
+      "email": "athlete_girl81@yahoo.com",
+      "dncStatus": "UNKNOWN",
+      "income": 70000,
+      "lineType": "mobile",
+      "carrier": "AERIAL COMMUNICATIONS, INC.",
+      "normalizedCarrier": "T-Mobile USA",
+      "searchFilter": "Location: Miami, FL | Industry: Real Estate",
+      "dateScraped": "2026-03-10",
+      "linkedinUrl": "https://www.linkedin.com/in/ACwAAAX-MhsByZDSDoV3KjqXnJSwZWJvlTikSBg",
+      "zipProvenance": "verified_skip_trace",
+      "skipTracingDisposition": "clear_match",
+      "needsVerification": true
+    }
+  },
+  {
+    "metadata": {
+      "savedAt": "2026-03-10T19:09:11.918Z",
+      "leadKey": "linkedin:https://www.linkedin.com/in/ACwAAAZWbTsBbzyAk3Wo4j_LKtOIdyHEPGQ7C2E"
+    },
+    "enrichedRow": {
+      "Name": "Thomas Dees",
+      "Title": "Chief Appraiser",
+      "Company": "Central Florida Appraisals, Inc.",
+      "Location": "Lake Mary, Florida, United States",
+      "LinkedIn URL": "https://www.linkedin.com/in/ACwAAAZWbTsBbzyAk3Wo4j_LKtOIdyHEPGQ7C2E",
+      "Email": "tdeesmail@aol.com",
+      "Phone": "4074633427",
+      "First Name": "Thomas",
+      "Last Name": "Dees",
+      "City": "Lake Mary",
+      "State": "FL",
+      "Zip": "32746",
+      "Search Filter": "Location: Miami, FL | Industry: Real Estate",
+      "_enriched": {
+        "firstName": "Thomas",
+        "lastName": "Dees",
+        "zipCode": "32746",
+        "zipProvenance": "verified_skip_trace",
+        "gender": "male",
+        "genderConfidence": 98,
+        "phone": "4074633427",
+        "email": "tdeesmail@aol.com",
+        "addressLine2": "FL",
+        "incomePreQual": {
+          "conservative": {
+            "min": 137000,
+            "max": 437000,
+            "p50": 287000
+          },
+          "upside": {
+            "min": 154000,
+            "max": 411000,
+            "p50": 316000
+          },
+          "estimate": {
+            "range": {
+              "min": 137000,
+              "max": 411000
+            },
+            "p50": 302000,
+            "confidence": 0.48,
+            "primaryDrivers": [
+              "career ladder: exec",
+              "company: Central Florida Appraisals, Inc."
+            ],
+            "riskFlags": [
+              "High-level title but company type may not support it"
+            ]
+          },
+          "decision": {
+            "tier": "unknown",
+            "shouldContinueEnrichment": true,
+            "reason": "Income meets $60k threshold: Upside p50 ($316k) >= $60k minimum",
+            "band": "high",
+            "requiresStrongPositives": false,
+            "reasonCode": "INCOME_ABOVE_60K"
+          }
+        },
+        "skipTracingData": {
+          "Status": 200,
+          "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+          "Source": "tps_fsh_750_cch",
+          "Records": 1,
+          "Page": 1,
+          "PeopleDetails": [
+            {
+              "Name": "Thomas Dees",
+              "Link": "https://www.truepeoplesearch.com/find/person/pxn64nu8rnlun09l90rrr",
+              "Age": 49,
+              "Person ID": "pxn64nu8rnlun09l90rrr",
+              "Lives in": "Lake Mary, FL",
+              "Used to live in": "Mayo FL, Lake City FL, Altamonte Springs ...",
+              "Related to": "Catherine Dees, Eugene Dees, Michelle Cull..."
+            }
+          ],
+          "ageFromPersonDetails": "49"
+        },
+        "skipTracingDisposition": "clear_match",
+        "skipTracingMatchType": "exact_location",
+        "telnyxLookupData": {
+          "success": true,
+          "data": {
+            "data": {
+              "country_code": "US",
+              "national_format": "(407) 463-3427",
+              "phone_number": "+14074633427",
+              "fraud": null,
+              "carrier": {
+                "mobile_country_code": "",
+                "mobile_network_code": "",
+                "name": "NEW CINGULAR WIRELESS PCS, LLC - GA",
+                "type": "mobile",
+                "error_code": null,
+                "normalized_carrier": "AT&T"
+              },
+              "caller_name": null,
+              "nnid_override": null,
+              "portability": {
+                "lrn": null,
+                "ported_status": "",
+                "ported_date": "",
+                "ocn": "6214",
+                "line_type": "mobile",
+                "spid": "",
+                "spid_carrier_name": "NEW CINGULAR WIRELESS PCS, LLC",
+                "spid_carrier_type": "",
+                "altspid": "",
+                "altspid_carrier_name": "",
+                "altspid_carrier_type": "",
+                "city": "WINTERPARK",
+                "state": "Florida"
+              },
+              "valid_number": true,
+              "record_type": "number_lookup"
+            }
+          }
+        },
+        "lineType": "mobile",
+        "carrierName": "NEW CINGULAR WIRELESS PCS, LLC - GA",
+        "carrierType": "mobile",
+        "normalizedCarrier": "AT&T",
+        "decisionReason": "PARTIAL_ENRICHMENT",
+        "decisionCodes": [
+          "PARTIAL_ENRICHMENT",
+          "SOFT_DOWNGRADE_FREE_EMAIL"
+        ],
+        "decisionConfidence": 43,
+        "decisionAction": "partial",
+        "enrichmentLevel": "partial",
+        "dncStatus": "UNKNOWN",
+        "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+        "age": "49"
+      },
+      "Line Type": "mobile",
+      "Carrier": "NEW CINGULAR WIRELESS PCS, LLC - GA",
+      "Normalized Carrier": "AT&T",
+      "Age": "49",
+      "Gender": "male",
+      "Gender Confidence": 98
+    },
+    "leadSummary": {
+      "name": "Thomas Dees",
+      "phone": "4074633427",
+      "dobOrAge": "49",
+      "zipcode": "32746",
+      "state": "FL",
+      "city": "Lake Mary",
+      "email": "tdeesmail@aol.com",
+      "dncStatus": "UNKNOWN",
+      "income": 302000,
+      "lineType": "mobile",
+      "carrier": "NEW CINGULAR WIRELESS PCS, LLC - GA",
+      "normalizedCarrier": "AT&T",
+      "searchFilter": "Location: Miami, FL | Industry: Real Estate",
+      "dateScraped": "2026-03-10",
+      "linkedinUrl": "https://www.linkedin.com/in/ACwAAAZWbTsBbzyAk3Wo4j_LKtOIdyHEPGQ7C2E",
+      "zipProvenance": "verified_skip_trace",
+      "skipTracingDisposition": "clear_match"
+    }
+  },
+  {
+    "metadata": {
+      "savedAt": "2026-03-10T19:09:14.714Z",
+      "leadKey": "linkedin:https://www.linkedin.com/in/ACwAAAfNoHEBGaj4MAXwcL3v8z4xTHjBT0G88bw"
+    },
+    "enrichedRow": {
+      "Name": "Carlos A Plana",
+      "Title": "Insurance Agent",
+      "Company": "Access Insurance Underwriter, LLC",
+      "Location": "Miami, Florida, United States",
+      "LinkedIn URL": "https://www.linkedin.com/in/ACwAAAfNoHEBGaj4MAXwcL3v8z4xTHjBT0G88bw",
+      "Email": "vickyp7515@yahoo.com",
+      "Phone": "3054583776",
+      "First Name": "Carlos",
+      "Last Name": "A Plana",
+      "City": "Miami",
+      "State": "FL",
+      "Zip": "33165",
+      "Search Filter": "Location: Miami, FL | Industry: Real Estate",
+      "_enriched": {
+        "firstName": "Carlos",
+        "lastName": "Plana",
+        "zipCode": "33165",
+        "zipProvenance": "verified_skip_trace",
+        "gender": "male",
+        "genderConfidence": 98,
+        "phone": "3054583776",
+        "email": "vickyp7515@yahoo.com",
+        "addressLine2": "FL",
+        "incomePreQual": {
+          "conservative": {
+            "min": 30000,
+            "max": 109000,
+            "p50": 64000
+          },
+          "upside": {
+            "min": 9000,
+            "max": 107000,
+            "p50": 58000
+          },
+          "estimate": {
+            "range": {
+              "min": 30000,
+              "max": 107000
+            },
+            "p50": 61000,
+            "confidence": 0.33,
+            "primaryDrivers": [
+              "company: Access Insurance Underwriter, LLC"
+            ],
+            "riskFlags": [
+              "Job title seniority unclear"
+            ]
+          },
+          "decision": {
+            "tier": "unknown",
+            "shouldContinueEnrichment": false,
+            "reason": "Income below $60k threshold: Upside p50 ($58k) < $60k minimum",
+            "band": "low",
+            "requiresStrongPositives": false,
+            "reasonCode": "INCOME_BELOW_60K"
+          }
+        },
+        "skipTracingData": {
+          "Status": 200,
+          "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+          "Source": "tps_fsh_245_cch",
+          "Records": 7,
+          "Page": 1,
+          "PeopleDetails": [
+            {
+              "Name": "Carlos Plana",
+              "Link": "https://www.truepeoplesearch.com/find/person/pr9022n46u66unl29l4n",
+              "Age": 40,
+              "Person ID": "pr9022n46u66unl29l4n",
+              "Lives in": "Miami, FL",
+              "Used to live in": "",
+              "Related to": "Alex Plana, Alexander Plana, Carlos Plana,..."
+            }
+          ],
+          "ageFromPersonDetails": "40"
+        },
+        "skipTracingDisposition": "ambiguous_used_first",
+        "skipTracingMatchType": "ambiguous_used_first",
+        "telnyxLookupData": {
+          "success": true,
+          "data": {
+            "data": {
+              "country_code": "US",
+              "national_format": "(305) 458-3776",
+              "phone_number": "+13054583776",
+              "fraud": null,
+              "carrier": {
+                "mobile_country_code": "",
+                "mobile_network_code": "",
+                "name": "NEW CINGULAR WIRELESS PCS, LLC - GA",
+                "type": "mobile",
+                "error_code": null,
+                "normalized_carrier": "AT&T"
+              },
+              "caller_name": null,
+              "nnid_override": null,
+              "portability": {
+                "lrn": null,
+                "ported_status": "",
+                "ported_date": "",
+                "ocn": "6214",
+                "line_type": "mobile",
+                "spid": "",
+                "spid_carrier_name": "NEW CINGULAR WIRELESS PCS, LLC",
+                "spid_carrier_type": "",
+                "altspid": "",
+                "altspid_carrier_name": "",
+                "altspid_carrier_type": "",
+                "city": "MIAMI",
+                "state": "Florida"
+              },
+              "valid_number": true,
+              "record_type": "number_lookup"
+            }
+          }
+        },
+        "lineType": "mobile",
+        "carrierName": "NEW CINGULAR WIRELESS PCS, LLC - GA",
+        "carrierType": "mobile",
+        "normalizedCarrier": "AT&T",
+        "decisionReason": "PARTIAL_ENRICHMENT",
+        "decisionCodes": [
+          "PARTIAL_ENRICHMENT",
+          "SOFT_DOWNGRADE_FREE_EMAIL"
+        ],
+        "decisionConfidence": 43,
+        "decisionAction": "partial",
+        "enrichmentLevel": "partial",
+        "dncStatus": "UNKNOWN"
+      },
+      "Line Type": "mobile",
+      "Carrier": "NEW CINGULAR WIRELESS PCS, LLC - GA",
+      "Normalized Carrier": "AT&T",
+      "Gender": "male",
+      "Gender Confidence": 98
+    },
+    "leadSummary": {
+      "name": "Carlos A Plana",
+      "phone": "3054583776",
+      "dobOrAge": "",
+      "zipcode": "33165",
+      "state": "FL",
+      "city": "Miami",
+      "email": "vickyp7515@yahoo.com",
+      "dncStatus": "UNKNOWN",
+      "income": 61000,
+      "lineType": "mobile",
+      "carrier": "NEW CINGULAR WIRELESS PCS, LLC - GA",
+      "normalizedCarrier": "AT&T",
+      "searchFilter": "Location: Miami, FL | Industry: Real Estate",
+      "dateScraped": "2026-03-10",
+      "linkedinUrl": "https://www.linkedin.com/in/ACwAAAfNoHEBGaj4MAXwcL3v8z4xTHjBT0G88bw",
+      "zipProvenance": "verified_skip_trace",
+      "skipTracingDisposition": "ambiguous_used_first",
+      "enrichmentStopReason": "Ambiguous match – first candidate used (verify before contact)",
+      "reviewBucket": "ambiguous_identity",
+      "needsVerification": true
+    }
+  },
+  {
+    "metadata": {
+      "savedAt": "2026-03-10T19:09:16.398Z",
+      "leadKey": "linkedin:https://www.linkedin.com/in/ACwAADqtHmABCuRtWxR5qQJRf0u1ZgAlxP29WWo"
+    },
+    "enrichedRow": {
+      "Name": "Michael Notbohm",
+      "Title": "Founder",
+      "Company": "Denny AI",
+      "Location": "Tampa, Florida, United States",
+      "LinkedIn URL": "https://www.linkedin.com/in/ACwAADqtHmABCuRtWxR5qQJRf0u1ZgAlxP29WWo",
+      "Email": "lightningbroker@yahoo.com",
+      "Phone": "8137770031",
+      "First Name": "Michael",
+      "Last Name": "Notbohm",
+      "City": "Tampa",
+      "State": "FL",
+      "Zip": "33629",
+      "Search Filter": "Location: Miami, FL | Industry: Real Estate",
+      "_enriched": {
+        "firstName": "Michael",
+        "lastName": "Notbohm",
+        "zipCode": "33629",
+        "zipProvenance": "verified_skip_trace",
+        "gender": "male",
+        "genderConfidence": 98,
+        "phone": "8137770031",
+        "email": "lightningbroker@yahoo.com",
+        "addressLine2": "FL",
+        "incomePreQual": {
+          "conservative": {
+            "min": 233000,
+            "max": 533000,
+            "p50": 383000
+          },
+          "upside": {
+            "min": 258000,
+            "max": 547000,
+            "p50": 421000
+          },
+          "estimate": {
+            "range": {
+              "min": 233000,
+              "max": 547000
+            },
+            "p50": 402000,
+            "confidence": 0.48,
+            "primaryDrivers": [
+              "career ladder: exec",
+              "company: Denny AI"
+            ],
+            "riskFlags": [
+              "High-level title but company type may not support it"
+            ]
+          },
+          "decision": {
+            "tier": "unknown",
+            "shouldContinueEnrichment": true,
+            "reason": "Income meets $60k threshold: Upside p50 ($421k) >= $60k minimum",
+            "band": "high",
+            "requiresStrongPositives": false,
+            "reasonCode": "INCOME_ABOVE_60K"
+          }
+        },
+        "skipTracingData": {
+          "Status": 200,
+          "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+          "Source": "tps_fsh_251_cch",
+          "Records": 1,
+          "Page": 1,
+          "PeopleDetails": [
+            {
+              "Name": "Michael Notbohm",
+              "Link": "https://www.truepeoplesearch.com/find/person/p86n22662r609n2489n0",
+              "Age": 44,
+              "Person ID": "p86n22662r609n2489n0",
+              "Lives in": "Tampa, FL",
+              "Used to live in": "Las Vegas NV, Brandon FL, Auburn AL, Lutz...",
+              "Related to": "J Notbohm, Joy Notbohm, Mike Notbohm, Robe..."
+            }
+          ],
+          "ageFromPersonDetails": "44"
+        },
+        "skipTracingDisposition": "clear_match",
+        "skipTracingMatchType": "exact_location",
+        "telnyxLookupData": {
+          "success": true,
+          "data": {
+            "data": {
+              "country_code": "US",
+              "national_format": "(813) 777-0031",
+              "phone_number": "+18137770031",
+              "fraud": null,
+              "carrier": {
+                "mobile_country_code": "",
+                "mobile_network_code": "",
+                "name": "CELLCO PARTNERSHIP DBA VERIZON WIRELESS - FL",
+                "type": "mobile",
+                "error_code": null,
+                "normalized_carrier": "Verizon Wireless"
+              },
+              "caller_name": null,
+              "nnid_override": null,
+              "portability": {
+                "lrn": null,
+                "ported_status": "",
+                "ported_date": "",
+                "ocn": "6502",
+                "line_type": "mobile",
+                "spid": "",
+                "spid_carrier_name": "CELLCO PARTNERSHIP DBA VERIZON",
+                "spid_carrier_type": "",
+                "altspid": "",
+                "altspid_carrier_name": "",
+                "altspid_carrier_type": "",
+                "city": "TAMPA",
+                "state": "Florida"
+              },
+              "valid_number": true,
+              "record_type": "number_lookup"
+            }
+          }
+        },
+        "lineType": "mobile",
+        "carrierName": "CELLCO PARTNERSHIP DBA VERIZON WIRELESS - FL",
+        "carrierType": "mobile",
+        "normalizedCarrier": "Verizon Wireless",
+        "decisionReason": "PARTIAL_ENRICHMENT",
+        "decisionCodes": [
+          "PARTIAL_ENRICHMENT",
+          "SOFT_DOWNGRADE_FREE_EMAIL"
+        ],
+        "decisionConfidence": 36,
+        "decisionAction": "partial",
+        "enrichmentLevel": "partial",
+        "dncStatus": "UNKNOWN",
+        "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+        "age": "44"
+      },
+      "Line Type": "mobile",
+      "Carrier": "CELLCO PARTNERSHIP DBA VERIZON WIRELESS - FL",
+      "Normalized Carrier": "Verizon Wireless",
+      "Age": "44",
+      "Gender": "male",
+      "Gender Confidence": 98
+    },
+    "leadSummary": {
+      "name": "Michael Notbohm",
+      "phone": "8137770031",
+      "dobOrAge": "44",
+      "zipcode": "33629",
+      "state": "FL",
+      "city": "Tampa",
+      "email": "lightningbroker@yahoo.com",
+      "dncStatus": "UNKNOWN",
+      "income": 402000,
+      "lineType": "mobile",
+      "carrier": "CELLCO PARTNERSHIP DBA VERIZON WIRELESS - FL",
+      "normalizedCarrier": "Verizon Wireless",
+      "searchFilter": "Location: Miami, FL | Industry: Real Estate",
+      "dateScraped": "2026-03-10",
+      "linkedinUrl": "https://www.linkedin.com/in/ACwAADqtHmABCuRtWxR5qQJRf0u1ZgAlxP29WWo",
+      "zipProvenance": "verified_skip_trace",
+      "skipTracingDisposition": "clear_match"
+    }
+  },
+  {
+    "metadata": {
+      "savedAt": "2026-03-10T19:09:17.971Z",
+      "leadKey": "linkedin:https://www.linkedin.com/in/ACwAAACg5WwBNF0TG7ryFyydbDzIX8YYzgRXKro"
+    },
+    "enrichedRow": {
+      "Name": "Jessica Julian",
+      "Title": "Realtor Associate",
+      "Company": "Douglas Elliman Real Estate",
+      "Location": "West Palm Beach, Florida, United States",
+      "LinkedIn URL": "https://www.linkedin.com/in/ACwAAACg5WwBNF0TG7ryFyydbDzIX8YYzgRXKro",
+      "Email": "silversky20@juno.com",
+      "Phone": "2064652250",
+      "First Name": "Jessica",
+      "Last Name": "Julian",
+      "City": "West Palm Beach",
+      "State": "FL",
+      "Zip": "33405",
+      "Search Filter": "Location: Miami, FL | Industry: Real Estate",
+      "_enriched": {
+        "firstName": "Jessica",
+        "lastName": "Julian",
+        "zipCode": "33405",
+        "zipProvenance": "verified_skip_trace",
+        "gender": "female",
+        "genderConfidence": 98,
+        "phone": "2064652250",
+        "email": "silversky20@juno.com",
+        "addressLine2": "FL",
+        "incomePreQual": {
+          "conservative": {
+            "min": 31000,
+            "max": 109000,
+            "p50": 70000
+          },
+          "upside": {
+            "min": 28000,
+            "max": 112000,
+            "p50": 70000
+          },
+          "estimate": {
+            "range": {
+              "min": 31000,
+              "max": 112000
+            },
+            "p50": 70000,
+            "confidence": 0.6,
+            "primaryDrivers": [
+              "career ladder: ic",
+              "company: Douglas Elliman Real Estate"
+            ],
+            "riskFlags": []
+          },
+          "decision": {
+            "tier": "unknown",
+            "shouldContinueEnrichment": true,
+            "reason": "Income meets $60k threshold: Upside p50 ($70k) >= $60k minimum",
+            "band": "high",
+            "requiresStrongPositives": false,
+            "reasonCode": "INCOME_ABOVE_60K"
+          }
+        },
+        "skipTracingData": {
+          "Status": 200,
+          "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+          "Source": "tps_fsh_442_cch",
+          "Records": 1,
+          "Page": 1,
+          "PeopleDetails": [
+            {
+              "Name": "Jessica Julian",
+              "Link": "https://www.truepeoplesearch.com/find/person/px4l9988466822u264lru",
+              "Age": 45,
+              "Person ID": "px4l9988466822u264lru",
+              "Lives in": "West Palm Beach, FL",
+              "Used to live in": "Lake Worth Beach FL, Denver CO, Seattle W...",
+              "Related to": "Albert Julian, Jessica Woodard, Albert Jul..."
+            }
+          ],
+          "ageFromPersonDetails": "45"
+        },
+        "skipTracingDisposition": "clear_match",
+        "skipTracingMatchType": "exact_location",
+        "phoneStateMismatch": true,
+        "telnyxLookupData": {
+          "success": true,
+          "data": {
+            "data": {
+              "country_code": "US",
+              "national_format": "(206) 465-2250",
+              "phone_number": "+12064652250",
+              "fraud": null,
+              "carrier": {
+                "mobile_country_code": "",
+                "mobile_network_code": "",
+                "name": "NEW CINGULAR WIRELESS PCS, LLC",
+                "type": "mobile",
+                "error_code": null,
+                "normalized_carrier": "AT&T"
+              },
+              "caller_name": null,
+              "nnid_override": null,
+              "portability": {
+                "lrn": null,
+                "ported_status": "",
+                "ported_date": "",
+                "ocn": "6010",
+                "line_type": "mobile",
+                "spid": "",
+                "spid_carrier_name": "NEW CINGULAR WIRELESS PCS, LLC",
+                "spid_carrier_type": "",
+                "altspid": "",
+                "altspid_carrier_name": "",
+                "altspid_carrier_type": "",
+                "city": "SEATTLE",
+                "state": "Washington"
+              },
+              "valid_number": true,
+              "record_type": "number_lookup"
+            }
+          }
+        },
+        "lineType": "mobile",
+        "carrierName": "NEW CINGULAR WIRELESS PCS, LLC",
+        "carrierType": "mobile",
+        "normalizedCarrier": "AT&T",
+        "decisionReason": "FULL_ENRICHMENT",
+        "decisionCodes": [
+          "FULL_ENRICHMENT"
+        ],
+        "decisionConfidence": 60,
+        "decisionAction": "full",
+        "enrichmentLevel": "full",
+        "dncStatus": "UNKNOWN",
+        "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+        "age": "45"
+      },
+      "Line Type": "mobile",
+      "Carrier": "NEW CINGULAR WIRELESS PCS, LLC",
+      "Normalized Carrier": "AT&T",
+      "Age": "45",
+      "Gender": "female",
+      "Gender Confidence": 98
+    },
+    "leadSummary": {
+      "name": "Jessica Julian",
+      "phone": "2064652250",
+      "dobOrAge": "45",
+      "zipcode": "33405",
+      "state": "FL",
+      "city": "West Palm Beach",
+      "email": "silversky20@juno.com",
+      "dncStatus": "UNKNOWN",
+      "income": 70000,
+      "lineType": "mobile",
+      "carrier": "NEW CINGULAR WIRELESS PCS, LLC",
+      "normalizedCarrier": "AT&T",
+      "searchFilter": "Location: Miami, FL | Industry: Real Estate",
+      "dateScraped": "2026-03-10",
+      "linkedinUrl": "https://www.linkedin.com/in/ACwAAACg5WwBNF0TG7ryFyydbDzIX8YYzgRXKro",
+      "zipProvenance": "verified_skip_trace",
+      "skipTracingDisposition": "clear_match",
+      "phoneStateMismatch": true
+    }
+  },
+  {
+    "metadata": {
+      "savedAt": "2026-03-10T19:09:22.529Z",
+      "leadKey": "linkedin:https://www.linkedin.com/in/ACwAAACbqwABZ8hEGsVm0RDBeNvMLkKJ9wegUTg"
+    },
+    "enrichedRow": {
+      "Name": "Jacob Slevin",
+      "Title": "CEO",
+      "Company": "FuseProp",
+      "Location": "Boca Raton, Florida, United States",
+      "LinkedIn URL": "https://www.linkedin.com/in/ACwAAACbqwABZ8hEGsVm0RDBeNvMLkKJ9wegUTg",
+      "Email": "werbs@att.net",
+      "Phone": "5616543028",
+      "First Name": "Jacob",
+      "Last Name": "Slevin",
+      "City": "Boca Raton",
+      "State": "FL",
+      "Zip": "33434",
+      "Search Filter": "Location: Miami, FL | Industry: Real Estate",
+      "_enriched": {
+        "firstName": "Jacob",
+        "lastName": "Slevin",
+        "zipCode": "33434",
+        "zipProvenance": "verified_skip_trace",
+        "gender": "male",
+        "genderConfidence": 98,
+        "phone": "5616543028",
+        "email": "werbs@att.net",
+        "addressLine2": "FL",
+        "incomePreQual": {
+          "conservative": {
+            "min": 313000,
+            "max": 613000,
+            "p50": 463000
+          },
+          "upside": {
+            "min": 347000,
+            "max": 662000,
+            "p50": 509000
+          },
+          "estimate": {
+            "range": {
+              "min": 313000,
+              "max": 662000
+            },
+            "p50": 486000,
+            "confidence": 0.48,
+            "primaryDrivers": [
+              "career ladder: exec",
+              "company: FuseProp"
+            ],
+            "riskFlags": [
+              "High-level title but company type may not support it"
+            ]
+          },
+          "decision": {
+            "tier": "unknown",
+            "shouldContinueEnrichment": true,
+            "reason": "Income meets $60k threshold: Upside p50 ($509k) >= $60k minimum",
+            "band": "high",
+            "requiresStrongPositives": false,
+            "reasonCode": "INCOME_ABOVE_60K"
+          }
+        },
+        "skipTracingData": {
+          "Status": 200,
+          "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+          "Source": "tps_fsh_281_cch",
+          "Records": 2,
+          "Page": 1,
+          "PeopleDetails": [
+            {
+              "Name": "Jacob Slevin",
+              "Link": "https://www.truepeoplesearch.com/find/person/px2nrurr4ll2lnuu280",
+              "Age": 40,
+              "Person ID": "px2nrurr4ll2lnuu280",
+              "Lives in": "Boca Raton, FL",
+              "Used to live in": "",
+              "Related to": "Andrew Werber, Benjamin Werber, Daniel Wer..."
+            }
+          ],
+          "ageFromPersonDetails": "40"
+        },
+        "skipTracingDisposition": "clear_match",
+        "skipTracingMatchType": "exact_location",
+        "telnyxLookupData": {
+          "success": true,
+          "data": {
+            "data": {
+              "country_code": "US",
+              "national_format": "(561) 654-3028",
+              "phone_number": "+15616543028",
+              "fraud": null,
+              "carrier": {
+                "mobile_country_code": "",
+                "mobile_network_code": "",
+                "name": "Cingular Wireless/2",
+                "type": "mobile",
+                "error_code": null,
+                "normalized_carrier": "AT&T"
+              },
+              "caller_name": null,
+              "nnid_override": null,
+              "portability": {
+                "lrn": "561319XXXX",
+                "ported_status": "",
+                "ported_date": "",
+                "ocn": "6214",
+                "line_type": "mobile",
+                "spid": "",
+                "spid_carrier_name": "NEW CINGULAR WIRELESS PCS, LLC",
+                "spid_carrier_type": "",
+                "altspid": "",
+                "altspid_carrier_name": "",
+                "altspid_carrier_type": "",
+                "city": "WPALMBEACH",
+                "state": "Florida"
+              },
+              "valid_number": true,
+              "record_type": "number_lookup"
+            }
+          }
+        },
+        "lineType": "mobile",
+        "carrierName": "Cingular Wireless/2",
+        "carrierType": "mobile",
+        "normalizedCarrier": "AT&T",
+        "decisionReason": "FULL_ENRICHMENT",
+        "decisionCodes": [
+          "FULL_ENRICHMENT"
+        ],
+        "decisionConfidence": 87,
+        "decisionAction": "full",
+        "enrichmentLevel": "full",
+        "dncStatus": "UNKNOWN",
+        "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+        "age": "40"
+      },
+      "Line Type": "mobile",
+      "Carrier": "Cingular Wireless/2",
+      "Normalized Carrier": "AT&T",
+      "Age": "40",
+      "Gender": "male",
+      "Gender Confidence": 98
+    },
+    "leadSummary": {
+      "name": "Jacob Slevin",
+      "phone": "5616543028",
+      "dobOrAge": "40",
+      "zipcode": "33434",
+      "state": "FL",
+      "city": "Boca Raton",
+      "email": "werbs@att.net",
+      "dncStatus": "UNKNOWN",
+      "income": 486000,
+      "lineType": "mobile",
+      "carrier": "Cingular Wireless/2",
+      "normalizedCarrier": "AT&T",
+      "searchFilter": "Location: Miami, FL | Industry: Real Estate",
+      "dateScraped": "2026-03-10",
+      "linkedinUrl": "https://www.linkedin.com/in/ACwAAACbqwABZ8hEGsVm0RDBeNvMLkKJ9wegUTg",
+      "zipProvenance": "verified_skip_trace",
+      "skipTracingDisposition": "clear_match"
+    }
+  },
+  {
+    "metadata": {
+      "savedAt": "2026-03-10T19:09:25.321Z",
+      "leadKey": "linkedin:https://www.linkedin.com/in/ACwAAAYYDh4B0hXrGAKWrKHc6kiAIu6psIyDOrs"
+    },
+    "enrichedRow": {
+      "Name": "Eyal Mehaber",
+      "Title": "CEO",
+      "Company": "EM Equity",
+      "Location": "Hollywood, Florida, United States",
+      "LinkedIn URL": "https://www.linkedin.com/in/ACwAAAYYDh4B0hXrGAKWrKHc6kiAIu6psIyDOrs",
+      "Email": "fmehaber@gmail.com",
+      "Phone": "7862515509",
+      "First Name": "Eyal",
+      "Last Name": "Mehaber",
+      "City": "Hollywood",
+      "State": "FL",
+      "Zip": "33020",
+      "Search Filter": "Location: Miami, FL | Industry: Real Estate",
+      "_enriched": {
+        "firstName": "Eyal",
+        "lastName": "Mehaber",
+        "zipCode": "33020",
+        "zipProvenance": "verified_skip_trace",
+        "phone": "7862515509",
+        "email": "fmehaber@gmail.com",
+        "addressLine2": "FL",
+        "incomePreQual": {
+          "conservative": {
+            "min": 410000,
+            "max": 710000,
+            "p50": 560000
+          },
+          "upside": {
+            "min": 454000,
+            "max": 779000,
+            "p50": 616000
+          },
+          "estimate": {
+            "range": {
+              "min": 410000,
+              "max": 779000
+            },
+            "p50": 588000,
+            "confidence": 0.48,
+            "primaryDrivers": [
+              "career ladder: exec",
+              "company: EM Equity"
+            ],
+            "riskFlags": [
+              "High-level title but company type may not support it"
+            ]
+          },
+          "decision": {
+            "tier": "unknown",
+            "shouldContinueEnrichment": true,
+            "reason": "Income meets $60k threshold: Upside p50 ($616k) >= $60k minimum",
+            "band": "high",
+            "requiresStrongPositives": false,
+            "reasonCode": "INCOME_ABOVE_60K"
+          }
+        },
+        "skipTracingData": {
+          "Status": 200,
+          "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+          "Source": "tps_fsh_224_cch",
+          "Records": 2,
+          "Page": 1,
+          "PeopleDetails": [
+            {
+              "Name": "Eyal Mehaber",
+              "Link": "https://www.truepeoplesearch.com/find/person/px60n098696rlr2n98r64",
+              "Age": 57,
+              "Person ID": "px60n098696rlr2n98r64",
+              "Lives in": "Hollywood, FL",
+              "Used to live in": "Sunny Isles Beach FL, Pompano Beach FL, L...",
+              "Related to": "Eyal Mehaber, Alana Mehaber, Alexa Mehaber..."
+            }
+          ],
+          "ageFromPersonDetails": "57"
+        },
+        "skipTracingDisposition": "ambiguous_used_first",
+        "skipTracingMatchType": "ambiguous_used_first",
+        "telnyxLookupData": {
+          "success": true,
+          "data": {
+            "data": {
+              "country_code": "US",
+              "national_format": "(786) 251-5509",
+              "phone_number": "+17862515509",
+              "fraud": null,
+              "carrier": {
+                "mobile_country_code": "",
+                "mobile_network_code": "",
+                "name": "Cingular Wireless/2",
+                "type": "mobile",
+                "error_code": null,
+                "normalized_carrier": ""
+              },
+              "caller_name": null,
+              "nnid_override": null,
+              "portability": {
+                "lrn": "305319XXXX",
+                "ported_status": "",
+                "ported_date": "",
+                "ocn": "6214",
+                "line_type": "mobile",
+                "spid": "",
+                "spid_carrier_name": "NEW CINGULAR WIRELESS PCS, LLC",
+                "spid_carrier_type": "",
+                "altspid": "",
+                "altspid_carrier_name": "",
+                "altspid_carrier_type": "",
+                "city": "NORTH DADE",
+                "state": "Florida"
+              },
+              "valid_number": true,
+              "record_type": "number_lookup"
+            }
+          }
+        },
+        "lineType": "mobile",
+        "carrierName": "Cingular Wireless/2",
+        "carrierType": "mobile",
+        "normalizedCarrier": "",
+        "decisionReason": "FULL_ENRICHMENT",
+        "decisionCodes": [
+          "FULL_ENRICHMENT",
+          "SOFT_DOWNGRADE_FREE_EMAIL"
+        ],
+        "decisionConfidence": 63,
+        "decisionAction": "full",
+        "enrichmentLevel": "full",
+        "dncStatus": "UNKNOWN",
+        "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+        "age": "57"
+      },
+      "Line Type": "mobile",
+      "Carrier": "Cingular Wireless/2",
+      "Age": "57"
+    },
+    "leadSummary": {
+      "name": "Eyal Mehaber",
+      "phone": "7862515509",
+      "dobOrAge": "57",
+      "zipcode": "33020",
+      "state": "FL",
+      "city": "Hollywood",
+      "email": "fmehaber@gmail.com",
+      "dncStatus": "UNKNOWN",
+      "income": 588000,
+      "lineType": "mobile",
+      "carrier": "Cingular Wireless/2",
+      "normalizedCarrier": "",
+      "searchFilter": "Location: Miami, FL | Industry: Real Estate",
+      "dateScraped": "2026-03-10",
+      "linkedinUrl": "https://www.linkedin.com/in/ACwAAAYYDh4B0hXrGAKWrKHc6kiAIu6psIyDOrs",
+      "zipProvenance": "verified_skip_trace",
+      "skipTracingDisposition": "ambiguous_used_first",
+      "enrichmentStopReason": "Ambiguous match – first candidate used (verify before contact)",
+      "reviewBucket": "ambiguous_identity",
+      "needsVerification": true
+    }
+  }
+]

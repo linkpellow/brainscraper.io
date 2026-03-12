@@ -1,0 +1,162 @@
+{
+  "metadata": {
+    "savedAt": "2026-03-10T02:04:42.894Z",
+    "leadKey": "linkedin:https://www.linkedin.com/in/ACwAAAZM_RwBwm4JsuwXs5bEcYz4pEJSrivjv7E"
+  },
+  "enrichedRow": {
+    "Name": "Serge Logan",
+    "Title": "Chief Executive Officer",
+    "Company": "Maatdesk",
+    "Location": "Miami, Florida, United States",
+    "LinkedIn URL": "https://www.linkedin.com/in/ACwAAAZM_RwBwm4JsuwXs5bEcYz4pEJSrivjv7E",
+    "Email": "mr_loginov@yahoo.com",
+    "Phone": "9546461908",
+    "First Name": "Serge",
+    "Last Name": "Logan",
+    "City": "Miami",
+    "State": "FL",
+    "Zip": "33180",
+    "Search Filter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+    "_enriched": {
+      "firstName": "Serge",
+      "lastName": "Logan",
+      "zipCode": "33180",
+      "zipProvenance": "verified_skip_trace",
+      "phone": "9546461908",
+      "email": "mr_loginov@yahoo.com",
+      "addressLine2": "FL",
+      "incomePreQual": {
+        "conservative": {
+          "min": 587000,
+          "max": 887000,
+          "p50": 737000
+        },
+        "upside": {
+          "min": 648000,
+          "max": 973000,
+          "p50": 810000
+        },
+        "estimate": {
+          "range": {
+            "min": 587000,
+            "max": 973000
+          },
+          "p50": 774000,
+          "confidence": 0.7,
+          "primaryDrivers": [
+            "career ladder: exec",
+            "executive role",
+            "company: Maatdesk"
+          ],
+          "riskFlags": [
+            "High-level title but company type may not support it"
+          ]
+        },
+        "decision": {
+          "tier": "unknown",
+          "shouldContinueEnrichment": true,
+          "reason": "Income meets $60k threshold: Upside p50 ($810k) >= $60k minimum",
+          "band": "high",
+          "requiresStrongPositives": false,
+          "reasonCode": "INCOME_ABOVE_60K"
+        }
+      },
+      "skipTracingData": {
+        "Status": 200,
+        "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+        "Source": "tps_fsh_532_cch",
+        "Records": 2,
+        "Page": 1,
+        "PeopleDetails": [
+          {
+            "Name": "Serge Logan",
+            "Link": "https://www.truepeoplesearch.com/find/person/p6268490ru0u22nuu260",
+            "Age": 38,
+            "Person ID": "p6268490ru0u22nuu260",
+            "Lives in": "Miami, FL",
+            "Used to live in": "Hallandale Beach FL, Miami Beach FL, Aven...",
+            "Related to": "Leonda Logan, Svetlana Kandeeva, Brenda Lo..."
+          }
+        ],
+        "ageFromPersonDetails": "38"
+      },
+      "skipTracingDisposition": "clear_match",
+      "skipTracingMatchType": "exact_location",
+      "telnyxLookupData": {
+        "success": true,
+        "data": {
+          "data": {
+            "country_code": "US",
+            "national_format": "(954) 646-1908",
+            "phone_number": "+19546461908",
+            "fraud": null,
+            "carrier": {
+              "mobile_country_code": "",
+              "mobile_network_code": "",
+              "name": "T-Mobile US-SVR-10X/2",
+              "type": "mobile",
+              "error_code": null,
+              "normalized_carrier": ""
+            },
+            "caller_name": null,
+            "nnid_override": null,
+            "portability": {
+              "lrn": "305490XXXX",
+              "ported_status": "",
+              "ported_date": "",
+              "ocn": "6889",
+              "line_type": "mobile",
+              "spid": "",
+              "spid_carrier_name": "OMNIPOINT MIAMI E LICENSE, LLC",
+              "spid_carrier_type": "",
+              "altspid": "",
+              "altspid_carrier_name": "",
+              "altspid_carrier_type": "",
+              "city": "MIAMI",
+              "state": "Florida"
+            },
+            "valid_number": true,
+            "record_type": "number_lookup"
+          }
+        }
+      },
+      "lineType": "mobile",
+      "carrierName": "T-Mobile US-SVR-10X/2",
+      "carrierType": "mobile",
+      "normalizedCarrier": "",
+      "decisionReason": "FULL_ENRICHMENT",
+      "decisionCodes": [
+        "FULL_ENRICHMENT",
+        "SOFT_DOWNGRADE_FREE_EMAIL"
+      ],
+      "decisionConfidence": 63,
+      "decisionAction": "full",
+      "enrichmentLevel": "full",
+      "dncStatus": "UNKNOWN",
+      "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+      "age": "38"
+    },
+    "Line Type": "mobile",
+    "Carrier": "T-Mobile US-SVR-10X/2",
+    "Age": "38"
+  },
+  "leadSummary": {
+    "name": "Serge Logan",
+    "phone": "9546461908",
+    "dobOrAge": "38",
+    "zipcode": "33180",
+    "state": "FL",
+    "city": "Miami",
+    "email": "mr_loginov@yahoo.com",
+    "dncStatus": "UNKNOWN",
+    "income": 774000,
+    "lineType": "mobile",
+    "carrier": "T-Mobile US-SVR-10X/2",
+    "normalizedCarrier": "",
+    "searchFilter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+    "dateScraped": "2026-03-10",
+    "linkedinUrl": "https://www.linkedin.com/in/ACwAAAZM_RwBwm4JsuwXs5bEcYz4pEJSrivjv7E",
+    "zipProvenance": "verified_skip_trace",
+    "skipTracingDisposition": "clear_match"
+  }
+}

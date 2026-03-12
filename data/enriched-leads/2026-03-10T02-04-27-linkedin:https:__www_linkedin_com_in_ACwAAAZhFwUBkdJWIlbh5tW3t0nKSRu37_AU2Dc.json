@@ -1,0 +1,163 @@
+{
+  "metadata": {
+    "savedAt": "2026-03-10T02:04:27.637Z",
+    "leadKey": "linkedin:https://www.linkedin.com/in/ACwAAAZhFwUBkdJWIlbh5tW3t0nKSRu37_AU2Dc"
+  },
+  "enrichedRow": {
+    "Name": "AJ Giordano",
+    "Title": "Consultant - Chief Operating Officer",
+    "Company": "Dr. Pryor",
+    "Location": "Fort Lauderdale, Florida, United States",
+    "LinkedIn URL": "https://www.linkedin.com/in/ACwAAAZhFwUBkdJWIlbh5tW3t0nKSRu37_AU2Dc",
+    "Email": "species1@optonline.net",
+    "Phone": "5169826554",
+    "First Name": "AJ",
+    "Last Name": "Giordano",
+    "City": "Fort Lauderdale",
+    "State": "FL",
+    "Zip": "80524",
+    "Search Filter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+    "_enriched": {
+      "firstName": "AJ",
+      "lastName": "Giordano",
+      "zipCode": "80524",
+      "zipProvenance": "verified_skip_trace",
+      "phone": "5169826554",
+      "email": "species1@optonline.net",
+      "addressLine2": "FL",
+      "incomePreQual": {
+        "conservative": {
+          "min": 465000,
+          "max": 765000,
+          "p50": 615000
+        },
+        "upside": {
+          "min": 514000,
+          "max": 839000,
+          "p50": 676000
+        },
+        "estimate": {
+          "range": {
+            "min": 465000,
+            "max": 839000
+          },
+          "p50": 646000,
+          "confidence": 0.7,
+          "primaryDrivers": [
+            "career ladder: exec",
+            "consultant role",
+            "company: Dr. Pryor"
+          ],
+          "riskFlags": [
+            "High-level title but company type may not support it"
+          ]
+        },
+        "decision": {
+          "tier": "unknown",
+          "shouldContinueEnrichment": true,
+          "reason": "Income meets $60k threshold: Upside p50 ($676k) >= $60k minimum",
+          "band": "high",
+          "requiresStrongPositives": false,
+          "reasonCode": "INCOME_ABOVE_60K"
+        }
+      },
+      "skipTracingData": {
+        "Status": 200,
+        "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+        "Source": "tps_fsh_451_cch",
+        "Records": 1,
+        "Page": 1,
+        "PeopleDetails": [
+          {
+            "Name": "Aj Giordano",
+            "Link": "https://www.truepeoplesearch.com/find/person/p482ru862u0l64684448",
+            "Age": 53,
+            "Person ID": "p482ru862u0l64684448",
+            "Lives in": "Fort Collins, CO",
+            "Used to live in": "Salinas CA, Ventura CA, Lindenhurst NY, T...",
+            "Related to": "Anthony Giordano, Anthony Giordano, Joan V..."
+          }
+        ],
+        "ageFromPersonDetails": "53"
+      },
+      "skipTracingDisposition": "clear_match",
+      "skipTracingMatchType": "initial_last",
+      "telnyxLookupData": {
+        "success": true,
+        "data": {
+          "data": {
+            "country_code": "US",
+            "national_format": "(516) 982-6554",
+            "phone_number": "+15169826554",
+            "fraud": null,
+            "carrier": {
+              "mobile_country_code": "",
+              "mobile_network_code": "",
+              "name": "Verizon Wireless:6006 - SVR/2",
+              "type": "mobile",
+              "error_code": null,
+              "normalized_carrier": "Verizon Wireless"
+            },
+            "caller_name": null,
+            "nnid_override": null,
+            "portability": {
+              "lrn": "631599XXXX",
+              "ported_status": "",
+              "ported_date": "",
+              "ocn": "6959",
+              "line_type": "mobile",
+              "spid": "",
+              "spid_carrier_name": "CELLCO PARTNERSHIP DBA VERIZON",
+              "spid_carrier_type": "",
+              "altspid": "",
+              "altspid_carrier_name": "",
+              "altspid_carrier_type": "",
+              "city": "RIVERHEAD",
+              "state": "New York"
+            },
+            "valid_number": true,
+            "record_type": "number_lookup"
+          }
+        }
+      },
+      "lineType": "mobile",
+      "carrierName": "Verizon Wireless:6006 - SVR/2",
+      "carrierType": "mobile",
+      "normalizedCarrier": "Verizon Wireless",
+      "decisionReason": "FULL_ENRICHMENT",
+      "decisionCodes": [
+        "FULL_ENRICHMENT"
+      ],
+      "decisionConfidence": 60,
+      "decisionAction": "full",
+      "enrichmentLevel": "full",
+      "dncStatus": "UNKNOWN",
+      "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+      "age": "53"
+    },
+    "Line Type": "mobile",
+    "Carrier": "Verizon Wireless:6006 - SVR/2",
+    "Normalized Carrier": "Verizon Wireless",
+    "Age": "53"
+  },
+  "leadSummary": {
+    "name": "AJ Giordano",
+    "phone": "5169826554",
+    "dobOrAge": "53",
+    "zipcode": "80524",
+    "state": "FL",
+    "city": "Fort Lauderdale",
+    "email": "species1@optonline.net",
+    "dncStatus": "UNKNOWN",
+    "income": 646000,
+    "lineType": "mobile",
+    "carrier": "Verizon Wireless:6006 - SVR/2",
+    "normalizedCarrier": "Verizon Wireless",
+    "searchFilter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+    "dateScraped": "2026-03-10",
+    "linkedinUrl": "https://www.linkedin.com/in/ACwAAAZhFwUBkdJWIlbh5tW3t0nKSRu37_AU2Dc",
+    "zipProvenance": "verified_skip_trace",
+    "skipTracingDisposition": "clear_match",
+    "needsVerification": true
+  }
+}

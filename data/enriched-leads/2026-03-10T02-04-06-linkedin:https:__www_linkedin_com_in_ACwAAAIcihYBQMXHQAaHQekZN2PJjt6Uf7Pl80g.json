@@ -1,0 +1,167 @@
+{
+  "metadata": {
+    "savedAt": "2026-03-10T02:04:06.254Z",
+    "leadKey": "linkedin:https://www.linkedin.com/in/ACwAAAIcihYBQMXHQAaHQekZN2PJjt6Uf7Pl80g"
+  },
+  "enrichedRow": {
+    "Name": "Ryan Canavan",
+    "Title": "Vice President of Sales",
+    "Company": "FairCode",
+    "Location": "Inlet Beach, Florida, United States",
+    "LinkedIn URL": "https://www.linkedin.com/in/ACwAAAIcihYBQMXHQAaHQekZN2PJjt6Uf7Pl80g",
+    "Email": "ryan.canavan@hotmail.com",
+    "Phone": "4048032847",
+    "First Name": "Ryan",
+    "Last Name": "Canavan",
+    "City": "Inlet Beach",
+    "State": "FL",
+    "Zip": "32461",
+    "Search Filter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+    "_enriched": {
+      "firstName": "Ryan",
+      "lastName": "Canavan",
+      "zipCode": "32461",
+      "zipProvenance": "verified_skip_trace",
+      "gender": "male",
+      "genderConfidence": 98,
+      "phone": "4048032847",
+      "email": "ryan.canavan@hotmail.com",
+      "addressLine2": "FL",
+      "incomePreQual": {
+        "conservative": {
+          "min": 78000,
+          "max": 378000,
+          "p50": 228000
+        },
+        "upside": {
+          "min": 103000,
+          "max": 345000,
+          "p50": 265000
+        },
+        "estimate": {
+          "range": {
+            "min": 78000,
+            "max": 345000
+          },
+          "p50": 247000,
+          "confidence": 0.7,
+          "primaryDrivers": [
+            "career ladder: exec",
+            "sales role",
+            "company: FairCode"
+          ],
+          "riskFlags": [
+            "High-level title but company type may not support it"
+          ]
+        },
+        "decision": {
+          "tier": "unknown",
+          "shouldContinueEnrichment": true,
+          "reason": "Income meets $60k threshold: Upside p50 ($265k) >= $60k minimum",
+          "band": "high",
+          "requiresStrongPositives": false,
+          "reasonCode": "INCOME_ABOVE_60K"
+        }
+      },
+      "skipTracingData": {
+        "Status": 200,
+        "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+        "Source": "tps_fsh_368_cch",
+        "Records": 1,
+        "Page": 1,
+        "PeopleDetails": [
+          {
+            "Name": "Ryan Canavan",
+            "Link": "https://www.truepeoplesearch.com/find/person/pu22uur0ru8l4ln49r2l",
+            "Age": 58,
+            "Person ID": "pu22uur0ru8l4ln49r2l",
+            "Lives in": "Inlet Beach, FL",
+            "Used to live in": "Atlanta GA, Brookhaven GA, Roswell GA, Ba...",
+            "Related to": "Karen Canavan, Adason Canavan, Addy Canava..."
+          }
+        ],
+        "ageFromPersonDetails": "58"
+      },
+      "skipTracingDisposition": "clear_match",
+      "skipTracingMatchType": "exact_location",
+      "telnyxLookupData": {
+        "success": true,
+        "data": {
+          "data": {
+            "country_code": "US",
+            "national_format": "(404) 803-2847",
+            "phone_number": "+14048032847",
+            "fraud": null,
+            "carrier": {
+              "mobile_country_code": "",
+              "mobile_network_code": "",
+              "name": "CELLCO PARTNERSHIP DBA VERIZON WIRELESS - GA",
+              "type": "mobile",
+              "error_code": null,
+              "normalized_carrier": "Verizon Wireless"
+            },
+            "caller_name": null,
+            "nnid_override": null,
+            "portability": {
+              "lrn": null,
+              "ported_status": "",
+              "ported_date": "",
+              "ocn": "6540",
+              "line_type": "mobile",
+              "spid": "",
+              "spid_carrier_name": "CELLCO PARTNERSHIP DBA VERIZON",
+              "spid_carrier_type": "",
+              "altspid": "",
+              "altspid_carrier_name": "",
+              "altspid_carrier_type": "",
+              "city": "ATLANTA",
+              "state": "Georgia"
+            },
+            "valid_number": true,
+            "record_type": "number_lookup"
+          }
+        }
+      },
+      "lineType": "mobile",
+      "carrierName": "CELLCO PARTNERSHIP DBA VERIZON WIRELESS - GA",
+      "carrierType": "mobile",
+      "normalizedCarrier": "Verizon Wireless",
+      "decisionReason": "PARTIAL_ENRICHMENT",
+      "decisionCodes": [
+        "PARTIAL_ENRICHMENT",
+        "SOFT_DOWNGRADE_FREE_EMAIL"
+      ],
+      "decisionConfidence": 36,
+      "decisionAction": "partial",
+      "enrichmentLevel": "partial",
+      "dncStatus": "UNKNOWN",
+      "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+      "age": "58"
+    },
+    "Line Type": "mobile",
+    "Carrier": "CELLCO PARTNERSHIP DBA VERIZON WIRELESS - GA",
+    "Normalized Carrier": "Verizon Wireless",
+    "Age": "58",
+    "Gender": "male",
+    "Gender Confidence": 98
+  },
+  "leadSummary": {
+    "name": "Ryan Canavan",
+    "phone": "4048032847",
+    "dobOrAge": "58",
+    "zipcode": "32461",
+    "state": "FL",
+    "city": "Inlet Beach",
+    "email": "ryan.canavan@hotmail.com",
+    "dncStatus": "UNKNOWN",
+    "income": 247000,
+    "lineType": "mobile",
+    "carrier": "CELLCO PARTNERSHIP DBA VERIZON WIRELESS - GA",
+    "normalizedCarrier": "Verizon Wireless",
+    "searchFilter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+    "dateScraped": "2026-03-10",
+    "linkedinUrl": "https://www.linkedin.com/in/ACwAAAIcihYBQMXHQAaHQekZN2PJjt6Uf7Pl80g",
+    "zipProvenance": "verified_skip_trace",
+    "skipTracingDisposition": "clear_match"
+  }
+}

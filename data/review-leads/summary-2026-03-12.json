@@ -1,0 +1,417 @@
+[
+  {
+    "metadata": {
+      "savedAt": "2026-03-12T01:38:21.110Z",
+      "leadKey": "linkedin:https://www.linkedin.com/in/ACwAAAaGhX4B5S93IlWW8_mIq-D3Wj0mciSge-w",
+      "reviewBucket": "no_exact_match"
+    },
+    "enrichedRow": {
+      "Name": "Abbey Gadinsky-Snyder",
+      "Title": "Founder, CEO & Principal Real Estate Broker",
+      "Company": "GADCO Residential Real Estate",
+      "Location": "Miami, FL",
+      "LinkedIn URL": "https://www.linkedin.com/in/ACwAAAaGhX4B5S93IlWW8_mIq-D3Wj0mciSge-w",
+      "Email": "",
+      "Phone": "",
+      "First Name": "Abbey",
+      "Last Name": "Gadinsky-Snyder",
+      "City": "Miami",
+      "State": "FL",
+      "Zip": "33101",
+      "Search Filter": "roi-test-fl-real-estate",
+      "_enriched": {
+        "firstName": "Abbey",
+        "lastName": "Gadinsky-Snyder",
+        "zipCode": "33101",
+        "zipProvenance": "derived_city_state",
+        "addressLine2": "FL",
+        "incomePreQual": {
+          "conservative": {
+            "min": 92000,
+            "max": 392000,
+            "p50": 242000
+          },
+          "upside": {
+            "min": 104000,
+            "max": 346000,
+            "p50": 266000
+          },
+          "estimate": {
+            "range": {
+              "min": 92000,
+              "max": 346000
+            },
+            "p50": 254000,
+            "confidence": 0.48,
+            "primaryDrivers": [
+              "career ladder: exec",
+              "company: GADCO Residential Real Estate"
+            ],
+            "riskFlags": [
+              "High-level title but company type may not support it"
+            ]
+          },
+          "decision": {
+            "tier": "unknown",
+            "shouldContinueEnrichment": true,
+            "reason": "Income meets $60k threshold: Upside p50 ($266k) >= $60k minimum",
+            "band": "high",
+            "requiresStrongPositives": false,
+            "reasonCode": "INCOME_ABOVE_60K"
+          }
+        },
+        "skipTracingData": {
+          "Status": 200,
+          "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+          "Source": "tps_fsh_359_cch",
+          "Records": 1,
+          "Page": 1,
+          "PeopleDetails": [
+            {
+              "Name": "Abbey G Snyder",
+              "Link": "https://www.truepeoplesearch.com/find/person/p82nlunl0l6u84rnn202",
+              "Age": 40,
+              "Person ID": "p82nlunl0l6u84rnn202",
+              "Lives in": "Hollywood, FL",
+              "Used to live in": "Miami FL, Miami Beach FL, New York NY, Ga...",
+              "Related to": "Brooke Gadinsky-Snyder, Brooke Gadinsky-Sn..."
+            }
+          ]
+        },
+        "skipTracingDisposition": "no_exact_match",
+        "decisionReason": "FULL_ENRICHMENT",
+        "decisionCodes": [
+          "FULL_ENRICHMENT"
+        ],
+        "decisionConfidence": 83,
+        "decisionAction": "full",
+        "enrichmentLevel": "full"
+      }
+    },
+    "leadSummary": {
+      "name": "Abbey Gadinsky-Snyder",
+      "phone": "",
+      "dobOrAge": "",
+      "zipcode": "33101",
+      "state": "FL",
+      "city": "Miami",
+      "email": "",
+      "dncStatus": "UNKNOWN",
+      "income": 254000,
+      "lineType": "",
+      "carrier": "",
+      "normalizedCarrier": "",
+      "searchFilter": "roi-test-fl-real-estate",
+      "dateScraped": "2026-03-12",
+      "linkedinUrl": "https://www.linkedin.com/in/ACwAAAaGhX4B5S93IlWW8_mIq-D3Wj0mciSge-w",
+      "zipProvenance": "derived_city_state",
+      "skipTracingDisposition": "no_exact_match",
+      "enrichmentStopReason": "No exact skip-tracing match",
+      "reviewBucket": "no_exact_match"
+    }
+  },
+  {
+    "metadata": {
+      "savedAt": "2026-03-12T01:38:32.484Z",
+      "leadKey": "linkedin:https://www.linkedin.com/in/ACwAAEA9de0BLoNGaFbk_ZamgFyFvaYgcxGDNEo",
+      "reviewBucket": "no_exact_match"
+    },
+    "enrichedRow": {
+      "Name": "Jaime Walsh",
+      "Title": "Licensed Real Estate Agent",
+      "Company": "Keller Williams Realty, LLC",
+      "Location": "Tampa, FL",
+      "LinkedIn URL": "https://www.linkedin.com/in/ACwAAEA9de0BLoNGaFbk_ZamgFyFvaYgcxGDNEo",
+      "Email": "",
+      "Phone": "",
+      "First Name": "Jaime",
+      "Last Name": "Walsh",
+      "City": "Tampa",
+      "State": "FL",
+      "Zip": "33101",
+      "Search Filter": "roi-test-fl-real-estate",
+      "_enriched": {
+        "firstName": "Jaime",
+        "lastName": "Walsh",
+        "zipCode": "33101",
+        "zipProvenance": "derived_city_state",
+        "addressLine2": "FL",
+        "incomePreQual": {
+          "conservative": {
+            "min": 30000,
+            "max": 98000,
+            "p50": 53000
+          },
+          "upside": {
+            "min": -1000,
+            "max": 97000,
+            "p50": 48000
+          },
+          "estimate": {
+            "range": {
+              "min": 30000,
+              "max": 97000
+            },
+            "p50": 51000,
+            "confidence": 0.33,
+            "primaryDrivers": [
+              "company: Keller Williams Realty, LLC"
+            ],
+            "riskFlags": [
+              "Job title seniority unclear"
+            ]
+          },
+          "decision": {
+            "tier": "unknown",
+            "shouldContinueEnrichment": false,
+            "reason": "Income below $60k threshold: Upside p50 ($48k) < $60k minimum",
+            "band": "low",
+            "requiresStrongPositives": false,
+            "reasonCode": "INCOME_BELOW_60K"
+          }
+        },
+        "skipTracingData": {
+          "Status": 200,
+          "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+          "Source": "tps_fsh_651_cch",
+          "Records": 54,
+          "Page": 1,
+          "PeopleDetails": [
+            {
+              "Name": "James Walsh Jr",
+              "Link": "https://www.truepeoplesearch.com/find/person/px88u80urn69604u0904l",
+              "Age": 59,
+              "Person ID": "px88u80urn69604u0904l",
+              "Lives in": "Seaford, DE",
+              "Used to live in": "Tampa, FL, O Fallon MO, Long Beach CA, To...",
+              "Related to": "Charlene Franchetto, Gerti Walsh, James Wa..."
+            },
+            {
+              "Name": "James Walsh",
+              "Link": "https://www.truepeoplesearch.com/find/person/pxn08rl6044l00940r860",
+              "Age": "",
+              "Person ID": "pxn08rl6044l00940r860",
+              "Lives in": "Rancho Cucamonga, CA",
+              "Used to live in": "Lake Havasu City AZ, Fredericksburg VA, T...",
+              "Related to": "Delfina Scarborough, Ann Scarborough, Bonn..."
+            },
+            {
+              "Name": "James Walsh",
+              "Link": "https://www.truepeoplesearch.com/find/person/p2l22l6n48ul49ln46ur",
+              "Age": 57,
+              "Person ID": "p2l22l6n48ul49ln46ur",
+              "Lives in": "Kihei, HI",
+              "Used to live in": "Tampa, FL, Virginia Beach VA, Kahului HI,...",
+              "Related to": "Kaori Beck, Brandon Beck, Bryan Beck, Davi..."
+            },
+            {
+              "Name": "James Walsh",
+              "Link": "https://www.truepeoplesearch.com/find/person/px6884l82n6660nlnu808",
+              "Age": 64,
+              "Person ID": "px6884l82n6660nlnu808",
+              "Lives in": "Lighthouse Point, FL",
+              "Used to live in": "San Francisco CA, Tampa FL, West Hollywoo...",
+              "Related to": "Alyson Walsh, Brian Walsh, James Walsh, Na..."
+            },
+            {
+              "Name": "James Walsh",
+              "Link": "https://www.truepeoplesearch.com/find/person/pur84nl44u9nn6206rn6",
+              "Age": 56,
+              "Person ID": "pur84nl44u9nn6206rn6",
+              "Lives in": "New Port Richey, FL",
+              "Used to live in": "Tampa, FL, Clearwater FL, Charleston WV, ...",
+              "Related to": "Edward Walsh, Harold Stallworth, James Sta..."
+            },
+            {
+              "Name": "Richard Walsh",
+              "Link": "https://www.truepeoplesearch.com/find/person/px889rur2l60u02208r2u",
+              "Age": 73,
+              "Person ID": "px889rur2l60u02208r2u",
+              "Lives in": "Orlando, FL",
+              "Used to live in": "Tampa, FL, Pasadena CA, Odessa FL, Stoneh...",
+              "Related to": "Angela Walsh, Ann Hippe, Blanca Walsh, Bob..."
+            },
+            {
+              "Name": "David Walsh",
+              "Link": "https://www.truepeoplesearch.com/find/person/p8n22url9ln82r882ruu",
+              "Age": 65,
+              "Person ID": "p8n22url9ln82r882ruu",
+              "Lives in": "Saint Petersburg, FL",
+              "Used to live in": "Weatherford TX, Tampa FL, Sarasota FL, Sa...",
+              "Related to": "Catherine Walsh, James Walsh, Lucila Walsh..."
+            },
+            {
+              "Name": "James Walsh Jr",
+              "Link": "https://www.truepeoplesearch.com/find/person/px8un9n8r0rl0l894un9r",
+              "Age": 52,
+              "Person ID": "px8un9n8r0rl0l894un9r",
+              "Lives in": "Winter Garden, FL",
+              "Used to live in": "Tampa, FL, Hudson FL, Apopka FL, Orlando ...",
+              "Related to": "Suzanne Walsh"
+            },
+            {
+              "Name": "James Walsh",
+              "Link": "https://www.truepeoplesearch.com/find/person/pu49099ull49luu096u",
+              "Age": 77,
+              "Person ID": "pu49099ull49luu096u",
+              "Lives in": "Roswell, GA",
+              "Used to live in": "Tampa, FL, Greensboro NC, Itasca IL, Lync...",
+              "Related to": "Mary Walsh, Laura Walsh, Rachel Walsh, Sea..."
+            },
+            {
+              "Name": "James Walsh",
+              "Link": "https://www.truepeoplesearch.com/find/person/px6n698984n2l9u92uulu",
+              "Age": 92,
+              "Person ID": "px6n698984n2l9u92uulu",
+              "Lives in": "Jacksonville, FL",
+              "Used to live in": "Tampa, FL, Ponte Vedra Beach FL, Santa Ro...",
+              "Related to": "Carroll Walsh, Chrysa Walsh, James Walsh, ..."
+            }
+          ]
+        },
+        "skipTracingDisposition": "no_exact_match",
+        "decisionReason": "INCOME_BELOW_60K",
+        "decisionCodes": [
+          "INCOME_BELOW_60K"
+        ],
+        "decisionConfidence": 55,
+        "decisionAction": "skip",
+        "enrichmentLevel": "none"
+      }
+    },
+    "leadSummary": {
+      "name": "Jaime Walsh",
+      "phone": "",
+      "dobOrAge": "",
+      "zipcode": "33101",
+      "state": "FL",
+      "city": "Tampa",
+      "email": "",
+      "dncStatus": "UNKNOWN",
+      "income": 51000,
+      "lineType": "",
+      "carrier": "",
+      "normalizedCarrier": "",
+      "searchFilter": "roi-test-fl-real-estate",
+      "dateScraped": "2026-03-12",
+      "linkedinUrl": "https://www.linkedin.com/in/ACwAAEA9de0BLoNGaFbk_ZamgFyFvaYgcxGDNEo",
+      "zipProvenance": "derived_city_state",
+      "skipTracingDisposition": "no_exact_match",
+      "enrichmentStopReason": "No exact skip-tracing match",
+      "reviewBucket": "no_exact_match"
+    }
+  },
+  {
+    "metadata": {
+      "savedAt": "2026-03-12T01:38:33.172Z",
+      "leadKey": "linkedin:https://www.linkedin.com/in/ACwAAD0MsyYBPKisJLF6glU8HmkRuJB_BG7rvpM",
+      "reviewBucket": "no_exact_match"
+    },
+    "enrichedRow": {
+      "Name": "Charlie Alfaro",
+      "Title": "Freight broker associate ",
+      "Company": "Bear Hauling Corp",
+      "Location": "Miami, FL",
+      "LinkedIn URL": "https://www.linkedin.com/in/ACwAAD0MsyYBPKisJLF6glU8HmkRuJB_BG7rvpM",
+      "Email": "",
+      "Phone": "",
+      "First Name": "Charlie",
+      "Last Name": "Alfaro",
+      "City": "Miami",
+      "State": "FL",
+      "Zip": "33101",
+      "Search Filter": "roi-test-fl-real-estate",
+      "_enriched": {
+        "firstName": "Charlie",
+        "lastName": "Alfaro",
+        "zipCode": "33101",
+        "zipProvenance": "derived_city_state",
+        "gender": "male",
+        "genderConfidence": 98,
+        "addressLine2": "FL",
+        "incomePreQual": {
+          "conservative": {
+            "min": 31000,
+            "max": 109000,
+            "p50": 70000
+          },
+          "upside": {
+            "min": 28000,
+            "max": 112000,
+            "p50": 70000
+          },
+          "estimate": {
+            "range": {
+              "min": 31000,
+              "max": 112000
+            },
+            "p50": 70000,
+            "confidence": 0.6,
+            "primaryDrivers": [
+              "career ladder: ic",
+              "company: Bear Hauling Corp"
+            ],
+            "riskFlags": []
+          },
+          "decision": {
+            "tier": "unknown",
+            "shouldContinueEnrichment": true,
+            "reason": "Income meets $60k threshold: Upside p50 ($70k) >= $60k minimum",
+            "band": "high",
+            "requiresStrongPositives": false,
+            "reasonCode": "INCOME_ABOVE_60K"
+          }
+        },
+        "skipTracingData": {
+          "Status": 200,
+          "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+          "Source": "tps_fsh_524_cch",
+          "Records": 1,
+          "Page": 1,
+          "PeopleDetails": [
+            {
+              "Name": "Charles Alfaro",
+              "Link": "https://www.truepeoplesearch.com/find/person/pxuu469n0un4n9nu4928l",
+              "Age": 53,
+              "Person ID": "pxuu469n0un4n9nu4928l",
+              "Lives in": "Miami, FL",
+              "Used to live in": "Hialeah FL",
+              "Related to": "Carlos Alfaro, Genoveva Alfaro, Leonardo A..."
+            }
+          ]
+        },
+        "skipTracingDisposition": "no_exact_match",
+        "decisionReason": "PARTIAL_ENRICHMENT",
+        "decisionCodes": [
+          "PARTIAL_ENRICHMENT"
+        ],
+        "decisionConfidence": 55,
+        "decisionAction": "partial",
+        "enrichmentLevel": "partial"
+      },
+      "Gender": "male",
+      "Gender Confidence": 98
+    },
+    "leadSummary": {
+      "name": "Charlie Alfaro",
+      "phone": "",
+      "dobOrAge": "",
+      "zipcode": "33101",
+      "state": "FL",
+      "city": "Miami",
+      "email": "",
+      "dncStatus": "UNKNOWN",
+      "income": 70000,
+      "lineType": "",
+      "carrier": "",
+      "normalizedCarrier": "",
+      "searchFilter": "roi-test-fl-real-estate",
+      "dateScraped": "2026-03-12",
+      "linkedinUrl": "https://www.linkedin.com/in/ACwAAD0MsyYBPKisJLF6glU8HmkRuJB_BG7rvpM",
+      "zipProvenance": "derived_city_state",
+      "skipTracingDisposition": "no_exact_match",
+      "enrichmentStopReason": "No exact skip-tracing match",
+      "reviewBucket": "no_exact_match"
+    }
+  }
+]

@@ -1,0 +1,166 @@
+{
+  "metadata": {
+    "savedAt": "2026-03-10T19:09:16.398Z",
+    "leadKey": "linkedin:https://www.linkedin.com/in/ACwAADqtHmABCuRtWxR5qQJRf0u1ZgAlxP29WWo"
+  },
+  "enrichedRow": {
+    "Name": "Michael Notbohm",
+    "Title": "Founder",
+    "Company": "Denny AI",
+    "Location": "Tampa, Florida, United States",
+    "LinkedIn URL": "https://www.linkedin.com/in/ACwAADqtHmABCuRtWxR5qQJRf0u1ZgAlxP29WWo",
+    "Email": "lightningbroker@yahoo.com",
+    "Phone": "8137770031",
+    "First Name": "Michael",
+    "Last Name": "Notbohm",
+    "City": "Tampa",
+    "State": "FL",
+    "Zip": "33629",
+    "Search Filter": "Location: Miami, FL | Industry: Real Estate",
+    "_enriched": {
+      "firstName": "Michael",
+      "lastName": "Notbohm",
+      "zipCode": "33629",
+      "zipProvenance": "verified_skip_trace",
+      "gender": "male",
+      "genderConfidence": 98,
+      "phone": "8137770031",
+      "email": "lightningbroker@yahoo.com",
+      "addressLine2": "FL",
+      "incomePreQual": {
+        "conservative": {
+          "min": 233000,
+          "max": 533000,
+          "p50": 383000
+        },
+        "upside": {
+          "min": 258000,
+          "max": 547000,
+          "p50": 421000
+        },
+        "estimate": {
+          "range": {
+            "min": 233000,
+            "max": 547000
+          },
+          "p50": 402000,
+          "confidence": 0.48,
+          "primaryDrivers": [
+            "career ladder: exec",
+            "company: Denny AI"
+          ],
+          "riskFlags": [
+            "High-level title but company type may not support it"
+          ]
+        },
+        "decision": {
+          "tier": "unknown",
+          "shouldContinueEnrichment": true,
+          "reason": "Income meets $60k threshold: Upside p50 ($421k) >= $60k minimum",
+          "band": "high",
+          "requiresStrongPositives": false,
+          "reasonCode": "INCOME_ABOVE_60K"
+        }
+      },
+      "skipTracingData": {
+        "Status": 200,
+        "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+        "Source": "tps_fsh_251_cch",
+        "Records": 1,
+        "Page": 1,
+        "PeopleDetails": [
+          {
+            "Name": "Michael Notbohm",
+            "Link": "https://www.truepeoplesearch.com/find/person/p86n22662r609n2489n0",
+            "Age": 44,
+            "Person ID": "p86n22662r609n2489n0",
+            "Lives in": "Tampa, FL",
+            "Used to live in": "Las Vegas NV, Brandon FL, Auburn AL, Lutz...",
+            "Related to": "J Notbohm, Joy Notbohm, Mike Notbohm, Robe..."
+          }
+        ],
+        "ageFromPersonDetails": "44"
+      },
+      "skipTracingDisposition": "clear_match",
+      "skipTracingMatchType": "exact_location",
+      "telnyxLookupData": {
+        "success": true,
+        "data": {
+          "data": {
+            "country_code": "US",
+            "national_format": "(813) 777-0031",
+            "phone_number": "+18137770031",
+            "fraud": null,
+            "carrier": {
+              "mobile_country_code": "",
+              "mobile_network_code": "",
+              "name": "CELLCO PARTNERSHIP DBA VERIZON WIRELESS - FL",
+              "type": "mobile",
+              "error_code": null,
+              "normalized_carrier": "Verizon Wireless"
+            },
+            "caller_name": null,
+            "nnid_override": null,
+            "portability": {
+              "lrn": null,
+              "ported_status": "",
+              "ported_date": "",
+              "ocn": "6502",
+              "line_type": "mobile",
+              "spid": "",
+              "spid_carrier_name": "CELLCO PARTNERSHIP DBA VERIZON",
+              "spid_carrier_type": "",
+              "altspid": "",
+              "altspid_carrier_name": "",
+              "altspid_carrier_type": "",
+              "city": "TAMPA",
+              "state": "Florida"
+            },
+            "valid_number": true,
+            "record_type": "number_lookup"
+          }
+        }
+      },
+      "lineType": "mobile",
+      "carrierName": "CELLCO PARTNERSHIP DBA VERIZON WIRELESS - FL",
+      "carrierType": "mobile",
+      "normalizedCarrier": "Verizon Wireless",
+      "decisionReason": "PARTIAL_ENRICHMENT",
+      "decisionCodes": [
+        "PARTIAL_ENRICHMENT",
+        "SOFT_DOWNGRADE_FREE_EMAIL"
+      ],
+      "decisionConfidence": 36,
+      "decisionAction": "partial",
+      "enrichmentLevel": "partial",
+      "dncStatus": "UNKNOWN",
+      "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+      "age": "44"
+    },
+    "Line Type": "mobile",
+    "Carrier": "CELLCO PARTNERSHIP DBA VERIZON WIRELESS - FL",
+    "Normalized Carrier": "Verizon Wireless",
+    "Age": "44",
+    "Gender": "male",
+    "Gender Confidence": 98
+  },
+  "leadSummary": {
+    "name": "Michael Notbohm",
+    "phone": "8137770031",
+    "dobOrAge": "44",
+    "zipcode": "33629",
+    "state": "FL",
+    "city": "Tampa",
+    "email": "lightningbroker@yahoo.com",
+    "dncStatus": "UNKNOWN",
+    "income": 402000,
+    "lineType": "mobile",
+    "carrier": "CELLCO PARTNERSHIP DBA VERIZON WIRELESS - FL",
+    "normalizedCarrier": "Verizon Wireless",
+    "searchFilter": "Location: Miami, FL | Industry: Real Estate",
+    "dateScraped": "2026-03-10",
+    "linkedinUrl": "https://www.linkedin.com/in/ACwAADqtHmABCuRtWxR5qQJRf0u1ZgAlxP29WWo",
+    "zipProvenance": "verified_skip_trace",
+    "skipTracingDisposition": "clear_match"
+  }
+}

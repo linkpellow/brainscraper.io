@@ -1,0 +1,167 @@
+{
+  "metadata": {
+    "savedAt": "2026-03-10T19:09:07.152Z",
+    "leadKey": "linkedin:https://www.linkedin.com/in/ACwAAAX-MhsByZDSDoV3KjqXnJSwZWJvlTikSBg"
+  },
+  "enrichedRow": {
+    "Name": "Greg Scaffidi",
+    "Title": "Construction Consulting; Project Management, Finance & Operations",
+    "Company": "Self-employed",
+    "Location": "Ponte Vedra Beach, Florida, United States",
+    "LinkedIn URL": "https://www.linkedin.com/in/ACwAAAX-MhsByZDSDoV3KjqXnJSwZWJvlTikSBg",
+    "Email": "athlete_girl81@yahoo.com",
+    "Phone": "8137853350",
+    "First Name": "Greg",
+    "Last Name": "Scaffidi",
+    "City": "Ponte Vedra Beach",
+    "State": "FL",
+    "Zip": "32081",
+    "Search Filter": "Location: Miami, FL | Industry: Real Estate",
+    "_enriched": {
+      "firstName": "Greg",
+      "lastName": "Scaffidi",
+      "zipCode": "32081",
+      "zipProvenance": "verified_skip_trace",
+      "gender": "male",
+      "genderConfidence": 98,
+      "phone": "8137853350",
+      "email": "athlete_girl81@yahoo.com",
+      "addressLine2": "FL",
+      "incomePreQual": {
+        "conservative": {
+          "min": 30000,
+          "max": 115000,
+          "p50": 70000
+        },
+        "upside": {
+          "min": 21000,
+          "max": 119000,
+          "p50": 70000
+        },
+        "estimate": {
+          "range": {
+            "min": 30000,
+            "max": 119000
+          },
+          "p50": 70000,
+          "confidence": 0.55,
+          "primaryDrivers": [
+            "operations role",
+            "company: Self-employed"
+          ],
+          "riskFlags": [
+            "Job title seniority unclear"
+          ]
+        },
+        "decision": {
+          "tier": "unknown",
+          "shouldContinueEnrichment": true,
+          "reason": "Income meets $60k threshold: Upside p50 ($70k) >= $60k minimum",
+          "band": "high",
+          "requiresStrongPositives": false,
+          "reasonCode": "INCOME_ABOVE_60K"
+        }
+      },
+      "skipTracingData": {
+        "Status": 200,
+        "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+        "Source": "tps_fsh_216_cch",
+        "Records": 1,
+        "Page": 1,
+        "PeopleDetails": [
+          {
+            "Name": "Greg Scaffidi",
+            "Link": "https://www.truepeoplesearch.com/find/person/px60n2l9lnn6r69r62284",
+            "Age": 44,
+            "Person ID": "px60n2l9lnn6r69r62284",
+            "Lives in": "Ponte Vedra, FL",
+            "Used to live in": "Ponte Vedra Beach FL, Jacksonville FL, Sa...",
+            "Related to": "Benedict Scaffidi, Carl Scaffidi, Charles ..."
+          }
+        ],
+        "ageFromPersonDetails": "44"
+      },
+      "skipTracingDisposition": "clear_match",
+      "skipTracingMatchType": "name_only",
+      "telnyxLookupData": {
+        "success": true,
+        "data": {
+          "data": {
+            "country_code": "US",
+            "national_format": "(813) 785-3350",
+            "phone_number": "+18137853350",
+            "fraud": null,
+            "carrier": {
+              "mobile_country_code": "",
+              "mobile_network_code": "",
+              "name": "AERIAL COMMUNICATIONS, INC.",
+              "type": "mobile",
+              "error_code": null,
+              "normalized_carrier": "T-Mobile USA"
+            },
+            "caller_name": null,
+            "nnid_override": null,
+            "portability": {
+              "lrn": null,
+              "ported_status": "",
+              "ported_date": "",
+              "ocn": "6664",
+              "line_type": "mobile",
+              "spid": "",
+              "spid_carrier_name": "SPRINT SPECTRUM L.P.",
+              "spid_carrier_type": "",
+              "altspid": "",
+              "altspid_carrier_name": "",
+              "altspid_carrier_type": "",
+              "city": "TAMPA",
+              "state": "Florida"
+            },
+            "valid_number": true,
+            "record_type": "number_lookup"
+          }
+        }
+      },
+      "lineType": "mobile",
+      "carrierName": "AERIAL COMMUNICATIONS, INC.",
+      "carrierType": "mobile",
+      "normalizedCarrier": "T-Mobile USA",
+      "decisionReason": "PARTIAL_ENRICHMENT",
+      "decisionCodes": [
+        "PARTIAL_ENRICHMENT",
+        "SOFT_DOWNGRADE_FREE_EMAIL"
+      ],
+      "decisionConfidence": 36,
+      "decisionAction": "partial",
+      "enrichmentLevel": "partial",
+      "dncStatus": "UNKNOWN",
+      "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+      "age": "44"
+    },
+    "Line Type": "mobile",
+    "Carrier": "AERIAL COMMUNICATIONS, INC.",
+    "Normalized Carrier": "T-Mobile USA",
+    "Age": "44",
+    "Gender": "male",
+    "Gender Confidence": 98
+  },
+  "leadSummary": {
+    "name": "Greg Scaffidi",
+    "phone": "8137853350",
+    "dobOrAge": "44",
+    "zipcode": "32081",
+    "state": "FL",
+    "city": "Ponte Vedra Beach",
+    "email": "athlete_girl81@yahoo.com",
+    "dncStatus": "UNKNOWN",
+    "income": 70000,
+    "lineType": "mobile",
+    "carrier": "AERIAL COMMUNICATIONS, INC.",
+    "normalizedCarrier": "T-Mobile USA",
+    "searchFilter": "Location: Miami, FL | Industry: Real Estate",
+    "dateScraped": "2026-03-10",
+    "linkedinUrl": "https://www.linkedin.com/in/ACwAAAX-MhsByZDSDoV3KjqXnJSwZWJvlTikSBg",
+    "zipProvenance": "verified_skip_trace",
+    "skipTracingDisposition": "clear_match",
+    "needsVerification": true
+  }
+}

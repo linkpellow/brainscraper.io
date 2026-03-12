@@ -1,0 +1,4237 @@
+{
+  "meta": {
+    "createdAt": "2026-03-12T04:58:15.313Z",
+    "startedAt": "2026-03-12T04:57:49.413Z",
+    "sourcePath": "/Users/linkpellow/brainscraper.io-1/data/api-results/2026-03-10T02-02-19-premium-search-person.json",
+    "method": "direct enrichRow",
+    "outputPath": "/Users/linkpellow/brainscraper.io-1/data/roi-proofs/2026-03-12T00-57-49-direct-enrich-row-roi-proof.json",
+    "notes": "25 Florida real-estate leads with blank phone/email enriched directly via enrichRow to bypass re-enrich checkpoint skipping."
+  },
+  "input": {
+    "leadCount": 25,
+    "leads": [
+      {
+        "Name": "Jessica Bauer",
+        "Title": "Realtor®",
+        "Company": "Premiere Plus Realty, Co.",
+        "Location": "Estero, Florida, United States",
+        "LinkedIn URL": "https://www.linkedin.com/in/ACwAAAAQW0IBbLgMR8SUch4IRHL6fWubWvtdRto",
+        "Email": "",
+        "Phone": "",
+        "First Name": "Jessica",
+        "Last Name": "Bauer",
+        "City": "Estero",
+        "State": "FL",
+        "Zip": "",
+        "Search Filter": "roi-proof-direct-enrich-row",
+        "source": {
+          "linkedInUrl": "https://www.linkedin.com/in/ACwAAAAQW0IBbLgMR8SUch4IRHL6fWubWvtdRto",
+          "title": "Realtor®",
+          "company": "Premiere Plus Realty, Co.",
+          "location": "Estero, Florida, United States"
+        }
+      },
+      {
+        "Name": "Bobby Rinko",
+        "Title": "Real Estate Agent",
+        "Company": "Waterfront Realty Group, Inc.",
+        "Location": "Cape Coral, Florida, United States",
+        "LinkedIn URL": "https://www.linkedin.com/in/ACwAAD-bO6QBuzuueaBclGzgV4Gh5BOxuVShRYU",
+        "Email": "",
+        "Phone": "",
+        "First Name": "Bobby",
+        "Last Name": "Rinko",
+        "City": "Cape Coral",
+        "State": "FL",
+        "Zip": "",
+        "Search Filter": "roi-proof-direct-enrich-row",
+        "source": {
+          "linkedInUrl": "https://www.linkedin.com/in/ACwAAD-bO6QBuzuueaBclGzgV4Gh5BOxuVShRYU",
+          "title": "Real Estate Agent",
+          "company": "Waterfront Realty Group, Inc.",
+          "location": "Cape Coral, Florida, United States"
+        }
+      },
+      {
+        "Name": "Henrique Zingg",
+        "Title": "Real Estate Private Equity Intern",
+        "Company": "Project Destined",
+        "Location": "Miami, Florida, United States",
+        "LinkedIn URL": "https://www.linkedin.com/in/ACwAAEKoTjUBHqK-LoO6CADoYDzzth6bOD_xlRY",
+        "Email": "",
+        "Phone": "",
+        "First Name": "Henrique",
+        "Last Name": "Zingg",
+        "City": "Miami",
+        "State": "FL",
+        "Zip": "",
+        "Search Filter": "roi-proof-direct-enrich-row",
+        "source": {
+          "linkedInUrl": "https://www.linkedin.com/in/ACwAAEKoTjUBHqK-LoO6CADoYDzzth6bOD_xlRY",
+          "title": "Real Estate Private Equity Intern",
+          "company": "Project Destined",
+          "location": "Miami, Florida, United States"
+        }
+      },
+      {
+        "Name": "Shaun Libou",
+        "Title": "Managing Director",
+        "Company": "Big 4 Properties",
+        "Location": "St. Petersburg, Florida, United States",
+        "LinkedIn URL": "https://www.linkedin.com/in/ACwAAAaM8K8BYU9sq7dl74wdpfDLnw6HjemZBaY",
+        "Email": "",
+        "Phone": "",
+        "First Name": "Shaun",
+        "Last Name": "Libou",
+        "City": "St. Petersburg",
+        "State": "FL",
+        "Zip": "",
+        "Search Filter": "roi-proof-direct-enrich-row",
+        "source": {
+          "linkedInUrl": "https://www.linkedin.com/in/ACwAAAaM8K8BYU9sq7dl74wdpfDLnw6HjemZBaY",
+          "title": "Managing Director",
+          "company": "Big 4 Properties",
+          "location": "St. Petersburg, Florida, United States"
+        }
+      },
+      {
+        "Name": "William Law",
+        "Title": "Manager",
+        "Company": "ARCC Properties",
+        "Location": "Tampa, Florida, United States",
+        "LinkedIn URL": "https://www.linkedin.com/in/ACwAAD00TIcB6-eekczepG80N8m1KjqRqeDhsy8",
+        "Email": "",
+        "Phone": "",
+        "First Name": "William",
+        "Last Name": "Law",
+        "City": "Tampa",
+        "State": "FL",
+        "Zip": "",
+        "Search Filter": "roi-proof-direct-enrich-row",
+        "source": {
+          "linkedInUrl": "https://www.linkedin.com/in/ACwAAD00TIcB6-eekczepG80N8m1KjqRqeDhsy8",
+          "title": "Manager",
+          "company": "ARCC Properties",
+          "location": "Tampa, Florida, United States"
+        }
+      },
+      {
+        "Name": "Chad Risch",
+        "Title": "Director of Preconstruction",
+        "Company": "Continental Properties",
+        "Location": "Kissimmee, Florida, United States",
+        "LinkedIn URL": "https://www.linkedin.com/in/ACwAAD6G6NUBSZwUjIDUr2syySvPjvp1bq1cuzw",
+        "Email": "",
+        "Phone": "",
+        "First Name": "Chad",
+        "Last Name": "Risch",
+        "City": "Kissimmee",
+        "State": "FL",
+        "Zip": "",
+        "Search Filter": "roi-proof-direct-enrich-row",
+        "source": {
+          "linkedInUrl": "https://www.linkedin.com/in/ACwAAD6G6NUBSZwUjIDUr2syySvPjvp1bq1cuzw",
+          "title": "Director of Preconstruction",
+          "company": "Continental Properties",
+          "location": "Kissimmee, Florida, United States"
+        }
+      },
+      {
+        "Name": "Ryan Barry",
+        "Title": "Incoming Real Estate Development Intern",
+        "Company": "Rockefeller Group",
+        "Location": "Tampa, Florida, United States",
+        "LinkedIn URL": "https://www.linkedin.com/in/ACwAAD2HPhABC4Y9jirEMsoaFpkw773zBUSDCC8",
+        "Email": "",
+        "Phone": "",
+        "First Name": "Ryan",
+        "Last Name": "Barry",
+        "City": "Tampa",
+        "State": "FL",
+        "Zip": "",
+        "Search Filter": "roi-proof-direct-enrich-row",
+        "source": {
+          "linkedInUrl": "https://www.linkedin.com/in/ACwAAD2HPhABC4Y9jirEMsoaFpkw773zBUSDCC8",
+          "title": "Incoming Real Estate Development Intern",
+          "company": "Rockefeller Group",
+          "location": "Tampa, Florida, United States"
+        }
+      },
+      {
+        "Name": "Lisa Maly",
+        "Title": "Principal, Capital Allocation & Real Asset Strategy",
+        "Company": "Modern Elite Enterprises / MOD Capital Funding f.k.a. Showcase Investment Properties",
+        "Location": "Palmetto, Florida, United States",
+        "LinkedIn URL": "https://www.linkedin.com/in/ACwAAEClrwIBeMumnMz0476pCDhBdfR0GX2Kndw",
+        "Email": "",
+        "Phone": "",
+        "First Name": "Lisa",
+        "Last Name": "Maly",
+        "City": "Palmetto",
+        "State": "FL",
+        "Zip": "",
+        "Search Filter": "roi-proof-direct-enrich-row",
+        "source": {
+          "linkedInUrl": "https://www.linkedin.com/in/ACwAAEClrwIBeMumnMz0476pCDhBdfR0GX2Kndw",
+          "title": "Principal, Capital Allocation & Real Asset Strategy",
+          "company": "Modern Elite Enterprises / MOD Capital Funding f.k.a. Showcase Investment Properties",
+          "location": "Palmetto, Florida, United States"
+        }
+      },
+      {
+        "Name": "Daisy Alvarez",
+        "Title": "Real Estate Agent",
+        "Company": "eXp Realty",
+        "Location": "Wellington, Florida, United States",
+        "LinkedIn URL": "https://www.linkedin.com/in/ACwAAAbjkf8B3aPzzDx8TXdnQM3MrtLbeE7oXRs",
+        "Email": "",
+        "Phone": "",
+        "First Name": "Daisy",
+        "Last Name": "Alvarez",
+        "City": "Wellington",
+        "State": "FL",
+        "Zip": "",
+        "Search Filter": "roi-proof-direct-enrich-row",
+        "source": {
+          "linkedInUrl": "https://www.linkedin.com/in/ACwAAAbjkf8B3aPzzDx8TXdnQM3MrtLbeE7oXRs",
+          "title": "Real Estate Agent",
+          "company": "eXp Realty",
+          "location": "Wellington, Florida, United States"
+        }
+      },
+      {
+        "Name": "Scott Sundermeier",
+        "Title": "Vice President, Brokerage / Managed Transportation",
+        "Company": "Ascent Global Logistics",
+        "Location": "Stuart, Florida, United States",
+        "LinkedIn URL": "https://www.linkedin.com/in/ACwAAACkqCMBUqItIORmXbwJL6FLcwSEvCdQuuc",
+        "Email": "",
+        "Phone": "",
+        "First Name": "Scott",
+        "Last Name": "Sundermeier",
+        "City": "Stuart",
+        "State": "FL",
+        "Zip": "",
+        "Search Filter": "roi-proof-direct-enrich-row",
+        "source": {
+          "linkedInUrl": "https://www.linkedin.com/in/ACwAAACkqCMBUqItIORmXbwJL6FLcwSEvCdQuuc",
+          "title": "Vice President, Brokerage / Managed Transportation",
+          "company": "Ascent Global Logistics",
+          "location": "Stuart, Florida, United States"
+        }
+      },
+      {
+        "Name": "Abbey Gadinsky-Snyder",
+        "Title": "Founder, CEO & Principal Real Estate Broker",
+        "Company": "GADCO Residential Real Estate",
+        "Location": "Miami, Florida, United States",
+        "LinkedIn URL": "https://www.linkedin.com/in/ACwAAAaGhX4B5S93IlWW8_mIq-D3Wj0mciSge-w",
+        "Email": "",
+        "Phone": "",
+        "First Name": "Abbey",
+        "Last Name": "Gadinsky-Snyder",
+        "City": "Miami",
+        "State": "FL",
+        "Zip": "",
+        "Search Filter": "roi-proof-direct-enrich-row",
+        "source": {
+          "linkedInUrl": "https://www.linkedin.com/in/ACwAAAaGhX4B5S93IlWW8_mIq-D3Wj0mciSge-w",
+          "title": "Founder, CEO & Principal Real Estate Broker",
+          "company": "GADCO Residential Real Estate",
+          "location": "Miami, Florida, United States"
+        }
+      },
+      {
+        "Name": "Simon Reynolds MBA",
+        "Title": "Realtor",
+        "Company": "William Raveis South Florida",
+        "Location": "Boca Raton, Florida, United States",
+        "LinkedIn URL": "https://www.linkedin.com/in/ACwAAAbTEuIBrvwK2vwI5_oelpgkEMfxQFSQ9ho",
+        "Email": "",
+        "Phone": "",
+        "First Name": "Simon",
+        "Last Name": "Reynolds MBA",
+        "City": "Boca Raton",
+        "State": "FL",
+        "Zip": "",
+        "Search Filter": "roi-proof-direct-enrich-row",
+        "source": {
+          "linkedInUrl": "https://www.linkedin.com/in/ACwAAAbTEuIBrvwK2vwI5_oelpgkEMfxQFSQ9ho",
+          "title": "Realtor",
+          "company": "William Raveis South Florida",
+          "location": "Boca Raton, Florida, United States"
+        }
+      },
+      {
+        "Name": "Saul Saltares",
+        "Title": "Maintenance Manager at Venterra Realty",
+        "Company": "Venterra Realty",
+        "Location": "St. Petersburg, Florida, United States",
+        "LinkedIn URL": "https://www.linkedin.com/in/ACwAAAbBXdABhsIUzVf_ZCiYX86Biw1WHYxaQnA",
+        "Email": "",
+        "Phone": "",
+        "First Name": "Saul",
+        "Last Name": "Saltares",
+        "City": "St. Petersburg",
+        "State": "FL",
+        "Zip": "",
+        "Search Filter": "roi-proof-direct-enrich-row",
+        "source": {
+          "linkedInUrl": "https://www.linkedin.com/in/ACwAAAbBXdABhsIUzVf_ZCiYX86Biw1WHYxaQnA",
+          "title": "Maintenance Manager at Venterra Realty",
+          "company": "Venterra Realty",
+          "location": "St. Petersburg, Florida, United States"
+        }
+      },
+      {
+        "Name": "KRIS KOPP",
+        "Title": "Real Estate Agent",
+        "Company": "EXIT Gulf Coast Realty",
+        "Location": "Punta Gorda, Florida, United States",
+        "LinkedIn URL": "https://www.linkedin.com/in/ACwAAAYG7PgB7M7wJnfDpqQyyMfFbp7pa40HdGA",
+        "Email": "",
+        "Phone": "",
+        "First Name": "KRIS",
+        "Last Name": "KOPP",
+        "City": "Punta Gorda",
+        "State": "FL",
+        "Zip": "",
+        "Search Filter": "roi-proof-direct-enrich-row",
+        "source": {
+          "linkedInUrl": "https://www.linkedin.com/in/ACwAAAYG7PgB7M7wJnfDpqQyyMfFbp7pa40HdGA",
+          "title": "Real Estate Agent",
+          "company": "EXIT Gulf Coast Realty",
+          "location": "Punta Gorda, Florida, United States"
+        }
+      },
+      {
+        "Name": "Juan Pablo Rubio",
+        "Title": "Miami Pre-Construction & Investment Advisor",
+        "Company": "eXp Realty",
+        "Location": "Miami, Florida, United States",
+        "LinkedIn URL": "https://www.linkedin.com/in/ACwAAAYkfMwBy68RUfiA06Aoiif34wttQKaB-3o",
+        "Email": "",
+        "Phone": "",
+        "First Name": "Juan",
+        "Last Name": "Pablo Rubio",
+        "City": "Miami",
+        "State": "FL",
+        "Zip": "",
+        "Search Filter": "roi-proof-direct-enrich-row",
+        "source": {
+          "linkedInUrl": "https://www.linkedin.com/in/ACwAAAYkfMwBy68RUfiA06Aoiif34wttQKaB-3o",
+          "title": "Miami Pre-Construction & Investment Advisor",
+          "company": "eXp Realty",
+          "location": "Miami, Florida, United States"
+        }
+      },
+      {
+        "Name": "Sidney Odums II",
+        "Title": "Real Estate",
+        "Company": "Walls Realty Associates,LLC",
+        "Location": "Seminole, Florida, United States",
+        "LinkedIn URL": "https://www.linkedin.com/in/ACwAAEK9KEgBVi4AHKCnmmDL9zRF7y_GyUZa6UQ",
+        "Email": "",
+        "Phone": "",
+        "First Name": "Sidney",
+        "Last Name": "Odums II",
+        "City": "Seminole",
+        "State": "FL",
+        "Zip": "",
+        "Search Filter": "roi-proof-direct-enrich-row",
+        "source": {
+          "linkedInUrl": "https://www.linkedin.com/in/ACwAAEK9KEgBVi4AHKCnmmDL9zRF7y_GyUZa6UQ",
+          "title": "Real Estate",
+          "company": "Walls Realty Associates,LLC",
+          "location": "Seminole, Florida, United States"
+        }
+      },
+      {
+        "Name": "Ava Peacock",
+        "Title": "Social Media and Content Specialist",
+        "Company": "John R. Wood Properties",
+        "Location": "Fort Myers, Florida, United States",
+        "LinkedIn URL": "https://www.linkedin.com/in/ACwAAEHln1cB_yqQulnbsoJa2eRP5nOjrNRcFgc",
+        "Email": "",
+        "Phone": "",
+        "First Name": "Ava",
+        "Last Name": "Peacock",
+        "City": "Fort Myers",
+        "State": "FL",
+        "Zip": "",
+        "Search Filter": "roi-proof-direct-enrich-row",
+        "source": {
+          "linkedInUrl": "https://www.linkedin.com/in/ACwAAEHln1cB_yqQulnbsoJa2eRP5nOjrNRcFgc",
+          "title": "Social Media and Content Specialist",
+          "company": "John R. Wood Properties",
+          "location": "Fort Myers, Florida, United States"
+        }
+      },
+      {
+        "Name": "Dhillon Patel",
+        "Title": "Incoming 2026 Real Estate Summer Analyst",
+        "Company": "Fortress Investment Group",
+        "Location": "Tampa, Florida, United States",
+        "LinkedIn URL": "https://www.linkedin.com/in/ACwAAD9JbUEBvktMyICrBIB3akTS71g6zHJNdQg",
+        "Email": "",
+        "Phone": "",
+        "First Name": "Dhillon",
+        "Last Name": "Patel",
+        "City": "Tampa",
+        "State": "FL",
+        "Zip": "",
+        "Search Filter": "roi-proof-direct-enrich-row",
+        "source": {
+          "linkedInUrl": "https://www.linkedin.com/in/ACwAAD9JbUEBvktMyICrBIB3akTS71g6zHJNdQg",
+          "title": "Incoming 2026 Real Estate Summer Analyst",
+          "company": "Fortress Investment Group",
+          "location": "Tampa, Florida, United States"
+        }
+      },
+      {
+        "Name": "Amy Vanz",
+        "Title": "Licensed Real Estate Agent",
+        "Company": "Keller Williams Classic Realty Group - Orlando, FL",
+        "Location": "Orlando, Florida, United States",
+        "LinkedIn URL": "https://www.linkedin.com/in/ACwAAD_NIBcBkggFqs39xyjPTY0nowz8QGNJtlM",
+        "Email": "",
+        "Phone": "",
+        "First Name": "Amy",
+        "Last Name": "Vanz",
+        "City": "Orlando",
+        "State": "FL",
+        "Zip": "",
+        "Search Filter": "roi-proof-direct-enrich-row",
+        "source": {
+          "linkedInUrl": "https://www.linkedin.com/in/ACwAAD_NIBcBkggFqs39xyjPTY0nowz8QGNJtlM",
+          "title": "Licensed Real Estate Agent",
+          "company": "Keller Williams Classic Realty Group - Orlando, FL",
+          "location": "Orlando, Florida, United States"
+        }
+      },
+      {
+        "Name": "Aria P.",
+        "Title": "Marketing Coordinator",
+        "Company": "Leisure Investment Properties Group",
+        "Location": "Palm Harbor, Florida, United States",
+        "LinkedIn URL": "https://www.linkedin.com/in/ACwAAD6UWk8BZmRFGvkEtCId3Ixf-tdj51Xj-co",
+        "Email": "",
+        "Phone": "",
+        "First Name": "Aria",
+        "Last Name": "P.",
+        "City": "Palm Harbor",
+        "State": "FL",
+        "Zip": "",
+        "Search Filter": "roi-proof-direct-enrich-row",
+        "source": {
+          "linkedInUrl": "https://www.linkedin.com/in/ACwAAD6UWk8BZmRFGvkEtCId3Ixf-tdj51Xj-co",
+          "title": "Marketing Coordinator",
+          "company": "Leisure Investment Properties Group",
+          "location": "Palm Harbor, Florida, United States"
+        }
+      },
+      {
+        "Name": "Melissa Morehouse",
+        "Title": "Associate Vice President, Marketing Operations",
+        "Company": "Premier Sotheby's International Realty",
+        "Location": "Naples, Florida, United States",
+        "LinkedIn URL": "https://www.linkedin.com/in/ACwAAAbFi1wBM7V4UW4H-UeVEdhx9o12PEnX7ZI",
+        "Email": "",
+        "Phone": "",
+        "First Name": "Melissa",
+        "Last Name": "Morehouse",
+        "City": "Naples",
+        "State": "FL",
+        "Zip": "",
+        "Search Filter": "roi-proof-direct-enrich-row",
+        "source": {
+          "linkedInUrl": "https://www.linkedin.com/in/ACwAAAbFi1wBM7V4UW4H-UeVEdhx9o12PEnX7ZI",
+          "title": "Associate Vice President, Marketing Operations",
+          "company": "Premier Sotheby's International Realty",
+          "location": "Naples, Florida, United States"
+        }
+      },
+      {
+        "Name": "Jaime Walsh",
+        "Title": "Licensed Real Estate Agent",
+        "Company": "Keller Williams Realty, LLC",
+        "Location": "Tampa, Florida, United States",
+        "LinkedIn URL": "https://www.linkedin.com/in/ACwAAEA9de0BLoNGaFbk_ZamgFyFvaYgcxGDNEo",
+        "Email": "",
+        "Phone": "",
+        "First Name": "Jaime",
+        "Last Name": "Walsh",
+        "City": "Tampa",
+        "State": "FL",
+        "Zip": "",
+        "Search Filter": "roi-proof-direct-enrich-row",
+        "source": {
+          "linkedInUrl": "https://www.linkedin.com/in/ACwAAEA9de0BLoNGaFbk_ZamgFyFvaYgcxGDNEo",
+          "title": "Licensed Real Estate Agent",
+          "company": "Keller Williams Realty, LLC",
+          "location": "Tampa, Florida, United States"
+        }
+      },
+      {
+        "Name": "Charlie Alfaro",
+        "Title": "Freight broker associate ",
+        "Company": "Bear Hauling Corp",
+        "Location": "Miami, Florida, United States",
+        "LinkedIn URL": "https://www.linkedin.com/in/ACwAAD0MsyYBPKisJLF6glU8HmkRuJB_BG7rvpM",
+        "Email": "",
+        "Phone": "",
+        "First Name": "Charlie",
+        "Last Name": "Alfaro",
+        "City": "Miami",
+        "State": "FL",
+        "Zip": "",
+        "Search Filter": "roi-proof-direct-enrich-row",
+        "source": {
+          "linkedInUrl": "https://www.linkedin.com/in/ACwAAD0MsyYBPKisJLF6glU8HmkRuJB_BG7rvpM",
+          "title": "Freight broker associate ",
+          "company": "Bear Hauling Corp",
+          "location": "Miami, Florida, United States"
+        }
+      },
+      {
+        "Name": "Roarke Rozar",
+        "Title": "Insurance Broker",
+        "Company": "The Cornerstone Group",
+        "Location": "Tampa, Florida, United States",
+        "LinkedIn URL": "https://www.linkedin.com/in/ACwAADys7K4BTjCP4oD6Rwj0LBG751SPRKMoBV4",
+        "Email": "",
+        "Phone": "",
+        "First Name": "Roarke",
+        "Last Name": "Rozar",
+        "City": "Tampa",
+        "State": "FL",
+        "Zip": "",
+        "Search Filter": "roi-proof-direct-enrich-row",
+        "source": {
+          "linkedInUrl": "https://www.linkedin.com/in/ACwAADys7K4BTjCP4oD6Rwj0LBG751SPRKMoBV4",
+          "title": "Insurance Broker",
+          "company": "The Cornerstone Group",
+          "location": "Tampa, Florida, United States"
+        }
+      },
+      {
+        "Name": "Erica Elliott",
+        "Title": "Realtor Sales Associate",
+        "Company": "Keller Williams",
+        "Location": "West Palm Beach, Florida, United States",
+        "LinkedIn URL": "https://www.linkedin.com/in/ACwAAAbgusgByeEaITSRKNlKq-nRbdM1M6v7k1s",
+        "Email": "",
+        "Phone": "",
+        "First Name": "Erica",
+        "Last Name": "Elliott",
+        "City": "West Palm Beach",
+        "State": "FL",
+        "Zip": "",
+        "Search Filter": "roi-proof-direct-enrich-row",
+        "source": {
+          "linkedInUrl": "https://www.linkedin.com/in/ACwAAAbgusgByeEaITSRKNlKq-nRbdM1M6v7k1s",
+          "title": "Realtor Sales Associate",
+          "company": "Keller Williams",
+          "location": "West Palm Beach, Florida, United States"
+        }
+      }
+    ]
+  },
+  "results": [
+    {
+      "row": {
+        "Name": "Jessica Bauer",
+        "Title": "Realtor®",
+        "Company": "Premiere Plus Realty, Co.",
+        "Location": "Estero, Florida, United States",
+        "LinkedIn URL": "https://www.linkedin.com/in/ACwAAAAQW0IBbLgMR8SUch4IRHL6fWubWvtdRto",
+        "Email": "",
+        "Phone": "",
+        "First Name": "Jessica",
+        "Last Name": "Bauer",
+        "City": "Estero",
+        "State": "FL",
+        "Zip": "",
+        "Search Filter": "roi-proof-direct-enrich-row"
+      },
+      "enriched": {
+        "firstName": "Jessica",
+        "lastName": "Bauer",
+        "zipCode": "33101",
+        "zipProvenance": "derived_city_state",
+        "gender": "female",
+        "genderConfidence": 98,
+        "addressLine2": "FL",
+        "incomePreQual": {
+          "conservative": {
+            "min": 30000,
+            "max": 115000,
+            "p50": 70000
+          },
+          "upside": {
+            "min": 21000,
+            "max": 119000,
+            "p50": 70000
+          },
+          "estimate": {
+            "range": {
+              "min": 30000,
+              "max": 119000
+            },
+            "p50": 70000,
+            "confidence": 0.33,
+            "primaryDrivers": [
+              "company: Premiere Plus Realty, Co."
+            ],
+            "riskFlags": [
+              "Job title seniority unclear"
+            ]
+          },
+          "decision": {
+            "tier": "unknown",
+            "shouldContinueEnrichment": true,
+            "reason": "Income meets $60k threshold: Upside p50 ($70k) >= $60k minimum",
+            "band": "high",
+            "requiresStrongPositives": false,
+            "reasonCode": "INCOME_ABOVE_60K"
+          }
+        },
+        "skipTracingData": {
+          "Status": 200,
+          "Message": "state_1; We could not find any records for that search criteria",
+          "Source": "tps_fsh_175_cch",
+          "Records": 0,
+          "Page": 1,
+          "PeopleDetails": []
+        },
+        "decisionReason": "PARTIAL_ENRICHMENT",
+        "decisionCodes": [
+          "PARTIAL_ENRICHMENT"
+        ],
+        "decisionConfidence": 45,
+        "decisionAction": "partial",
+        "enrichmentLevel": "partial"
+      },
+      "summary": {
+        "name": "Jessica Bauer",
+        "phone": "",
+        "dobOrAge": "",
+        "zipcode": "33101",
+        "state": "FL",
+        "city": "Estero",
+        "email": "",
+        "dncStatus": "UNKNOWN",
+        "income": 70000,
+        "lineType": "",
+        "carrier": "",
+        "normalizedCarrier": "",
+        "searchFilter": "roi-proof-direct-enrich-row",
+        "dateScraped": "2026-03-12",
+        "linkedinUrl": "https://www.linkedin.com/in/ACwAAAAQW0IBbLgMR8SUch4IRHL6fWubWvtdRto",
+        "zipProvenance": "derived_city_state"
+      }
+    },
+    {
+      "row": {
+        "Name": "Bobby Rinko",
+        "Title": "Real Estate Agent",
+        "Company": "Waterfront Realty Group, Inc.",
+        "Location": "Cape Coral, Florida, United States",
+        "LinkedIn URL": "https://www.linkedin.com/in/ACwAAD-bO6QBuzuueaBclGzgV4Gh5BOxuVShRYU",
+        "Email": "",
+        "Phone": "",
+        "First Name": "Bobby",
+        "Last Name": "Rinko",
+        "City": "Cape Coral",
+        "State": "FL",
+        "Zip": "",
+        "Search Filter": "roi-proof-direct-enrich-row"
+      },
+      "enriched": {
+        "firstName": "Bobby",
+        "lastName": "Rinko",
+        "zipCode": "33904",
+        "zipProvenance": "verified_skip_trace",
+        "gender": "male",
+        "genderConfidence": 98,
+        "phone": "2393400744",
+        "email": "therinkos@icloud.com",
+        "addressLine2": "FL",
+        "incomePreQual": {
+          "conservative": {
+            "min": 30000,
+            "max": 115000,
+            "p50": 70000
+          },
+          "upside": {
+            "min": 21000,
+            "max": 119000,
+            "p50": 70000
+          },
+          "estimate": {
+            "range": {
+              "min": 30000,
+              "max": 119000
+            },
+            "p50": 70000,
+            "confidence": 0.33,
+            "primaryDrivers": [
+              "company: Waterfront Realty Group, Inc."
+            ],
+            "riskFlags": [
+              "Job title seniority unclear"
+            ]
+          },
+          "decision": {
+            "tier": "unknown",
+            "shouldContinueEnrichment": true,
+            "reason": "Income meets $60k threshold: Upside p50 ($70k) >= $60k minimum",
+            "band": "high",
+            "requiresStrongPositives": false,
+            "reasonCode": "INCOME_ABOVE_60K"
+          }
+        },
+        "skipTracingData": {
+          "Status": 200,
+          "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+          "Source": "tps_fsh_257_cch",
+          "Records": 2,
+          "Page": 1,
+          "PeopleDetails": [
+            {
+              "Name": "Bobby Rinko",
+              "Link": "https://www.truepeoplesearch.com/find/person/px4ll462rrn6r060nuu49",
+              "Age": 60,
+              "Person ID": "px4ll462rrn6r060nuu49",
+              "Lives in": "Cape Coral, FL",
+              "Used to live in": "Murphy NC, Hendersonville NC, Lake Suzy F...",
+              "Related to": "Carole Rinko, Kathleen Rinko, Robert Rinko..."
+            }
+          ],
+          "ageFromPersonDetails": "60"
+        },
+        "skipTracingDisposition": "clear_match",
+        "skipTracingMatchType": "exact_location",
+        "age": "60",
+        "telnyxLookupData": {
+          "success": true,
+          "data": {
+            "data": {
+              "country_code": "US",
+              "national_format": "(239) 340-0744",
+              "phone_number": "+12393400744",
+              "fraud": null,
+              "carrier": {
+                "mobile_country_code": "",
+                "mobile_network_code": "",
+                "name": "Cingular Wireless/2",
+                "type": "mobile",
+                "error_code": null,
+                "normalized_carrier": ""
+              },
+              "caller_name": null,
+              "nnid_override": null,
+              "portability": {
+                "lrn": "239233XXXX",
+                "ported_status": "",
+                "ported_date": "",
+                "ocn": "6214",
+                "line_type": "mobile",
+                "spid": "",
+                "spid_carrier_name": "NEW CINGULAR WIRELESS PCS, LLC",
+                "spid_carrier_type": "",
+                "altspid": "",
+                "altspid_carrier_name": "",
+                "altspid_carrier_type": "",
+                "city": "FTMYERSBCH",
+                "state": "Florida"
+              },
+              "valid_number": true,
+              "record_type": "number_lookup"
+            }
+          }
+        },
+        "lineType": "mobile",
+        "carrierName": "Cingular Wireless/2",
+        "carrierType": "mobile",
+        "normalizedCarrier": "",
+        "decisionReason": "AGE_OVER_59",
+        "decisionCodes": [
+          "AGE_OVER_59"
+        ],
+        "decisionConfidence": 43,
+        "decisionAction": "skip",
+        "enrichmentLevel": "none",
+        "dncStatus": "UNKNOWN",
+        "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box."
+      },
+      "summary": {
+        "name": "Bobby Rinko",
+        "phone": "2393400744",
+        "dobOrAge": "60",
+        "zipcode": "33904",
+        "state": "FL",
+        "city": "Cape Coral",
+        "email": "therinkos@icloud.com",
+        "dncStatus": "UNKNOWN",
+        "income": 70000,
+        "lineType": "mobile",
+        "carrier": "",
+        "normalizedCarrier": "",
+        "searchFilter": "roi-proof-direct-enrich-row",
+        "dateScraped": "2026-03-12",
+        "linkedinUrl": "https://www.linkedin.com/in/ACwAAD-bO6QBuzuueaBclGzgV4Gh5BOxuVShRYU",
+        "zipProvenance": "verified_skip_trace",
+        "skipTracingDisposition": "clear_match"
+      }
+    },
+    {
+      "row": {
+        "Name": "Henrique Zingg",
+        "Title": "Real Estate Private Equity Intern",
+        "Company": "Project Destined",
+        "Location": "Miami, Florida, United States",
+        "LinkedIn URL": "https://www.linkedin.com/in/ACwAAEKoTjUBHqK-LoO6CADoYDzzth6bOD_xlRY",
+        "Email": "",
+        "Phone": "",
+        "First Name": "Henrique",
+        "Last Name": "Zingg",
+        "City": "Miami",
+        "State": "FL",
+        "Zip": "",
+        "Search Filter": "roi-proof-direct-enrich-row"
+      },
+      "enriched": {
+        "firstName": "Henrique",
+        "lastName": "Zingg",
+        "zipCode": "33129",
+        "zipProvenance": "verified_skip_trace",
+        "gender": "male",
+        "genderConfidence": 98,
+        "phone": "7864498854",
+        "email": "alfredo9574@att.net",
+        "addressLine2": "FL",
+        "incomePreQual": {
+          "conservative": {
+            "min": 31000,
+            "max": 109000,
+            "p50": 70000
+          },
+          "upside": {
+            "min": 28000,
+            "max": 112000,
+            "p50": 70000
+          },
+          "estimate": {
+            "range": {
+              "min": 31000,
+              "max": 112000
+            },
+            "p50": 70000,
+            "confidence": 0.6,
+            "primaryDrivers": [
+              "career ladder: ic",
+              "company: Project Destined"
+            ],
+            "riskFlags": []
+          },
+          "decision": {
+            "tier": "unknown",
+            "shouldContinueEnrichment": true,
+            "reason": "Income meets $60k threshold: Upside p50 ($70k) >= $60k minimum",
+            "band": "high",
+            "requiresStrongPositives": false,
+            "reasonCode": "INCOME_ABOVE_60K"
+          }
+        },
+        "skipTracingData": {
+          "Status": 200,
+          "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+          "Source": "tps_fsh_262_cch",
+          "Records": 1,
+          "Page": 1,
+          "PeopleDetails": [
+            {
+              "Name": "Henrique Zingg",
+              "Link": "https://www.truepeoplesearch.com/find/person/pxr048nun94989r8n6229",
+              "Age": 80,
+              "Person ID": "pxr048nun94989r8n6229",
+              "Lives in": "Miami, FL",
+              "Used to live in": "",
+              "Related to": "Alex Ulivi, Alfredo Zingg, Alfredo Zinggre..."
+            }
+          ],
+          "ageFromPersonDetails": "80"
+        },
+        "skipTracingDisposition": "clear_match",
+        "skipTracingMatchType": "exact_location",
+        "age": "80",
+        "telnyxLookupData": {
+          "success": true,
+          "data": {
+            "data": {
+              "country_code": "US",
+              "national_format": "(786) 449-8854",
+              "phone_number": "+17864498854",
+              "fraud": null,
+              "carrier": {
+                "mobile_country_code": "",
+                "mobile_network_code": "",
+                "name": "Cingular Wireless/2",
+                "type": "mobile",
+                "error_code": null,
+                "normalized_carrier": "AT&T"
+              },
+              "caller_name": null,
+              "nnid_override": null,
+              "portability": {
+                "lrn": "954573XXXX",
+                "ported_status": "",
+                "ported_date": "",
+                "ocn": "6214",
+                "line_type": "mobile",
+                "spid": "",
+                "spid_carrier_name": "NEW CINGULAR WIRELESS PCS, LLC",
+                "spid_carrier_type": "",
+                "altspid": "",
+                "altspid_carrier_name": "",
+                "altspid_carrier_type": "",
+                "city": "DEERFLDBCH",
+                "state": "Florida"
+              },
+              "valid_number": true,
+              "record_type": "number_lookup"
+            }
+          }
+        },
+        "lineType": "mobile",
+        "carrierName": "Cingular Wireless/2",
+        "carrierType": "mobile",
+        "normalizedCarrier": "AT&T",
+        "decisionReason": "KILL_SWITCH",
+        "decisionCodes": [
+          "KILL_SWITCH"
+        ],
+        "decisionConfidence": 97,
+        "decisionAction": "skip",
+        "enrichmentLevel": "none",
+        "dncStatus": "UNKNOWN"
+      },
+      "summary": {
+        "name": "Henrique Zingg",
+        "phone": "7864498854",
+        "dobOrAge": "80",
+        "zipcode": "33129",
+        "state": "FL",
+        "city": "Miami",
+        "email": "alfredo9574@att.net",
+        "dncStatus": "UNKNOWN",
+        "income": 70000,
+        "lineType": "mobile",
+        "carrier": "",
+        "normalizedCarrier": "",
+        "searchFilter": "roi-proof-direct-enrich-row",
+        "dateScraped": "2026-03-12",
+        "linkedinUrl": "https://www.linkedin.com/in/ACwAAEKoTjUBHqK-LoO6CADoYDzzth6bOD_xlRY",
+        "zipProvenance": "verified_skip_trace",
+        "skipTracingDisposition": "clear_match"
+      }
+    },
+    {
+      "row": {
+        "Name": "Shaun Libou",
+        "Title": "Managing Director",
+        "Company": "Big 4 Properties",
+        "Location": "St. Petersburg, Florida, United States",
+        "LinkedIn URL": "https://www.linkedin.com/in/ACwAAAaM8K8BYU9sq7dl74wdpfDLnw6HjemZBaY",
+        "Email": "",
+        "Phone": "",
+        "First Name": "Shaun",
+        "Last Name": "Libou",
+        "City": "St. Petersburg",
+        "State": "FL",
+        "Zip": "",
+        "Search Filter": "roi-proof-direct-enrich-row"
+      },
+      "enriched": {
+        "firstName": "Shaun",
+        "lastName": "Libou",
+        "zipCode": "34241",
+        "zipProvenance": "verified_skip_trace",
+        "email": "slibou@gmail.com",
+        "addressLine2": "FL",
+        "incomePreQual": {
+          "conservative": {
+            "min": 98000,
+            "max": 266000,
+            "p50": 182000
+          },
+          "upside": {
+            "min": 113000,
+            "max": 265000,
+            "p50": 204000
+          },
+          "estimate": {
+            "range": {
+              "min": 98000,
+              "max": 265000
+            },
+            "p50": 193000,
+            "confidence": 0.43,
+            "primaryDrivers": [
+              "career ladder: director",
+              "director role",
+              "company: Big 4 Properties"
+            ],
+            "riskFlags": [
+              "High-level title but company type may not support it",
+              "Job title seniority unclear"
+            ]
+          },
+          "decision": {
+            "tier": "unknown",
+            "shouldContinueEnrichment": true,
+            "reason": "Income meets $60k threshold: Upside p50 ($204k) >= $60k minimum",
+            "band": "high",
+            "requiresStrongPositives": false,
+            "reasonCode": "INCOME_ABOVE_60K"
+          }
+        },
+        "skipTracingData": {
+          "Status": 200,
+          "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+          "Source": "tps_fsh_231_cch",
+          "Records": 1,
+          "Page": 1,
+          "PeopleDetails": [
+            {
+              "Name": "Shaun Libou",
+              "Link": "https://www.truepeoplesearch.com/find/person/px4r8n8l4l448r494lu44",
+              "Age": 34,
+              "Person ID": "px4r8n8l4l448r494lu44",
+              "Lives in": "Sarasota, FL",
+              "Used to live in": "New York NY, Tampa FL, Southampton PA",
+              "Related to": "Jason Libou, Keith Libou, Phyllis Libou, B..."
+            }
+          ],
+          "ageFromPersonDetails": "34"
+        },
+        "skipTracingDisposition": "clear_match",
+        "skipTracingMatchType": "name_only",
+        "decisionReason": "FULL_ENRICHMENT",
+        "decisionCodes": [
+          "FULL_ENRICHMENT",
+          "SOFT_DOWNGRADE_FREE_EMAIL"
+        ],
+        "decisionConfidence": 61,
+        "decisionAction": "full",
+        "enrichmentLevel": "full"
+      },
+      "summary": {
+        "name": "Shaun Libou",
+        "phone": "",
+        "dobOrAge": "",
+        "zipcode": "34241",
+        "state": "FL",
+        "city": "St. Petersburg",
+        "email": "slibou@gmail.com",
+        "dncStatus": "UNKNOWN",
+        "income": 193000,
+        "lineType": "",
+        "carrier": "",
+        "normalizedCarrier": "",
+        "searchFilter": "roi-proof-direct-enrich-row",
+        "dateScraped": "2026-03-12",
+        "linkedinUrl": "https://www.linkedin.com/in/ACwAAAaM8K8BYU9sq7dl74wdpfDLnw6HjemZBaY",
+        "zipProvenance": "verified_skip_trace",
+        "skipTracingDisposition": "clear_match",
+        "needsVerification": true
+      }
+    },
+    {
+      "row": {
+        "Name": "William Law",
+        "Title": "Manager",
+        "Company": "ARCC Properties",
+        "Location": "Tampa, Florida, United States",
+        "LinkedIn URL": "https://www.linkedin.com/in/ACwAAD00TIcB6-eekczepG80N8m1KjqRqeDhsy8",
+        "Email": "",
+        "Phone": "",
+        "First Name": "William",
+        "Last Name": "Law",
+        "City": "Tampa",
+        "State": "FL",
+        "Zip": "",
+        "Search Filter": "roi-proof-direct-enrich-row"
+      },
+      "enriched": {
+        "firstName": "William",
+        "lastName": "Law",
+        "zipCode": "33624",
+        "zipProvenance": "verified_skip_trace",
+        "gender": "male",
+        "genderConfidence": 98,
+        "phone": "8134201990",
+        "email": "blaw27@gmail.com",
+        "addressLine2": "FL",
+        "incomePreQual": {
+          "conservative": {
+            "min": 60000,
+            "max": 180000,
+            "p50": 120000
+          },
+          "upside": {
+            "min": 55000,
+            "max": 156000,
+            "p50": 120000
+          },
+          "estimate": {
+            "range": {
+              "min": 60000,
+              "max": 156000
+            },
+            "p50": 120000,
+            "confidence": 0.55,
+            "primaryDrivers": [
+              "career ladder: manager",
+              "manager role",
+              "company: ARCC Properties"
+            ],
+            "riskFlags": [
+              "Job title seniority unclear"
+            ]
+          },
+          "decision": {
+            "tier": "unknown",
+            "shouldContinueEnrichment": true,
+            "reason": "Income meets $60k threshold: Upside p50 ($120k) >= $60k minimum",
+            "band": "high",
+            "requiresStrongPositives": false,
+            "reasonCode": "INCOME_ABOVE_60K"
+          }
+        },
+        "skipTracingData": {
+          "Status": 200,
+          "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+          "Source": "tps_fsh_286_cch",
+          "Records": 12,
+          "Page": 1,
+          "PeopleDetails": [
+            {
+              "Name": "William Law",
+              "Link": "https://www.truepeoplesearch.com/find/person/p6l6lu890u0r6uln0n48",
+              "Age": 42,
+              "Person ID": "p6l6lu890u0r6uln0n48",
+              "Lives in": "Tampa, FL",
+              "Used to live in": "Odessa FL, Gainesville FL",
+              "Related to": "Billy Law, Christie Law, Megan Law, Wanda ..."
+            }
+          ],
+          "ageFromPersonDetails": "42"
+        },
+        "skipTracingDisposition": "ambiguous_used_first",
+        "skipTracingCandidatesForReview": [
+          {
+            "Name": "William Law",
+            "Link": "https://www.truepeoplesearch.com/find/person/p6l6lu890u0r6uln0n48",
+            "Age": 42,
+            "Person ID": "p6l6lu890u0r6uln0n48",
+            "Lives in": "Tampa, FL",
+            "Used to live in": "Odessa FL, Gainesville FL",
+            "Related to": "Billy Law, Christie Law, Megan Law, Wanda ..."
+          },
+          {
+            "Name": "William Law",
+            "Link": "https://www.truepeoplesearch.com/find/person/pl8rululul86n4249800",
+            "Age": 94,
+            "Person ID": "pl8rululul86n4249800",
+            "Lives in": "Tampa, FL",
+            "Used to live in": "Vero Beach FL, Odessa FL, Orange Park FL",
+            "Related to": "Wanda Law, Billy Law, Billy Law, Billy Law..."
+          }
+        ],
+        "skipTracingMatchType": "ambiguous_used_first",
+        "telnyxLookupData": {
+          "success": true,
+          "data": {
+            "data": {
+              "country_code": "US",
+              "national_format": "(813) 420-1990",
+              "phone_number": "+18134201990",
+              "fraud": null,
+              "carrier": {
+                "mobile_country_code": "",
+                "mobile_network_code": "",
+                "name": "AERIAL COMMUNICATIONS, INC.",
+                "type": "mobile",
+                "error_code": null,
+                "normalized_carrier": ""
+              },
+              "caller_name": null,
+              "nnid_override": null,
+              "portability": {
+                "lrn": null,
+                "ported_status": "",
+                "ported_date": "",
+                "ocn": "6701",
+                "line_type": "mobile",
+                "spid": "",
+                "spid_carrier_name": "AERIAL COMMUNICATIONS",
+                "spid_carrier_type": "",
+                "altspid": "",
+                "altspid_carrier_name": "",
+                "altspid_carrier_type": "",
+                "city": "TAMPA",
+                "state": "Florida"
+              },
+              "valid_number": true,
+              "record_type": "number_lookup"
+            }
+          }
+        },
+        "lineType": "mobile",
+        "carrierName": "AERIAL COMMUNICATIONS, INC.",
+        "carrierType": "mobile",
+        "normalizedCarrier": "",
+        "decisionReason": "FULL_ENRICHMENT",
+        "decisionCodes": [
+          "FULL_ENRICHMENT",
+          "SOFT_DOWNGRADE_FREE_EMAIL"
+        ],
+        "decisionConfidence": 63,
+        "decisionAction": "full",
+        "enrichmentLevel": "full",
+        "dncStatus": "UNKNOWN",
+        "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+        "age": "42"
+      },
+      "summary": {
+        "name": "William Law",
+        "phone": "8134201990",
+        "dobOrAge": "42",
+        "zipcode": "33624",
+        "state": "FL",
+        "city": "Tampa",
+        "email": "blaw27@gmail.com",
+        "dncStatus": "UNKNOWN",
+        "income": 120000,
+        "lineType": "mobile",
+        "carrier": "",
+        "normalizedCarrier": "",
+        "searchFilter": "roi-proof-direct-enrich-row",
+        "dateScraped": "2026-03-12",
+        "linkedinUrl": "https://www.linkedin.com/in/ACwAAD00TIcB6-eekczepG80N8m1KjqRqeDhsy8",
+        "zipProvenance": "verified_skip_trace",
+        "skipTracingDisposition": "ambiguous_used_first",
+        "enrichmentStopReason": "Ambiguous match – first candidate used (verify before contact)",
+        "reviewBucket": "ambiguous_identity",
+        "needsVerification": true
+      }
+    },
+    {
+      "row": {
+        "Name": "Chad Risch",
+        "Title": "Director of Preconstruction",
+        "Company": "Continental Properties",
+        "Location": "Kissimmee, Florida, United States",
+        "LinkedIn URL": "https://www.linkedin.com/in/ACwAAD6G6NUBSZwUjIDUr2syySvPjvp1bq1cuzw",
+        "Email": "",
+        "Phone": "",
+        "First Name": "Chad",
+        "Last Name": "Risch",
+        "City": "Kissimmee",
+        "State": "FL",
+        "Zip": "",
+        "Search Filter": "roi-proof-direct-enrich-row"
+      },
+      "enriched": {
+        "firstName": "Chad",
+        "lastName": "Risch",
+        "zipCode": "34747",
+        "zipProvenance": "verified_skip_trace",
+        "phone": "2319202799",
+        "addressLine2": "FL",
+        "incomePreQual": {
+          "conservative": {
+            "min": 134000,
+            "max": 302000,
+            "p50": 218000
+          },
+          "upside": {
+            "min": 153000,
+            "max": 317000,
+            "p50": 244000
+          },
+          "estimate": {
+            "range": {
+              "min": 134000,
+              "max": 317000
+            },
+            "p50": 231000,
+            "confidence": 0.43,
+            "primaryDrivers": [
+              "career ladder: director",
+              "director role",
+              "company: Continental Properties"
+            ],
+            "riskFlags": [
+              "High-level title but company type may not support it",
+              "Job title seniority unclear"
+            ]
+          },
+          "decision": {
+            "tier": "unknown",
+            "shouldContinueEnrichment": true,
+            "reason": "Income meets $60k threshold: Upside p50 ($244k) >= $60k minimum",
+            "band": "high",
+            "requiresStrongPositives": false,
+            "reasonCode": "INCOME_ABOVE_60K"
+          }
+        },
+        "skipTracingData": {
+          "Status": 200,
+          "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+          "Source": "tps_fsh_193_cch",
+          "Records": 1,
+          "Page": 1,
+          "PeopleDetails": [
+            {
+              "Name": "Chad Risch",
+              "Link": "https://www.truepeoplesearch.com/find/person/pxuln86n99ln4u4268n9r",
+              "Age": 38,
+              "Person ID": "pxuln86n99ln4u4268n9r",
+              "Lives in": "Kissimmee, FL",
+              "Used to live in": "Davenport FL, Abingdon MD, Big Rapids MI,...",
+              "Related to": "Hannah Risch, Jeffrey Risch, Jerry Risch, ..."
+            }
+          ],
+          "ageFromPersonDetails": "38"
+        },
+        "skipTracingDisposition": "clear_match",
+        "skipTracingMatchType": "exact_location",
+        "phoneStateMismatch": true,
+        "telnyxLookupData": {
+          "success": true,
+          "data": {
+            "data": {
+              "country_code": "US",
+              "national_format": "(231) 920-2799",
+              "phone_number": "+12319202799",
+              "fraud": null,
+              "carrier": {
+                "mobile_country_code": "",
+                "mobile_network_code": "",
+                "name": "Verizon Wireless:6006 - SVR/2",
+                "type": "mobile",
+                "error_code": null,
+                "normalized_carrier": "Verizon Wireless"
+              },
+              "caller_name": null,
+              "nnid_override": null,
+              "portability": {
+                "lrn": "616283XXXX",
+                "ported_status": "",
+                "ported_date": "",
+                "ocn": "6003",
+                "line_type": "mobile",
+                "spid": "",
+                "spid_carrier_name": "CELLCO PARTNERSHIP DBA VERIZON",
+                "spid_carrier_type": "",
+                "altspid": "",
+                "altspid_carrier_name": "",
+                "altspid_carrier_type": "",
+                "city": "ZEELAND",
+                "state": "Michigan"
+              },
+              "valid_number": true,
+              "record_type": "number_lookup"
+            }
+          }
+        },
+        "lineType": "mobile",
+        "carrierName": "Verizon Wireless:6006 - SVR/2",
+        "carrierType": "mobile",
+        "normalizedCarrier": "Verizon Wireless",
+        "decisionReason": "FULL_ENRICHMENT",
+        "decisionCodes": [
+          "FULL_ENRICHMENT"
+        ],
+        "decisionConfidence": 84,
+        "decisionAction": "full",
+        "enrichmentLevel": "full",
+        "dncStatus": "UNKNOWN",
+        "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+        "age": "38"
+      },
+      "summary": {
+        "name": "Chad Risch",
+        "phone": "2319202799",
+        "dobOrAge": "38",
+        "zipcode": "34747",
+        "state": "FL",
+        "city": "Kissimmee",
+        "email": "",
+        "dncStatus": "UNKNOWN",
+        "income": 231000,
+        "lineType": "mobile",
+        "carrier": "",
+        "normalizedCarrier": "",
+        "searchFilter": "roi-proof-direct-enrich-row",
+        "dateScraped": "2026-03-12",
+        "linkedinUrl": "https://www.linkedin.com/in/ACwAAD6G6NUBSZwUjIDUr2syySvPjvp1bq1cuzw",
+        "zipProvenance": "verified_skip_trace",
+        "skipTracingDisposition": "clear_match",
+        "phoneStateMismatch": true
+      }
+    },
+    {
+      "row": {
+        "Name": "Ryan Barry",
+        "Title": "Incoming Real Estate Development Intern",
+        "Company": "Rockefeller Group",
+        "Location": "Tampa, Florida, United States",
+        "LinkedIn URL": "https://www.linkedin.com/in/ACwAAD2HPhABC4Y9jirEMsoaFpkw773zBUSDCC8",
+        "Email": "",
+        "Phone": "",
+        "First Name": "Ryan",
+        "Last Name": "Barry",
+        "City": "Tampa",
+        "State": "FL",
+        "Zip": "",
+        "Search Filter": "roi-proof-direct-enrich-row"
+      },
+      "enriched": {
+        "firstName": "Ryan",
+        "lastName": "Barry",
+        "zipCode": "33625",
+        "zipProvenance": "verified_skip_trace",
+        "gender": "male",
+        "genderConfidence": 98,
+        "phone": "2398503738",
+        "email": "mr.hotrod87@yahoo.com",
+        "addressLine2": "FL",
+        "incomePreQual": {
+          "conservative": {
+            "min": 31000,
+            "max": 109000,
+            "p50": 70000
+          },
+          "upside": {
+            "min": 28000,
+            "max": 112000,
+            "p50": 70000
+          },
+          "estimate": {
+            "range": {
+              "min": 31000,
+              "max": 112000
+            },
+            "p50": 70000,
+            "confidence": 0.6,
+            "primaryDrivers": [
+              "career ladder: ic",
+              "company: Rockefeller Group"
+            ],
+            "riskFlags": []
+          },
+          "decision": {
+            "tier": "unknown",
+            "shouldContinueEnrichment": true,
+            "reason": "Income meets $60k threshold: Upside p50 ($70k) >= $60k minimum",
+            "band": "high",
+            "requiresStrongPositives": false,
+            "reasonCode": "INCOME_ABOVE_60K"
+          }
+        },
+        "skipTracingData": {
+          "Status": 200,
+          "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+          "Source": "tps_fsh_233_cch",
+          "Records": 7,
+          "Page": 1,
+          "PeopleDetails": [
+            {
+              "Name": "Ryan Barry",
+              "Link": "https://www.truepeoplesearch.com/find/person/pl2r2lu980ul48rrr888",
+              "Age": 45,
+              "Person ID": "pl2r2lu980ul48rrr888",
+              "Lives in": "Tampa, FL",
+              "Used to live in": "Fort Myers FL, Cape Coral FL, Winter Have...",
+              "Related to": "Andrew Johnson, Dale Johnson, Dale Johnson..."
+            }
+          ],
+          "ageFromPersonDetails": "45"
+        },
+        "skipTracingDisposition": "ambiguous_used_first",
+        "skipTracingCandidatesForReview": [
+          {
+            "Name": "Ryan Barry",
+            "Link": "https://www.truepeoplesearch.com/find/person/pl2r2lu980ul48rrr888",
+            "Age": 45,
+            "Person ID": "pl2r2lu980ul48rrr888",
+            "Lives in": "Tampa, FL",
+            "Used to live in": "Fort Myers FL, Cape Coral FL, Winter Have...",
+            "Related to": "Andrew Johnson, Dale Johnson, Dale Johnson..."
+          },
+          {
+            "Name": "Ryan Barry",
+            "Link": "https://www.truepeoplesearch.com/find/person/pnnlu6un40n424299496",
+            "Age": 55,
+            "Person ID": "pnnlu6un40n424299496",
+            "Lives in": "Tampa, FL",
+            "Used to live in": "Powell OH, Dublin OH, Montgomery OH, Plai...",
+            "Related to": "Amy Barry, Camryn Barry, Carol Barry, Dyla..."
+          },
+          {
+            "Name": "Ryan Barry",
+            "Link": "https://www.truepeoplesearch.com/find/person/pxr6r4ruuu6nu99rl9449",
+            "Age": 52,
+            "Person ID": "pxr6r4ruuu6nu99rl9449",
+            "Lives in": "Tampa, FL",
+            "Used to live in": "Chevy Chase MD, Washington DC, Reston VA,...",
+            "Related to": "Cynthia Barry, Dawn Jones, Jason Barry, Ci..."
+          }
+        ],
+        "skipTracingMatchType": "ambiguous_used_first",
+        "telnyxLookupData": {
+          "success": true,
+          "data": {
+            "data": {
+              "country_code": "US",
+              "national_format": "(239) 850-3738",
+              "phone_number": "+12398503738",
+              "fraud": null,
+              "carrier": {
+                "mobile_country_code": "",
+                "mobile_network_code": "",
+                "name": "NEW CINGULAR WIRELESS PCS, LLC - GA",
+                "type": "mobile",
+                "error_code": null,
+                "normalized_carrier": "AT&T"
+              },
+              "caller_name": null,
+              "nnid_override": null,
+              "portability": {
+                "lrn": null,
+                "ported_status": "",
+                "ported_date": "",
+                "ocn": "6214",
+                "line_type": "mobile",
+                "spid": "",
+                "spid_carrier_name": "NEW CINGULAR WIRELESS PCS, LLC",
+                "spid_carrier_type": "",
+                "altspid": "",
+                "altspid_carrier_name": "",
+                "altspid_carrier_type": "",
+                "city": "FORT MYERS",
+                "state": "Florida"
+              },
+              "valid_number": true,
+              "record_type": "number_lookup"
+            }
+          }
+        },
+        "lineType": "mobile",
+        "carrierName": "NEW CINGULAR WIRELESS PCS, LLC - GA",
+        "carrierType": "mobile",
+        "normalizedCarrier": "AT&T",
+        "decisionReason": "PARTIAL_ENRICHMENT",
+        "decisionCodes": [
+          "PARTIAL_ENRICHMENT",
+          "SOFT_DOWNGRADE_FREE_EMAIL"
+        ],
+        "decisionConfidence": 18,
+        "decisionAction": "partial",
+        "enrichmentLevel": "partial",
+        "dncStatus": "UNKNOWN",
+        "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+        "age": "45"
+      },
+      "summary": {
+        "name": "Ryan Barry",
+        "phone": "2398503738",
+        "dobOrAge": "45",
+        "zipcode": "33625",
+        "state": "FL",
+        "city": "Tampa",
+        "email": "mr.hotrod87@yahoo.com",
+        "dncStatus": "UNKNOWN",
+        "income": 70000,
+        "lineType": "mobile",
+        "carrier": "",
+        "normalizedCarrier": "",
+        "searchFilter": "roi-proof-direct-enrich-row",
+        "dateScraped": "2026-03-12",
+        "linkedinUrl": "https://www.linkedin.com/in/ACwAAD2HPhABC4Y9jirEMsoaFpkw773zBUSDCC8",
+        "zipProvenance": "verified_skip_trace",
+        "skipTracingDisposition": "ambiguous_used_first",
+        "enrichmentStopReason": "Ambiguous match – first candidate used (verify before contact)",
+        "reviewBucket": "ambiguous_identity",
+        "needsVerification": true
+      }
+    },
+    {
+      "row": {
+        "Name": "Lisa Maly",
+        "Title": "Principal, Capital Allocation & Real Asset Strategy",
+        "Company": "Modern Elite Enterprises / MOD Capital Funding f.k.a. Showcase Investment Properties",
+        "Location": "Palmetto, Florida, United States",
+        "LinkedIn URL": "https://www.linkedin.com/in/ACwAAEClrwIBeMumnMz0476pCDhBdfR0GX2Kndw",
+        "Email": "",
+        "Phone": "",
+        "First Name": "Lisa",
+        "Last Name": "Maly",
+        "City": "Palmetto",
+        "State": "FL",
+        "Zip": "",
+        "Search Filter": "roi-proof-direct-enrich-row"
+      },
+      "enriched": {
+        "firstName": "Lisa",
+        "lastName": "Maly",
+        "zipCode": "34221",
+        "zipProvenance": "verified_skip_trace",
+        "gender": "female",
+        "genderConfidence": 98,
+        "phone": "6086637630",
+        "email": "lisa@showcaseinvproperties.com",
+        "addressLine2": "FL",
+        "incomePreQual": {
+          "conservative": {
+            "min": 56000,
+            "max": 164000,
+            "p50": 110000
+          },
+          "upside": {
+            "min": 63000,
+            "max": 157000,
+            "p50": 121000
+          },
+          "estimate": {
+            "range": {
+              "min": 56000,
+              "max": 157000
+            },
+            "p50": 116000,
+            "confidence": 0.48,
+            "primaryDrivers": [
+              "career ladder: senior_ic",
+              "company: Modern Elite Enterprises / MOD Capital Funding f.k.a. Showcase Investment Properties"
+            ],
+            "riskFlags": [
+              "High-level title but company type may not support it"
+            ]
+          },
+          "decision": {
+            "tier": "unknown",
+            "shouldContinueEnrichment": true,
+            "reason": "Income meets $60k threshold: Upside p50 ($121k) >= $60k minimum",
+            "band": "high",
+            "requiresStrongPositives": false,
+            "reasonCode": "INCOME_ABOVE_60K"
+          }
+        },
+        "skipTracingData": {
+          "Status": 200,
+          "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+          "Source": "tps_fsh_202_cch",
+          "Records": 1,
+          "Page": 1,
+          "PeopleDetails": [
+            {
+              "Name": "Lisa Maly",
+              "Link": "https://www.truepeoplesearch.com/find/person/pn42rrr88969nu02lru4",
+              "Age": 54,
+              "Person ID": "pn42rrr88969nu02lru4",
+              "Lives in": "Palmetto, FL",
+              "Used to live in": "Odessa FL, Tarpon Springs FL, Belleair Be...",
+              "Related to": "Marlene Hilger"
+            }
+          ],
+          "ageFromPersonDetails": "54"
+        },
+        "skipTracingDisposition": "clear_match",
+        "skipTracingMatchType": "exact_location",
+        "phoneStateMismatch": true,
+        "telnyxLookupData": {
+          "success": true,
+          "data": {
+            "data": {
+              "country_code": "US",
+              "national_format": "(608) 663-7630",
+              "phone_number": "+16086637630",
+              "fraud": null,
+              "carrier": {
+                "mobile_country_code": "",
+                "mobile_network_code": "",
+                "name": "TDS METROCOM, LLC",
+                "type": "fixed line",
+                "error_code": null,
+                "normalized_carrier": ""
+              },
+              "caller_name": null,
+              "nnid_override": null,
+              "portability": {
+                "lrn": null,
+                "ported_status": "",
+                "ported_date": "",
+                "ocn": "7804",
+                "line_type": "fixed line",
+                "spid": "",
+                "spid_carrier_name": "TDS METROCOM, INC. - WI",
+                "spid_carrier_type": "",
+                "altspid": "",
+                "altspid_carrier_name": "",
+                "altspid_carrier_type": "",
+                "city": "MADISON",
+                "state": "Wisconsin"
+              },
+              "valid_number": true,
+              "record_type": "number_lookup"
+            }
+          }
+        },
+        "lineType": "fixed line",
+        "carrierName": "TDS METROCOM, LLC",
+        "carrierType": "fixed line",
+        "normalizedCarrier": "",
+        "decisionReason": "FULL_ENRICHMENT",
+        "decisionCodes": [
+          "FULL_ENRICHMENT"
+        ],
+        "decisionConfidence": 60,
+        "decisionAction": "full",
+        "enrichmentLevel": "full",
+        "dncStatus": "UNKNOWN"
+      },
+      "summary": {
+        "name": "Lisa Maly",
+        "phone": "6086637630",
+        "dobOrAge": "",
+        "zipcode": "34221",
+        "state": "FL",
+        "city": "Palmetto",
+        "email": "lisa@showcaseinvproperties.com",
+        "dncStatus": "UNKNOWN",
+        "income": 116000,
+        "lineType": "fixed line",
+        "carrier": "",
+        "normalizedCarrier": "",
+        "searchFilter": "roi-proof-direct-enrich-row",
+        "dateScraped": "2026-03-12",
+        "linkedinUrl": "https://www.linkedin.com/in/ACwAAEClrwIBeMumnMz0476pCDhBdfR0GX2Kndw",
+        "zipProvenance": "verified_skip_trace",
+        "skipTracingDisposition": "clear_match",
+        "phoneStateMismatch": true
+      }
+    },
+    {
+      "row": {
+        "Name": "Daisy Alvarez",
+        "Title": "Real Estate Agent",
+        "Company": "eXp Realty",
+        "Location": "Wellington, Florida, United States",
+        "LinkedIn URL": "https://www.linkedin.com/in/ACwAAAbjkf8B3aPzzDx8TXdnQM3MrtLbeE7oXRs",
+        "Email": "",
+        "Phone": "",
+        "First Name": "Daisy",
+        "Last Name": "Alvarez",
+        "City": "Wellington",
+        "State": "FL",
+        "Zip": "",
+        "Search Filter": "roi-proof-direct-enrich-row"
+      },
+      "enriched": {
+        "firstName": "Daisy",
+        "lastName": "Alvarez",
+        "zipCode": "33414",
+        "zipProvenance": "verified_skip_trace",
+        "phone": "5169965862",
+        "email": "edward.alvarez@att.net",
+        "addressLine2": "FL",
+        "incomePreQual": {
+          "conservative": {
+            "min": 30000,
+            "max": 115000,
+            "p50": 70000
+          },
+          "upside": {
+            "min": 21000,
+            "max": 119000,
+            "p50": 70000
+          },
+          "estimate": {
+            "range": {
+              "min": 30000,
+              "max": 119000
+            },
+            "p50": 70000,
+            "confidence": 0.33,
+            "primaryDrivers": [
+              "company: eXp Realty"
+            ],
+            "riskFlags": [
+              "Job title seniority unclear"
+            ]
+          },
+          "decision": {
+            "tier": "unknown",
+            "shouldContinueEnrichment": true,
+            "reason": "Income meets $60k threshold: Upside p50 ($70k) >= $60k minimum",
+            "band": "high",
+            "requiresStrongPositives": false,
+            "reasonCode": "INCOME_ABOVE_60K"
+          }
+        },
+        "skipTracingData": {
+          "Status": 200,
+          "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+          "Source": "tps_fsh_201_cch",
+          "Records": 4,
+          "Page": 1,
+          "PeopleDetails": [
+            {
+              "Name": "Daisy Alvarez Jr",
+              "Link": "https://www.truepeoplesearch.com/find/person/p9lllr0r0982902u2un6",
+              "Age": 67,
+              "Person ID": "p9lllr0r0982902u2un6",
+              "Lives in": "Wellington, FL",
+              "Used to live in": "Loxahatchee FL, West Palm Beach FL, Hiale...",
+              "Related to": "Amparo Alvarez, Andrew Alvarez, Clara Alva..."
+            }
+          ],
+          "ageFromPersonDetails": "67"
+        },
+        "skipTracingDisposition": "clear_match",
+        "skipTracingMatchType": "exact_location",
+        "phoneStateMismatch": true,
+        "age": "67",
+        "telnyxLookupData": {
+          "success": true,
+          "data": {
+            "data": {
+              "country_code": "US",
+              "national_format": "(516) 996-5862",
+              "phone_number": "+15169965862",
+              "fraud": null,
+              "carrier": {
+                "mobile_country_code": "",
+                "mobile_network_code": "",
+                "name": "NEW CINGULAR WIRELESS PCS, LLC - DC",
+                "type": "mobile",
+                "error_code": null,
+                "normalized_carrier": "AT&T"
+              },
+              "caller_name": null,
+              "nnid_override": null,
+              "portability": {
+                "lrn": null,
+                "ported_status": "",
+                "ported_date": "",
+                "ocn": "4036",
+                "line_type": "mobile",
+                "spid": "",
+                "spid_carrier_name": "NEW CINGULAR WIRELESS PCS, LLC",
+                "spid_carrier_type": "",
+                "altspid": "",
+                "altspid_carrier_name": "",
+                "altspid_carrier_type": "",
+                "city": "NASSAUZN05",
+                "state": "New York"
+              },
+              "valid_number": true,
+              "record_type": "number_lookup"
+            }
+          }
+        },
+        "lineType": "mobile",
+        "carrierName": "NEW CINGULAR WIRELESS PCS, LLC - DC",
+        "carrierType": "mobile",
+        "normalizedCarrier": "AT&T",
+        "decisionReason": "AGE_OVER_59",
+        "decisionCodes": [
+          "AGE_OVER_59"
+        ],
+        "decisionConfidence": 44,
+        "decisionAction": "skip",
+        "enrichmentLevel": "none",
+        "dncStatus": "UNKNOWN",
+        "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box."
+      },
+      "summary": {
+        "name": "Daisy Alvarez",
+        "phone": "5169965862",
+        "dobOrAge": "67",
+        "zipcode": "33414",
+        "state": "FL",
+        "city": "Wellington",
+        "email": "edward.alvarez@att.net",
+        "dncStatus": "UNKNOWN",
+        "income": 70000,
+        "lineType": "mobile",
+        "carrier": "",
+        "normalizedCarrier": "",
+        "searchFilter": "roi-proof-direct-enrich-row",
+        "dateScraped": "2026-03-12",
+        "linkedinUrl": "https://www.linkedin.com/in/ACwAAAbjkf8B3aPzzDx8TXdnQM3MrtLbeE7oXRs",
+        "zipProvenance": "verified_skip_trace",
+        "skipTracingDisposition": "clear_match",
+        "phoneStateMismatch": true
+      }
+    },
+    {
+      "row": {
+        "Name": "Scott Sundermeier",
+        "Title": "Vice President, Brokerage / Managed Transportation",
+        "Company": "Ascent Global Logistics",
+        "Location": "Stuart, Florida, United States",
+        "LinkedIn URL": "https://www.linkedin.com/in/ACwAAACkqCMBUqItIORmXbwJL6FLcwSEvCdQuuc",
+        "Email": "",
+        "Phone": "",
+        "First Name": "Scott",
+        "Last Name": "Sundermeier",
+        "City": "Stuart",
+        "State": "FL",
+        "Zip": "",
+        "Search Filter": "roi-proof-direct-enrich-row"
+      },
+      "enriched": {
+        "firstName": "Scott",
+        "lastName": "Sundermeier",
+        "zipCode": "34990",
+        "zipProvenance": "verified_skip_trace",
+        "gender": "male",
+        "genderConfidence": 98,
+        "phone": "3303107859",
+        "email": "dlsundermeier@gmail.com",
+        "addressLine2": "FL",
+        "incomePreQual": {
+          "conservative": {
+            "min": 70000,
+            "max": 370000,
+            "p50": 220000
+          },
+          "upside": {
+            "min": 80000,
+            "max": 315000,
+            "p50": 242000
+          },
+          "estimate": {
+            "range": {
+              "min": 70000,
+              "max": 315000
+            },
+            "p50": 231000,
+            "confidence": 0.48,
+            "primaryDrivers": [
+              "career ladder: exec",
+              "company: Ascent Global Logistics"
+            ],
+            "riskFlags": [
+              "High-level title but company type may not support it"
+            ]
+          },
+          "decision": {
+            "tier": "unknown",
+            "shouldContinueEnrichment": true,
+            "reason": "Income meets $60k threshold: Upside p50 ($242k) >= $60k minimum",
+            "band": "high",
+            "requiresStrongPositives": false,
+            "reasonCode": "INCOME_ABOVE_60K"
+          }
+        },
+        "skipTracingData": {
+          "Status": 200,
+          "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+          "Source": "tps_fsh_192_cch",
+          "Records": 1,
+          "Page": 1,
+          "PeopleDetails": [
+            {
+              "Name": "Scott Sundermeier",
+              "Link": "https://www.truepeoplesearch.com/find/person/p490nn0u4rulrun6un6l",
+              "Age": 57,
+              "Person ID": "p490nn0u4rulrun6un6l",
+              "Lives in": "Palm City, FL",
+              "Used to live in": "Brunswick OH, Oxford OH",
+              "Related to": "Allison Slusarski, Bradley Sundermeier, Co..."
+            }
+          ],
+          "ageFromPersonDetails": "57"
+        },
+        "skipTracingDisposition": "clear_match",
+        "skipTracingMatchType": "name_only",
+        "phoneStateMismatch": true,
+        "telnyxLookupData": {
+          "success": true,
+          "data": {
+            "data": {
+              "country_code": "US",
+              "national_format": "(330) 310-7859",
+              "phone_number": "+13303107859",
+              "fraud": null,
+              "carrier": {
+                "mobile_country_code": "",
+                "mobile_network_code": "",
+                "name": "Verizon Wireless:6006 - SVR/2",
+                "type": "mobile",
+                "error_code": null,
+                "normalized_carrier": "Verizon Wireless"
+              },
+              "caller_name": null,
+              "nnid_override": null,
+              "portability": {
+                "lrn": "330714XXXX",
+                "ported_status": "",
+                "ported_date": "",
+                "ocn": "6025",
+                "line_type": "mobile",
+                "spid": "",
+                "spid_carrier_name": "CELLCO PARTNERSHIP DBA VERIZON",
+                "spid_carrier_type": "",
+                "altspid": "",
+                "altspid_carrier_name": "",
+                "altspid_carrier_type": "",
+                "city": "AKRON",
+                "state": "Ohio"
+              },
+              "valid_number": true,
+              "record_type": "number_lookup"
+            }
+          }
+        },
+        "lineType": "mobile",
+        "carrierName": "Verizon Wireless:6006 - SVR/2",
+        "carrierType": "mobile",
+        "normalizedCarrier": "Verizon Wireless",
+        "decisionReason": "PARTIAL_ENRICHMENT",
+        "decisionCodes": [
+          "PARTIAL_ENRICHMENT",
+          "SOFT_DOWNGRADE_FREE_EMAIL"
+        ],
+        "decisionConfidence": 36,
+        "decisionAction": "partial",
+        "enrichmentLevel": "partial",
+        "dncStatus": "UNKNOWN",
+        "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+        "age": "57"
+      },
+      "summary": {
+        "name": "Scott Sundermeier",
+        "phone": "3303107859",
+        "dobOrAge": "57",
+        "zipcode": "34990",
+        "state": "FL",
+        "city": "Stuart",
+        "email": "dlsundermeier@gmail.com",
+        "dncStatus": "UNKNOWN",
+        "income": 231000,
+        "lineType": "mobile",
+        "carrier": "",
+        "normalizedCarrier": "",
+        "searchFilter": "roi-proof-direct-enrich-row",
+        "dateScraped": "2026-03-12",
+        "linkedinUrl": "https://www.linkedin.com/in/ACwAAACkqCMBUqItIORmXbwJL6FLcwSEvCdQuuc",
+        "zipProvenance": "verified_skip_trace",
+        "skipTracingDisposition": "clear_match",
+        "needsVerification": true,
+        "phoneStateMismatch": true
+      }
+    },
+    {
+      "row": {
+        "Name": "Abbey Gadinsky-Snyder",
+        "Title": "Founder, CEO & Principal Real Estate Broker",
+        "Company": "GADCO Residential Real Estate",
+        "Location": "Miami, Florida, United States",
+        "LinkedIn URL": "https://www.linkedin.com/in/ACwAAAaGhX4B5S93IlWW8_mIq-D3Wj0mciSge-w",
+        "Email": "",
+        "Phone": "",
+        "First Name": "Abbey",
+        "Last Name": "Gadinsky-Snyder",
+        "City": "Miami",
+        "State": "FL",
+        "Zip": "",
+        "Search Filter": "roi-proof-direct-enrich-row"
+      },
+      "enriched": {
+        "firstName": "Abbey",
+        "lastName": "Gadinsky-Snyder",
+        "zipCode": "33101",
+        "zipProvenance": "derived_city_state",
+        "addressLine2": "FL",
+        "incomePreQual": {
+          "conservative": {
+            "min": 92000,
+            "max": 392000,
+            "p50": 242000
+          },
+          "upside": {
+            "min": 104000,
+            "max": 346000,
+            "p50": 266000
+          },
+          "estimate": {
+            "range": {
+              "min": 92000,
+              "max": 346000
+            },
+            "p50": 254000,
+            "confidence": 0.48,
+            "primaryDrivers": [
+              "career ladder: exec",
+              "company: GADCO Residential Real Estate"
+            ],
+            "riskFlags": [
+              "High-level title but company type may not support it"
+            ]
+          },
+          "decision": {
+            "tier": "unknown",
+            "shouldContinueEnrichment": true,
+            "reason": "Income meets $60k threshold: Upside p50 ($266k) >= $60k minimum",
+            "band": "high",
+            "requiresStrongPositives": false,
+            "reasonCode": "INCOME_ABOVE_60K"
+          }
+        },
+        "skipTracingData": {
+          "Status": 200,
+          "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+          "Source": "tps_fsh_209_cch",
+          "Records": 1,
+          "Page": 1,
+          "PeopleDetails": [
+            {
+              "Name": "Abbey G Snyder",
+              "Link": "https://www.truepeoplesearch.com/find/person/p82nlunl0l6u84rnn202",
+              "Age": 40,
+              "Person ID": "p82nlunl0l6u84rnn202",
+              "Lives in": "Hollywood, FL",
+              "Used to live in": "Miami FL, Miami Beach FL, New York NY, Ga...",
+              "Related to": "Brooke Gadinsky-Snyder, Brooke Gadinsky-Sn..."
+            }
+          ]
+        },
+        "skipTracingDisposition": "no_exact_match",
+        "decisionReason": "FULL_ENRICHMENT",
+        "decisionCodes": [
+          "FULL_ENRICHMENT"
+        ],
+        "decisionConfidence": 83,
+        "decisionAction": "full",
+        "enrichmentLevel": "full"
+      },
+      "summary": {
+        "name": "Abbey Gadinsky-Snyder",
+        "phone": "",
+        "dobOrAge": "",
+        "zipcode": "33101",
+        "state": "FL",
+        "city": "Miami",
+        "email": "",
+        "dncStatus": "UNKNOWN",
+        "income": 254000,
+        "lineType": "",
+        "carrier": "",
+        "normalizedCarrier": "",
+        "searchFilter": "roi-proof-direct-enrich-row",
+        "dateScraped": "2026-03-12",
+        "linkedinUrl": "https://www.linkedin.com/in/ACwAAAaGhX4B5S93IlWW8_mIq-D3Wj0mciSge-w",
+        "zipProvenance": "derived_city_state",
+        "skipTracingDisposition": "no_exact_match",
+        "enrichmentStopReason": "No exact skip-tracing match",
+        "reviewBucket": "no_exact_match"
+      }
+    },
+    {
+      "row": {
+        "Name": "Simon Reynolds MBA",
+        "Title": "Realtor",
+        "Company": "William Raveis South Florida",
+        "Location": "Boca Raton, Florida, United States",
+        "LinkedIn URL": "https://www.linkedin.com/in/ACwAAAbTEuIBrvwK2vwI5_oelpgkEMfxQFSQ9ho",
+        "Email": "",
+        "Phone": "",
+        "First Name": "Simon",
+        "Last Name": "Reynolds MBA",
+        "City": "Boca Raton",
+        "State": "FL",
+        "Zip": "",
+        "Search Filter": "roi-proof-direct-enrich-row"
+      },
+      "enriched": {
+        "firstName": "Simon",
+        "lastName": "Reynolds",
+        "zipCode": "33441",
+        "zipProvenance": "verified_skip_trace",
+        "phone": "5616098987",
+        "email": "simon24feb@gmail.com",
+        "addressLine2": "FL",
+        "incomePreQual": {
+          "conservative": {
+            "min": 30000,
+            "max": 115000,
+            "p50": 70000
+          },
+          "upside": {
+            "min": 21000,
+            "max": 119000,
+            "p50": 70000
+          },
+          "estimate": {
+            "range": {
+              "min": 30000,
+              "max": 119000
+            },
+            "p50": 70000,
+            "confidence": 0.33,
+            "primaryDrivers": [
+              "company: William Raveis South Florida"
+            ],
+            "riskFlags": [
+              "Job title seniority unclear"
+            ]
+          },
+          "decision": {
+            "tier": "unknown",
+            "shouldContinueEnrichment": true,
+            "reason": "Income meets $60k threshold: Upside p50 ($70k) >= $60k minimum",
+            "band": "high",
+            "requiresStrongPositives": false,
+            "reasonCode": "INCOME_ABOVE_60K"
+          }
+        },
+        "skipTracingData": {
+          "Status": 200,
+          "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+          "Source": "tps_fsh_601_cch",
+          "Records": 2,
+          "Page": 1,
+          "PeopleDetails": [
+            {
+              "Name": "Simon Reynolds",
+              "Link": "https://www.truepeoplesearch.com/find/person/p60900rn282n4n89892r",
+              "Age": 60,
+              "Person ID": "p60900rn282n4n89892r",
+              "Lives in": "Deerfield Beach, FL",
+              "Used to live in": "Boca Raton FL, West Palm Beach FL",
+              "Related to": "David Reynolds, Geraldine Reynolds"
+            }
+          ],
+          "ageFromPersonDetails": "60"
+        },
+        "skipTracingDisposition": "ambiguous_used_first",
+        "skipTracingCandidatesForReview": [
+          {
+            "Name": "Simon Reynolds",
+            "Link": "https://www.truepeoplesearch.com/find/person/p60900rn282n4n89892r",
+            "Age": 60,
+            "Person ID": "p60900rn282n4n89892r",
+            "Lives in": "Deerfield Beach, FL",
+            "Used to live in": "Boca Raton FL, West Palm Beach FL",
+            "Related to": "David Reynolds, Geraldine Reynolds"
+          },
+          {
+            "Name": "Simon Reynolds",
+            "Link": "https://www.truepeoplesearch.com/find/person/p6068rlu98nl890r8r6",
+            "Age": 58,
+            "Person ID": "p6068rlu98nl890r8r6",
+            "Lives in": "Delray Beach, FL",
+            "Used to live in": "Tampa FL, Mesa AZ, Beverly Hills CA, Jack...",
+            "Related to": "Christian Reynolds, David Reynolds, Patti ..."
+          }
+        ],
+        "skipTracingMatchType": "ambiguous_used_first",
+        "age": "60",
+        "telnyxLookupData": {
+          "success": true,
+          "data": {
+            "data": {
+              "country_code": "US",
+              "national_format": "(561) 609-8987",
+              "phone_number": "+15616098987",
+              "fraud": null,
+              "carrier": {
+                "mobile_country_code": "",
+                "mobile_network_code": "",
+                "name": "T-Mobile US-SVR-10X/2",
+                "type": "mobile",
+                "error_code": null,
+                "normalized_carrier": ""
+              },
+              "caller_name": null,
+              "nnid_override": null,
+              "portability": {
+                "lrn": "561306XXXX",
+                "ported_status": "",
+                "ported_date": "",
+                "ocn": "6889",
+                "line_type": "mobile",
+                "spid": "",
+                "spid_carrier_name": "OMNIPOINT MIAMI E LICENSE, LLC",
+                "spid_carrier_type": "",
+                "altspid": "",
+                "altspid_carrier_name": "",
+                "altspid_carrier_type": "",
+                "city": "DELRAY BCH",
+                "state": "Florida"
+              },
+              "valid_number": true,
+              "record_type": "number_lookup"
+            }
+          }
+        },
+        "lineType": "mobile",
+        "carrierName": "T-Mobile US-SVR-10X/2",
+        "carrierType": "mobile",
+        "normalizedCarrier": "",
+        "decisionReason": "AGE_OVER_59",
+        "decisionCodes": [
+          "AGE_OVER_59"
+        ],
+        "decisionConfidence": 37,
+        "decisionAction": "skip",
+        "enrichmentLevel": "none",
+        "dncStatus": "UNKNOWN",
+        "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box."
+      },
+      "summary": {
+        "name": "Simon Reynolds MBA",
+        "phone": "5616098987",
+        "dobOrAge": "60",
+        "zipcode": "33441",
+        "state": "FL",
+        "city": "Boca Raton",
+        "email": "simon24feb@gmail.com",
+        "dncStatus": "UNKNOWN",
+        "income": 70000,
+        "lineType": "mobile",
+        "carrier": "",
+        "normalizedCarrier": "",
+        "searchFilter": "roi-proof-direct-enrich-row",
+        "dateScraped": "2026-03-12",
+        "linkedinUrl": "https://www.linkedin.com/in/ACwAAAbTEuIBrvwK2vwI5_oelpgkEMfxQFSQ9ho",
+        "zipProvenance": "verified_skip_trace",
+        "skipTracingDisposition": "ambiguous_used_first",
+        "enrichmentStopReason": "Ambiguous match – first candidate used (verify before contact)",
+        "reviewBucket": "ambiguous_identity",
+        "needsVerification": true
+      }
+    },
+    {
+      "row": {
+        "Name": "Saul Saltares",
+        "Title": "Maintenance Manager at Venterra Realty",
+        "Company": "Venterra Realty",
+        "Location": "St. Petersburg, Florida, United States",
+        "LinkedIn URL": "https://www.linkedin.com/in/ACwAAAbBXdABhsIUzVf_ZCiYX86Biw1WHYxaQnA",
+        "Email": "",
+        "Phone": "",
+        "First Name": "Saul",
+        "Last Name": "Saltares",
+        "City": "St. Petersburg",
+        "State": "FL",
+        "Zip": "",
+        "Search Filter": "roi-proof-direct-enrich-row"
+      },
+      "enriched": {
+        "firstName": "Saul",
+        "lastName": "Saltares",
+        "zipCode": "33782",
+        "zipProvenance": "verified_skip_trace",
+        "phone": "4074629096",
+        "email": "saulsmail2@yahoo.com",
+        "addressLine2": "FL",
+        "incomePreQual": {
+          "conservative": {
+            "min": 60000,
+            "max": 180000,
+            "p50": 120000
+          },
+          "upside": {
+            "min": 55000,
+            "max": 156000,
+            "p50": 120000
+          },
+          "estimate": {
+            "range": {
+              "min": 60000,
+              "max": 156000
+            },
+            "p50": 120000,
+            "confidence": 0.55,
+            "primaryDrivers": [
+              "career ladder: manager",
+              "manager role",
+              "company: Venterra Realty"
+            ],
+            "riskFlags": [
+              "Job title seniority unclear"
+            ]
+          },
+          "decision": {
+            "tier": "unknown",
+            "shouldContinueEnrichment": true,
+            "reason": "Income meets $60k threshold: Upside p50 ($120k) >= $60k minimum",
+            "band": "high",
+            "requiresStrongPositives": false,
+            "reasonCode": "INCOME_ABOVE_60K"
+          }
+        },
+        "skipTracingData": {
+          "Status": 200,
+          "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+          "Source": "tps_fsh_267_cch",
+          "Records": 1,
+          "Page": 1,
+          "PeopleDetails": [
+            {
+              "Name": "Saul Saltares Jr",
+              "Link": "https://www.truepeoplesearch.com/find/person/pn8u048ulr9rlu09ur84",
+              "Age": 58,
+              "Person ID": "pn8u048ulr9rlu09ur84",
+              "Lives in": "Pinellas Park, FL",
+              "Used to live in": "Saint Petersburg FL, Winter Springs FL, O...",
+              "Related to": "Saul Saltares"
+            }
+          ],
+          "ageFromPersonDetails": "58"
+        },
+        "skipTracingDisposition": "clear_match",
+        "skipTracingMatchType": "name_only",
+        "telnyxLookupData": {
+          "success": true,
+          "data": {
+            "data": {
+              "country_code": "US",
+              "national_format": "(407) 462-9096",
+              "phone_number": "+14074629096",
+              "fraud": null,
+              "carrier": {
+                "mobile_country_code": "",
+                "mobile_network_code": "",
+                "name": "NEW CINGULAR WIRELESS PCS, LLC - GA",
+                "type": "mobile",
+                "error_code": null,
+                "normalized_carrier": ""
+              },
+              "caller_name": null,
+              "nnid_override": null,
+              "portability": {
+                "lrn": null,
+                "ported_status": "",
+                "ported_date": "",
+                "ocn": "6214",
+                "line_type": "mobile",
+                "spid": "",
+                "spid_carrier_name": "NEW CINGULAR WIRELESS PCS, LLC",
+                "spid_carrier_type": "",
+                "altspid": "",
+                "altspid_carrier_name": "",
+                "altspid_carrier_type": "",
+                "city": "WINTERPARK",
+                "state": "Florida"
+              },
+              "valid_number": true,
+              "record_type": "number_lookup"
+            }
+          }
+        },
+        "lineType": "mobile",
+        "carrierName": "NEW CINGULAR WIRELESS PCS, LLC - GA",
+        "carrierType": "mobile",
+        "normalizedCarrier": "",
+        "decisionReason": "FULL_ENRICHMENT",
+        "decisionCodes": [
+          "FULL_ENRICHMENT",
+          "SOFT_DOWNGRADE_FREE_EMAIL"
+        ],
+        "decisionConfidence": 63,
+        "decisionAction": "full",
+        "enrichmentLevel": "full",
+        "dncStatus": "UNKNOWN",
+        "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+        "age": "58"
+      },
+      "summary": {
+        "name": "Saul Saltares",
+        "phone": "4074629096",
+        "dobOrAge": "58",
+        "zipcode": "33782",
+        "state": "FL",
+        "city": "St. Petersburg",
+        "email": "saulsmail2@yahoo.com",
+        "dncStatus": "UNKNOWN",
+        "income": 120000,
+        "lineType": "mobile",
+        "carrier": "",
+        "normalizedCarrier": "",
+        "searchFilter": "roi-proof-direct-enrich-row",
+        "dateScraped": "2026-03-12",
+        "linkedinUrl": "https://www.linkedin.com/in/ACwAAAbBXdABhsIUzVf_ZCiYX86Biw1WHYxaQnA",
+        "zipProvenance": "verified_skip_trace",
+        "skipTracingDisposition": "clear_match",
+        "needsVerification": true
+      }
+    },
+    {
+      "row": {
+        "Name": "KRIS KOPP",
+        "Title": "Real Estate Agent",
+        "Company": "EXIT Gulf Coast Realty",
+        "Location": "Punta Gorda, Florida, United States",
+        "LinkedIn URL": "https://www.linkedin.com/in/ACwAAAYG7PgB7M7wJnfDpqQyyMfFbp7pa40HdGA",
+        "Email": "",
+        "Phone": "",
+        "First Name": "KRIS",
+        "Last Name": "KOPP",
+        "City": "Punta Gorda",
+        "State": "FL",
+        "Zip": "",
+        "Search Filter": "roi-proof-direct-enrich-row"
+      },
+      "enriched": {
+        "firstName": "KRIS",
+        "lastName": "KOPP",
+        "zipCode": "54025",
+        "zipProvenance": "verified_skip_trace",
+        "phone": "7634394071",
+        "email": "kvlkopp@hotmail.com",
+        "addressLine2": "FL",
+        "incomePreQual": {
+          "conservative": {
+            "min": 30000,
+            "max": 115000,
+            "p50": 70000
+          },
+          "upside": {
+            "min": 21000,
+            "max": 119000,
+            "p50": 70000
+          },
+          "estimate": {
+            "range": {
+              "min": 30000,
+              "max": 119000
+            },
+            "p50": 70000,
+            "confidence": 0.33,
+            "primaryDrivers": [
+              "company: EXIT Gulf Coast Realty"
+            ],
+            "riskFlags": [
+              "Job title seniority unclear"
+            ]
+          },
+          "decision": {
+            "tier": "unknown",
+            "shouldContinueEnrichment": true,
+            "reason": "Income meets $60k threshold: Upside p50 ($70k) >= $60k minimum",
+            "band": "high",
+            "requiresStrongPositives": false,
+            "reasonCode": "INCOME_ABOVE_60K"
+          }
+        },
+        "skipTracingData": {
+          "Status": 200,
+          "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+          "Source": "tps_fsh_256_cch",
+          "Records": 1,
+          "Page": 1,
+          "PeopleDetails": [
+            {
+              "Name": "Kris Kopp",
+              "Link": "https://www.truepeoplesearch.com/find/person/p4rn9n0469nr6u4l0rl9",
+              "Age": 47,
+              "Person ID": "p4rn9n0469nr6u4l0rl9",
+              "Lives in": "Somerset, WI",
+              "Used to live in": "Punta Gorda FL, Isanti MN, Osceola WI, Hu...",
+              "Related to": "Vicki Kopp, Ava Kopp, Curtis Kopp, Lily Ko..."
+            }
+          ],
+          "ageFromPersonDetails": "47"
+        },
+        "skipTracingDisposition": "clear_match",
+        "skipTracingMatchType": "name_only",
+        "phoneStateMismatch": true,
+        "telnyxLookupData": {
+          "success": true,
+          "data": {
+            "data": {
+              "country_code": "US",
+              "national_format": "(763) 439-4071",
+              "phone_number": "+17634394071",
+              "fraud": null,
+              "carrier": {
+                "mobile_country_code": "",
+                "mobile_network_code": "",
+                "name": "T-Mobile US-SVR-10X/2",
+                "type": "mobile",
+                "error_code": null,
+                "normalized_carrier": ""
+              },
+              "caller_name": null,
+              "nnid_override": null,
+              "portability": {
+                "lrn": "763439XXXX",
+                "ported_status": "",
+                "ported_date": "",
+                "ocn": "6701",
+                "line_type": "mobile",
+                "spid": "",
+                "spid_carrier_name": "AERIAL COMMUNICATIONS",
+                "spid_carrier_type": "",
+                "altspid": "",
+                "altspid_carrier_name": "",
+                "altspid_carrier_type": "",
+                "city": "TWINCITIES",
+                "state": "Minnesota"
+              },
+              "valid_number": true,
+              "record_type": "number_lookup"
+            }
+          }
+        },
+        "lineType": "mobile",
+        "carrierName": "T-Mobile US-SVR-10X/2",
+        "carrierType": "mobile",
+        "normalizedCarrier": "",
+        "decisionReason": "PARTIAL_ENRICHMENT",
+        "decisionCodes": [
+          "PARTIAL_ENRICHMENT",
+          "SOFT_DOWNGRADE_FREE_EMAIL"
+        ],
+        "decisionConfidence": 36,
+        "decisionAction": "partial",
+        "enrichmentLevel": "partial",
+        "dncStatus": "UNKNOWN",
+        "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+        "age": "47"
+      },
+      "summary": {
+        "name": "KRIS KOPP",
+        "phone": "7634394071",
+        "dobOrAge": "47",
+        "zipcode": "54025",
+        "state": "FL",
+        "city": "Punta Gorda",
+        "email": "kvlkopp@hotmail.com",
+        "dncStatus": "UNKNOWN",
+        "income": 70000,
+        "lineType": "mobile",
+        "carrier": "",
+        "normalizedCarrier": "",
+        "searchFilter": "roi-proof-direct-enrich-row",
+        "dateScraped": "2026-03-12",
+        "linkedinUrl": "https://www.linkedin.com/in/ACwAAAYG7PgB7M7wJnfDpqQyyMfFbp7pa40HdGA",
+        "zipProvenance": "verified_skip_trace",
+        "skipTracingDisposition": "clear_match",
+        "needsVerification": true,
+        "phoneStateMismatch": true
+      }
+    },
+    {
+      "row": {
+        "Name": "Juan Pablo Rubio",
+        "Title": "Miami Pre-Construction & Investment Advisor",
+        "Company": "eXp Realty",
+        "Location": "Miami, Florida, United States",
+        "LinkedIn URL": "https://www.linkedin.com/in/ACwAAAYkfMwBy68RUfiA06Aoiif34wttQKaB-3o",
+        "Email": "",
+        "Phone": "",
+        "First Name": "Juan",
+        "Last Name": "Pablo Rubio",
+        "City": "Miami",
+        "State": "FL",
+        "Zip": "",
+        "Search Filter": "roi-proof-direct-enrich-row"
+      },
+      "enriched": {
+        "firstName": "Juan",
+        "lastName": "Rubio",
+        "zipCode": "33183",
+        "zipProvenance": "verified_skip_trace",
+        "gender": "male",
+        "genderConfidence": 98,
+        "phone": "6616456144",
+        "email": "jrubio2903@cox.net",
+        "addressLine2": "FL",
+        "incomePreQual": {
+          "conservative": {
+            "min": 30000,
+            "max": 115000,
+            "p50": 70000
+          },
+          "upside": {
+            "min": 21000,
+            "max": 119000,
+            "p50": 70000
+          },
+          "estimate": {
+            "range": {
+              "min": 30000,
+              "max": 119000
+            },
+            "p50": 70000,
+            "confidence": 0.55,
+            "primaryDrivers": [
+              "advisor role",
+              "company: eXp Realty"
+            ],
+            "riskFlags": [
+              "Job title seniority unclear"
+            ]
+          },
+          "decision": {
+            "tier": "unknown",
+            "shouldContinueEnrichment": true,
+            "reason": "Income meets $60k threshold: Upside p50 ($70k) >= $60k minimum",
+            "band": "high",
+            "requiresStrongPositives": false,
+            "reasonCode": "INCOME_ABOVE_60K"
+          }
+        },
+        "skipTracingData": {
+          "Status": 200,
+          "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+          "Source": "tps_fsh_388_cch",
+          "Records": 96,
+          "Page": 1,
+          "PeopleDetails": [
+            {
+              "Name": "Juan Rubio Sr",
+              "Link": "https://www.truepeoplesearch.com/find/person/px609u0l8rlrr02rrr646",
+              "Age": 90,
+              "Person ID": "px609u0l8rlrr02rrr646",
+              "Lives in": "Miami, FL",
+              "Used to live in": "Santa Clarita CA, Valencia CA, Los Angele...",
+              "Related to": "Zaida Rubio, Agripino Rubio, Elizabeth Arr..."
+            }
+          ],
+          "ageFromPersonDetails": "90"
+        },
+        "skipTracingDisposition": "ambiguous_used_first",
+        "skipTracingCandidatesForReview": [
+          {
+            "Name": "Juan Rubio Sr",
+            "Link": "https://www.truepeoplesearch.com/find/person/px609u0l8rlrr02rrr646",
+            "Age": 90,
+            "Person ID": "px609u0l8rlrr02rrr646",
+            "Lives in": "Miami, FL",
+            "Used to live in": "Santa Clarita CA, Valencia CA, Los Angele...",
+            "Related to": "Zaida Rubio, Agripino Rubio, Elizabeth Arr..."
+          },
+          {
+            "Name": "Juan Rubio",
+            "Link": "https://www.truepeoplesearch.com/find/person/pxulu94u9u4668l8r0640",
+            "Age": 57,
+            "Person ID": "pxulu94u9u4668l8r0640",
+            "Lives in": "Miami, FL",
+            "Used to live in": "North Miami FL, Miami Beach FL, Downey CA...",
+            "Related to": "Ana Campbell, Denisse Quan, Elena Quan, An..."
+          }
+        ],
+        "skipTracingMatchType": "ambiguous_used_first",
+        "phoneStateMismatch": true,
+        "age": "90",
+        "telnyxLookupData": {
+          "success": true,
+          "data": {
+            "data": {
+              "country_code": "US",
+              "national_format": "(661) 645-6144",
+              "phone_number": "+16616456144",
+              "fraud": null,
+              "carrier": {
+                "mobile_country_code": "",
+                "mobile_network_code": "",
+                "name": "Verizon Wireless:6006 - SVR/2",
+                "type": "mobile",
+                "error_code": null,
+                "normalized_carrier": ""
+              },
+              "caller_name": null,
+              "nnid_override": null,
+              "portability": {
+                "lrn": "805832XXXX",
+                "ported_status": "",
+                "ported_date": "",
+                "ocn": "6006",
+                "line_type": "mobile",
+                "spid": "",
+                "spid_carrier_name": "CELLCO PARTNERSHIP DBA VERIZON",
+                "spid_carrier_type": "",
+                "altspid": "",
+                "altspid_carrier_name": "",
+                "altspid_carrier_type": "",
+                "city": "OXNARD",
+                "state": "California"
+              },
+              "valid_number": true,
+              "record_type": "number_lookup"
+            }
+          }
+        },
+        "lineType": "mobile",
+        "carrierName": "Verizon Wireless:6006 - SVR/2",
+        "carrierType": "mobile",
+        "normalizedCarrier": "",
+        "decisionReason": "AGE_OVER_59",
+        "decisionCodes": [
+          "AGE_OVER_59"
+        ],
+        "decisionConfidence": 44,
+        "decisionAction": "skip",
+        "enrichmentLevel": "none",
+        "dncStatus": "UNKNOWN",
+        "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box."
+      },
+      "summary": {
+        "name": "Juan Pablo Rubio",
+        "phone": "6616456144",
+        "dobOrAge": "90",
+        "zipcode": "33183",
+        "state": "FL",
+        "city": "Miami",
+        "email": "jrubio2903@cox.net",
+        "dncStatus": "UNKNOWN",
+        "income": 70000,
+        "lineType": "mobile",
+        "carrier": "",
+        "normalizedCarrier": "",
+        "searchFilter": "roi-proof-direct-enrich-row",
+        "dateScraped": "2026-03-12",
+        "linkedinUrl": "https://www.linkedin.com/in/ACwAAAYkfMwBy68RUfiA06Aoiif34wttQKaB-3o",
+        "zipProvenance": "verified_skip_trace",
+        "skipTracingDisposition": "ambiguous_used_first",
+        "enrichmentStopReason": "Ambiguous match – first candidate used (verify before contact)",
+        "reviewBucket": "ambiguous_identity",
+        "needsVerification": true,
+        "phoneStateMismatch": true
+      }
+    },
+    {
+      "row": {
+        "Name": "Sidney Odums II",
+        "Title": "Real Estate",
+        "Company": "Walls Realty Associates,LLC",
+        "Location": "Seminole, Florida, United States",
+        "LinkedIn URL": "https://www.linkedin.com/in/ACwAAEK9KEgBVi4AHKCnmmDL9zRF7y_GyUZa6UQ",
+        "Email": "",
+        "Phone": "",
+        "First Name": "Sidney",
+        "Last Name": "Odums II",
+        "City": "Seminole",
+        "State": "FL",
+        "Zip": "",
+        "Search Filter": "roi-proof-direct-enrich-row"
+      },
+      "enriched": {
+        "firstName": "Sidney",
+        "lastName": "Odums",
+        "zipCode": "33756",
+        "zipProvenance": "verified_skip_trace",
+        "gender": "neutral",
+        "genderConfidence": 95,
+        "phone": "7277420371",
+        "email": "e_odums@hotmail.com",
+        "addressLine2": "FL",
+        "incomePreQual": {
+          "conservative": {
+            "min": 30000,
+            "max": 109000,
+            "p50": 64000
+          },
+          "upside": {
+            "min": 9000,
+            "max": 107000,
+            "p50": 58000
+          },
+          "estimate": {
+            "range": {
+              "min": 30000,
+              "max": 107000
+            },
+            "p50": 61000,
+            "confidence": 0.33,
+            "primaryDrivers": [
+              "company: Walls Realty Associates,LLC"
+            ],
+            "riskFlags": [
+              "Job title seniority unclear"
+            ]
+          },
+          "decision": {
+            "tier": "unknown",
+            "shouldContinueEnrichment": false,
+            "reason": "Income below $60k threshold: Upside p50 ($58k) < $60k minimum",
+            "band": "low",
+            "requiresStrongPositives": false,
+            "reasonCode": "INCOME_BELOW_60K"
+          }
+        },
+        "skipTracingData": {
+          "Status": 200,
+          "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+          "Source": "tps_fsh_297_cch",
+          "Records": 1,
+          "Page": 1,
+          "PeopleDetails": [
+            {
+              "Name": "Sidney Odums Jr",
+              "Link": "https://www.truepeoplesearch.com/find/person/pnu68uuurnlr2l249848",
+              "Age": 47,
+              "Person ID": "pnu68uuurnlr2l249848",
+              "Lives in": "Clearwater, FL",
+              "Used to live in": "Largo FL, Seminole FL, St Petersburg FL, ...",
+              "Related to": "Alesia Odums, Mattie Odums, Mattie Odums, ..."
+            }
+          ],
+          "ageFromPersonDetails": "47"
+        },
+        "skipTracingDisposition": "clear_match",
+        "skipTracingMatchType": "name_only",
+        "telnyxLookupData": {
+          "success": true,
+          "data": {
+            "data": {
+              "country_code": "US",
+              "national_format": "(727) 742-0371",
+              "phone_number": "+17277420371",
+              "fraud": null,
+              "carrier": {
+                "mobile_country_code": "",
+                "mobile_network_code": "",
+                "name": "T-Mobile US-SVR-10X/2",
+                "type": "mobile",
+                "error_code": null,
+                "normalized_carrier": ""
+              },
+              "caller_name": null,
+              "nnid_override": null,
+              "portability": {
+                "lrn": "727688XXXX",
+                "ported_status": "",
+                "ported_date": "",
+                "ocn": "6701",
+                "line_type": "mobile",
+                "spid": "",
+                "spid_carrier_name": "AERIAL COMMUNICATIONS",
+                "spid_carrier_type": "",
+                "altspid": "",
+                "altspid_carrier_name": "",
+                "altspid_carrier_type": "",
+                "city": "CLEARWATER",
+                "state": "Florida"
+              },
+              "valid_number": true,
+              "record_type": "number_lookup"
+            }
+          }
+        },
+        "lineType": "mobile",
+        "carrierName": "T-Mobile US-SVR-10X/2",
+        "carrierType": "mobile",
+        "normalizedCarrier": "",
+        "decisionReason": "PARTIAL_ENRICHMENT",
+        "decisionCodes": [
+          "PARTIAL_ENRICHMENT",
+          "SOFT_DOWNGRADE_FREE_EMAIL"
+        ],
+        "decisionConfidence": 43,
+        "decisionAction": "partial",
+        "enrichmentLevel": "partial",
+        "dncStatus": "UNKNOWN",
+        "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+        "age": "47"
+      },
+      "summary": {
+        "name": "Sidney Odums II",
+        "phone": "7277420371",
+        "dobOrAge": "47",
+        "zipcode": "33756",
+        "state": "FL",
+        "city": "Seminole",
+        "email": "e_odums@hotmail.com",
+        "dncStatus": "UNKNOWN",
+        "income": 61000,
+        "lineType": "mobile",
+        "carrier": "",
+        "normalizedCarrier": "",
+        "searchFilter": "roi-proof-direct-enrich-row",
+        "dateScraped": "2026-03-12",
+        "linkedinUrl": "https://www.linkedin.com/in/ACwAAEK9KEgBVi4AHKCnmmDL9zRF7y_GyUZa6UQ",
+        "zipProvenance": "verified_skip_trace",
+        "skipTracingDisposition": "clear_match",
+        "needsVerification": true
+      }
+    },
+    {
+      "row": {
+        "Name": "Ava Peacock",
+        "Title": "Social Media and Content Specialist",
+        "Company": "John R. Wood Properties",
+        "Location": "Fort Myers, Florida, United States",
+        "LinkedIn URL": "https://www.linkedin.com/in/ACwAAEHln1cB_yqQulnbsoJa2eRP5nOjrNRcFgc",
+        "Email": "",
+        "Phone": "",
+        "First Name": "Ava",
+        "Last Name": "Peacock",
+        "City": "Fort Myers",
+        "State": "FL",
+        "Zip": "",
+        "Search Filter": "roi-proof-direct-enrich-row"
+      },
+      "enriched": {
+        "firstName": "Ava",
+        "lastName": "Peacock",
+        "zipCode": "32259",
+        "zipProvenance": "verified_skip_trace",
+        "gender": "female",
+        "genderConfidence": 98,
+        "phone": "7723493204",
+        "addressLine2": "FL",
+        "incomePreQual": {
+          "conservative": {
+            "min": 31000,
+            "max": 109000,
+            "p50": 70000
+          },
+          "upside": {
+            "min": 28000,
+            "max": 112000,
+            "p50": 70000
+          },
+          "estimate": {
+            "range": {
+              "min": 31000,
+              "max": 112000
+            },
+            "p50": 70000,
+            "confidence": 0.82,
+            "primaryDrivers": [
+              "career ladder: ic",
+              "specialist role",
+              "company: John R. Wood Properties"
+            ],
+            "riskFlags": []
+          },
+          "decision": {
+            "tier": "unknown",
+            "shouldContinueEnrichment": true,
+            "reason": "Income meets $60k threshold: Upside p50 ($70k) >= $60k minimum",
+            "band": "high",
+            "requiresStrongPositives": false,
+            "reasonCode": "INCOME_ABOVE_60K"
+          }
+        },
+        "skipTracingData": {
+          "Status": 200,
+          "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+          "Source": "tps_fsh_227_cch",
+          "Records": 2,
+          "Page": 1,
+          "PeopleDetails": [
+            {
+              "Name": "Ava Peacock",
+              "Link": "https://www.truepeoplesearch.com/find/person/px46n98r2800nn4n2u2l4",
+              "Age": 22,
+              "Person ID": "px46n98r2800nn4n2u2l4",
+              "Lives in": "Saint Johns, FL",
+              "Used to live in": "Palm City FL",
+              "Related to": "Daniel Peacock, Katherine Peacock, Kate Pe..."
+            }
+          ],
+          "ageFromPersonDetails": "22"
+        },
+        "skipTracingDisposition": "clear_match",
+        "skipTracingMatchType": "name_only",
+        "telnyxLookupData": {
+          "success": true,
+          "data": {
+            "data": {
+              "country_code": "US",
+              "national_format": "(772) 349-3204",
+              "phone_number": "+17723493204",
+              "fraud": null,
+              "carrier": {
+                "mobile_country_code": "",
+                "mobile_network_code": "",
+                "name": "Cingular Wireless/2",
+                "type": "mobile",
+                "error_code": null,
+                "normalized_carrier": "AT&T"
+              },
+              "caller_name": null,
+              "nnid_override": null,
+              "portability": {
+                "lrn": "561319XXXX",
+                "ported_status": "",
+                "ported_date": "",
+                "ocn": "6214",
+                "line_type": "mobile",
+                "spid": "",
+                "spid_carrier_name": "NEW CINGULAR WIRELESS PCS, LLC",
+                "spid_carrier_type": "",
+                "altspid": "",
+                "altspid_carrier_name": "",
+                "altspid_carrier_type": "",
+                "city": "WPALMBEACH",
+                "state": "Florida"
+              },
+              "valid_number": true,
+              "record_type": "number_lookup"
+            }
+          }
+        },
+        "lineType": "mobile",
+        "carrierName": "Cingular Wireless/2",
+        "carrierType": "mobile",
+        "normalizedCarrier": "AT&T",
+        "decisionReason": "FULL_ENRICHMENT",
+        "decisionCodes": [
+          "FULL_ENRICHMENT"
+        ],
+        "decisionConfidence": 69,
+        "decisionAction": "full",
+        "enrichmentLevel": "full",
+        "dncStatus": "UNKNOWN",
+        "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+        "age": "22"
+      },
+      "summary": {
+        "name": "Ava Peacock",
+        "phone": "7723493204",
+        "dobOrAge": "22",
+        "zipcode": "32259",
+        "state": "FL",
+        "city": "Fort Myers",
+        "email": "",
+        "dncStatus": "UNKNOWN",
+        "income": 70000,
+        "lineType": "mobile",
+        "carrier": "",
+        "normalizedCarrier": "",
+        "searchFilter": "roi-proof-direct-enrich-row",
+        "dateScraped": "2026-03-12",
+        "linkedinUrl": "https://www.linkedin.com/in/ACwAAEHln1cB_yqQulnbsoJa2eRP5nOjrNRcFgc",
+        "zipProvenance": "verified_skip_trace",
+        "skipTracingDisposition": "clear_match",
+        "needsVerification": true
+      }
+    },
+    {
+      "row": {
+        "Name": "Dhillon Patel",
+        "Title": "Incoming 2026 Real Estate Summer Analyst",
+        "Company": "Fortress Investment Group",
+        "Location": "Tampa, Florida, United States",
+        "LinkedIn URL": "https://www.linkedin.com/in/ACwAAD9JbUEBvktMyICrBIB3akTS71g6zHJNdQg",
+        "Email": "",
+        "Phone": "",
+        "First Name": "Dhillon",
+        "Last Name": "Patel",
+        "City": "Tampa",
+        "State": "FL",
+        "Zip": "",
+        "Search Filter": "roi-proof-direct-enrich-row"
+      },
+      "enriched": {
+        "firstName": "Dhillon",
+        "lastName": "Patel",
+        "zipCode": "33613",
+        "zipProvenance": "verified_skip_trace",
+        "phone": "8138463178",
+        "email": "dhillkp@icloud.com",
+        "addressLine2": "FL",
+        "incomePreQual": {
+          "conservative": {
+            "min": 31000,
+            "max": 109000,
+            "p50": 70000
+          },
+          "upside": {
+            "min": 28000,
+            "max": 112000,
+            "p50": 70000
+          },
+          "estimate": {
+            "range": {
+              "min": 31000,
+              "max": 112000
+            },
+            "p50": 70000,
+            "confidence": 0.55,
+            "primaryDrivers": [
+              "career ladder: ic",
+              "analyst role",
+              "company: Fortress Investment Group"
+            ],
+            "riskFlags": [
+              "Job title seniority unclear"
+            ]
+          },
+          "decision": {
+            "tier": "unknown",
+            "shouldContinueEnrichment": true,
+            "reason": "Income meets $60k threshold: Upside p50 ($70k) >= $60k minimum",
+            "band": "high",
+            "requiresStrongPositives": false,
+            "reasonCode": "INCOME_ABOVE_60K"
+          }
+        },
+        "skipTracingData": {
+          "Status": 200,
+          "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+          "Source": "tps_fsh_232_cch",
+          "Records": 1,
+          "Page": 1,
+          "PeopleDetails": [
+            {
+              "Name": "Dhillon Patel",
+              "Link": "https://www.truepeoplesearch.com/find/person/pxr4l4n4l6024u69r62u4",
+              "Age": 21,
+              "Person ID": "pxr4l4n4l6024u69r62u4",
+              "Lives in": "Tampa, FL",
+              "Used to live in": "",
+              "Related to": "Amrish Patel, Arvind Patel, Ila Patel, Jyo..."
+            }
+          ],
+          "ageFromPersonDetails": "21"
+        },
+        "skipTracingDisposition": "clear_match",
+        "skipTracingMatchType": "exact_location",
+        "telnyxLookupData": {
+          "success": true,
+          "data": {
+            "data": {
+              "country_code": "US",
+              "national_format": "(813) 846-3178",
+              "phone_number": "+18138463178",
+              "fraud": null,
+              "carrier": {
+                "mobile_country_code": "",
+                "mobile_network_code": "",
+                "name": "T-Mobile US-SVR-10X/2",
+                "type": "mobile",
+                "error_code": null,
+                "normalized_carrier": ""
+              },
+              "caller_name": null,
+              "nnid_override": null,
+              "portability": {
+                "lrn": "727271XXXX",
+                "ported_status": "",
+                "ported_date": "",
+                "ocn": "6701",
+                "line_type": "mobile",
+                "spid": "",
+                "spid_carrier_name": "AERIAL COMMUNICATIONS",
+                "spid_carrier_type": "",
+                "altspid": "",
+                "altspid_carrier_name": "",
+                "altspid_carrier_type": "",
+                "city": "NWPTRICHEY",
+                "state": "Florida"
+              },
+              "valid_number": true,
+              "record_type": "number_lookup"
+            }
+          }
+        },
+        "lineType": "mobile",
+        "carrierName": "T-Mobile US-SVR-10X/2",
+        "carrierType": "mobile",
+        "normalizedCarrier": "",
+        "decisionReason": "FULL_ENRICHMENT",
+        "decisionCodes": [
+          "FULL_ENRICHMENT",
+          "SOFT_DOWNGRADE_FREE_EMAIL"
+        ],
+        "decisionConfidence": 50,
+        "decisionAction": "full",
+        "enrichmentLevel": "full",
+        "dncStatus": "UNKNOWN",
+        "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+        "age": "21"
+      },
+      "summary": {
+        "name": "Dhillon Patel",
+        "phone": "8138463178",
+        "dobOrAge": "21",
+        "zipcode": "33613",
+        "state": "FL",
+        "city": "Tampa",
+        "email": "dhillkp@icloud.com",
+        "dncStatus": "UNKNOWN",
+        "income": 70000,
+        "lineType": "mobile",
+        "carrier": "",
+        "normalizedCarrier": "",
+        "searchFilter": "roi-proof-direct-enrich-row",
+        "dateScraped": "2026-03-12",
+        "linkedinUrl": "https://www.linkedin.com/in/ACwAAD9JbUEBvktMyICrBIB3akTS71g6zHJNdQg",
+        "zipProvenance": "verified_skip_trace",
+        "skipTracingDisposition": "clear_match"
+      }
+    },
+    {
+      "row": {
+        "Name": "Amy Vanz",
+        "Title": "Licensed Real Estate Agent",
+        "Company": "Keller Williams Classic Realty Group - Orlando, FL",
+        "Location": "Orlando, Florida, United States",
+        "LinkedIn URL": "https://www.linkedin.com/in/ACwAAD_NIBcBkggFqs39xyjPTY0nowz8QGNJtlM",
+        "Email": "",
+        "Phone": "",
+        "First Name": "Amy",
+        "Last Name": "Vanz",
+        "City": "Orlando",
+        "State": "FL",
+        "Zip": "",
+        "Search Filter": "roi-proof-direct-enrich-row"
+      },
+      "enriched": {
+        "firstName": "Amy",
+        "lastName": "Vanz",
+        "zipCode": "33101",
+        "zipProvenance": "derived_city_state",
+        "gender": "female",
+        "genderConfidence": 98,
+        "addressLine2": "FL",
+        "incomePreQual": {
+          "conservative": {
+            "min": 30000,
+            "max": 103000,
+            "p50": 58000
+          },
+          "upside": {
+            "min": 9000,
+            "max": 107000,
+            "p50": 58000
+          },
+          "estimate": {
+            "range": {
+              "min": 30000,
+              "max": 107000
+            },
+            "p50": 58000,
+            "confidence": 0.33,
+            "primaryDrivers": [
+              "company: Keller Williams Classic Realty Group - Orlando, FL"
+            ],
+            "riskFlags": [
+              "Job title seniority unclear"
+            ]
+          },
+          "decision": {
+            "tier": "unknown",
+            "shouldContinueEnrichment": false,
+            "reason": "Income below $60k threshold: Upside p50 ($58k) < $60k minimum",
+            "band": "low",
+            "requiresStrongPositives": false,
+            "reasonCode": "INCOME_BELOW_60K"
+          }
+        },
+        "skipTracingData": {
+          "Status": 200,
+          "Message": "state_1; We could not find any records for that search criteria",
+          "Source": "tps_fsh_233_cch",
+          "Records": 0,
+          "Page": 1,
+          "PeopleDetails": []
+        },
+        "decisionReason": "INCOME_BELOW_60K",
+        "decisionCodes": [
+          "INCOME_BELOW_60K"
+        ],
+        "decisionConfidence": 45,
+        "decisionAction": "skip",
+        "enrichmentLevel": "none"
+      },
+      "summary": {
+        "name": "Amy Vanz",
+        "phone": "",
+        "dobOrAge": "",
+        "zipcode": "33101",
+        "state": "FL",
+        "city": "Orlando",
+        "email": "",
+        "dncStatus": "UNKNOWN",
+        "income": 58000,
+        "lineType": "",
+        "carrier": "",
+        "normalizedCarrier": "",
+        "searchFilter": "roi-proof-direct-enrich-row",
+        "dateScraped": "2026-03-12",
+        "linkedinUrl": "https://www.linkedin.com/in/ACwAAD_NIBcBkggFqs39xyjPTY0nowz8QGNJtlM",
+        "zipProvenance": "derived_city_state"
+      }
+    },
+    {
+      "row": {
+        "Name": "Aria P.",
+        "Title": "Marketing Coordinator",
+        "Company": "Leisure Investment Properties Group",
+        "Location": "Palm Harbor, Florida, United States",
+        "LinkedIn URL": "https://www.linkedin.com/in/ACwAAD6UWk8BZmRFGvkEtCId3Ixf-tdj51Xj-co",
+        "Email": "",
+        "Phone": "",
+        "First Name": "Aria",
+        "Last Name": "P.",
+        "City": "Palm Harbor",
+        "State": "FL",
+        "Zip": "",
+        "Search Filter": "roi-proof-direct-enrich-row"
+      },
+      "enriched": {
+        "firstName": "Aria",
+        "lastName": "P.",
+        "zipCode": "33101",
+        "zipProvenance": "derived_city_state",
+        "gender": "female",
+        "genderConfidence": 98,
+        "addressLine2": "FL",
+        "incomePreQual": {
+          "conservative": {
+            "min": 31000,
+            "max": 109000,
+            "p50": 70000
+          },
+          "upside": {
+            "min": 28000,
+            "max": 112000,
+            "p50": 70000
+          },
+          "estimate": {
+            "range": {
+              "min": 31000,
+              "max": 112000
+            },
+            "p50": 70000,
+            "confidence": 0.55,
+            "primaryDrivers": [
+              "career ladder: ic",
+              "coordinator role",
+              "company: Leisure Investment Properties Group"
+            ],
+            "riskFlags": [
+              "Job title seniority unclear"
+            ]
+          },
+          "decision": {
+            "tier": "unknown",
+            "shouldContinueEnrichment": true,
+            "reason": "Income meets $60k threshold: Upside p50 ($70k) >= $60k minimum",
+            "band": "high",
+            "requiresStrongPositives": false,
+            "reasonCode": "INCOME_ABOVE_60K"
+          }
+        },
+        "skipTracingData": {
+          "Status": 200,
+          "Message": "state_1; We could not find any records for that search criteria",
+          "Source": "tps_fsh_339_cch",
+          "Records": 0,
+          "Page": 1,
+          "PeopleDetails": []
+        },
+        "decisionReason": "PARTIAL_ENRICHMENT",
+        "decisionCodes": [
+          "PARTIAL_ENRICHMENT"
+        ],
+        "decisionConfidence": 45,
+        "decisionAction": "partial",
+        "enrichmentLevel": "partial"
+      },
+      "summary": {
+        "name": "Aria P.",
+        "phone": "",
+        "dobOrAge": "",
+        "zipcode": "33101",
+        "state": "FL",
+        "city": "Palm Harbor",
+        "email": "",
+        "dncStatus": "UNKNOWN",
+        "income": 70000,
+        "lineType": "",
+        "carrier": "",
+        "normalizedCarrier": "",
+        "searchFilter": "roi-proof-direct-enrich-row",
+        "dateScraped": "2026-03-12",
+        "linkedinUrl": "https://www.linkedin.com/in/ACwAAD6UWk8BZmRFGvkEtCId3Ixf-tdj51Xj-co",
+        "zipProvenance": "derived_city_state"
+      }
+    },
+    {
+      "row": {
+        "Name": "Melissa Morehouse",
+        "Title": "Associate Vice President, Marketing Operations",
+        "Company": "Premier Sotheby's International Realty",
+        "Location": "Naples, Florida, United States",
+        "LinkedIn URL": "https://www.linkedin.com/in/ACwAAAbFi1wBM7V4UW4H-UeVEdhx9o12PEnX7ZI",
+        "Email": "",
+        "Phone": "",
+        "First Name": "Melissa",
+        "Last Name": "Morehouse",
+        "City": "Naples",
+        "State": "FL",
+        "Zip": "",
+        "Search Filter": "roi-proof-direct-enrich-row"
+      },
+      "enriched": {
+        "firstName": "Melissa",
+        "lastName": "Morehouse",
+        "zipCode": "34119",
+        "zipProvenance": "verified_skip_trace",
+        "gender": "female",
+        "genderConfidence": 98,
+        "phone": "8135462312",
+        "email": "ghmd1982@hotmail.com",
+        "addressLine2": "FL",
+        "incomePreQual": {
+          "conservative": {
+            "min": 116000,
+            "max": 416000,
+            "p50": 266000
+          },
+          "upside": {
+            "min": 130000,
+            "max": 381000,
+            "p50": 293000
+          },
+          "estimate": {
+            "range": {
+              "min": 116000,
+              "max": 381000
+            },
+            "p50": 280000,
+            "confidence": 0.7,
+            "primaryDrivers": [
+              "career ladder: exec",
+              "marketing role",
+              "company: Premier Sotheby's International Realty"
+            ],
+            "riskFlags": [
+              "High-level title but company type may not support it"
+            ]
+          },
+          "decision": {
+            "tier": "unknown",
+            "shouldContinueEnrichment": true,
+            "reason": "Income meets $60k threshold: Upside p50 ($293k) >= $60k minimum",
+            "band": "high",
+            "requiresStrongPositives": false,
+            "reasonCode": "INCOME_ABOVE_60K"
+          }
+        },
+        "skipTracingData": {
+          "Status": 200,
+          "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+          "Source": "tps_fsh_211_2tr_ncch",
+          "Records": 1,
+          "Page": 1,
+          "PeopleDetails": [
+            {
+              "Name": "Melissa Morehouse",
+              "Link": "https://www.truepeoplesearch.com/find/person/pnl9r4lln24n89l028u9",
+              "Age": 43,
+              "Person ID": "pnl9r4lln24n89l028u9",
+              "Lives in": "Naples, FL",
+              "Used to live in": "Tampa FL, Canton MI",
+              "Related to": "G Morehouse, Gary Morehouse, Grace Morehou..."
+            }
+          ],
+          "ageFromPersonDetails": "43"
+        },
+        "skipTracingDisposition": "clear_match",
+        "skipTracingMatchType": "exact_location",
+        "telnyxLookupData": {
+          "success": true,
+          "data": {
+            "data": {
+              "country_code": "US",
+              "national_format": "(813) 546-2312",
+              "phone_number": "+18135462312",
+              "fraud": null,
+              "carrier": {
+                "mobile_country_code": "",
+                "mobile_network_code": "",
+                "name": "Verizon Wireless:6006 - SVR/2",
+                "type": "mobile",
+                "error_code": null,
+                "normalized_carrier": "Verizon Wireless"
+              },
+              "caller_name": null,
+              "nnid_override": null,
+              "portability": {
+                "lrn": "813404XXXX",
+                "ported_status": "",
+                "ported_date": "",
+                "ocn": "6502",
+                "line_type": "mobile",
+                "spid": "",
+                "spid_carrier_name": "CELLCO PARTNERSHIP DBA VERIZON",
+                "spid_carrier_type": "",
+                "altspid": "",
+                "altspid_carrier_name": "",
+                "altspid_carrier_type": "",
+                "city": "TAMPA",
+                "state": "Florida"
+              },
+              "valid_number": true,
+              "record_type": "number_lookup"
+            }
+          }
+        },
+        "lineType": "mobile",
+        "carrierName": "Verizon Wireless:6006 - SVR/2",
+        "carrierType": "mobile",
+        "normalizedCarrier": "Verizon Wireless",
+        "decisionReason": "PARTIAL_ENRICHMENT",
+        "decisionCodes": [
+          "PARTIAL_ENRICHMENT",
+          "SOFT_DOWNGRADE_FREE_EMAIL"
+        ],
+        "decisionConfidence": 36,
+        "decisionAction": "partial",
+        "enrichmentLevel": "partial",
+        "dncStatus": "UNKNOWN",
+        "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+        "age": "43"
+      },
+      "summary": {
+        "name": "Melissa Morehouse",
+        "phone": "8135462312",
+        "dobOrAge": "43",
+        "zipcode": "34119",
+        "state": "FL",
+        "city": "Naples",
+        "email": "ghmd1982@hotmail.com",
+        "dncStatus": "UNKNOWN",
+        "income": 280000,
+        "lineType": "mobile",
+        "carrier": "",
+        "normalizedCarrier": "",
+        "searchFilter": "roi-proof-direct-enrich-row",
+        "dateScraped": "2026-03-12",
+        "linkedinUrl": "https://www.linkedin.com/in/ACwAAAbFi1wBM7V4UW4H-UeVEdhx9o12PEnX7ZI",
+        "zipProvenance": "verified_skip_trace",
+        "skipTracingDisposition": "clear_match"
+      }
+    },
+    {
+      "row": {
+        "Name": "Jaime Walsh",
+        "Title": "Licensed Real Estate Agent",
+        "Company": "Keller Williams Realty, LLC",
+        "Location": "Tampa, Florida, United States",
+        "LinkedIn URL": "https://www.linkedin.com/in/ACwAAEA9de0BLoNGaFbk_ZamgFyFvaYgcxGDNEo",
+        "Email": "",
+        "Phone": "",
+        "First Name": "Jaime",
+        "Last Name": "Walsh",
+        "City": "Tampa",
+        "State": "FL",
+        "Zip": "",
+        "Search Filter": "roi-proof-direct-enrich-row"
+      },
+      "enriched": {
+        "firstName": "Jaime",
+        "lastName": "Walsh",
+        "zipCode": "33101",
+        "zipProvenance": "derived_city_state",
+        "addressLine2": "FL",
+        "incomePreQual": {
+          "conservative": {
+            "min": 30000,
+            "max": 98000,
+            "p50": 53000
+          },
+          "upside": {
+            "min": -1000,
+            "max": 97000,
+            "p50": 48000
+          },
+          "estimate": {
+            "range": {
+              "min": 30000,
+              "max": 97000
+            },
+            "p50": 51000,
+            "confidence": 0.33,
+            "primaryDrivers": [
+              "company: Keller Williams Realty, LLC"
+            ],
+            "riskFlags": [
+              "Job title seniority unclear"
+            ]
+          },
+          "decision": {
+            "tier": "unknown",
+            "shouldContinueEnrichment": false,
+            "reason": "Income below $60k threshold: Upside p50 ($48k) < $60k minimum",
+            "band": "low",
+            "requiresStrongPositives": false,
+            "reasonCode": "INCOME_BELOW_60K"
+          }
+        },
+        "skipTracingData": {
+          "Status": 200,
+          "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+          "Source": "tps_fsh_282_cch",
+          "Records": 54,
+          "Page": 1,
+          "PeopleDetails": [
+            {
+              "Name": "James Walsh Jr",
+              "Link": "https://www.truepeoplesearch.com/find/person/px88u80urn69604u0904l",
+              "Age": 59,
+              "Person ID": "px88u80urn69604u0904l",
+              "Lives in": "Seaford, DE",
+              "Used to live in": "Tampa, FL, O Fallon MO, Long Beach CA, To...",
+              "Related to": "Charlene Franchetto, Gerti Walsh, James Wa..."
+            },
+            {
+              "Name": "James Walsh",
+              "Link": "https://www.truepeoplesearch.com/find/person/pxn08rl6044l00940r860",
+              "Age": "",
+              "Person ID": "pxn08rl6044l00940r860",
+              "Lives in": "Rancho Cucamonga, CA",
+              "Used to live in": "Lake Havasu City AZ, Fredericksburg VA, T...",
+              "Related to": "Delfina Scarborough, Ann Scarborough, Bonn..."
+            },
+            {
+              "Name": "James Walsh",
+              "Link": "https://www.truepeoplesearch.com/find/person/p2l22l6n48ul49ln46ur",
+              "Age": 57,
+              "Person ID": "p2l22l6n48ul49ln46ur",
+              "Lives in": "Kihei, HI",
+              "Used to live in": "Tampa, FL, Virginia Beach VA, Kahului HI,...",
+              "Related to": "Kaori Beck, Brandon Beck, Bryan Beck, Davi..."
+            },
+            {
+              "Name": "James Walsh",
+              "Link": "https://www.truepeoplesearch.com/find/person/px6884l82n6660nlnu808",
+              "Age": 64,
+              "Person ID": "px6884l82n6660nlnu808",
+              "Lives in": "Lighthouse Point, FL",
+              "Used to live in": "San Francisco CA, Tampa FL, West Hollywoo...",
+              "Related to": "Alyson Walsh, Brian Walsh, James Walsh, Na..."
+            },
+            {
+              "Name": "James Walsh",
+              "Link": "https://www.truepeoplesearch.com/find/person/pur84nl44u9nn6206rn6",
+              "Age": 56,
+              "Person ID": "pur84nl44u9nn6206rn6",
+              "Lives in": "New Port Richey, FL",
+              "Used to live in": "Tampa, FL, Clearwater FL, Charleston WV, ...",
+              "Related to": "Edward Walsh, Harold Stallworth, James Sta..."
+            },
+            {
+              "Name": "Richard Walsh",
+              "Link": "https://www.truepeoplesearch.com/find/person/px889rur2l60u02208r2u",
+              "Age": 73,
+              "Person ID": "px889rur2l60u02208r2u",
+              "Lives in": "Orlando, FL",
+              "Used to live in": "Tampa, FL, Pasadena CA, Odessa FL, Stoneh...",
+              "Related to": "Angela Walsh, Ann Hippe, Blanca Walsh, Bob..."
+            },
+            {
+              "Name": "David Walsh",
+              "Link": "https://www.truepeoplesearch.com/find/person/p8n22url9ln82r882ruu",
+              "Age": 65,
+              "Person ID": "p8n22url9ln82r882ruu",
+              "Lives in": "Saint Petersburg, FL",
+              "Used to live in": "Weatherford TX, Tampa FL, Sarasota FL, Sa...",
+              "Related to": "Catherine Walsh, James Walsh, Lucila Walsh..."
+            },
+            {
+              "Name": "James Walsh Jr",
+              "Link": "https://www.truepeoplesearch.com/find/person/px8un9n8r0rl0l894un9r",
+              "Age": 52,
+              "Person ID": "px8un9n8r0rl0l894un9r",
+              "Lives in": "Winter Garden, FL",
+              "Used to live in": "Tampa, FL, Hudson FL, Apopka FL, Orlando ...",
+              "Related to": "Suzanne Walsh"
+            },
+            {
+              "Name": "James Walsh",
+              "Link": "https://www.truepeoplesearch.com/find/person/pu49099ull49luu096u",
+              "Age": 77,
+              "Person ID": "pu49099ull49luu096u",
+              "Lives in": "Roswell, GA",
+              "Used to live in": "Tampa, FL, Greensboro NC, Itasca IL, Lync...",
+              "Related to": "Mary Walsh, Laura Walsh, Rachel Walsh, Sea..."
+            },
+            {
+              "Name": "James Walsh",
+              "Link": "https://www.truepeoplesearch.com/find/person/px6n698984n2l9u92uulu",
+              "Age": 92,
+              "Person ID": "px6n698984n2l9u92uulu",
+              "Lives in": "Jacksonville, FL",
+              "Used to live in": "Tampa, FL, Ponte Vedra Beach FL, Santa Ro...",
+              "Related to": "Carroll Walsh, Chrysa Walsh, James Walsh, ..."
+            }
+          ]
+        },
+        "skipTracingDisposition": "no_exact_match",
+        "decisionReason": "INCOME_BELOW_60K",
+        "decisionCodes": [
+          "INCOME_BELOW_60K"
+        ],
+        "decisionConfidence": 55,
+        "decisionAction": "skip",
+        "enrichmentLevel": "none"
+      },
+      "summary": {
+        "name": "Jaime Walsh",
+        "phone": "",
+        "dobOrAge": "",
+        "zipcode": "33101",
+        "state": "FL",
+        "city": "Tampa",
+        "email": "",
+        "dncStatus": "UNKNOWN",
+        "income": 51000,
+        "lineType": "",
+        "carrier": "",
+        "normalizedCarrier": "",
+        "searchFilter": "roi-proof-direct-enrich-row",
+        "dateScraped": "2026-03-12",
+        "linkedinUrl": "https://www.linkedin.com/in/ACwAAEA9de0BLoNGaFbk_ZamgFyFvaYgcxGDNEo",
+        "zipProvenance": "derived_city_state",
+        "skipTracingDisposition": "no_exact_match",
+        "enrichmentStopReason": "No exact skip-tracing match",
+        "reviewBucket": "no_exact_match"
+      }
+    },
+    {
+      "row": {
+        "Name": "Charlie Alfaro",
+        "Title": "Freight broker associate ",
+        "Company": "Bear Hauling Corp",
+        "Location": "Miami, Florida, United States",
+        "LinkedIn URL": "https://www.linkedin.com/in/ACwAAD0MsyYBPKisJLF6glU8HmkRuJB_BG7rvpM",
+        "Email": "",
+        "Phone": "",
+        "First Name": "Charlie",
+        "Last Name": "Alfaro",
+        "City": "Miami",
+        "State": "FL",
+        "Zip": "",
+        "Search Filter": "roi-proof-direct-enrich-row"
+      },
+      "enriched": {
+        "firstName": "Charlie",
+        "lastName": "Alfaro",
+        "zipCode": "33101",
+        "zipProvenance": "derived_city_state",
+        "gender": "male",
+        "genderConfidence": 98,
+        "addressLine2": "FL",
+        "incomePreQual": {
+          "conservative": {
+            "min": 31000,
+            "max": 109000,
+            "p50": 70000
+          },
+          "upside": {
+            "min": 28000,
+            "max": 112000,
+            "p50": 70000
+          },
+          "estimate": {
+            "range": {
+              "min": 31000,
+              "max": 112000
+            },
+            "p50": 70000,
+            "confidence": 0.6,
+            "primaryDrivers": [
+              "career ladder: ic",
+              "company: Bear Hauling Corp"
+            ],
+            "riskFlags": []
+          },
+          "decision": {
+            "tier": "unknown",
+            "shouldContinueEnrichment": true,
+            "reason": "Income meets $60k threshold: Upside p50 ($70k) >= $60k minimum",
+            "band": "high",
+            "requiresStrongPositives": false,
+            "reasonCode": "INCOME_ABOVE_60K"
+          }
+        },
+        "skipTracingData": {
+          "Status": 200,
+          "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+          "Source": "tps_fsh_178_cch",
+          "Records": 1,
+          "Page": 1,
+          "PeopleDetails": [
+            {
+              "Name": "Charles Alfaro",
+              "Link": "https://www.truepeoplesearch.com/find/person/pxuu469n0un4n9nu4928l",
+              "Age": 53,
+              "Person ID": "pxuu469n0un4n9nu4928l",
+              "Lives in": "Miami, FL",
+              "Used to live in": "Hialeah FL",
+              "Related to": "Carlos Alfaro, Genoveva Alfaro, Leonardo A..."
+            }
+          ]
+        },
+        "skipTracingDisposition": "no_exact_match",
+        "decisionReason": "PARTIAL_ENRICHMENT",
+        "decisionCodes": [
+          "PARTIAL_ENRICHMENT"
+        ],
+        "decisionConfidence": 55,
+        "decisionAction": "partial",
+        "enrichmentLevel": "partial"
+      },
+      "summary": {
+        "name": "Charlie Alfaro",
+        "phone": "",
+        "dobOrAge": "",
+        "zipcode": "33101",
+        "state": "FL",
+        "city": "Miami",
+        "email": "",
+        "dncStatus": "UNKNOWN",
+        "income": 70000,
+        "lineType": "",
+        "carrier": "",
+        "normalizedCarrier": "",
+        "searchFilter": "roi-proof-direct-enrich-row",
+        "dateScraped": "2026-03-12",
+        "linkedinUrl": "https://www.linkedin.com/in/ACwAAD0MsyYBPKisJLF6glU8HmkRuJB_BG7rvpM",
+        "zipProvenance": "derived_city_state",
+        "skipTracingDisposition": "no_exact_match",
+        "enrichmentStopReason": "No exact skip-tracing match",
+        "reviewBucket": "no_exact_match"
+      }
+    },
+    {
+      "row": {
+        "Name": "Roarke Rozar",
+        "Title": "Insurance Broker",
+        "Company": "The Cornerstone Group",
+        "Location": "Tampa, Florida, United States",
+        "LinkedIn URL": "https://www.linkedin.com/in/ACwAADys7K4BTjCP4oD6Rwj0LBG751SPRKMoBV4",
+        "Email": "",
+        "Phone": "",
+        "First Name": "Roarke",
+        "Last Name": "Rozar",
+        "City": "Tampa",
+        "State": "FL",
+        "Zip": "",
+        "Search Filter": "roi-proof-direct-enrich-row"
+      },
+      "enriched": {
+        "firstName": "Roarke",
+        "lastName": "Rozar",
+        "zipCode": "32086",
+        "zipProvenance": "verified_skip_trace",
+        "phone": "9043258270",
+        "addressLine2": "FL",
+        "incomePreQual": {
+          "conservative": {
+            "min": 30000,
+            "max": 93000,
+            "p50": 48000
+          },
+          "upside": {
+            "min": -1000,
+            "max": 97000,
+            "p50": 48000
+          },
+          "estimate": {
+            "range": {
+              "min": 30000,
+              "max": 97000
+            },
+            "p50": 48000,
+            "confidence": 0.33,
+            "primaryDrivers": [
+              "company: The Cornerstone Group"
+            ],
+            "riskFlags": [
+              "Job title seniority unclear"
+            ]
+          },
+          "decision": {
+            "tier": "unknown",
+            "shouldContinueEnrichment": false,
+            "reason": "Income below $60k threshold: Upside p50 ($48k) < $60k minimum",
+            "band": "low",
+            "requiresStrongPositives": false,
+            "reasonCode": "INCOME_BELOW_60K"
+          }
+        },
+        "skipTracingData": {
+          "Status": 200,
+          "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+          "Source": "tps_fsh_245_cch",
+          "Records": 1,
+          "Page": 1,
+          "PeopleDetails": [
+            {
+              "Name": "Roarke Rozar",
+              "Link": "https://www.truepeoplesearch.com/find/person/px608u664uu80rrn6l244",
+              "Age": 22,
+              "Person ID": "px608u664uu80rrn6l244",
+              "Lives in": "Saint Augustine, FL",
+              "Used to live in": "",
+              "Related to": "Ashely Rozar, Ashton Rozar, Chris Rozar, C..."
+            }
+          ],
+          "ageFromPersonDetails": "22"
+        },
+        "skipTracingDisposition": "clear_match",
+        "skipTracingMatchType": "name_only",
+        "telnyxLookupData": {
+          "success": true,
+          "data": {
+            "data": {
+              "country_code": "US",
+              "national_format": "(904) 325-8270",
+              "phone_number": "+19043258270",
+              "fraud": null,
+              "carrier": {
+                "mobile_country_code": "",
+                "mobile_network_code": "",
+                "name": "Verizon Wireless:6006 - SVR/2",
+                "type": "mobile",
+                "error_code": null,
+                "normalized_carrier": "Verizon Wireless"
+              },
+              "caller_name": null,
+              "nnid_override": null,
+              "portability": {
+                "lrn": "904477XXXX",
+                "ported_status": "",
+                "ported_date": "",
+                "ocn": "6502",
+                "line_type": "mobile",
+                "spid": "",
+                "spid_carrier_name": "CELLCO PARTNERSHIP DBA VERIZON",
+                "spid_carrier_type": "",
+                "altspid": "",
+                "altspid_carrier_name": "",
+                "altspid_carrier_type": "",
+                "city": "JACKSONVL",
+                "state": "Florida"
+              },
+              "valid_number": true,
+              "record_type": "number_lookup"
+            }
+          }
+        },
+        "lineType": "mobile",
+        "carrierName": "Verizon Wireless:6006 - SVR/2",
+        "carrierType": "mobile",
+        "normalizedCarrier": "Verizon Wireless",
+        "decisionReason": "INCOME_BELOW_60K",
+        "decisionCodes": [
+          "INCOME_BELOW_60K"
+        ],
+        "decisionConfidence": 51,
+        "decisionAction": "skip",
+        "enrichmentLevel": "none",
+        "dncStatus": "UNKNOWN",
+        "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+        "age": "22"
+      },
+      "summary": {
+        "name": "Roarke Rozar",
+        "phone": "9043258270",
+        "dobOrAge": "22",
+        "zipcode": "32086",
+        "state": "FL",
+        "city": "Tampa",
+        "email": "",
+        "dncStatus": "UNKNOWN",
+        "income": 48000,
+        "lineType": "mobile",
+        "carrier": "",
+        "normalizedCarrier": "",
+        "searchFilter": "roi-proof-direct-enrich-row",
+        "dateScraped": "2026-03-12",
+        "linkedinUrl": "https://www.linkedin.com/in/ACwAADys7K4BTjCP4oD6Rwj0LBG751SPRKMoBV4",
+        "zipProvenance": "verified_skip_trace",
+        "skipTracingDisposition": "clear_match",
+        "needsVerification": true
+      }
+    },
+    {
+      "row": {
+        "Name": "Erica Elliott",
+        "Title": "Realtor Sales Associate",
+        "Company": "Keller Williams",
+        "Location": "West Palm Beach, Florida, United States",
+        "LinkedIn URL": "https://www.linkedin.com/in/ACwAAAbgusgByeEaITSRKNlKq-nRbdM1M6v7k1s",
+        "Email": "",
+        "Phone": "",
+        "First Name": "Erica",
+        "Last Name": "Elliott",
+        "City": "West Palm Beach",
+        "State": "FL",
+        "Zip": "",
+        "Search Filter": "roi-proof-direct-enrich-row"
+      },
+      "enriched": {
+        "firstName": "Erica",
+        "lastName": "Elliott",
+        "zipCode": "33401",
+        "zipProvenance": "verified_skip_trace",
+        "gender": "female",
+        "genderConfidence": 90,
+        "phone": "5615989373",
+        "email": "floridamomcpa@yahoo.com",
+        "addressLine2": "FL",
+        "incomePreQual": {
+          "conservative": {
+            "min": 33000,
+            "max": 111000,
+            "p50": 72000
+          },
+          "upside": {
+            "min": 35000,
+            "max": 119000,
+            "p50": 77000
+          },
+          "estimate": {
+            "range": {
+              "min": 33000,
+              "max": 119000
+            },
+            "p50": 75000,
+            "confidence": 0.82,
+            "primaryDrivers": [
+              "career ladder: ic",
+              "sales role",
+              "company: Keller Williams"
+            ],
+            "riskFlags": []
+          },
+          "decision": {
+            "tier": "unknown",
+            "shouldContinueEnrichment": true,
+            "reason": "Income meets $60k threshold: Upside p50 ($77k) >= $60k minimum",
+            "band": "high",
+            "requiresStrongPositives": false,
+            "reasonCode": "INCOME_ABOVE_60K"
+          }
+        },
+        "skipTracingData": {
+          "Status": 200,
+          "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+          "Source": "tps_fsh_254_cch",
+          "Records": 3,
+          "Page": 1,
+          "PeopleDetails": [
+            {
+              "Name": "Erica Elliott",
+              "Link": "https://www.truepeoplesearch.com/find/person/pxn9802u086242r09r84",
+              "Age": 58,
+              "Person ID": "pxn9802u086242r09r84",
+              "Lives in": "West Palm Beach, FL",
+              "Used to live in": "Columbia SC, Chicago IL, Fairview NC, Ash...",
+              "Related to": "Anna Petroski, Chloe Garton, Gerri Tobia, ..."
+            }
+          ],
+          "ageFromPersonDetails": "58"
+        },
+        "skipTracingDisposition": "clear_match",
+        "skipTracingMatchType": "exact_location",
+        "telnyxLookupData": {
+          "success": true,
+          "data": {
+            "data": {
+              "country_code": "US",
+              "national_format": "(561) 598-9373",
+              "phone_number": "+15615989373",
+              "fraud": null,
+              "carrier": {
+                "mobile_country_code": "",
+                "mobile_network_code": "",
+                "name": "CELLCO PARTNERSHIP DBA VERIZON WIRELESS - FL",
+                "type": "mobile",
+                "error_code": null,
+                "normalized_carrier": "Verizon Wireless"
+              },
+              "caller_name": null,
+              "nnid_override": null,
+              "portability": {
+                "lrn": null,
+                "ported_status": "",
+                "ported_date": "",
+                "ocn": "6502",
+                "line_type": "mobile",
+                "spid": "",
+                "spid_carrier_name": "CELLCO PARTNERSHIP DBA VERIZON",
+                "spid_carrier_type": "",
+                "altspid": "",
+                "altspid_carrier_name": "",
+                "altspid_carrier_type": "",
+                "city": "WPALMBEACH",
+                "state": "Florida"
+              },
+              "valid_number": true,
+              "record_type": "number_lookup"
+            }
+          }
+        },
+        "lineType": "mobile",
+        "carrierName": "CELLCO PARTNERSHIP DBA VERIZON WIRELESS - FL",
+        "carrierType": "mobile",
+        "normalizedCarrier": "Verizon Wireless",
+        "decisionReason": "PARTIAL_ENRICHMENT",
+        "decisionCodes": [
+          "PARTIAL_ENRICHMENT",
+          "SOFT_DOWNGRADE_FREE_EMAIL"
+        ],
+        "decisionConfidence": 36,
+        "decisionAction": "partial",
+        "enrichmentLevel": "partial",
+        "dncStatus": "UNKNOWN",
+        "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+        "age": "58"
+      },
+      "summary": {
+        "name": "Erica Elliott",
+        "phone": "5615989373",
+        "dobOrAge": "58",
+        "zipcode": "33401",
+        "state": "FL",
+        "city": "West Palm Beach",
+        "email": "floridamomcpa@yahoo.com",
+        "dncStatus": "UNKNOWN",
+        "income": 75000,
+        "lineType": "mobile",
+        "carrier": "",
+        "normalizedCarrier": "",
+        "searchFilter": "roi-proof-direct-enrich-row",
+        "dateScraped": "2026-03-12",
+        "linkedinUrl": "https://www.linkedin.com/in/ACwAAAbgusgByeEaITSRKNlKq-nRbdM1M6v7k1s",
+        "zipProvenance": "verified_skip_trace",
+        "skipTracingDisposition": "clear_match"
+      }
+    }
+  ],
+  "metrics": {
+    "sent": 25,
+    "returned": 25,
+    "withPhone": 18,
+    "withMobile": 17,
+    "withEmail": 16,
+    "withAge": 17,
+    "noPhone": 7,
+    "nonMobileOrUnknownLineType": 1,
+    "wastePercent": 32,
+    "mobileYieldPercent": 68,
+    "phoneRecoveryPercent": 72
+  }
+}

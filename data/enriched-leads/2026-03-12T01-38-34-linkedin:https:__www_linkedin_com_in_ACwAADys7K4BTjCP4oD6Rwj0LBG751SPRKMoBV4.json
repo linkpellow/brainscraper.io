@@ -1,0 +1,160 @@
+{
+  "metadata": {
+    "savedAt": "2026-03-12T01:38:34.338Z",
+    "leadKey": "linkedin:https://www.linkedin.com/in/ACwAADys7K4BTjCP4oD6Rwj0LBG751SPRKMoBV4"
+  },
+  "enrichedRow": {
+    "Name": "Roarke Rozar",
+    "Title": "Insurance Broker",
+    "Company": "The Cornerstone Group",
+    "Location": "Tampa, FL",
+    "LinkedIn URL": "https://www.linkedin.com/in/ACwAADys7K4BTjCP4oD6Rwj0LBG751SPRKMoBV4",
+    "Email": "",
+    "Phone": "9043258270",
+    "First Name": "Roarke",
+    "Last Name": "Rozar",
+    "City": "Tampa",
+    "State": "FL",
+    "Zip": "32086",
+    "Search Filter": "roi-test-fl-real-estate",
+    "_enriched": {
+      "firstName": "Roarke",
+      "lastName": "Rozar",
+      "zipCode": "32086",
+      "zipProvenance": "verified_skip_trace",
+      "phone": "9043258270",
+      "addressLine2": "FL",
+      "incomePreQual": {
+        "conservative": {
+          "min": 30000,
+          "max": 93000,
+          "p50": 48000
+        },
+        "upside": {
+          "min": -1000,
+          "max": 97000,
+          "p50": 48000
+        },
+        "estimate": {
+          "range": {
+            "min": 30000,
+            "max": 97000
+          },
+          "p50": 48000,
+          "confidence": 0.33,
+          "primaryDrivers": [
+            "company: The Cornerstone Group"
+          ],
+          "riskFlags": [
+            "Job title seniority unclear"
+          ]
+        },
+        "decision": {
+          "tier": "unknown",
+          "shouldContinueEnrichment": false,
+          "reason": "Income below $60k threshold: Upside p50 ($48k) < $60k minimum",
+          "band": "low",
+          "requiresStrongPositives": false,
+          "reasonCode": "INCOME_BELOW_60K"
+        }
+      },
+      "skipTracingData": {
+        "Status": 200,
+        "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+        "Source": "tps_fsh_353_cch",
+        "Records": 1,
+        "Page": 1,
+        "PeopleDetails": [
+          {
+            "Name": "Roarke Rozar",
+            "Link": "https://www.truepeoplesearch.com/find/person/px608u664uu80rrn6l244",
+            "Age": 22,
+            "Person ID": "px608u664uu80rrn6l244",
+            "Lives in": "Saint Augustine, FL",
+            "Used to live in": "",
+            "Related to": "Ashely Rozar, Ashton Rozar, Chris Rozar, C..."
+          }
+        ],
+        "ageFromPersonDetails": "22"
+      },
+      "skipTracingDisposition": "clear_match",
+      "skipTracingMatchType": "name_only",
+      "telnyxLookupData": {
+        "success": true,
+        "data": {
+          "data": {
+            "country_code": "US",
+            "national_format": "(904) 325-8270",
+            "phone_number": "+19043258270",
+            "fraud": null,
+            "carrier": {
+              "mobile_country_code": "",
+              "mobile_network_code": "",
+              "name": "Verizon Wireless:6006 - SVR/2",
+              "type": "mobile",
+              "error_code": null,
+              "normalized_carrier": "Verizon Wireless"
+            },
+            "caller_name": null,
+            "nnid_override": null,
+            "portability": {
+              "lrn": "904477XXXX",
+              "ported_status": "",
+              "ported_date": "",
+              "ocn": "6502",
+              "line_type": "mobile",
+              "spid": "",
+              "spid_carrier_name": "CELLCO PARTNERSHIP DBA VERIZON",
+              "spid_carrier_type": "",
+              "altspid": "",
+              "altspid_carrier_name": "",
+              "altspid_carrier_type": "",
+              "city": "JACKSONVL",
+              "state": "Florida"
+            },
+            "valid_number": true,
+            "record_type": "number_lookup"
+          }
+        }
+      },
+      "lineType": "mobile",
+      "carrierName": "Verizon Wireless:6006 - SVR/2",
+      "carrierType": "mobile",
+      "normalizedCarrier": "Verizon Wireless",
+      "decisionReason": "INCOME_BELOW_60K",
+      "decisionCodes": [
+        "INCOME_BELOW_60K"
+      ],
+      "decisionConfidence": 51,
+      "decisionAction": "skip",
+      "enrichmentLevel": "none",
+      "dncStatus": "UNKNOWN",
+      "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+      "age": "22"
+    },
+    "Line Type": "mobile",
+    "Carrier": "Verizon Wireless:6006 - SVR/2",
+    "Normalized Carrier": "Verizon Wireless",
+    "Age": "22"
+  },
+  "leadSummary": {
+    "name": "Roarke Rozar",
+    "phone": "9043258270",
+    "dobOrAge": "22",
+    "zipcode": "32086",
+    "state": "FL",
+    "city": "Tampa",
+    "email": "",
+    "dncStatus": "UNKNOWN",
+    "income": 48000,
+    "lineType": "mobile",
+    "carrier": "Verizon Wireless:6006 - SVR/2",
+    "normalizedCarrier": "Verizon Wireless",
+    "searchFilter": "roi-test-fl-real-estate",
+    "dateScraped": "2026-03-12",
+    "linkedinUrl": "https://www.linkedin.com/in/ACwAADys7K4BTjCP4oD6Rwj0LBG751SPRKMoBV4",
+    "zipProvenance": "verified_skip_trace",
+    "skipTracingDisposition": "clear_match",
+    "needsVerification": true
+  }
+}

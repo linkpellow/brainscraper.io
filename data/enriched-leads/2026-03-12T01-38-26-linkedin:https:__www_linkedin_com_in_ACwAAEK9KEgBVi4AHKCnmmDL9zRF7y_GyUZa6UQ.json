@@ -1,0 +1,165 @@
+{
+  "metadata": {
+    "savedAt": "2026-03-12T01:38:26.678Z",
+    "leadKey": "linkedin:https://www.linkedin.com/in/ACwAAEK9KEgBVi4AHKCnmmDL9zRF7y_GyUZa6UQ"
+  },
+  "enrichedRow": {
+    "Name": "Sidney Odums II",
+    "Title": "Real Estate",
+    "Company": "Walls Realty Associates,LLC",
+    "Location": "Seminole, FL",
+    "LinkedIn URL": "https://www.linkedin.com/in/ACwAAEK9KEgBVi4AHKCnmmDL9zRF7y_GyUZa6UQ",
+    "Email": "e_odums@hotmail.com",
+    "Phone": "7277420371",
+    "First Name": "Sidney",
+    "Last Name": "Odums II",
+    "City": "Seminole",
+    "State": "FL",
+    "Zip": "33756",
+    "Search Filter": "roi-test-fl-real-estate",
+    "_enriched": {
+      "firstName": "Sidney",
+      "lastName": "Odums",
+      "zipCode": "33756",
+      "zipProvenance": "verified_skip_trace",
+      "gender": "neutral",
+      "genderConfidence": 95,
+      "phone": "7277420371",
+      "email": "e_odums@hotmail.com",
+      "addressLine2": "FL",
+      "incomePreQual": {
+        "conservative": {
+          "min": 30000,
+          "max": 109000,
+          "p50": 64000
+        },
+        "upside": {
+          "min": 9000,
+          "max": 107000,
+          "p50": 58000
+        },
+        "estimate": {
+          "range": {
+            "min": 30000,
+            "max": 107000
+          },
+          "p50": 61000,
+          "confidence": 0.33,
+          "primaryDrivers": [
+            "company: Walls Realty Associates,LLC"
+          ],
+          "riskFlags": [
+            "Job title seniority unclear"
+          ]
+        },
+        "decision": {
+          "tier": "unknown",
+          "shouldContinueEnrichment": false,
+          "reason": "Income below $60k threshold: Upside p50 ($58k) < $60k minimum",
+          "band": "low",
+          "requiresStrongPositives": false,
+          "reasonCode": "INCOME_BELOW_60K"
+        }
+      },
+      "skipTracingData": {
+        "Status": 200,
+        "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+        "Source": "tps_fsh_304_cch",
+        "Records": 1,
+        "Page": 1,
+        "PeopleDetails": [
+          {
+            "Name": "Sidney Odums Jr",
+            "Link": "https://www.truepeoplesearch.com/find/person/pnu68uuurnlr2l249848",
+            "Age": 47,
+            "Person ID": "pnu68uuurnlr2l249848",
+            "Lives in": "Clearwater, FL",
+            "Used to live in": "Largo FL, Seminole FL, St Petersburg FL, ...",
+            "Related to": "Alesia Odums, Mattie Odums, Mattie Odums, ..."
+          }
+        ],
+        "ageFromPersonDetails": "47"
+      },
+      "skipTracingDisposition": "clear_match",
+      "skipTracingMatchType": "name_only",
+      "telnyxLookupData": {
+        "success": true,
+        "data": {
+          "data": {
+            "country_code": "US",
+            "national_format": "(727) 742-0371",
+            "phone_number": "+17277420371",
+            "fraud": null,
+            "carrier": {
+              "mobile_country_code": "",
+              "mobile_network_code": "",
+              "name": "T-Mobile US-SVR-10X/2",
+              "type": "mobile",
+              "error_code": null,
+              "normalized_carrier": ""
+            },
+            "caller_name": null,
+            "nnid_override": null,
+            "portability": {
+              "lrn": "727688XXXX",
+              "ported_status": "",
+              "ported_date": "",
+              "ocn": "6701",
+              "line_type": "mobile",
+              "spid": "",
+              "spid_carrier_name": "AERIAL COMMUNICATIONS",
+              "spid_carrier_type": "",
+              "altspid": "",
+              "altspid_carrier_name": "",
+              "altspid_carrier_type": "",
+              "city": "CLEARWATER",
+              "state": "Florida"
+            },
+            "valid_number": true,
+            "record_type": "number_lookup"
+          }
+        }
+      },
+      "lineType": "mobile",
+      "carrierName": "T-Mobile US-SVR-10X/2",
+      "carrierType": "mobile",
+      "normalizedCarrier": "",
+      "decisionReason": "PARTIAL_ENRICHMENT",
+      "decisionCodes": [
+        "PARTIAL_ENRICHMENT",
+        "SOFT_DOWNGRADE_FREE_EMAIL"
+      ],
+      "decisionConfidence": 43,
+      "decisionAction": "partial",
+      "enrichmentLevel": "partial",
+      "dncStatus": "UNKNOWN",
+      "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+      "age": "47"
+    },
+    "Line Type": "mobile",
+    "Carrier": "T-Mobile US-SVR-10X/2",
+    "Age": "47",
+    "Gender": "neutral",
+    "Gender Confidence": 95
+  },
+  "leadSummary": {
+    "name": "Sidney Odums II",
+    "phone": "7277420371",
+    "dobOrAge": "47",
+    "zipcode": "33756",
+    "state": "FL",
+    "city": "Seminole",
+    "email": "e_odums@hotmail.com",
+    "dncStatus": "UNKNOWN",
+    "income": 61000,
+    "lineType": "mobile",
+    "carrier": "T-Mobile US-SVR-10X/2",
+    "normalizedCarrier": "",
+    "searchFilter": "roi-test-fl-real-estate",
+    "dateScraped": "2026-03-12",
+    "linkedinUrl": "https://www.linkedin.com/in/ACwAAEK9KEgBVi4AHKCnmmDL9zRF7y_GyUZa6UQ",
+    "zipProvenance": "verified_skip_trace",
+    "skipTracingDisposition": "clear_match",
+    "needsVerification": true
+  }
+}

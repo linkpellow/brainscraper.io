@@ -1,0 +1,164 @@
+{
+  "metadata": {
+    "savedAt": "2026-03-12T01:38:09.077Z",
+    "leadKey": "linkedin:https://www.linkedin.com/in/ACwAAD-bO6QBuzuueaBclGzgV4Gh5BOxuVShRYU"
+  },
+  "enrichedRow": {
+    "Name": "Bobby Rinko",
+    "Title": "Real Estate Agent",
+    "Company": "Waterfront Realty Group, Inc.",
+    "Location": "Cape Coral, FL",
+    "LinkedIn URL": "https://www.linkedin.com/in/ACwAAD-bO6QBuzuueaBclGzgV4Gh5BOxuVShRYU",
+    "Email": "therinkos@icloud.com",
+    "Phone": "2393400744",
+    "First Name": "Bobby",
+    "Last Name": "Rinko",
+    "City": "Cape Coral",
+    "State": "FL",
+    "Zip": "33904",
+    "Search Filter": "roi-test-fl-real-estate",
+    "_enriched": {
+      "firstName": "Bobby",
+      "lastName": "Rinko",
+      "zipCode": "33904",
+      "zipProvenance": "verified_skip_trace",
+      "gender": "male",
+      "genderConfidence": 98,
+      "phone": "2393400744",
+      "email": "therinkos@icloud.com",
+      "addressLine2": "FL",
+      "incomePreQual": {
+        "conservative": {
+          "min": 30000,
+          "max": 115000,
+          "p50": 70000
+        },
+        "upside": {
+          "min": 21000,
+          "max": 119000,
+          "p50": 70000
+        },
+        "estimate": {
+          "range": {
+            "min": 30000,
+            "max": 119000
+          },
+          "p50": 70000,
+          "confidence": 0.33,
+          "primaryDrivers": [
+            "company: Waterfront Realty Group, Inc."
+          ],
+          "riskFlags": [
+            "Job title seniority unclear"
+          ]
+        },
+        "decision": {
+          "tier": "unknown",
+          "shouldContinueEnrichment": true,
+          "reason": "Income meets $60k threshold: Upside p50 ($70k) >= $60k minimum",
+          "band": "high",
+          "requiresStrongPositives": false,
+          "reasonCode": "INCOME_ABOVE_60K"
+        }
+      },
+      "skipTracingData": {
+        "Status": 200,
+        "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+        "Source": "tps_fsh_299_cch",
+        "Records": 2,
+        "Page": 1,
+        "PeopleDetails": [
+          {
+            "Name": "Bobby Rinko",
+            "Link": "https://www.truepeoplesearch.com/find/person/px4ll462rrn6r060nuu49",
+            "Age": 60,
+            "Person ID": "px4ll462rrn6r060nuu49",
+            "Lives in": "Cape Coral, FL",
+            "Used to live in": "Murphy NC, Hendersonville NC, Lake Suzy F...",
+            "Related to": "Carole Rinko, Kathleen Rinko, Robert Rinko..."
+          }
+        ],
+        "ageFromPersonDetails": "60"
+      },
+      "skipTracingDisposition": "clear_match",
+      "skipTracingMatchType": "exact_location",
+      "age": "60",
+      "telnyxLookupData": {
+        "success": true,
+        "data": {
+          "data": {
+            "country_code": "US",
+            "national_format": "(239) 340-0744",
+            "phone_number": "+12393400744",
+            "fraud": null,
+            "carrier": {
+              "mobile_country_code": "",
+              "mobile_network_code": "",
+              "name": "Cingular Wireless/2",
+              "type": "mobile",
+              "error_code": null,
+              "normalized_carrier": "AT&T"
+            },
+            "caller_name": null,
+            "nnid_override": null,
+            "portability": {
+              "lrn": "239233XXXX",
+              "ported_status": "",
+              "ported_date": "",
+              "ocn": "6214",
+              "line_type": "mobile",
+              "spid": "",
+              "spid_carrier_name": "NEW CINGULAR WIRELESS PCS, LLC",
+              "spid_carrier_type": "",
+              "altspid": "",
+              "altspid_carrier_name": "",
+              "altspid_carrier_type": "",
+              "city": "FTMYERSBCH",
+              "state": "Florida"
+            },
+            "valid_number": true,
+            "record_type": "number_lookup"
+          }
+        }
+      },
+      "lineType": "mobile",
+      "carrierName": "Cingular Wireless/2",
+      "carrierType": "mobile",
+      "normalizedCarrier": "AT&T",
+      "decisionReason": "AGE_OVER_59",
+      "decisionCodes": [
+        "AGE_OVER_59"
+      ],
+      "decisionConfidence": 43,
+      "decisionAction": "skip",
+      "enrichmentLevel": "none",
+      "dncStatus": "UNKNOWN",
+      "dncReason": "DNC session is no longer valid. Paste a fresh DNC access token in the Lead Generation token box."
+    },
+    "Line Type": "mobile",
+    "Carrier": "Cingular Wireless/2",
+    "Normalized Carrier": "AT&T",
+    "Age": "60",
+    "Gender": "male",
+    "Gender Confidence": 98
+  },
+  "leadSummary": {
+    "name": "Bobby Rinko",
+    "phone": "2393400744",
+    "dobOrAge": "60",
+    "zipcode": "33904",
+    "state": "FL",
+    "city": "Cape Coral",
+    "email": "therinkos@icloud.com",
+    "dncStatus": "UNKNOWN",
+    "income": 70000,
+    "lineType": "mobile",
+    "carrier": "Cingular Wireless/2",
+    "normalizedCarrier": "AT&T",
+    "searchFilter": "roi-test-fl-real-estate",
+    "dateScraped": "2026-03-12",
+    "linkedinUrl": "https://www.linkedin.com/in/ACwAAD-bO6QBuzuueaBclGzgV4Gh5BOxuVShRYU",
+    "zipProvenance": "verified_skip_trace",
+    "skipTracingDisposition": "clear_match"
+  }
+}

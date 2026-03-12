@@ -1,0 +1,167 @@
+{
+  "metadata": {
+    "savedAt": "2026-03-10T02:04:13.321Z",
+    "leadKey": "linkedin:https://www.linkedin.com/in/ACwAAEGxQiQB76TU6h-kNsrdUgi5bbddSCHPpmg"
+  },
+  "enrichedRow": {
+    "Name": "Drew Ruchim",
+    "Title": "Co-Founder",
+    "Company": "Aditt",
+    "Location": "Miami, Florida, United States",
+    "LinkedIn URL": "https://www.linkedin.com/in/ACwAAEGxQiQB76TU6h-kNsrdUgi5bbddSCHPpmg",
+    "Email": "druchim@gmail.com",
+    "Phone": "8478226980",
+    "First Name": "Drew",
+    "Last Name": "Ruchim",
+    "City": "Miami",
+    "State": "FL",
+    "Zip": "60089",
+    "Search Filter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+    "_enriched": {
+      "firstName": "Drew",
+      "lastName": "Ruchim",
+      "zipCode": "60089",
+      "zipProvenance": "verified_skip_trace",
+      "gender": "male",
+      "genderConfidence": 98,
+      "phone": "8478226980",
+      "email": "druchim@gmail.com",
+      "addressLine2": "FL",
+      "incomePreQual": {
+        "conservative": {
+          "min": 143000,
+          "max": 443000,
+          "p50": 293000
+        },
+        "upside": {
+          "min": 160000,
+          "max": 419000,
+          "p50": 322000
+        },
+        "estimate": {
+          "range": {
+            "min": 143000,
+            "max": 419000
+          },
+          "p50": 308000,
+          "confidence": 0.48,
+          "primaryDrivers": [
+            "career ladder: exec",
+            "company: Aditt"
+          ],
+          "riskFlags": [
+            "High-level title but company type may not support it"
+          ]
+        },
+        "decision": {
+          "tier": "unknown",
+          "shouldContinueEnrichment": true,
+          "reason": "Income meets $60k threshold: Upside p50 ($322k) >= $60k minimum",
+          "band": "high",
+          "requiresStrongPositives": false,
+          "reasonCode": "INCOME_ABOVE_60K"
+        }
+      },
+      "skipTracingData": {
+        "Status": 200,
+        "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+        "Source": "tps_fsh_544_cch",
+        "Records": 1,
+        "Page": 1,
+        "PeopleDetails": [
+          {
+            "Name": "Drew Ruchim",
+            "Link": "https://www.truepeoplesearch.com/find/person/px22u6889n0l64lr0rl80",
+            "Age": 24,
+            "Person ID": "px22u6889n0l64lr0rl80",
+            "Lives in": "Buffalo Grove, IL",
+            "Used to live in": "",
+            "Related to": "Cindi Ruchim, Elle Ruchim, Heather Ruchim,..."
+          }
+        ],
+        "ageFromPersonDetails": "24"
+      },
+      "skipTracingDisposition": "clear_match",
+      "skipTracingMatchType": "name_only",
+      "telnyxLookupData": {
+        "success": true,
+        "data": {
+          "data": {
+            "country_code": "US",
+            "national_format": "(847) 822-6980",
+            "phone_number": "+18478226980",
+            "fraud": null,
+            "carrier": {
+              "mobile_country_code": "",
+              "mobile_network_code": "",
+              "name": "NEW CINGULAR WIRELESS PCS, LLC - IL",
+              "type": "mobile",
+              "error_code": null,
+              "normalized_carrier": "AT&T"
+            },
+            "caller_name": null,
+            "nnid_override": null,
+            "portability": {
+              "lrn": null,
+              "ported_status": "",
+              "ported_date": "",
+              "ocn": "6534",
+              "line_type": "mobile",
+              "spid": "",
+              "spid_carrier_name": "NEW CINGULAR WIRELESS PCS, LLC",
+              "spid_carrier_type": "",
+              "altspid": "",
+              "altspid_carrier_name": "",
+              "altspid_carrier_type": "",
+              "city": "HINSDALE",
+              "state": "Illinois"
+            },
+            "valid_number": true,
+            "record_type": "number_lookup"
+          }
+        }
+      },
+      "lineType": "mobile",
+      "carrierName": "NEW CINGULAR WIRELESS PCS, LLC - IL",
+      "carrierType": "mobile",
+      "normalizedCarrier": "AT&T",
+      "decisionReason": "PARTIAL_ENRICHMENT",
+      "decisionCodes": [
+        "PARTIAL_ENRICHMENT",
+        "SOFT_DOWNGRADE_FREE_EMAIL"
+      ],
+      "decisionConfidence": 36,
+      "decisionAction": "partial",
+      "enrichmentLevel": "partial",
+      "dncStatus": "UNKNOWN",
+      "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+      "age": "24"
+    },
+    "Line Type": "mobile",
+    "Carrier": "NEW CINGULAR WIRELESS PCS, LLC - IL",
+    "Normalized Carrier": "AT&T",
+    "Age": "24",
+    "Gender": "male",
+    "Gender Confidence": 98
+  },
+  "leadSummary": {
+    "name": "Drew Ruchim",
+    "phone": "8478226980",
+    "dobOrAge": "24",
+    "zipcode": "60089",
+    "state": "FL",
+    "city": "Miami",
+    "email": "druchim@gmail.com",
+    "dncStatus": "UNKNOWN",
+    "income": 308000,
+    "lineType": "mobile",
+    "carrier": "NEW CINGULAR WIRELESS PCS, LLC - IL",
+    "normalizedCarrier": "AT&T",
+    "searchFilter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+    "dateScraped": "2026-03-10",
+    "linkedinUrl": "https://www.linkedin.com/in/ACwAAEGxQiQB76TU6h-kNsrdUgi5bbddSCHPpmg",
+    "zipProvenance": "verified_skip_trace",
+    "skipTracingDisposition": "clear_match",
+    "needsVerification": true
+  }
+}

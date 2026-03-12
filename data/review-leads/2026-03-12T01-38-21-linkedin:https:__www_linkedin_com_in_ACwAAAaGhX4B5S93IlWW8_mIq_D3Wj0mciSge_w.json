@@ -1,0 +1,111 @@
+{
+  "metadata": {
+    "savedAt": "2026-03-12T01:38:21.110Z",
+    "leadKey": "linkedin:https://www.linkedin.com/in/ACwAAAaGhX4B5S93IlWW8_mIq-D3Wj0mciSge-w",
+    "reviewBucket": "no_exact_match"
+  },
+  "enrichedRow": {
+    "Name": "Abbey Gadinsky-Snyder",
+    "Title": "Founder, CEO & Principal Real Estate Broker",
+    "Company": "GADCO Residential Real Estate",
+    "Location": "Miami, FL",
+    "LinkedIn URL": "https://www.linkedin.com/in/ACwAAAaGhX4B5S93IlWW8_mIq-D3Wj0mciSge-w",
+    "Email": "",
+    "Phone": "",
+    "First Name": "Abbey",
+    "Last Name": "Gadinsky-Snyder",
+    "City": "Miami",
+    "State": "FL",
+    "Zip": "33101",
+    "Search Filter": "roi-test-fl-real-estate",
+    "_enriched": {
+      "firstName": "Abbey",
+      "lastName": "Gadinsky-Snyder",
+      "zipCode": "33101",
+      "zipProvenance": "derived_city_state",
+      "addressLine2": "FL",
+      "incomePreQual": {
+        "conservative": {
+          "min": 92000,
+          "max": 392000,
+          "p50": 242000
+        },
+        "upside": {
+          "min": 104000,
+          "max": 346000,
+          "p50": 266000
+        },
+        "estimate": {
+          "range": {
+            "min": 92000,
+            "max": 346000
+          },
+          "p50": 254000,
+          "confidence": 0.48,
+          "primaryDrivers": [
+            "career ladder: exec",
+            "company: GADCO Residential Real Estate"
+          ],
+          "riskFlags": [
+            "High-level title but company type may not support it"
+          ]
+        },
+        "decision": {
+          "tier": "unknown",
+          "shouldContinueEnrichment": true,
+          "reason": "Income meets $60k threshold: Upside p50 ($266k) >= $60k minimum",
+          "band": "high",
+          "requiresStrongPositives": false,
+          "reasonCode": "INCOME_ABOVE_60K"
+        }
+      },
+      "skipTracingData": {
+        "Status": 200,
+        "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+        "Source": "tps_fsh_359_cch",
+        "Records": 1,
+        "Page": 1,
+        "PeopleDetails": [
+          {
+            "Name": "Abbey G Snyder",
+            "Link": "https://www.truepeoplesearch.com/find/person/p82nlunl0l6u84rnn202",
+            "Age": 40,
+            "Person ID": "p82nlunl0l6u84rnn202",
+            "Lives in": "Hollywood, FL",
+            "Used to live in": "Miami FL, Miami Beach FL, New York NY, Ga...",
+            "Related to": "Brooke Gadinsky-Snyder, Brooke Gadinsky-Sn..."
+          }
+        ]
+      },
+      "skipTracingDisposition": "no_exact_match",
+      "decisionReason": "FULL_ENRICHMENT",
+      "decisionCodes": [
+        "FULL_ENRICHMENT"
+      ],
+      "decisionConfidence": 83,
+      "decisionAction": "full",
+      "enrichmentLevel": "full"
+    }
+  },
+  "leadSummary": {
+    "name": "Abbey Gadinsky-Snyder",
+    "phone": "",
+    "dobOrAge": "",
+    "zipcode": "33101",
+    "state": "FL",
+    "city": "Miami",
+    "email": "",
+    "dncStatus": "UNKNOWN",
+    "income": 254000,
+    "lineType": "",
+    "carrier": "",
+    "normalizedCarrier": "",
+    "searchFilter": "roi-test-fl-real-estate",
+    "dateScraped": "2026-03-12",
+    "linkedinUrl": "https://www.linkedin.com/in/ACwAAAaGhX4B5S93IlWW8_mIq-D3Wj0mciSge-w",
+    "zipProvenance": "derived_city_state",
+    "skipTracingDisposition": "no_exact_match",
+    "enrichmentStopReason": "No exact skip-tracing match",
+    "reviewBucket": "no_exact_match"
+  }
+}

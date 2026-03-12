@@ -1,0 +1,162 @@
+{
+  "metadata": {
+    "savedAt": "2026-03-12T01:38:19.334Z",
+    "leadKey": "linkedin:https://www.linkedin.com/in/ACwAAAbjkf8B3aPzzDx8TXdnQM3MrtLbeE7oXRs"
+  },
+  "enrichedRow": {
+    "Name": "Daisy Alvarez",
+    "Title": "Real Estate Agent",
+    "Company": "eXp Realty",
+    "Location": "Wellington, FL",
+    "LinkedIn URL": "https://www.linkedin.com/in/ACwAAAbjkf8B3aPzzDx8TXdnQM3MrtLbeE7oXRs",
+    "Email": "edward.alvarez@att.net",
+    "Phone": "5169965862",
+    "First Name": "Daisy",
+    "Last Name": "Alvarez",
+    "City": "Wellington",
+    "State": "FL",
+    "Zip": "33414",
+    "Search Filter": "roi-test-fl-real-estate",
+    "_enriched": {
+      "firstName": "Daisy",
+      "lastName": "Alvarez",
+      "zipCode": "33414",
+      "zipProvenance": "verified_skip_trace",
+      "phone": "5169965862",
+      "email": "edward.alvarez@att.net",
+      "addressLine2": "FL",
+      "incomePreQual": {
+        "conservative": {
+          "min": 30000,
+          "max": 115000,
+          "p50": 70000
+        },
+        "upside": {
+          "min": 21000,
+          "max": 119000,
+          "p50": 70000
+        },
+        "estimate": {
+          "range": {
+            "min": 30000,
+            "max": 119000
+          },
+          "p50": 70000,
+          "confidence": 0.33,
+          "primaryDrivers": [
+            "company: eXp Realty"
+          ],
+          "riskFlags": [
+            "Job title seniority unclear"
+          ]
+        },
+        "decision": {
+          "tier": "unknown",
+          "shouldContinueEnrichment": true,
+          "reason": "Income meets $60k threshold: Upside p50 ($70k) >= $60k minimum",
+          "band": "high",
+          "requiresStrongPositives": false,
+          "reasonCode": "INCOME_ABOVE_60K"
+        }
+      },
+      "skipTracingData": {
+        "Status": 200,
+        "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+        "Source": "tps_fsh_357_cch",
+        "Records": 4,
+        "Page": 1,
+        "PeopleDetails": [
+          {
+            "Name": "Daisy Alvarez Jr",
+            "Link": "https://www.truepeoplesearch.com/find/person/p9lllr0r0982902u2un6",
+            "Age": 67,
+            "Person ID": "p9lllr0r0982902u2un6",
+            "Lives in": "Wellington, FL",
+            "Used to live in": "Loxahatchee FL, West Palm Beach FL, Hiale...",
+            "Related to": "Amparo Alvarez, Andrew Alvarez, Clara Alva..."
+          }
+        ],
+        "ageFromPersonDetails": "67"
+      },
+      "skipTracingDisposition": "clear_match",
+      "skipTracingMatchType": "exact_location",
+      "phoneStateMismatch": true,
+      "age": "67",
+      "telnyxLookupData": {
+        "success": true,
+        "data": {
+          "data": {
+            "country_code": "US",
+            "national_format": "(516) 996-5862",
+            "phone_number": "+15169965862",
+            "fraud": null,
+            "carrier": {
+              "mobile_country_code": "",
+              "mobile_network_code": "",
+              "name": "NEW CINGULAR WIRELESS PCS, LLC - DC",
+              "type": "mobile",
+              "error_code": null,
+              "normalized_carrier": "AT&T"
+            },
+            "caller_name": null,
+            "nnid_override": null,
+            "portability": {
+              "lrn": null,
+              "ported_status": "",
+              "ported_date": "",
+              "ocn": "4036",
+              "line_type": "mobile",
+              "spid": "",
+              "spid_carrier_name": "NEW CINGULAR WIRELESS PCS, LLC",
+              "spid_carrier_type": "",
+              "altspid": "",
+              "altspid_carrier_name": "",
+              "altspid_carrier_type": "",
+              "city": "NASSAUZN05",
+              "state": "New York"
+            },
+            "valid_number": true,
+            "record_type": "number_lookup"
+          }
+        }
+      },
+      "lineType": "mobile",
+      "carrierName": "NEW CINGULAR WIRELESS PCS, LLC - DC",
+      "carrierType": "mobile",
+      "normalizedCarrier": "AT&T",
+      "decisionReason": "AGE_OVER_59",
+      "decisionCodes": [
+        "AGE_OVER_59"
+      ],
+      "decisionConfidence": 44,
+      "decisionAction": "skip",
+      "enrichmentLevel": "none",
+      "dncStatus": "UNKNOWN",
+      "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box."
+    },
+    "Line Type": "mobile",
+    "Carrier": "NEW CINGULAR WIRELESS PCS, LLC - DC",
+    "Normalized Carrier": "AT&T",
+    "Age": "67"
+  },
+  "leadSummary": {
+    "name": "Daisy Alvarez",
+    "phone": "5169965862",
+    "dobOrAge": "67",
+    "zipcode": "33414",
+    "state": "FL",
+    "city": "Wellington",
+    "email": "edward.alvarez@att.net",
+    "dncStatus": "UNKNOWN",
+    "income": 70000,
+    "lineType": "mobile",
+    "carrier": "NEW CINGULAR WIRELESS PCS, LLC - DC",
+    "normalizedCarrier": "AT&T",
+    "searchFilter": "roi-test-fl-real-estate",
+    "dateScraped": "2026-03-12",
+    "linkedinUrl": "https://www.linkedin.com/in/ACwAAAbjkf8B3aPzzDx8TXdnQM3MrtLbeE7oXRs",
+    "zipProvenance": "verified_skip_trace",
+    "skipTracingDisposition": "clear_match",
+    "phoneStateMismatch": true
+  }
+}

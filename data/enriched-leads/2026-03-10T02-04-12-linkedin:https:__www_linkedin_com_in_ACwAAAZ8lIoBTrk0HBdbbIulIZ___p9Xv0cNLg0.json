@@ -1,0 +1,167 @@
+{
+  "metadata": {
+    "savedAt": "2026-03-10T02:04:12.056Z",
+    "leadKey": "linkedin:https://www.linkedin.com/in/ACwAAAZ8lIoBTrk0HBdbbIulIZ__-p9Xv0cNLg0"
+  },
+  "enrichedRow": {
+    "Name": "Pedro Caramuru",
+    "Title": "Chief Operating Officer",
+    "Company": "Stealth Startup",
+    "Location": "Miami, Florida, United States",
+    "LinkedIn URL": "https://www.linkedin.com/in/ACwAAAZ8lIoBTrk0HBdbbIulIZ__-p9Xv0cNLg0",
+    "Email": "pedro.caramuru85@gmail.com",
+    "Phone": "6507665768",
+    "First Name": "Pedro",
+    "Last Name": "Caramuru",
+    "City": "Miami",
+    "State": "FL",
+    "Zip": "33157",
+    "Search Filter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+    "_enriched": {
+      "firstName": "Pedro",
+      "lastName": "Caramuru",
+      "zipCode": "33157",
+      "zipProvenance": "verified_skip_trace",
+      "gender": "male",
+      "genderConfidence": 98,
+      "phone": "6507665768",
+      "email": "pedro.caramuru85@gmail.com",
+      "addressLine2": "FL",
+      "incomePreQual": {
+        "conservative": {
+          "min": 130000,
+          "max": 430000,
+          "p50": 280000
+        },
+        "upside": {
+          "min": 130000,
+          "max": 381000,
+          "p50": 293000
+        },
+        "estimate": {
+          "range": {
+            "min": 130000,
+            "max": 381000
+          },
+          "p50": 287000,
+          "confidence": 0.48,
+          "primaryDrivers": [
+            "career ladder: exec",
+            "company: Stealth Startup"
+          ],
+          "riskFlags": [
+            "High-level title but company type may not support it"
+          ]
+        },
+        "decision": {
+          "tier": "unknown",
+          "shouldContinueEnrichment": true,
+          "reason": "Income meets $60k threshold: Upside p50 ($293k) >= $60k minimum",
+          "band": "high",
+          "requiresStrongPositives": false,
+          "reasonCode": "INCOME_ABOVE_60K"
+        }
+      },
+      "skipTracingData": {
+        "Status": 200,
+        "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+        "Source": "tps_fsh_380_cch",
+        "Records": 1,
+        "Page": 1,
+        "PeopleDetails": [
+          {
+            "Name": "Pedro Caramuru",
+            "Link": "https://www.truepeoplesearch.com/find/person/px90rnn0u0l0802n40269",
+            "Age": 41,
+            "Person ID": "px90rnn0u0l0802n40269",
+            "Lives in": "Palmetto Bay, FL",
+            "Used to live in": "Miami FL, San Mateo CA, Burlingame CA",
+            "Related to": ""
+          }
+        ],
+        "ageFromPersonDetails": "41"
+      },
+      "skipTracingDisposition": "clear_match",
+      "skipTracingMatchType": "name_only",
+      "telnyxLookupData": {
+        "success": true,
+        "data": {
+          "data": {
+            "country_code": "US",
+            "national_format": "(650) 766-5768",
+            "phone_number": "+16507665768",
+            "fraud": null,
+            "carrier": {
+              "mobile_country_code": "",
+              "mobile_network_code": "",
+              "name": "NEW CINGULAR WIRELESS PCS, LLC",
+              "type": "mobile",
+              "error_code": null,
+              "normalized_carrier": "AT&T"
+            },
+            "caller_name": null,
+            "nnid_override": null,
+            "portability": {
+              "lrn": null,
+              "ported_status": "",
+              "ported_date": "",
+              "ocn": "6010",
+              "line_type": "mobile",
+              "spid": "",
+              "spid_carrier_name": "NEW CINGULAR WIRELESS PCS, LLC",
+              "spid_carrier_type": "",
+              "altspid": "",
+              "altspid_carrier_name": "",
+              "altspid_carrier_type": "",
+              "city": "SAN MATEO",
+              "state": "California"
+            },
+            "valid_number": true,
+            "record_type": "number_lookup"
+          }
+        }
+      },
+      "lineType": "mobile",
+      "carrierName": "NEW CINGULAR WIRELESS PCS, LLC",
+      "carrierType": "mobile",
+      "normalizedCarrier": "AT&T",
+      "decisionReason": "PARTIAL_ENRICHMENT",
+      "decisionCodes": [
+        "PARTIAL_ENRICHMENT",
+        "SOFT_DOWNGRADE_FREE_EMAIL"
+      ],
+      "decisionConfidence": 32,
+      "decisionAction": "partial",
+      "enrichmentLevel": "partial",
+      "dncStatus": "UNKNOWN",
+      "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+      "age": "41"
+    },
+    "Line Type": "mobile",
+    "Carrier": "NEW CINGULAR WIRELESS PCS, LLC",
+    "Normalized Carrier": "AT&T",
+    "Age": "41",
+    "Gender": "male",
+    "Gender Confidence": 98
+  },
+  "leadSummary": {
+    "name": "Pedro Caramuru",
+    "phone": "6507665768",
+    "dobOrAge": "41",
+    "zipcode": "33157",
+    "state": "FL",
+    "city": "Miami",
+    "email": "pedro.caramuru85@gmail.com",
+    "dncStatus": "UNKNOWN",
+    "income": 287000,
+    "lineType": "mobile",
+    "carrier": "NEW CINGULAR WIRELESS PCS, LLC",
+    "normalizedCarrier": "AT&T",
+    "searchFilter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+    "dateScraped": "2026-03-10",
+    "linkedinUrl": "https://www.linkedin.com/in/ACwAAAZ8lIoBTrk0HBdbbIulIZ__-p9Xv0cNLg0",
+    "zipProvenance": "verified_skip_trace",
+    "skipTracingDisposition": "clear_match",
+    "needsVerification": true
+  }
+}

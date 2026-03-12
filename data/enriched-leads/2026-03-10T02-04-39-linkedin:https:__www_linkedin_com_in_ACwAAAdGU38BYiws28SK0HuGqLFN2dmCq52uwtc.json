@@ -1,0 +1,166 @@
+{
+  "metadata": {
+    "savedAt": "2026-03-10T02:04:39.635Z",
+    "leadKey": "linkedin:https://www.linkedin.com/in/ACwAAAdGU38BYiws28SK0HuGqLFN2dmCq52uwtc"
+  },
+  "enrichedRow": {
+    "Name": "Rachel Vinciguerra",
+    "Title": "Clinical Specialist III",
+    "Company": "Abbott",
+    "Location": "West Palm Beach, Florida, United States",
+    "LinkedIn URL": "https://www.linkedin.com/in/ACwAAAdGU38BYiws28SK0HuGqLFN2dmCq52uwtc",
+    "Email": "rvinciguerra306@gmail.com",
+    "Phone": "5514276797",
+    "First Name": "Rachel",
+    "Last Name": "Vinciguerra",
+    "City": "West Palm Beach",
+    "State": "FL",
+    "Zip": "33478",
+    "Search Filter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+    "_enriched": {
+      "firstName": "Rachel",
+      "lastName": "Vinciguerra",
+      "zipCode": "33478",
+      "zipProvenance": "verified_skip_trace",
+      "gender": "female",
+      "genderConfidence": 98,
+      "phone": "5514276797",
+      "email": "rvinciguerra306@gmail.com",
+      "addressLine2": "FL",
+      "incomePreQual": {
+        "conservative": {
+          "min": 31000,
+          "max": 109000,
+          "p50": 70000
+        },
+        "upside": {
+          "min": 28000,
+          "max": 112000,
+          "p50": 70000
+        },
+        "estimate": {
+          "range": {
+            "min": 31000,
+            "max": 112000
+          },
+          "p50": 70000,
+          "confidence": 0.82,
+          "primaryDrivers": [
+            "career ladder: ic",
+            "specialist role",
+            "company: Abbott"
+          ],
+          "riskFlags": []
+        },
+        "decision": {
+          "tier": "unknown",
+          "shouldContinueEnrichment": true,
+          "reason": "Income meets $60k threshold: Upside p50 ($70k) >= $60k minimum",
+          "band": "high",
+          "requiresStrongPositives": false,
+          "reasonCode": "INCOME_ABOVE_60K"
+        }
+      },
+      "skipTracingData": {
+        "Status": 200,
+        "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+        "Source": "tps_fsh_504_cch",
+        "Records": 1,
+        "Page": 1,
+        "PeopleDetails": [
+          {
+            "Name": "Rachel Vinciguerra",
+            "Link": "https://www.truepeoplesearch.com/find/person/p2r8rnl2l92nurunul06",
+            "Age": 34,
+            "Person ID": "p2r8rnl2l92nurunul06",
+            "Lives in": "Jupiter, FL",
+            "Used to live in": "Boynton Beach FL, Upper Saddle River NJ",
+            "Related to": "Donna Mastrocco, Jaclyn Vinciguerra, Krist..."
+          }
+        ],
+        "ageFromPersonDetails": "34"
+      },
+      "skipTracingDisposition": "clear_match",
+      "skipTracingMatchType": "name_only",
+      "telnyxLookupData": {
+        "success": true,
+        "data": {
+          "data": {
+            "country_code": "US",
+            "national_format": "(551) 427-6797",
+            "phone_number": "+15514276797",
+            "fraud": null,
+            "carrier": {
+              "mobile_country_code": "",
+              "mobile_network_code": "",
+              "name": "CELLCO PARTNERSHIP DBA VERIZON WIRELESS - NJ",
+              "type": "mobile",
+              "error_code": null,
+              "normalized_carrier": "Verizon Wireless"
+            },
+            "caller_name": null,
+            "nnid_override": null,
+            "portability": {
+              "lrn": null,
+              "ported_status": "",
+              "ported_date": "",
+              "ocn": "6391",
+              "line_type": "mobile",
+              "spid": "",
+              "spid_carrier_name": "CELLCO PARTNERSHIP DBA VERIZON",
+              "spid_carrier_type": "",
+              "altspid": "",
+              "altspid_carrier_name": "",
+              "altspid_carrier_type": "",
+              "city": "RAMSEY",
+              "state": "New Jersey"
+            },
+            "valid_number": true,
+            "record_type": "number_lookup"
+          }
+        }
+      },
+      "lineType": "mobile",
+      "carrierName": "CELLCO PARTNERSHIP DBA VERIZON WIRELESS - NJ",
+      "carrierType": "mobile",
+      "normalizedCarrier": "Verizon Wireless",
+      "decisionReason": "FULL_ENRICHMENT",
+      "decisionCodes": [
+        "FULL_ENRICHMENT",
+        "SOFT_DOWNGRADE_FREE_EMAIL"
+      ],
+      "decisionConfidence": 50,
+      "decisionAction": "full",
+      "enrichmentLevel": "full",
+      "dncStatus": "UNKNOWN",
+      "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+      "age": "34"
+    },
+    "Line Type": "mobile",
+    "Carrier": "CELLCO PARTNERSHIP DBA VERIZON WIRELESS - NJ",
+    "Normalized Carrier": "Verizon Wireless",
+    "Age": "34",
+    "Gender": "female",
+    "Gender Confidence": 98
+  },
+  "leadSummary": {
+    "name": "Rachel Vinciguerra",
+    "phone": "5514276797",
+    "dobOrAge": "34",
+    "zipcode": "33478",
+    "state": "FL",
+    "city": "West Palm Beach",
+    "email": "rvinciguerra306@gmail.com",
+    "dncStatus": "UNKNOWN",
+    "income": 70000,
+    "lineType": "mobile",
+    "carrier": "CELLCO PARTNERSHIP DBA VERIZON WIRELESS - NJ",
+    "normalizedCarrier": "Verizon Wireless",
+    "searchFilter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+    "dateScraped": "2026-03-10",
+    "linkedinUrl": "https://www.linkedin.com/in/ACwAAAdGU38BYiws28SK0HuGqLFN2dmCq52uwtc",
+    "zipProvenance": "verified_skip_trace",
+    "skipTracingDisposition": "clear_match",
+    "needsVerification": true
+  }
+}

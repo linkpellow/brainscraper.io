@@ -1,0 +1,160 @@
+{
+  "metadata": {
+    "savedAt": "2026-03-09T19:50:00.539Z",
+    "leadKey": "linkedin:https://www.linkedin.com/in/ACwAAAV5_rUBI6TmgnF05h0o8YiZWV9Bpe6_gdQ"
+  },
+  "enrichedRow": {
+    "Name": "Garrett McGuire",
+    "Title": "Delegate, 17th District",
+    "Company": "Virginia House of Delegates",
+    "Location": "Alexandria, Virginia, United States",
+    "LinkedIn URL": "https://www.linkedin.com/in/ACwAAAV5_rUBI6TmgnF05h0o8YiZWV9Bpe6_gdQ",
+    "Email": "llamas5486@aol.com",
+    "Phone": "2025497454",
+    "First Name": "Garrett",
+    "Last Name": "McGuire",
+    "City": "Alexandria",
+    "State": "VA",
+    "Zip": "22303",
+    "Search Filter": "Location: Alexandria, Virginia | Changed Jobs (90 days)",
+    "_enriched": {
+      "firstName": "Garrett",
+      "lastName": "McGuire",
+      "zipCode": "22303",
+      "zipProvenance": "verified_skip_trace",
+      "phone": "2025497454",
+      "email": "llamas5486@aol.com",
+      "addressLine2": "VA",
+      "incomePreQual": {
+        "conservative": {
+          "min": 30000,
+          "max": 115000,
+          "p50": 70000
+        },
+        "upside": {
+          "min": 21000,
+          "max": 119000,
+          "p50": 70000
+        },
+        "estimate": {
+          "range": {
+            "min": 30000,
+            "max": 119000
+          },
+          "p50": 70000,
+          "confidence": 0.33,
+          "primaryDrivers": [
+            "company: Virginia House of Delegates"
+          ],
+          "riskFlags": [
+            "Job title seniority unclear"
+          ]
+        },
+        "decision": {
+          "tier": "unknown",
+          "shouldContinueEnrichment": true,
+          "reason": "Income meets $60k threshold: Upside p50 ($70k) >= $60k minimum",
+          "band": "high",
+          "requiresStrongPositives": false,
+          "reasonCode": "INCOME_ABOVE_60K"
+        }
+      },
+      "skipTracingData": {
+        "Status": 200,
+        "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+        "Source": "tps_fsh_469_cch",
+        "Records": 1,
+        "Page": 1,
+        "PeopleDetails": [
+          {
+            "Name": "Garrett McGuire",
+            "Link": "https://www.truepeoplesearch.com/find/person/p46u8n88r8ln266090n8",
+            "Age": 40,
+            "Person ID": "p46u8n88r8ln266090n8",
+            "Lives in": "Alexandria, VA",
+            "Used to live in": "Arlington VA, Washington DC",
+            "Related to": "Connor Mcguire, Dylan Mcguire, Joseph Mcgu..."
+          }
+        ],
+        "ageFromPersonDetails": "40"
+      },
+      "skipTracingDisposition": "clear_match",
+      "telnyxLookupData": {
+        "success": true,
+        "data": {
+          "data": {
+            "country_code": "US",
+            "national_format": "(202) 549-7454",
+            "phone_number": "+12025497454",
+            "fraud": null,
+            "carrier": {
+              "mobile_country_code": "",
+              "mobile_network_code": "",
+              "name": "NEW CINGULAR WIRELESS PCS, LLC - DC",
+              "type": "mobile",
+              "error_code": null,
+              "normalized_carrier": "AT&T"
+            },
+            "caller_name": null,
+            "nnid_override": null,
+            "portability": {
+              "lrn": null,
+              "ported_status": "",
+              "ported_date": "",
+              "ocn": "4036",
+              "line_type": "mobile",
+              "spid": "",
+              "spid_carrier_name": "NEW CINGULAR WIRELESS PCS, LLC",
+              "spid_carrier_type": "",
+              "altspid": "",
+              "altspid_carrier_name": "",
+              "altspid_carrier_type": "",
+              "city": "WSHNGTNZN1",
+              "state": ""
+            },
+            "valid_number": true,
+            "record_type": "number_lookup"
+          }
+        }
+      },
+      "lineType": "mobile",
+      "carrierName": "NEW CINGULAR WIRELESS PCS, LLC - DC",
+      "carrierType": "mobile",
+      "normalizedCarrier": "AT&T",
+      "decisionReason": "PARTIAL_ENRICHMENT",
+      "decisionCodes": [
+        "PARTIAL_ENRICHMENT",
+        "SOFT_DOWNGRADE_FREE_EMAIL"
+      ],
+      "decisionConfidence": 36,
+      "decisionAction": "partial",
+      "enrichmentLevel": "partial",
+      "dncStatus": "UNKNOWN",
+      "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+      "age": "40"
+    },
+    "Line Type": "mobile",
+    "Carrier": "NEW CINGULAR WIRELESS PCS, LLC - DC",
+    "Normalized Carrier": "AT&T",
+    "Age": "40"
+  },
+  "leadSummary": {
+    "name": "Garrett McGuire",
+    "phone": "2025497454",
+    "dobOrAge": "40",
+    "zipcode": "22303",
+    "state": "VA",
+    "city": "Alexandria",
+    "email": "llamas5486@aol.com",
+    "dncStatus": "UNKNOWN",
+    "income": 70000,
+    "lineType": "mobile",
+    "carrier": "NEW CINGULAR WIRELESS PCS, LLC - DC",
+    "normalizedCarrier": "AT&T",
+    "searchFilter": "Location: Alexandria, Virginia | Changed Jobs (90 days)",
+    "dateScraped": "2026-03-09",
+    "linkedinUrl": "https://www.linkedin.com/in/ACwAAAV5_rUBI6TmgnF05h0o8YiZWV9Bpe6_gdQ",
+    "zipProvenance": "verified_skip_trace",
+    "skipTracingDisposition": "clear_match"
+  }
+}

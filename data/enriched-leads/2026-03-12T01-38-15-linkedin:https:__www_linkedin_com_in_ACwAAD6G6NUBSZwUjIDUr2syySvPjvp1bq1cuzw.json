@@ -1,0 +1,164 @@
+{
+  "metadata": {
+    "savedAt": "2026-03-12T01:38:15.664Z",
+    "leadKey": "linkedin:https://www.linkedin.com/in/ACwAAD6G6NUBSZwUjIDUr2syySvPjvp1bq1cuzw"
+  },
+  "enrichedRow": {
+    "Name": "Chad Risch",
+    "Title": "Director of Preconstruction",
+    "Company": "Continental Properties",
+    "Location": "Kissimmee, FL",
+    "LinkedIn URL": "https://www.linkedin.com/in/ACwAAD6G6NUBSZwUjIDUr2syySvPjvp1bq1cuzw",
+    "Email": "",
+    "Phone": "2319202799",
+    "First Name": "Chad",
+    "Last Name": "Risch",
+    "City": "Kissimmee",
+    "State": "FL",
+    "Zip": "34747",
+    "Search Filter": "roi-test-fl-real-estate",
+    "_enriched": {
+      "firstName": "Chad",
+      "lastName": "Risch",
+      "zipCode": "34747",
+      "zipProvenance": "verified_skip_trace",
+      "phone": "2319202799",
+      "addressLine2": "FL",
+      "incomePreQual": {
+        "conservative": {
+          "min": 134000,
+          "max": 302000,
+          "p50": 218000
+        },
+        "upside": {
+          "min": 153000,
+          "max": 317000,
+          "p50": 244000
+        },
+        "estimate": {
+          "range": {
+            "min": 134000,
+            "max": 317000
+          },
+          "p50": 231000,
+          "confidence": 0.43,
+          "primaryDrivers": [
+            "career ladder: director",
+            "director role",
+            "company: Continental Properties"
+          ],
+          "riskFlags": [
+            "High-level title but company type may not support it",
+            "Job title seniority unclear"
+          ]
+        },
+        "decision": {
+          "tier": "unknown",
+          "shouldContinueEnrichment": true,
+          "reason": "Income meets $60k threshold: Upside p50 ($244k) >= $60k minimum",
+          "band": "high",
+          "requiresStrongPositives": false,
+          "reasonCode": "INCOME_ABOVE_60K"
+        }
+      },
+      "skipTracingData": {
+        "Status": 200,
+        "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+        "Source": "tps_fsh_296_cch",
+        "Records": 1,
+        "Page": 1,
+        "PeopleDetails": [
+          {
+            "Name": "Chad Risch",
+            "Link": "https://www.truepeoplesearch.com/find/person/pxuln86n99ln4u4268n9r",
+            "Age": 38,
+            "Person ID": "pxuln86n99ln4u4268n9r",
+            "Lives in": "Kissimmee, FL",
+            "Used to live in": "Davenport FL, Abingdon MD, Big Rapids MI,...",
+            "Related to": "Hannah Risch, Jeffrey Risch, Jerry Risch, ..."
+          }
+        ],
+        "ageFromPersonDetails": "38"
+      },
+      "skipTracingDisposition": "clear_match",
+      "skipTracingMatchType": "exact_location",
+      "phoneStateMismatch": true,
+      "telnyxLookupData": {
+        "success": true,
+        "data": {
+          "data": {
+            "country_code": "US",
+            "national_format": "(231) 920-2799",
+            "phone_number": "+12319202799",
+            "fraud": null,
+            "carrier": {
+              "mobile_country_code": "",
+              "mobile_network_code": "",
+              "name": "Verizon Wireless:6006 - SVR/2",
+              "type": "mobile",
+              "error_code": null,
+              "normalized_carrier": "Verizon Wireless"
+            },
+            "caller_name": null,
+            "nnid_override": null,
+            "portability": {
+              "lrn": "616283XXXX",
+              "ported_status": "",
+              "ported_date": "",
+              "ocn": "6003",
+              "line_type": "mobile",
+              "spid": "",
+              "spid_carrier_name": "CELLCO PARTNERSHIP DBA VERIZON",
+              "spid_carrier_type": "",
+              "altspid": "",
+              "altspid_carrier_name": "",
+              "altspid_carrier_type": "",
+              "city": "ZEELAND",
+              "state": "Michigan"
+            },
+            "valid_number": true,
+            "record_type": "number_lookup"
+          }
+        }
+      },
+      "lineType": "mobile",
+      "carrierName": "Verizon Wireless:6006 - SVR/2",
+      "carrierType": "mobile",
+      "normalizedCarrier": "Verizon Wireless",
+      "decisionReason": "FULL_ENRICHMENT",
+      "decisionCodes": [
+        "FULL_ENRICHMENT"
+      ],
+      "decisionConfidence": 84,
+      "decisionAction": "full",
+      "enrichmentLevel": "full",
+      "dncStatus": "UNKNOWN",
+      "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+      "age": "38"
+    },
+    "Line Type": "mobile",
+    "Carrier": "Verizon Wireless:6006 - SVR/2",
+    "Normalized Carrier": "Verizon Wireless",
+    "Age": "38"
+  },
+  "leadSummary": {
+    "name": "Chad Risch",
+    "phone": "2319202799",
+    "dobOrAge": "38",
+    "zipcode": "34747",
+    "state": "FL",
+    "city": "Kissimmee",
+    "email": "",
+    "dncStatus": "UNKNOWN",
+    "income": 231000,
+    "lineType": "mobile",
+    "carrier": "Verizon Wireless:6006 - SVR/2",
+    "normalizedCarrier": "Verizon Wireless",
+    "searchFilter": "roi-test-fl-real-estate",
+    "dateScraped": "2026-03-12",
+    "linkedinUrl": "https://www.linkedin.com/in/ACwAAD6G6NUBSZwUjIDUr2syySvPjvp1bq1cuzw",
+    "zipProvenance": "verified_skip_trace",
+    "skipTracingDisposition": "clear_match",
+    "phoneStateMismatch": true
+  }
+}

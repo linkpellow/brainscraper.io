@@ -1,0 +1,164 @@
+{
+  "metadata": {
+    "savedAt": "2026-03-10T19:09:25.321Z",
+    "leadKey": "linkedin:https://www.linkedin.com/in/ACwAAAYYDh4B0hXrGAKWrKHc6kiAIu6psIyDOrs"
+  },
+  "enrichedRow": {
+    "Name": "Eyal Mehaber",
+    "Title": "CEO",
+    "Company": "EM Equity",
+    "Location": "Hollywood, Florida, United States",
+    "LinkedIn URL": "https://www.linkedin.com/in/ACwAAAYYDh4B0hXrGAKWrKHc6kiAIu6psIyDOrs",
+    "Email": "fmehaber@gmail.com",
+    "Phone": "7862515509",
+    "First Name": "Eyal",
+    "Last Name": "Mehaber",
+    "City": "Hollywood",
+    "State": "FL",
+    "Zip": "33020",
+    "Search Filter": "Location: Miami, FL | Industry: Real Estate",
+    "_enriched": {
+      "firstName": "Eyal",
+      "lastName": "Mehaber",
+      "zipCode": "33020",
+      "zipProvenance": "verified_skip_trace",
+      "phone": "7862515509",
+      "email": "fmehaber@gmail.com",
+      "addressLine2": "FL",
+      "incomePreQual": {
+        "conservative": {
+          "min": 410000,
+          "max": 710000,
+          "p50": 560000
+        },
+        "upside": {
+          "min": 454000,
+          "max": 779000,
+          "p50": 616000
+        },
+        "estimate": {
+          "range": {
+            "min": 410000,
+            "max": 779000
+          },
+          "p50": 588000,
+          "confidence": 0.48,
+          "primaryDrivers": [
+            "career ladder: exec",
+            "company: EM Equity"
+          ],
+          "riskFlags": [
+            "High-level title but company type may not support it"
+          ]
+        },
+        "decision": {
+          "tier": "unknown",
+          "shouldContinueEnrichment": true,
+          "reason": "Income meets $60k threshold: Upside p50 ($616k) >= $60k minimum",
+          "band": "high",
+          "requiresStrongPositives": false,
+          "reasonCode": "INCOME_ABOVE_60K"
+        }
+      },
+      "skipTracingData": {
+        "Status": 200,
+        "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+        "Source": "tps_fsh_224_cch",
+        "Records": 2,
+        "Page": 1,
+        "PeopleDetails": [
+          {
+            "Name": "Eyal Mehaber",
+            "Link": "https://www.truepeoplesearch.com/find/person/px60n098696rlr2n98r64",
+            "Age": 57,
+            "Person ID": "px60n098696rlr2n98r64",
+            "Lives in": "Hollywood, FL",
+            "Used to live in": "Sunny Isles Beach FL, Pompano Beach FL, L...",
+            "Related to": "Eyal Mehaber, Alana Mehaber, Alexa Mehaber..."
+          }
+        ],
+        "ageFromPersonDetails": "57"
+      },
+      "skipTracingDisposition": "ambiguous_used_first",
+      "skipTracingMatchType": "ambiguous_used_first",
+      "telnyxLookupData": {
+        "success": true,
+        "data": {
+          "data": {
+            "country_code": "US",
+            "national_format": "(786) 251-5509",
+            "phone_number": "+17862515509",
+            "fraud": null,
+            "carrier": {
+              "mobile_country_code": "",
+              "mobile_network_code": "",
+              "name": "Cingular Wireless/2",
+              "type": "mobile",
+              "error_code": null,
+              "normalized_carrier": ""
+            },
+            "caller_name": null,
+            "nnid_override": null,
+            "portability": {
+              "lrn": "305319XXXX",
+              "ported_status": "",
+              "ported_date": "",
+              "ocn": "6214",
+              "line_type": "mobile",
+              "spid": "",
+              "spid_carrier_name": "NEW CINGULAR WIRELESS PCS, LLC",
+              "spid_carrier_type": "",
+              "altspid": "",
+              "altspid_carrier_name": "",
+              "altspid_carrier_type": "",
+              "city": "NORTH DADE",
+              "state": "Florida"
+            },
+            "valid_number": true,
+            "record_type": "number_lookup"
+          }
+        }
+      },
+      "lineType": "mobile",
+      "carrierName": "Cingular Wireless/2",
+      "carrierType": "mobile",
+      "normalizedCarrier": "",
+      "decisionReason": "FULL_ENRICHMENT",
+      "decisionCodes": [
+        "FULL_ENRICHMENT",
+        "SOFT_DOWNGRADE_FREE_EMAIL"
+      ],
+      "decisionConfidence": 63,
+      "decisionAction": "full",
+      "enrichmentLevel": "full",
+      "dncStatus": "UNKNOWN",
+      "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+      "age": "57"
+    },
+    "Line Type": "mobile",
+    "Carrier": "Cingular Wireless/2",
+    "Age": "57"
+  },
+  "leadSummary": {
+    "name": "Eyal Mehaber",
+    "phone": "7862515509",
+    "dobOrAge": "57",
+    "zipcode": "33020",
+    "state": "FL",
+    "city": "Hollywood",
+    "email": "fmehaber@gmail.com",
+    "dncStatus": "UNKNOWN",
+    "income": 588000,
+    "lineType": "mobile",
+    "carrier": "Cingular Wireless/2",
+    "normalizedCarrier": "",
+    "searchFilter": "Location: Miami, FL | Industry: Real Estate",
+    "dateScraped": "2026-03-10",
+    "linkedinUrl": "https://www.linkedin.com/in/ACwAAAYYDh4B0hXrGAKWrKHc6kiAIu6psIyDOrs",
+    "zipProvenance": "verified_skip_trace",
+    "skipTracingDisposition": "ambiguous_used_first",
+    "enrichmentStopReason": "Ambiguous match – first candidate used (verify before contact)",
+    "reviewBucket": "ambiguous_identity",
+    "needsVerification": true
+  }
+}

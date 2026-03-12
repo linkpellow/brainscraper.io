@@ -1,0 +1,166 @@
+{
+  "metadata": {
+    "savedAt": "2026-03-10T19:09:11.918Z",
+    "leadKey": "linkedin:https://www.linkedin.com/in/ACwAAAZWbTsBbzyAk3Wo4j_LKtOIdyHEPGQ7C2E"
+  },
+  "enrichedRow": {
+    "Name": "Thomas Dees",
+    "Title": "Chief Appraiser",
+    "Company": "Central Florida Appraisals, Inc.",
+    "Location": "Lake Mary, Florida, United States",
+    "LinkedIn URL": "https://www.linkedin.com/in/ACwAAAZWbTsBbzyAk3Wo4j_LKtOIdyHEPGQ7C2E",
+    "Email": "tdeesmail@aol.com",
+    "Phone": "4074633427",
+    "First Name": "Thomas",
+    "Last Name": "Dees",
+    "City": "Lake Mary",
+    "State": "FL",
+    "Zip": "32746",
+    "Search Filter": "Location: Miami, FL | Industry: Real Estate",
+    "_enriched": {
+      "firstName": "Thomas",
+      "lastName": "Dees",
+      "zipCode": "32746",
+      "zipProvenance": "verified_skip_trace",
+      "gender": "male",
+      "genderConfidence": 98,
+      "phone": "4074633427",
+      "email": "tdeesmail@aol.com",
+      "addressLine2": "FL",
+      "incomePreQual": {
+        "conservative": {
+          "min": 137000,
+          "max": 437000,
+          "p50": 287000
+        },
+        "upside": {
+          "min": 154000,
+          "max": 411000,
+          "p50": 316000
+        },
+        "estimate": {
+          "range": {
+            "min": 137000,
+            "max": 411000
+          },
+          "p50": 302000,
+          "confidence": 0.48,
+          "primaryDrivers": [
+            "career ladder: exec",
+            "company: Central Florida Appraisals, Inc."
+          ],
+          "riskFlags": [
+            "High-level title but company type may not support it"
+          ]
+        },
+        "decision": {
+          "tier": "unknown",
+          "shouldContinueEnrichment": true,
+          "reason": "Income meets $60k threshold: Upside p50 ($316k) >= $60k minimum",
+          "band": "high",
+          "requiresStrongPositives": false,
+          "reasonCode": "INCOME_ABOVE_60K"
+        }
+      },
+      "skipTracingData": {
+        "Status": 200,
+        "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+        "Source": "tps_fsh_750_cch",
+        "Records": 1,
+        "Page": 1,
+        "PeopleDetails": [
+          {
+            "Name": "Thomas Dees",
+            "Link": "https://www.truepeoplesearch.com/find/person/pxn64nu8rnlun09l90rrr",
+            "Age": 49,
+            "Person ID": "pxn64nu8rnlun09l90rrr",
+            "Lives in": "Lake Mary, FL",
+            "Used to live in": "Mayo FL, Lake City FL, Altamonte Springs ...",
+            "Related to": "Catherine Dees, Eugene Dees, Michelle Cull..."
+          }
+        ],
+        "ageFromPersonDetails": "49"
+      },
+      "skipTracingDisposition": "clear_match",
+      "skipTracingMatchType": "exact_location",
+      "telnyxLookupData": {
+        "success": true,
+        "data": {
+          "data": {
+            "country_code": "US",
+            "national_format": "(407) 463-3427",
+            "phone_number": "+14074633427",
+            "fraud": null,
+            "carrier": {
+              "mobile_country_code": "",
+              "mobile_network_code": "",
+              "name": "NEW CINGULAR WIRELESS PCS, LLC - GA",
+              "type": "mobile",
+              "error_code": null,
+              "normalized_carrier": "AT&T"
+            },
+            "caller_name": null,
+            "nnid_override": null,
+            "portability": {
+              "lrn": null,
+              "ported_status": "",
+              "ported_date": "",
+              "ocn": "6214",
+              "line_type": "mobile",
+              "spid": "",
+              "spid_carrier_name": "NEW CINGULAR WIRELESS PCS, LLC",
+              "spid_carrier_type": "",
+              "altspid": "",
+              "altspid_carrier_name": "",
+              "altspid_carrier_type": "",
+              "city": "WINTERPARK",
+              "state": "Florida"
+            },
+            "valid_number": true,
+            "record_type": "number_lookup"
+          }
+        }
+      },
+      "lineType": "mobile",
+      "carrierName": "NEW CINGULAR WIRELESS PCS, LLC - GA",
+      "carrierType": "mobile",
+      "normalizedCarrier": "AT&T",
+      "decisionReason": "PARTIAL_ENRICHMENT",
+      "decisionCodes": [
+        "PARTIAL_ENRICHMENT",
+        "SOFT_DOWNGRADE_FREE_EMAIL"
+      ],
+      "decisionConfidence": 43,
+      "decisionAction": "partial",
+      "enrichmentLevel": "partial",
+      "dncStatus": "UNKNOWN",
+      "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+      "age": "49"
+    },
+    "Line Type": "mobile",
+    "Carrier": "NEW CINGULAR WIRELESS PCS, LLC - GA",
+    "Normalized Carrier": "AT&T",
+    "Age": "49",
+    "Gender": "male",
+    "Gender Confidence": 98
+  },
+  "leadSummary": {
+    "name": "Thomas Dees",
+    "phone": "4074633427",
+    "dobOrAge": "49",
+    "zipcode": "32746",
+    "state": "FL",
+    "city": "Lake Mary",
+    "email": "tdeesmail@aol.com",
+    "dncStatus": "UNKNOWN",
+    "income": 302000,
+    "lineType": "mobile",
+    "carrier": "NEW CINGULAR WIRELESS PCS, LLC - GA",
+    "normalizedCarrier": "AT&T",
+    "searchFilter": "Location: Miami, FL | Industry: Real Estate",
+    "dateScraped": "2026-03-10",
+    "linkedinUrl": "https://www.linkedin.com/in/ACwAAAZWbTsBbzyAk3Wo4j_LKtOIdyHEPGQ7C2E",
+    "zipProvenance": "verified_skip_trace",
+    "skipTracingDisposition": "clear_match"
+  }
+}

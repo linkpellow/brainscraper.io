@@ -1,0 +1,162 @@
+{
+  "metadata": {
+    "savedAt": "2026-03-10T02:04:32.338Z",
+    "leadKey": "linkedin:https://www.linkedin.com/in/ACwAAAbJb8ABYJw2E4LTiVoLCUigR8Ltzx4KiRk"
+  },
+  "enrichedRow": {
+    "Name": "James Lawes",
+    "Title": "Director | Talent Strategy & Structured Hiring Engagements Velocity Resource Group",
+    "Company": "Velocity Resource Group",
+    "Location": "Tampa, Florida, United States",
+    "LinkedIn URL": "https://www.linkedin.com/in/ACwAAAbJb8ABYJw2E4LTiVoLCUigR8Ltzx4KiRk",
+    "Email": "",
+    "Phone": "8133735673",
+    "First Name": "James",
+    "Last Name": "Lawes",
+    "City": "Tampa",
+    "State": "FL",
+    "Zip": "33610",
+    "Search Filter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+    "_enriched": {
+      "firstName": "James",
+      "lastName": "Lawes",
+      "zipCode": "33610",
+      "zipProvenance": "verified_skip_trace",
+      "gender": "male",
+      "genderConfidence": 98,
+      "phone": "8133735673",
+      "addressLine2": "FL",
+      "incomePreQual": {
+        "conservative": {
+          "min": 117000,
+          "max": 285000,
+          "p50": 201000
+        },
+        "upside": {
+          "min": 134000,
+          "max": 292000,
+          "p50": 225000
+        },
+        "estimate": {
+          "range": {
+            "min": 117000,
+            "max": 292000
+          },
+          "p50": 213000,
+          "confidence": 0.43,
+          "primaryDrivers": [
+            "career ladder: director",
+            "director role",
+            "company: Velocity Resource Group"
+          ],
+          "riskFlags": [
+            "High-level title but company type may not support it",
+            "Job title seniority unclear"
+          ]
+        },
+        "decision": {
+          "tier": "unknown",
+          "shouldContinueEnrichment": true,
+          "reason": "Income meets $60k threshold: Upside p50 ($225k) >= $60k minimum",
+          "band": "high",
+          "requiresStrongPositives": false,
+          "reasonCode": "INCOME_ABOVE_60K"
+        }
+      },
+      "skipTracingData": {
+        "Status": 200,
+        "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+        "Source": "tps_fsh_577_cch",
+        "Records": 5,
+        "Page": 1,
+        "PeopleDetails": [
+          {
+            "Name": "James Lawes",
+            "Link": "https://www.truepeoplesearch.com/find/person/p8l4800r0nlu8ur24u2u",
+            "Age": 46,
+            "Person ID": "p8l4800r0nlu8ur24u2u",
+            "Lives in": "Tampa, FL",
+            "Used to live in": "Temple Terrace FL, Brandon FL, Miami FL, ...",
+            "Related to": "Donna Wright, Jameez Lawes, James Lawes, S..."
+          }
+        ],
+        "ageFromPersonDetails": "46"
+      },
+      "skipTracingDisposition": "clear_match",
+      "skipTracingMatchType": "exact_location",
+      "telnyxLookupData": {
+        "success": true,
+        "data": {
+          "data": {
+            "country_code": "US",
+            "national_format": "(813) 373-5673",
+            "phone_number": "+18133735673",
+            "fraud": null,
+            "carrier": {
+              "mobile_country_code": "",
+              "mobile_network_code": "",
+              "name": "BHNIS - Florida, LLC: 927D - NSR/1",
+              "type": "fixed line",
+              "error_code": null,
+              "normalized_carrier": ""
+            },
+            "caller_name": null,
+            "nnid_override": null,
+            "portability": {
+              "lrn": "813938XXXX",
+              "ported_status": "",
+              "ported_date": "",
+              "ocn": "927D",
+              "line_type": "fixed line",
+              "spid": "",
+              "spid_carrier_name": "BRIGHT HOUSE NTWS INFORMATION ",
+              "spid_carrier_type": "",
+              "altspid": "",
+              "altspid_carrier_name": "",
+              "altspid_carrier_type": "",
+              "city": "TAMPASTH",
+              "state": "Florida"
+            },
+            "valid_number": true,
+            "record_type": "number_lookup"
+          }
+        }
+      },
+      "lineType": "fixed line",
+      "carrierName": "BHNIS - Florida, LLC: 927D - NSR/1",
+      "carrierType": "fixed line",
+      "normalizedCarrier": "",
+      "decisionReason": "FULL_ENRICHMENT",
+      "decisionCodes": [
+        "FULL_ENRICHMENT"
+      ],
+      "decisionConfidence": 84,
+      "decisionAction": "full",
+      "enrichmentLevel": "full",
+      "dncStatus": "UNKNOWN"
+    },
+    "Line Type": "fixed line",
+    "Carrier": "BHNIS - Florida, LLC: 927D - NSR/1",
+    "Gender": "male",
+    "Gender Confidence": 98
+  },
+  "leadSummary": {
+    "name": "James Lawes",
+    "phone": "8133735673",
+    "dobOrAge": "",
+    "zipcode": "33610",
+    "state": "FL",
+    "city": "Tampa",
+    "email": "",
+    "dncStatus": "UNKNOWN",
+    "income": 213000,
+    "lineType": "fixed line",
+    "carrier": "BHNIS - Florida, LLC: 927D - NSR/1",
+    "normalizedCarrier": "",
+    "searchFilter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+    "dateScraped": "2026-03-10",
+    "linkedinUrl": "https://www.linkedin.com/in/ACwAAAbJb8ABYJw2E4LTiVoLCUigR8Ltzx4KiRk",
+    "zipProvenance": "verified_skip_trace",
+    "skipTracingDisposition": "clear_match"
+  }
+}

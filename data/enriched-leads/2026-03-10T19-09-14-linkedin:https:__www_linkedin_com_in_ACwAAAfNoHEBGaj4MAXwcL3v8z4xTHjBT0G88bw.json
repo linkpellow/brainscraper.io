@@ -1,0 +1,165 @@
+{
+  "metadata": {
+    "savedAt": "2026-03-10T19:09:14.714Z",
+    "leadKey": "linkedin:https://www.linkedin.com/in/ACwAAAfNoHEBGaj4MAXwcL3v8z4xTHjBT0G88bw"
+  },
+  "enrichedRow": {
+    "Name": "Carlos A Plana",
+    "Title": "Insurance Agent",
+    "Company": "Access Insurance Underwriter, LLC",
+    "Location": "Miami, Florida, United States",
+    "LinkedIn URL": "https://www.linkedin.com/in/ACwAAAfNoHEBGaj4MAXwcL3v8z4xTHjBT0G88bw",
+    "Email": "vickyp7515@yahoo.com",
+    "Phone": "3054583776",
+    "First Name": "Carlos",
+    "Last Name": "A Plana",
+    "City": "Miami",
+    "State": "FL",
+    "Zip": "33165",
+    "Search Filter": "Location: Miami, FL | Industry: Real Estate",
+    "_enriched": {
+      "firstName": "Carlos",
+      "lastName": "Plana",
+      "zipCode": "33165",
+      "zipProvenance": "verified_skip_trace",
+      "gender": "male",
+      "genderConfidence": 98,
+      "phone": "3054583776",
+      "email": "vickyp7515@yahoo.com",
+      "addressLine2": "FL",
+      "incomePreQual": {
+        "conservative": {
+          "min": 30000,
+          "max": 109000,
+          "p50": 64000
+        },
+        "upside": {
+          "min": 9000,
+          "max": 107000,
+          "p50": 58000
+        },
+        "estimate": {
+          "range": {
+            "min": 30000,
+            "max": 107000
+          },
+          "p50": 61000,
+          "confidence": 0.33,
+          "primaryDrivers": [
+            "company: Access Insurance Underwriter, LLC"
+          ],
+          "riskFlags": [
+            "Job title seniority unclear"
+          ]
+        },
+        "decision": {
+          "tier": "unknown",
+          "shouldContinueEnrichment": false,
+          "reason": "Income below $60k threshold: Upside p50 ($58k) < $60k minimum",
+          "band": "low",
+          "requiresStrongPositives": false,
+          "reasonCode": "INCOME_BELOW_60K"
+        }
+      },
+      "skipTracingData": {
+        "Status": 200,
+        "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+        "Source": "tps_fsh_245_cch",
+        "Records": 7,
+        "Page": 1,
+        "PeopleDetails": [
+          {
+            "Name": "Carlos Plana",
+            "Link": "https://www.truepeoplesearch.com/find/person/pr9022n46u66unl29l4n",
+            "Age": 40,
+            "Person ID": "pr9022n46u66unl29l4n",
+            "Lives in": "Miami, FL",
+            "Used to live in": "",
+            "Related to": "Alex Plana, Alexander Plana, Carlos Plana,..."
+          }
+        ],
+        "ageFromPersonDetails": "40"
+      },
+      "skipTracingDisposition": "ambiguous_used_first",
+      "skipTracingMatchType": "ambiguous_used_first",
+      "telnyxLookupData": {
+        "success": true,
+        "data": {
+          "data": {
+            "country_code": "US",
+            "national_format": "(305) 458-3776",
+            "phone_number": "+13054583776",
+            "fraud": null,
+            "carrier": {
+              "mobile_country_code": "",
+              "mobile_network_code": "",
+              "name": "NEW CINGULAR WIRELESS PCS, LLC - GA",
+              "type": "mobile",
+              "error_code": null,
+              "normalized_carrier": "AT&T"
+            },
+            "caller_name": null,
+            "nnid_override": null,
+            "portability": {
+              "lrn": null,
+              "ported_status": "",
+              "ported_date": "",
+              "ocn": "6214",
+              "line_type": "mobile",
+              "spid": "",
+              "spid_carrier_name": "NEW CINGULAR WIRELESS PCS, LLC",
+              "spid_carrier_type": "",
+              "altspid": "",
+              "altspid_carrier_name": "",
+              "altspid_carrier_type": "",
+              "city": "MIAMI",
+              "state": "Florida"
+            },
+            "valid_number": true,
+            "record_type": "number_lookup"
+          }
+        }
+      },
+      "lineType": "mobile",
+      "carrierName": "NEW CINGULAR WIRELESS PCS, LLC - GA",
+      "carrierType": "mobile",
+      "normalizedCarrier": "AT&T",
+      "decisionReason": "PARTIAL_ENRICHMENT",
+      "decisionCodes": [
+        "PARTIAL_ENRICHMENT",
+        "SOFT_DOWNGRADE_FREE_EMAIL"
+      ],
+      "decisionConfidence": 43,
+      "decisionAction": "partial",
+      "enrichmentLevel": "partial",
+      "dncStatus": "UNKNOWN"
+    },
+    "Line Type": "mobile",
+    "Carrier": "NEW CINGULAR WIRELESS PCS, LLC - GA",
+    "Normalized Carrier": "AT&T",
+    "Gender": "male",
+    "Gender Confidence": 98
+  },
+  "leadSummary": {
+    "name": "Carlos A Plana",
+    "phone": "3054583776",
+    "dobOrAge": "",
+    "zipcode": "33165",
+    "state": "FL",
+    "city": "Miami",
+    "email": "vickyp7515@yahoo.com",
+    "dncStatus": "UNKNOWN",
+    "income": 61000,
+    "lineType": "mobile",
+    "carrier": "NEW CINGULAR WIRELESS PCS, LLC - GA",
+    "normalizedCarrier": "AT&T",
+    "searchFilter": "Location: Miami, FL | Industry: Real Estate",
+    "dateScraped": "2026-03-10",
+    "linkedinUrl": "https://www.linkedin.com/in/ACwAAAfNoHEBGaj4MAXwcL3v8z4xTHjBT0G88bw",
+    "zipProvenance": "verified_skip_trace",
+    "skipTracingDisposition": "ambiguous_used_first",
+    "enrichmentStopReason": "Ambiguous match – first candidate used (verify before contact)",
+    "reviewBucket": "ambiguous_identity",
+    "needsVerification": true
+  }
+}

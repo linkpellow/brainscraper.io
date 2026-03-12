@@ -1,0 +1,165 @@
+{
+  "metadata": {
+    "savedAt": "2026-03-12T01:38:35.364Z",
+    "leadKey": "linkedin:https://www.linkedin.com/in/ACwAAAbgusgByeEaITSRKNlKq-nRbdM1M6v7k1s"
+  },
+  "enrichedRow": {
+    "Name": "Erica Elliott",
+    "Title": "Realtor Sales Associate",
+    "Company": "Keller Williams",
+    "Location": "West Palm Beach, FL",
+    "LinkedIn URL": "https://www.linkedin.com/in/ACwAAAbgusgByeEaITSRKNlKq-nRbdM1M6v7k1s",
+    "Email": "floridamomcpa@yahoo.com",
+    "Phone": "5615989373",
+    "First Name": "Erica",
+    "Last Name": "Elliott",
+    "City": "West Palm Beach",
+    "State": "FL",
+    "Zip": "33401",
+    "Search Filter": "roi-test-fl-real-estate",
+    "_enriched": {
+      "firstName": "Erica",
+      "lastName": "Elliott",
+      "zipCode": "33401",
+      "zipProvenance": "verified_skip_trace",
+      "gender": "female",
+      "genderConfidence": 90,
+      "phone": "5615989373",
+      "email": "floridamomcpa@yahoo.com",
+      "addressLine2": "FL",
+      "incomePreQual": {
+        "conservative": {
+          "min": 33000,
+          "max": 111000,
+          "p50": 72000
+        },
+        "upside": {
+          "min": 35000,
+          "max": 119000,
+          "p50": 77000
+        },
+        "estimate": {
+          "range": {
+            "min": 33000,
+            "max": 119000
+          },
+          "p50": 75000,
+          "confidence": 0.82,
+          "primaryDrivers": [
+            "career ladder: ic",
+            "sales role",
+            "company: Keller Williams"
+          ],
+          "riskFlags": []
+        },
+        "decision": {
+          "tier": "unknown",
+          "shouldContinueEnrichment": true,
+          "reason": "Income meets $60k threshold: Upside p50 ($77k) >= $60k minimum",
+          "band": "high",
+          "requiresStrongPositives": false,
+          "reasonCode": "INCOME_ABOVE_60K"
+        }
+      },
+      "skipTracingData": {
+        "Status": 200,
+        "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+        "Source": "tps_fsh_298_cch",
+        "Records": 3,
+        "Page": 1,
+        "PeopleDetails": [
+          {
+            "Name": "Erica Elliott",
+            "Link": "https://www.truepeoplesearch.com/find/person/pxn9802u086242r09r84",
+            "Age": 58,
+            "Person ID": "pxn9802u086242r09r84",
+            "Lives in": "West Palm Beach, FL",
+            "Used to live in": "Columbia SC, Chicago IL, Fairview NC, Ash...",
+            "Related to": "Anna Petroski, Chloe Garton, Gerri Tobia, ..."
+          }
+        ],
+        "ageFromPersonDetails": "58"
+      },
+      "skipTracingDisposition": "clear_match",
+      "skipTracingMatchType": "exact_location",
+      "telnyxLookupData": {
+        "success": true,
+        "data": {
+          "data": {
+            "country_code": "US",
+            "national_format": "(561) 598-9373",
+            "phone_number": "+15615989373",
+            "fraud": null,
+            "carrier": {
+              "mobile_country_code": "",
+              "mobile_network_code": "",
+              "name": "CELLCO PARTNERSHIP DBA VERIZON WIRELESS - FL",
+              "type": "mobile",
+              "error_code": null,
+              "normalized_carrier": "Verizon Wireless"
+            },
+            "caller_name": null,
+            "nnid_override": null,
+            "portability": {
+              "lrn": null,
+              "ported_status": "",
+              "ported_date": "",
+              "ocn": "6502",
+              "line_type": "mobile",
+              "spid": "",
+              "spid_carrier_name": "CELLCO PARTNERSHIP DBA VERIZON",
+              "spid_carrier_type": "",
+              "altspid": "",
+              "altspid_carrier_name": "",
+              "altspid_carrier_type": "",
+              "city": "WPALMBEACH",
+              "state": "Florida"
+            },
+            "valid_number": true,
+            "record_type": "number_lookup"
+          }
+        }
+      },
+      "lineType": "mobile",
+      "carrierName": "CELLCO PARTNERSHIP DBA VERIZON WIRELESS - FL",
+      "carrierType": "mobile",
+      "normalizedCarrier": "Verizon Wireless",
+      "decisionReason": "PARTIAL_ENRICHMENT",
+      "decisionCodes": [
+        "PARTIAL_ENRICHMENT",
+        "SOFT_DOWNGRADE_FREE_EMAIL"
+      ],
+      "decisionConfidence": 36,
+      "decisionAction": "partial",
+      "enrichmentLevel": "partial",
+      "dncStatus": "UNKNOWN",
+      "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+      "age": "58"
+    },
+    "Line Type": "mobile",
+    "Carrier": "CELLCO PARTNERSHIP DBA VERIZON WIRELESS - FL",
+    "Normalized Carrier": "Verizon Wireless",
+    "Age": "58",
+    "Gender": "female",
+    "Gender Confidence": 90
+  },
+  "leadSummary": {
+    "name": "Erica Elliott",
+    "phone": "5615989373",
+    "dobOrAge": "58",
+    "zipcode": "33401",
+    "state": "FL",
+    "city": "West Palm Beach",
+    "email": "floridamomcpa@yahoo.com",
+    "dncStatus": "UNKNOWN",
+    "income": 75000,
+    "lineType": "mobile",
+    "carrier": "CELLCO PARTNERSHIP DBA VERIZON WIRELESS - FL",
+    "normalizedCarrier": "Verizon Wireless",
+    "searchFilter": "roi-test-fl-real-estate",
+    "dateScraped": "2026-03-12",
+    "linkedinUrl": "https://www.linkedin.com/in/ACwAAAbgusgByeEaITSRKNlKq-nRbdM1M6v7k1s",
+    "zipProvenance": "verified_skip_trace",
+    "skipTracingDisposition": "clear_match"
+  }
+}

@@ -1,0 +1,168 @@
+{
+  "metadata": {
+    "savedAt": "2026-03-10T02:04:28.727Z",
+    "leadKey": "linkedin:https://www.linkedin.com/in/ACwAAAEWh9EBZAR5vW74uJlNa_cHyy5a3ZntfCs"
+  },
+  "enrichedRow": {
+    "Name": "Stephanie Daniels",
+    "Title": "Senior Vice President, Enterprise Operations",
+    "Company": "Ovation Healthcare",
+    "Location": "North Port, Florida, United States",
+    "LinkedIn URL": "https://www.linkedin.com/in/ACwAAAEWh9EBZAR5vW74uJlNa_cHyy5a3ZntfCs",
+    "Email": "stephmj7@gmail.com",
+    "Phone": "6157677189",
+    "First Name": "Stephanie",
+    "Last Name": "Daniels",
+    "City": "North Port",
+    "State": "FL",
+    "Zip": "37167",
+    "Search Filter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+    "_enriched": {
+      "firstName": "Stephanie",
+      "lastName": "Daniels",
+      "zipCode": "37167",
+      "zipProvenance": "verified_skip_trace",
+      "gender": "female",
+      "genderConfidence": 98,
+      "phone": "6157677189",
+      "email": "stephmj7@gmail.com",
+      "addressLine2": "FL",
+      "incomePreQual": {
+        "conservative": {
+          "min": 526000,
+          "max": 826000,
+          "p50": 676000
+        },
+        "upside": {
+          "min": 582000,
+          "max": 907000,
+          "p50": 744000
+        },
+        "estimate": {
+          "range": {
+            "min": 526000,
+            "max": 907000
+          },
+          "p50": 710000,
+          "confidence": 0.7,
+          "primaryDrivers": [
+            "career ladder: exec",
+            "operations role",
+            "company: Ovation Healthcare"
+          ],
+          "riskFlags": [
+            "High-level title but company type may not support it"
+          ]
+        },
+        "decision": {
+          "tier": "unknown",
+          "shouldContinueEnrichment": true,
+          "reason": "Income meets $60k threshold: Upside p50 ($744k) >= $60k minimum",
+          "band": "high",
+          "requiresStrongPositives": false,
+          "reasonCode": "INCOME_ABOVE_60K"
+        }
+      },
+      "skipTracingData": {
+        "Status": 200,
+        "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+        "Source": "tps_fsh_366_cch",
+        "Records": 1,
+        "Page": 1,
+        "PeopleDetails": [
+          {
+            "Name": "Stephanie Daniels",
+            "Link": "https://www.truepeoplesearch.com/find/person/pxnull298l66869060r6",
+            "Age": 56,
+            "Person ID": "pxnull298l66869060r6",
+            "Lives in": "Smyrna, TN",
+            "Used to live in": "North Port FL, Milan TN, Franklin TN, Dal...",
+            "Related to": "Anthony Martin, Carl Daniels, Ethan Martin..."
+          }
+        ],
+        "ageFromPersonDetails": "56"
+      },
+      "skipTracingDisposition": "clear_match",
+      "skipTracingMatchType": "name_only",
+      "telnyxLookupData": {
+        "success": true,
+        "data": {
+          "data": {
+            "country_code": "US",
+            "national_format": "(615) 767-7189",
+            "phone_number": "+16157677189",
+            "fraud": null,
+            "carrier": {
+              "mobile_country_code": "",
+              "mobile_network_code": "",
+              "name": "Cingular Wireless/2",
+              "type": "mobile",
+              "error_code": null,
+              "normalized_carrier": "AT&T"
+            },
+            "caller_name": null,
+            "nnid_override": null,
+            "portability": {
+              "lrn": "615502XXXX",
+              "ported_status": "",
+              "ported_date": "",
+              "ocn": "6214",
+              "line_type": "mobile",
+              "spid": "",
+              "spid_carrier_name": "NEW CINGULAR WIRELESS PCS, LLC",
+              "spid_carrier_type": "",
+              "altspid": "",
+              "altspid_carrier_name": "",
+              "altspid_carrier_type": "",
+              "city": "GALLATIN",
+              "state": "Tennessee"
+            },
+            "valid_number": true,
+            "record_type": "number_lookup"
+          }
+        }
+      },
+      "lineType": "mobile",
+      "carrierName": "Cingular Wireless/2",
+      "carrierType": "mobile",
+      "normalizedCarrier": "AT&T",
+      "decisionReason": "FULL_ENRICHMENT",
+      "decisionCodes": [
+        "FULL_ENRICHMENT",
+        "SOFT_DOWNGRADE_FREE_EMAIL"
+      ],
+      "decisionConfidence": 63,
+      "decisionAction": "full",
+      "enrichmentLevel": "full",
+      "dncStatus": "UNKNOWN",
+      "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+      "age": "56"
+    },
+    "Line Type": "mobile",
+    "Carrier": "Cingular Wireless/2",
+    "Normalized Carrier": "AT&T",
+    "Age": "56",
+    "Gender": "female",
+    "Gender Confidence": 98
+  },
+  "leadSummary": {
+    "name": "Stephanie Daniels",
+    "phone": "6157677189",
+    "dobOrAge": "56",
+    "zipcode": "37167",
+    "state": "FL",
+    "city": "North Port",
+    "email": "stephmj7@gmail.com",
+    "dncStatus": "UNKNOWN",
+    "income": 710000,
+    "lineType": "mobile",
+    "carrier": "Cingular Wireless/2",
+    "normalizedCarrier": "AT&T",
+    "searchFilter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+    "dateScraped": "2026-03-10",
+    "linkedinUrl": "https://www.linkedin.com/in/ACwAAAEWh9EBZAR5vW74uJlNa_cHyy5a3ZntfCs",
+    "zipProvenance": "verified_skip_trace",
+    "skipTracingDisposition": "clear_match",
+    "needsVerification": true
+  }
+}

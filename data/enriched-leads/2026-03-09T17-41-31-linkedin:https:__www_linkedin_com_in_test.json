@@ -1,0 +1,160 @@
+{
+  "metadata": {
+    "savedAt": "2026-03-09T17:41:31.388Z",
+    "leadKey": "linkedin:https://www.linkedin.com/in/test"
+  },
+  "enrichedRow": {
+    "Name": "Daniela Grozeva",
+    "Title": "Real Estate Broker Associate",
+    "Company": "Epique Realty",
+    "Location": "Cape Coral, FL, United States",
+    "LinkedIn URL": "https://www.linkedin.com/in/test",
+    "Email": "danielaghubavela@abv.bg",
+    "Phone": "2023447353",
+    "First Name": "Daniela",
+    "Last Name": "Grozeva",
+    "City": "Cape Coral",
+    "State": "FL",
+    "Zip": "33914",
+    "Search Filter": "test",
+    "_enriched": {
+      "firstName": "Daniela",
+      "lastName": "Grozeva",
+      "zipCode": "33914",
+      "zipProvenance": "verified_skip_trace",
+      "gender": "female",
+      "genderConfidence": 98,
+      "phone": "2023447353",
+      "email": "danielaghubavela@abv.bg",
+      "addressLine2": "FL",
+      "incomePreQual": {
+        "conservative": {
+          "min": 31000,
+          "max": 109000,
+          "p50": 70000
+        },
+        "upside": {
+          "min": 28000,
+          "max": 112000,
+          "p50": 70000
+        },
+        "estimate": {
+          "range": {
+            "min": 31000,
+            "max": 112000
+          },
+          "p50": 70000,
+          "confidence": 0.6,
+          "primaryDrivers": [
+            "career ladder: ic",
+            "company: Epique Realty"
+          ],
+          "riskFlags": []
+        },
+        "decision": {
+          "tier": "unknown",
+          "shouldContinueEnrichment": true,
+          "reason": "Income meets $60k threshold: Upside p50 ($70k) >= $60k minimum",
+          "band": "high",
+          "requiresStrongPositives": false,
+          "reasonCode": "INCOME_ABOVE_60K"
+        }
+      },
+      "skipTracingData": {
+        "Status": 200,
+        "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+        "Source": "tps_fsh_386_cch",
+        "Records": 1,
+        "Page": 1,
+        "PeopleDetails": [
+          {
+            "Name": "Daniela Grozeva",
+            "Link": "https://www.truepeoplesearch.com/find/person/pl004ru6nu9lnn4ll9u2",
+            "Age": 40,
+            "Person ID": "pl004ru6nu9lnn4ll9u2",
+            "Lives in": "Cape Coral, FL",
+            "Used to live in": "Fort Myers FL, Springfield VA, Alexandria...",
+            "Related to": ""
+          }
+        ],
+        "ageFromPersonDetails": "40"
+      },
+      "skipTracingDisposition": "clear_match",
+      "telnyxLookupData": {
+        "success": true,
+        "data": {
+          "data": {
+            "country_code": "US",
+            "national_format": "(202) 344-7353",
+            "phone_number": "+12023447353",
+            "fraud": null,
+            "carrier": {
+              "mobile_country_code": "",
+              "mobile_network_code": "",
+              "name": "Verizon Wireless:6006 - SVR/2",
+              "type": "mobile",
+              "error_code": null,
+              "normalized_carrier": "Verizon Wireless"
+            },
+            "caller_name": null,
+            "nnid_override": null,
+            "portability": {
+              "lrn": "202441XXXX",
+              "ported_status": "",
+              "ported_date": "",
+              "ocn": "6402",
+              "line_type": "mobile",
+              "spid": "",
+              "spid_carrier_name": "CELLCO PARTNERSHIP DBA VERIZON",
+              "spid_carrier_type": "",
+              "altspid": "",
+              "altspid_carrier_name": "",
+              "altspid_carrier_type": "",
+              "city": "WSHNGTNZN1",
+              "state": ""
+            },
+            "valid_number": true,
+            "record_type": "number_lookup"
+          }
+        }
+      },
+      "lineType": "mobile",
+      "carrierName": "Verizon Wireless:6006 - SVR/2",
+      "carrierType": "mobile",
+      "normalizedCarrier": "Verizon Wireless",
+      "decisionReason": "FULL_ENRICHMENT",
+      "decisionCodes": [
+        "FULL_ENRICHMENT"
+      ],
+      "decisionConfidence": 60,
+      "decisionAction": "full",
+      "enrichmentLevel": "full",
+      "dncStatus": "UNKNOWN",
+      "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+      "age": "40"
+    },
+    "Line Type": "mobile",
+    "Carrier": "Verizon Wireless:6006 - SVR/2",
+    "Normalized Carrier": "Verizon Wireless",
+    "Age": "40",
+    "Gender": "female",
+    "Gender Confidence": 98
+  },
+  "leadSummary": {
+    "name": "Daniela Grozeva",
+    "phone": "2023447353",
+    "dobOrAge": "40",
+    "zipcode": "33914",
+    "state": "FL",
+    "city": "Cape Coral",
+    "email": "danielaghubavela@abv.bg",
+    "dncStatus": "UNKNOWN",
+    "income": 70000,
+    "lineType": "mobile",
+    "carrier": "Verizon Wireless:6006 - SVR/2",
+    "normalizedCarrier": "Verizon Wireless",
+    "searchFilter": "test",
+    "dateScraped": "2026-03-09",
+    "linkedinUrl": "https://www.linkedin.com/in/test"
+  }
+}

@@ -30,7 +30,7 @@ app.prepare().then(async () => {
     const parsedUrl = parse(req.url || '', true);
     const pathname = parsedUrl.pathname || '';
     const isWarnScrape = pathname === '/api/warn/scrape';
-    const timeoutMs = isWarnScrape ? 130000 : 30000; // 130s for WARN scrape (Python subprocess), 30s for others
+    const timeoutMs = isWarnScrape ? 130000 : 30000; // 130s for WARN scrape parsing, 30s for others
     req.setTimeout(timeoutMs);
     res.setTimeout(timeoutMs);
 

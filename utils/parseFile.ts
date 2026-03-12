@@ -20,11 +20,11 @@ export interface ParseResult {
 }
 
 /**
- * Parses a CSV file using papaparse
+ * Parses CSV content (string). Use from server or client.
  * @param fileContent - The CSV file content as string
  * @returns ParsedData with headers and rows
  */
-function parseCSV(fileContent: string): ParsedData {
+export function parseCSVFromString(fileContent: string): ParsedData {
   const result = Papa.parse(fileContent, {
     header: true,
     skipEmptyLines: true,
@@ -48,12 +48,12 @@ function parseCSV(fileContent: string): ParsedData {
 }
 
 /**
- * Parses an Excel file using xlsx
+ * Parses Excel content from ArrayBuffer. Use from server or client.
  * @param arrayBuffer - The Excel file content as ArrayBuffer
  * @param sheetIndex - Optional sheet index (default: 0 for first sheet)
  * @returns ParsedData with headers and rows
  */
-function parseExcel(arrayBuffer: ArrayBuffer, sheetIndex: number = 0): ParsedData {
+export function parseExcelFromBuffer(arrayBuffer: ArrayBuffer, sheetIndex: number = 0): ParsedData {
   const workbook = XLSX.read(arrayBuffer, { type: 'array' });
   const sheetNames = workbook.SheetNames;
   
@@ -115,10 +115,10 @@ export async function parseFile(file: File): Promise<ParseResult> {
 
     if (fileTypeInfo.type === 'csv') {
       const fileContent = await readFileAsText(file);
-      parsedData = parseCSV(fileContent);
+      parsedData = parseCSVFromString(fileContent);
     } else if (fileTypeInfo.type === 'excel') {
       const arrayBuffer = await readFileAsArrayBuffer(file);
-      parsedData = parseExcel(arrayBuffer);
+      parsedData = parseExcelFromBuffer(arrayBuffer);
     } else {
       return {
         success: false,

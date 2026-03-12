@@ -10,6 +10,17 @@
         "--header",
         "x-api-key: 23e5cf67c6msh42e5d1ffe1031d1p160ee7jsn51d55368d962"
       ]
+    },
+    "RapidAPI Hub - Linkedin Sales Navigator Scraper API": {
+      "command": "npx",
+      "args": [
+        "mcp-remote",
+        "https://mcp.rapidapi.com",
+        "--header",
+        "x-api-host: realtime-linkedin-sales-navigator-data.p.rapidapi.com",
+        "--header",
+        "x-api-key: 23e5cf67c6msh42e5d1ffe1031d1p160ee7jsn51d55368d962"
+      ]
     }
   }
 }

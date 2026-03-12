@@ -1,0 +1,161 @@
+{
+  "metadata": {
+    "savedAt": "2026-03-10T02:04:09.799Z",
+    "leadKey": "linkedin:https://www.linkedin.com/in/ACwAADy8soYBU1KJn1KN0fQtahMnJ-jCsYTsiBk"
+  },
+  "enrichedRow": {
+    "Name": "Engin Ayaz",
+    "Title": "President",
+    "Company": "Palm Beach Elevator",
+    "Location": "North Palm Beach, Florida, United States",
+    "LinkedIn URL": "https://www.linkedin.com/in/ACwAADy8soYBU1KJn1KN0fQtahMnJ-jCsYTsiBk",
+    "Email": "eayaz1@gmail.com",
+    "Phone": "5613174039",
+    "First Name": "Engin",
+    "Last Name": "Ayaz",
+    "City": "North Palm Beach",
+    "State": "FL",
+    "Zip": "33408",
+    "Search Filter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+    "_enriched": {
+      "firstName": "Engin",
+      "lastName": "Ayaz",
+      "zipCode": "33408",
+      "zipProvenance": "verified_skip_trace",
+      "phone": "5613174039",
+      "email": "eayaz1@gmail.com",
+      "addressLine2": "FL",
+      "incomePreQual": {
+        "conservative": {
+          "min": 115000,
+          "max": 415000,
+          "p50": 265000
+        },
+        "upside": {
+          "min": 130000,
+          "max": 380000,
+          "p50": 292000
+        },
+        "estimate": {
+          "range": {
+            "min": 115000,
+            "max": 380000
+          },
+          "p50": 279000,
+          "confidence": 0.48,
+          "primaryDrivers": [
+            "career ladder: exec",
+            "company: Palm Beach Elevator"
+          ],
+          "riskFlags": [
+            "High-level title but company type may not support it"
+          ]
+        },
+        "decision": {
+          "tier": "unknown",
+          "shouldContinueEnrichment": true,
+          "reason": "Income meets $60k threshold: Upside p50 ($292k) >= $60k minimum",
+          "band": "high",
+          "requiresStrongPositives": false,
+          "reasonCode": "INCOME_ABOVE_60K"
+        }
+      },
+      "skipTracingData": {
+        "Status": 200,
+        "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+        "Source": "tps_fsh_724_cch",
+        "Records": 1,
+        "Page": 1,
+        "PeopleDetails": [
+          {
+            "Name": "Engin Ayaz",
+            "Link": "https://www.truepeoplesearch.com/find/person/pu2629nl8uu2nu40n04",
+            "Age": 37,
+            "Person ID": "pu2629nl8uu2nu40n04",
+            "Lives in": "North Palm Beach, FL",
+            "Used to live in": "Suwanee GA, Orlando FL, Fort Pierce FL, B...",
+            "Related to": "Cafer Ayaz, Cigdem Gali, Danielle Usiadek,..."
+          }
+        ],
+        "ageFromPersonDetails": "37"
+      },
+      "skipTracingDisposition": "clear_match",
+      "skipTracingMatchType": "exact_location",
+      "telnyxLookupData": {
+        "success": true,
+        "data": {
+          "data": {
+            "country_code": "US",
+            "national_format": "(561) 317-4039",
+            "phone_number": "+15613174039",
+            "fraud": null,
+            "carrier": {
+              "mobile_country_code": "",
+              "mobile_network_code": "",
+              "name": "T-Mobile US-SVR-10X/2",
+              "type": "mobile",
+              "error_code": null,
+              "normalized_carrier": ""
+            },
+            "caller_name": null,
+            "nnid_override": null,
+            "portability": {
+              "lrn": "561827XXXX",
+              "ported_status": "",
+              "ported_date": "",
+              "ocn": "6889",
+              "line_type": "mobile",
+              "spid": "",
+              "spid_carrier_name": "OMNIPOINT MIAMI E LICENSE, LLC",
+              "spid_carrier_type": "",
+              "altspid": "",
+              "altspid_carrier_name": "",
+              "altspid_carrier_type": "",
+              "city": "WPALMBEACH",
+              "state": "Florida"
+            },
+            "valid_number": true,
+            "record_type": "number_lookup"
+          }
+        }
+      },
+      "lineType": "mobile",
+      "carrierName": "T-Mobile US-SVR-10X/2",
+      "carrierType": "mobile",
+      "normalizedCarrier": "",
+      "decisionReason": "PARTIAL_ENRICHMENT",
+      "decisionCodes": [
+        "PARTIAL_ENRICHMENT",
+        "SOFT_DOWNGRADE_FREE_EMAIL"
+      ],
+      "decisionConfidence": 36,
+      "decisionAction": "partial",
+      "enrichmentLevel": "partial",
+      "dncStatus": "UNKNOWN",
+      "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+      "age": "37"
+    },
+    "Line Type": "mobile",
+    "Carrier": "T-Mobile US-SVR-10X/2",
+    "Age": "37"
+  },
+  "leadSummary": {
+    "name": "Engin Ayaz",
+    "phone": "5613174039",
+    "dobOrAge": "37",
+    "zipcode": "33408",
+    "state": "FL",
+    "city": "North Palm Beach",
+    "email": "eayaz1@gmail.com",
+    "dncStatus": "UNKNOWN",
+    "income": 279000,
+    "lineType": "mobile",
+    "carrier": "T-Mobile US-SVR-10X/2",
+    "normalizedCarrier": "",
+    "searchFilter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+    "dateScraped": "2026-03-10",
+    "linkedinUrl": "https://www.linkedin.com/in/ACwAADy8soYBU1KJn1KN0fQtahMnJ-jCsYTsiBk",
+    "zipProvenance": "verified_skip_trace",
+    "skipTracingDisposition": "clear_match"
+  }
+}

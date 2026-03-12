@@ -1,0 +1,166 @@
+{
+  "metadata": {
+    "savedAt": "2026-03-09T19:49:42.378Z",
+    "leadKey": "linkedin:https://www.linkedin.com/in/ACwAACP0B_wBFmMbpqr-MkMy8fymNYEl_h0qJSM"
+  },
+  "enrichedRow": {
+    "Name": "Jamie Ciesla",
+    "Title": "Executive Director",
+    "Company": "At Home in Alexandria",
+    "Location": "Alexandria, Virginia, United States",
+    "LinkedIn URL": "https://www.linkedin.com/in/ACwAACP0B_wBFmMbpqr-MkMy8fymNYEl_h0qJSM",
+    "Email": "jamie.ciesla@yahoo.com",
+    "Phone": "2622101025",
+    "First Name": "Jamie",
+    "Last Name": "Ciesla",
+    "City": "Alexandria",
+    "State": "VA",
+    "Zip": "22302",
+    "Search Filter": "Location: Alexandria, Virginia | Changed Jobs (90 days)",
+    "_enriched": {
+      "firstName": "Jamie",
+      "lastName": "Ciesla",
+      "zipCode": "22302",
+      "zipProvenance": "verified_skip_trace",
+      "gender": "male",
+      "genderConfidence": 98,
+      "phone": "2622101025",
+      "email": "jamie.ciesla@yahoo.com",
+      "addressLine2": "VA",
+      "incomePreQual": {
+        "conservative": {
+          "min": 99000,
+          "max": 267000,
+          "p50": 183000
+        },
+        "upside": {
+          "min": 135000,
+          "max": 281000,
+          "p50": 216000
+        },
+        "estimate": {
+          "range": {
+            "min": 99000,
+            "max": 281000
+          },
+          "p50": 200000,
+          "confidence": 0.7,
+          "primaryDrivers": [
+            "career ladder: director",
+            "director role",
+            "company: At Home in Alexandria"
+          ],
+          "riskFlags": [
+            "High-level title but company type may not support it"
+          ]
+        },
+        "decision": {
+          "tier": "unknown",
+          "shouldContinueEnrichment": true,
+          "reason": "Income meets $60k threshold: Upside p50 ($216k) >= $60k minimum",
+          "band": "high",
+          "requiresStrongPositives": false,
+          "reasonCode": "INCOME_ABOVE_60K"
+        }
+      },
+      "skipTracingData": {
+        "Status": 200,
+        "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+        "Source": "tps_fsh_310_cch",
+        "Records": 2,
+        "Page": 1,
+        "PeopleDetails": [
+          {
+            "Name": "Jamie Ciesla",
+            "Link": "https://www.truepeoplesearch.com/find/person/pxn6u4u2l98l062l8ull4",
+            "Age": 49,
+            "Person ID": "pxn6u4u2l98l062l8ull4",
+            "Lives in": "Alexandria, VA",
+            "Used to live in": "Ann Arbor MI, New York NY, Plymouth MI, B...",
+            "Related to": "Adam Ciesla, David Ciesla, Mathew Ciesla, ..."
+          }
+        ],
+        "ageFromPersonDetails": "49"
+      },
+      "skipTracingDisposition": "clear_match",
+      "telnyxLookupData": {
+        "success": true,
+        "data": {
+          "data": {
+            "country_code": "US",
+            "national_format": "(262) 210-1025",
+            "phone_number": "+12622101025",
+            "fraud": null,
+            "carrier": {
+              "mobile_country_code": "",
+              "mobile_network_code": "",
+              "name": "UNITED STATES CELLULAR - WI",
+              "type": "mobile",
+              "error_code": null,
+              "normalized_carrier": "U.S. Cellular"
+            },
+            "caller_name": null,
+            "nnid_override": null,
+            "portability": {
+              "lrn": null,
+              "ported_status": "",
+              "ported_date": "",
+              "ocn": "6274",
+              "line_type": "mobile",
+              "spid": "",
+              "spid_carrier_name": "UNITED STATES CELLULAR CORP. -",
+              "spid_carrier_type": "",
+              "altspid": "",
+              "altspid_carrier_name": "",
+              "altspid_carrier_type": "",
+              "city": "BURLINGTON",
+              "state": "Wisconsin"
+            },
+            "valid_number": true,
+            "record_type": "number_lookup"
+          }
+        }
+      },
+      "lineType": "mobile",
+      "carrierName": "UNITED STATES CELLULAR - WI",
+      "carrierType": "mobile",
+      "normalizedCarrier": "U.S. Cellular",
+      "decisionReason": "FULL_ENRICHMENT",
+      "decisionCodes": [
+        "FULL_ENRICHMENT",
+        "SOFT_DOWNGRADE_FREE_EMAIL"
+      ],
+      "decisionConfidence": 63,
+      "decisionAction": "full",
+      "enrichmentLevel": "full",
+      "dncStatus": "UNKNOWN",
+      "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+      "age": "49"
+    },
+    "Line Type": "mobile",
+    "Carrier": "UNITED STATES CELLULAR - WI",
+    "Normalized Carrier": "U.S. Cellular",
+    "Age": "49",
+    "Gender": "male",
+    "Gender Confidence": 98
+  },
+  "leadSummary": {
+    "name": "Jamie Ciesla",
+    "phone": "2622101025",
+    "dobOrAge": "49",
+    "zipcode": "22302",
+    "state": "VA",
+    "city": "Alexandria",
+    "email": "jamie.ciesla@yahoo.com",
+    "dncStatus": "UNKNOWN",
+    "income": 200000,
+    "lineType": "mobile",
+    "carrier": "UNITED STATES CELLULAR - WI",
+    "normalizedCarrier": "U.S. Cellular",
+    "searchFilter": "Location: Alexandria, Virginia | Changed Jobs (90 days)",
+    "dateScraped": "2026-03-09",
+    "linkedinUrl": "https://www.linkedin.com/in/ACwAACP0B_wBFmMbpqr-MkMy8fymNYEl_h0qJSM",
+    "zipProvenance": "verified_skip_trace",
+    "skipTracingDisposition": "clear_match"
+  }
+}

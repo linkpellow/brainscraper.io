@@ -1,0 +1,165 @@
+{
+  "metadata": {
+    "savedAt": "2026-03-10T19:09:22.529Z",
+    "leadKey": "linkedin:https://www.linkedin.com/in/ACwAAACbqwABZ8hEGsVm0RDBeNvMLkKJ9wegUTg"
+  },
+  "enrichedRow": {
+    "Name": "Jacob Slevin",
+    "Title": "CEO",
+    "Company": "FuseProp",
+    "Location": "Boca Raton, Florida, United States",
+    "LinkedIn URL": "https://www.linkedin.com/in/ACwAAACbqwABZ8hEGsVm0RDBeNvMLkKJ9wegUTg",
+    "Email": "werbs@att.net",
+    "Phone": "5616543028",
+    "First Name": "Jacob",
+    "Last Name": "Slevin",
+    "City": "Boca Raton",
+    "State": "FL",
+    "Zip": "33434",
+    "Search Filter": "Location: Miami, FL | Industry: Real Estate",
+    "_enriched": {
+      "firstName": "Jacob",
+      "lastName": "Slevin",
+      "zipCode": "33434",
+      "zipProvenance": "verified_skip_trace",
+      "gender": "male",
+      "genderConfidence": 98,
+      "phone": "5616543028",
+      "email": "werbs@att.net",
+      "addressLine2": "FL",
+      "incomePreQual": {
+        "conservative": {
+          "min": 313000,
+          "max": 613000,
+          "p50": 463000
+        },
+        "upside": {
+          "min": 347000,
+          "max": 662000,
+          "p50": 509000
+        },
+        "estimate": {
+          "range": {
+            "min": 313000,
+            "max": 662000
+          },
+          "p50": 486000,
+          "confidence": 0.48,
+          "primaryDrivers": [
+            "career ladder: exec",
+            "company: FuseProp"
+          ],
+          "riskFlags": [
+            "High-level title but company type may not support it"
+          ]
+        },
+        "decision": {
+          "tier": "unknown",
+          "shouldContinueEnrichment": true,
+          "reason": "Income meets $60k threshold: Upside p50 ($509k) >= $60k minimum",
+          "band": "high",
+          "requiresStrongPositives": false,
+          "reasonCode": "INCOME_ABOVE_60K"
+        }
+      },
+      "skipTracingData": {
+        "Status": 200,
+        "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+        "Source": "tps_fsh_281_cch",
+        "Records": 2,
+        "Page": 1,
+        "PeopleDetails": [
+          {
+            "Name": "Jacob Slevin",
+            "Link": "https://www.truepeoplesearch.com/find/person/px2nrurr4ll2lnuu280",
+            "Age": 40,
+            "Person ID": "px2nrurr4ll2lnuu280",
+            "Lives in": "Boca Raton, FL",
+            "Used to live in": "",
+            "Related to": "Andrew Werber, Benjamin Werber, Daniel Wer..."
+          }
+        ],
+        "ageFromPersonDetails": "40"
+      },
+      "skipTracingDisposition": "clear_match",
+      "skipTracingMatchType": "exact_location",
+      "telnyxLookupData": {
+        "success": true,
+        "data": {
+          "data": {
+            "country_code": "US",
+            "national_format": "(561) 654-3028",
+            "phone_number": "+15616543028",
+            "fraud": null,
+            "carrier": {
+              "mobile_country_code": "",
+              "mobile_network_code": "",
+              "name": "Cingular Wireless/2",
+              "type": "mobile",
+              "error_code": null,
+              "normalized_carrier": "AT&T"
+            },
+            "caller_name": null,
+            "nnid_override": null,
+            "portability": {
+              "lrn": "561319XXXX",
+              "ported_status": "",
+              "ported_date": "",
+              "ocn": "6214",
+              "line_type": "mobile",
+              "spid": "",
+              "spid_carrier_name": "NEW CINGULAR WIRELESS PCS, LLC",
+              "spid_carrier_type": "",
+              "altspid": "",
+              "altspid_carrier_name": "",
+              "altspid_carrier_type": "",
+              "city": "WPALMBEACH",
+              "state": "Florida"
+            },
+            "valid_number": true,
+            "record_type": "number_lookup"
+          }
+        }
+      },
+      "lineType": "mobile",
+      "carrierName": "Cingular Wireless/2",
+      "carrierType": "mobile",
+      "normalizedCarrier": "AT&T",
+      "decisionReason": "FULL_ENRICHMENT",
+      "decisionCodes": [
+        "FULL_ENRICHMENT"
+      ],
+      "decisionConfidence": 87,
+      "decisionAction": "full",
+      "enrichmentLevel": "full",
+      "dncStatus": "UNKNOWN",
+      "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+      "age": "40"
+    },
+    "Line Type": "mobile",
+    "Carrier": "Cingular Wireless/2",
+    "Normalized Carrier": "AT&T",
+    "Age": "40",
+    "Gender": "male",
+    "Gender Confidence": 98
+  },
+  "leadSummary": {
+    "name": "Jacob Slevin",
+    "phone": "5616543028",
+    "dobOrAge": "40",
+    "zipcode": "33434",
+    "state": "FL",
+    "city": "Boca Raton",
+    "email": "werbs@att.net",
+    "dncStatus": "UNKNOWN",
+    "income": 486000,
+    "lineType": "mobile",
+    "carrier": "Cingular Wireless/2",
+    "normalizedCarrier": "AT&T",
+    "searchFilter": "Location: Miami, FL | Industry: Real Estate",
+    "dateScraped": "2026-03-10",
+    "linkedinUrl": "https://www.linkedin.com/in/ACwAAACbqwABZ8hEGsVm0RDBeNvMLkKJ9wegUTg",
+    "zipProvenance": "verified_skip_trace",
+    "skipTracingDisposition": "clear_match"
+  }
+}

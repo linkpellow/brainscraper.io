@@ -1,0 +1,182 @@
+{
+  "metadata": {
+    "savedAt": "2026-03-12T01:38:22.324Z",
+    "leadKey": "linkedin:https://www.linkedin.com/in/ACwAAAbTEuIBrvwK2vwI5_oelpgkEMfxQFSQ9ho"
+  },
+  "enrichedRow": {
+    "Name": "Simon Reynolds MBA",
+    "Title": "Realtor",
+    "Company": "William Raveis South Florida",
+    "Location": "Boca Raton, FL",
+    "LinkedIn URL": "https://www.linkedin.com/in/ACwAAAbTEuIBrvwK2vwI5_oelpgkEMfxQFSQ9ho",
+    "Email": "simon24feb@gmail.com",
+    "Phone": "5616098987",
+    "First Name": "Simon",
+    "Last Name": "Reynolds MBA",
+    "City": "Boca Raton",
+    "State": "FL",
+    "Zip": "33441",
+    "Search Filter": "roi-test-fl-real-estate",
+    "_enriched": {
+      "firstName": "Simon",
+      "lastName": "Reynolds",
+      "zipCode": "33441",
+      "zipProvenance": "verified_skip_trace",
+      "phone": "5616098987",
+      "email": "simon24feb@gmail.com",
+      "addressLine2": "FL",
+      "incomePreQual": {
+        "conservative": {
+          "min": 30000,
+          "max": 115000,
+          "p50": 70000
+        },
+        "upside": {
+          "min": 21000,
+          "max": 119000,
+          "p50": 70000
+        },
+        "estimate": {
+          "range": {
+            "min": 30000,
+            "max": 119000
+          },
+          "p50": 70000,
+          "confidence": 0.33,
+          "primaryDrivers": [
+            "company: William Raveis South Florida"
+          ],
+          "riskFlags": [
+            "Job title seniority unclear"
+          ]
+        },
+        "decision": {
+          "tier": "unknown",
+          "shouldContinueEnrichment": true,
+          "reason": "Income meets $60k threshold: Upside p50 ($70k) >= $60k minimum",
+          "band": "high",
+          "requiresStrongPositives": false,
+          "reasonCode": "INCOME_ABOVE_60K"
+        }
+      },
+      "skipTracingData": {
+        "Status": 200,
+        "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+        "Source": "tps_fsh_293_cch",
+        "Records": 2,
+        "Page": 1,
+        "PeopleDetails": [
+          {
+            "Name": "Simon Reynolds",
+            "Link": "https://www.truepeoplesearch.com/find/person/p60900rn282n4n89892r",
+            "Age": 60,
+            "Person ID": "p60900rn282n4n89892r",
+            "Lives in": "Deerfield Beach, FL",
+            "Used to live in": "Boca Raton FL, West Palm Beach FL",
+            "Related to": "David Reynolds, Geraldine Reynolds"
+          }
+        ],
+        "ageFromPersonDetails": "60"
+      },
+      "skipTracingDisposition": "ambiguous_used_first",
+      "skipTracingCandidatesForReview": [
+        {
+          "Name": "Simon Reynolds",
+          "Link": "https://www.truepeoplesearch.com/find/person/p60900rn282n4n89892r",
+          "Age": 60,
+          "Person ID": "p60900rn282n4n89892r",
+          "Lives in": "Deerfield Beach, FL",
+          "Used to live in": "Boca Raton FL, West Palm Beach FL",
+          "Related to": "David Reynolds, Geraldine Reynolds"
+        },
+        {
+          "Name": "Simon Reynolds",
+          "Link": "https://www.truepeoplesearch.com/find/person/p6068rlu98nl890r8r6",
+          "Age": 58,
+          "Person ID": "p6068rlu98nl890r8r6",
+          "Lives in": "Delray Beach, FL",
+          "Used to live in": "Tampa FL, Mesa AZ, Beverly Hills CA, Jack...",
+          "Related to": "Christian Reynolds, David Reynolds, Patti ..."
+        }
+      ],
+      "skipTracingMatchType": "ambiguous_used_first",
+      "age": "60",
+      "telnyxLookupData": {
+        "success": true,
+        "data": {
+          "data": {
+            "country_code": "US",
+            "national_format": "(561) 609-8987",
+            "phone_number": "+15616098987",
+            "fraud": null,
+            "carrier": {
+              "mobile_country_code": "",
+              "mobile_network_code": "",
+              "name": "T-Mobile US-SVR-10X/2",
+              "type": "mobile",
+              "error_code": null,
+              "normalized_carrier": ""
+            },
+            "caller_name": null,
+            "nnid_override": null,
+            "portability": {
+              "lrn": "561306XXXX",
+              "ported_status": "",
+              "ported_date": "",
+              "ocn": "6889",
+              "line_type": "mobile",
+              "spid": "",
+              "spid_carrier_name": "OMNIPOINT MIAMI E LICENSE, LLC",
+              "spid_carrier_type": "",
+              "altspid": "",
+              "altspid_carrier_name": "",
+              "altspid_carrier_type": "",
+              "city": "DELRAY BCH",
+              "state": "Florida"
+            },
+            "valid_number": true,
+            "record_type": "number_lookup"
+          }
+        }
+      },
+      "lineType": "mobile",
+      "carrierName": "T-Mobile US-SVR-10X/2",
+      "carrierType": "mobile",
+      "normalizedCarrier": "",
+      "decisionReason": "AGE_OVER_59",
+      "decisionCodes": [
+        "AGE_OVER_59"
+      ],
+      "decisionConfidence": 37,
+      "decisionAction": "skip",
+      "enrichmentLevel": "none",
+      "dncStatus": "UNKNOWN",
+      "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box."
+    },
+    "Line Type": "mobile",
+    "Carrier": "T-Mobile US-SVR-10X/2",
+    "Age": "60"
+  },
+  "leadSummary": {
+    "name": "Simon Reynolds MBA",
+    "phone": "5616098987",
+    "dobOrAge": "60",
+    "zipcode": "33441",
+    "state": "FL",
+    "city": "Boca Raton",
+    "email": "simon24feb@gmail.com",
+    "dncStatus": "UNKNOWN",
+    "income": 70000,
+    "lineType": "mobile",
+    "carrier": "T-Mobile US-SVR-10X/2",
+    "normalizedCarrier": "",
+    "searchFilter": "roi-test-fl-real-estate",
+    "dateScraped": "2026-03-12",
+    "linkedinUrl": "https://www.linkedin.com/in/ACwAAAbTEuIBrvwK2vwI5_oelpgkEMfxQFSQ9ho",
+    "zipProvenance": "verified_skip_trace",
+    "skipTracingDisposition": "ambiguous_used_first",
+    "enrichmentStopReason": "Ambiguous match – first candidate used (verify before contact)",
+    "reviewBucket": "ambiguous_identity",
+    "needsVerification": true
+  }
+}

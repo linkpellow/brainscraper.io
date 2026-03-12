@@ -1,6 +1,12 @@
 {
   "linkedin": {
-    "monthly": {}
+    "monthly": {
+      "2026-03": 82
+    },
+    "2026-03-09": {
+      "count": 82,
+      "jobs": []
+    }
   },
   "facebook": {
     "monthly": {

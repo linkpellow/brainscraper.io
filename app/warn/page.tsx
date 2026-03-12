@@ -167,7 +167,7 @@ export default function WarnPage() {
         </div>
 
         {/* Upload */}
-        <div className="rounded-lg border border-white/10 bg-black/20 p-4">
+        <div className="rounded-lg border border-white/10 bg-black/55 p-4">
           <h2 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
             <Upload className="w-5 h-5" style={{ color: '#ff5757' }} />
             Upload WARN list(s)
@@ -210,7 +210,7 @@ export default function WarnPage() {
         </div>
 
         {/* Scrape from URL */}
-        <div className="rounded-lg border border-white/10 bg-black/20 p-4">
+        <div className="rounded-lg border border-white/10 bg-black/55 p-4">
           <h2 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
             <Globe className="w-5 h-5" style={{ color: '#ff5757' }} />
             Scrape WARN from URL
@@ -254,7 +254,7 @@ export default function WarnPage() {
 
         {/* Ingest result summary */}
         {ingestResult && ingestResult.length > 0 && (
-          <div className="rounded-lg border border-white/10 bg-black/20 p-4">
+          <div className="rounded-lg border border-white/10 bg-black/55 p-4">
             <h2 className="text-lg font-semibold text-white mb-2">Last ingest</h2>
             <ul className="text-slate-300 text-sm space-y-1">
               {ingestResult.map((r) => (
@@ -271,7 +271,7 @@ export default function WarnPage() {
         )}
 
         {/* Previously ingested */}
-        <div className="rounded-lg border border-white/10 bg-black/20 p-4">
+        <div className="rounded-lg border border-white/10 bg-black/55 p-4">
           <h2 className="text-lg font-semibold text-white mb-3">Previously ingested</h2>
           {loadingLists ? (
             <p className="text-slate-400 text-sm">Loading…</p>
@@ -297,7 +297,7 @@ export default function WarnPage() {
 
         {/* Preview table */}
         {loadedRows.length > 0 && (
-          <div className="rounded-lg border border-white/10 bg-black/20 p-4 overflow-hidden">
+          <div className="rounded-lg border border-white/10 bg-black/55 p-4 overflow-hidden">
             <h2 className="text-lg font-semibold text-white mb-3">
               Preview {loadedPath ? `(${loadedPath})` : ''}
             </h2>
@@ -356,7 +356,7 @@ export default function WarnPage() {
         )}
 
         {/* Match to LinkedIn & extract employees */}
-        <div className="rounded-lg border border-white/10 bg-black/20 p-4">
+        <div className="rounded-lg border border-white/10 bg-black/55 p-4">
           <h2 className="text-lg font-semibold text-white mb-2 flex items-center gap-2">
             <Linkedin className="w-5 h-5" style={{ color: '#ff5757' }} />
             Next step

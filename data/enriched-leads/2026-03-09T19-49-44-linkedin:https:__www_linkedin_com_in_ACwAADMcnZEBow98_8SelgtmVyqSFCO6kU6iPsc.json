@@ -1,0 +1,163 @@
+{
+  "metadata": {
+    "savedAt": "2026-03-09T19:49:44.469Z",
+    "leadKey": "linkedin:https://www.linkedin.com/in/ACwAADMcnZEBow98-8SelgtmVyqSFCO6kU6iPsc"
+  },
+  "enrichedRow": {
+    "Name": "Paola Navarro",
+    "Title": "Therapist Supervisor",
+    "Company": "City of Alexandria, Virginia",
+    "Location": "Alexandria, Virginia, United States",
+    "LinkedIn URL": "https://www.linkedin.com/in/ACwAADMcnZEBow98-8SelgtmVyqSFCO6kU6iPsc",
+    "Email": "elsa.navarro@grace.com",
+    "Phone": "6173087588",
+    "First Name": "Paola",
+    "Last Name": "Navarro",
+    "City": "Alexandria",
+    "State": "VA",
+    "Zip": "22302",
+    "Search Filter": "Location: Alexandria, Virginia | Changed Jobs (90 days)",
+    "_enriched": {
+      "firstName": "Paola",
+      "lastName": "Navarro",
+      "zipCode": "22302",
+      "zipProvenance": "verified_skip_trace",
+      "gender": "female",
+      "genderConfidence": 90,
+      "phone": "6173087588",
+      "email": "elsa.navarro@grace.com",
+      "addressLine2": "VA",
+      "incomePreQual": {
+        "conservative": {
+          "min": 30000,
+          "max": 115000,
+          "p50": 70000
+        },
+        "upside": {
+          "min": 21000,
+          "max": 119000,
+          "p50": 70000
+        },
+        "estimate": {
+          "range": {
+            "min": 30000,
+            "max": 119000
+          },
+          "p50": 70000,
+          "confidence": 0.33,
+          "primaryDrivers": [
+            "company: City of Alexandria, Virginia"
+          ],
+          "riskFlags": [
+            "Job title seniority unclear"
+          ]
+        },
+        "decision": {
+          "tier": "unknown",
+          "shouldContinueEnrichment": true,
+          "reason": "Income meets $60k threshold: Upside p50 ($70k) >= $60k minimum",
+          "band": "high",
+          "requiresStrongPositives": false,
+          "reasonCode": "INCOME_ABOVE_60K"
+        }
+      },
+      "skipTracingData": {
+        "Status": 200,
+        "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+        "Source": "tps_fsh_442_cch",
+        "Records": 1,
+        "Page": 1,
+        "PeopleDetails": [
+          {
+            "Name": "Paola Navarro",
+            "Link": "https://www.truepeoplesearch.com/find/person/p228049n88l22r0n0l94",
+            "Age": 52,
+            "Person ID": "p228049n88l22r0n0l94",
+            "Lives in": "Alexandria, VA",
+            "Used to live in": "Malden MA, Lexington MA, Cambridge MA, Ev...",
+            "Related to": "Alejandro Arrano, Antonio Arrano, Benjamin..."
+          }
+        ],
+        "ageFromPersonDetails": "52"
+      },
+      "skipTracingDisposition": "clear_match",
+      "telnyxLookupData": {
+        "success": true,
+        "data": {
+          "data": {
+            "country_code": "US",
+            "national_format": "(617) 308-7588",
+            "phone_number": "+16173087588",
+            "fraud": null,
+            "carrier": {
+              "mobile_country_code": "",
+              "mobile_network_code": "",
+              "name": "Cingular Wireless/2",
+              "type": "mobile",
+              "error_code": null,
+              "normalized_carrier": "AT&T"
+            },
+            "caller_name": null,
+            "nnid_override": null,
+            "portability": {
+              "lrn": "617301XXXX",
+              "ported_status": "",
+              "ported_date": "",
+              "ocn": "4036",
+              "line_type": "mobile",
+              "spid": "",
+              "spid_carrier_name": "NEW CINGULAR WIRELESS PCS, LLC",
+              "spid_carrier_type": "",
+              "altspid": "",
+              "altspid_carrier_name": "",
+              "altspid_carrier_type": "",
+              "city": "CAMBRIDGE",
+              "state": "Massachusetts"
+            },
+            "valid_number": true,
+            "record_type": "number_lookup"
+          }
+        }
+      },
+      "lineType": "mobile",
+      "carrierName": "Cingular Wireless/2",
+      "carrierType": "mobile",
+      "normalizedCarrier": "AT&T",
+      "decisionReason": "FULL_ENRICHMENT",
+      "decisionCodes": [
+        "FULL_ENRICHMENT"
+      ],
+      "decisionConfidence": 60,
+      "decisionAction": "full",
+      "enrichmentLevel": "full",
+      "dncStatus": "UNKNOWN",
+      "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+      "age": "52"
+    },
+    "Line Type": "mobile",
+    "Carrier": "Cingular Wireless/2",
+    "Normalized Carrier": "AT&T",
+    "Age": "52",
+    "Gender": "female",
+    "Gender Confidence": 90
+  },
+  "leadSummary": {
+    "name": "Paola Navarro",
+    "phone": "6173087588",
+    "dobOrAge": "52",
+    "zipcode": "22302",
+    "state": "VA",
+    "city": "Alexandria",
+    "email": "elsa.navarro@grace.com",
+    "dncStatus": "UNKNOWN",
+    "income": 70000,
+    "lineType": "mobile",
+    "carrier": "Cingular Wireless/2",
+    "normalizedCarrier": "AT&T",
+    "searchFilter": "Location: Alexandria, Virginia | Changed Jobs (90 days)",
+    "dateScraped": "2026-03-09",
+    "linkedinUrl": "https://www.linkedin.com/in/ACwAADMcnZEBow98-8SelgtmVyqSFCO6kU6iPsc",
+    "zipProvenance": "verified_skip_trace",
+    "skipTracingDisposition": "clear_match"
+  }
+}

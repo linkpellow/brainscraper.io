@@ -1,0 +1,165 @@
+{
+  "metadata": {
+    "savedAt": "2026-03-10T02:04:59.172Z",
+    "leadKey": "linkedin:https://www.linkedin.com/in/ACwAAACutj8B67pH966-Tg4K4UUHyMQaMMzU0IE"
+  },
+  "enrichedRow": {
+    "Name": "Bryan Gould",
+    "Title": "Chief Revenue Officer",
+    "Company": "Jax Consulting",
+    "Location": "Lake Worth, Florida, United States",
+    "LinkedIn URL": "https://www.linkedin.com/in/ACwAAACutj8B67pH966-Tg4K4UUHyMQaMMzU0IE",
+    "Email": "aagould@bellsouth.net",
+    "Phone": "5615962177",
+    "First Name": "Bryan",
+    "Last Name": "Gould",
+    "City": "Lake Worth",
+    "State": "FL",
+    "Zip": "33467",
+    "Search Filter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+    "_enriched": {
+      "firstName": "Bryan",
+      "lastName": "Gould",
+      "zipCode": "33467",
+      "zipProvenance": "verified_skip_trace",
+      "gender": "male",
+      "genderConfidence": 98,
+      "phone": "5615962177",
+      "email": "aagould@bellsouth.net",
+      "addressLine2": "FL",
+      "incomePreQual": {
+        "conservative": {
+          "min": 2809000,
+          "max": 3109000,
+          "p50": 2959000
+        },
+        "upside": {
+          "min": 3092000,
+          "max": 3417000,
+          "p50": 3255000
+        },
+        "estimate": {
+          "range": {
+            "min": 2809000,
+            "max": 3417000
+          },
+          "p50": 3107000,
+          "confidence": 0.48,
+          "primaryDrivers": [
+            "career ladder: exec",
+            "company: Jax Consulting"
+          ],
+          "riskFlags": [
+            "High-level title but company type may not support it"
+          ]
+        },
+        "decision": {
+          "tier": "unknown",
+          "shouldContinueEnrichment": true,
+          "reason": "Income meets $60k threshold: Upside p50 ($3255k) >= $60k minimum",
+          "band": "high",
+          "requiresStrongPositives": false,
+          "reasonCode": "INCOME_ABOVE_60K"
+        }
+      },
+      "skipTracingData": {
+        "Status": 200,
+        "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+        "Source": "tps_fsh_478_cch",
+        "Records": 3,
+        "Page": 1,
+        "PeopleDetails": [
+          {
+            "Name": "Bryan Gould",
+            "Link": "https://www.truepeoplesearch.com/find/person/pu90rllnunnu9uu9rrl2",
+            "Age": 48,
+            "Person ID": "pu90rllnunnu9uu9rrl2",
+            "Lives in": "Lake Worth, FL",
+            "Used to live in": "Boynton Beach FL, Port Charlotte FL, Well...",
+            "Related to": "Alan Gould, Alan Gould, Alan Gould, Angela..."
+          }
+        ],
+        "ageFromPersonDetails": "48"
+      },
+      "skipTracingDisposition": "clear_match",
+      "skipTracingMatchType": "exact_location",
+      "telnyxLookupData": {
+        "success": true,
+        "data": {
+          "data": {
+            "country_code": "US",
+            "national_format": "(561) 596-2177",
+            "phone_number": "+15615962177",
+            "fraud": null,
+            "carrier": {
+              "mobile_country_code": "",
+              "mobile_network_code": "",
+              "name": "CELLCO PARTNERSHIP DBA VERIZON WIRELESS - FL",
+              "type": "mobile",
+              "error_code": null,
+              "normalized_carrier": "Verizon Wireless"
+            },
+            "caller_name": null,
+            "nnid_override": null,
+            "portability": {
+              "lrn": null,
+              "ported_status": "",
+              "ported_date": "",
+              "ocn": "6502",
+              "line_type": "mobile",
+              "spid": "",
+              "spid_carrier_name": "CELLCO PARTNERSHIP DBA VERIZON",
+              "spid_carrier_type": "",
+              "altspid": "",
+              "altspid_carrier_name": "",
+              "altspid_carrier_type": "",
+              "city": "WPALMBEACH",
+              "state": "Florida"
+            },
+            "valid_number": true,
+            "record_type": "number_lookup"
+          }
+        }
+      },
+      "lineType": "mobile",
+      "carrierName": "CELLCO PARTNERSHIP DBA VERIZON WIRELESS - FL",
+      "carrierType": "mobile",
+      "normalizedCarrier": "Verizon Wireless",
+      "decisionReason": "FULL_ENRICHMENT",
+      "decisionCodes": [
+        "FULL_ENRICHMENT"
+      ],
+      "decisionConfidence": 60,
+      "decisionAction": "full",
+      "enrichmentLevel": "full",
+      "dncStatus": "UNKNOWN",
+      "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+      "age": "48"
+    },
+    "Line Type": "mobile",
+    "Carrier": "CELLCO PARTNERSHIP DBA VERIZON WIRELESS - FL",
+    "Normalized Carrier": "Verizon Wireless",
+    "Age": "48",
+    "Gender": "male",
+    "Gender Confidence": 98
+  },
+  "leadSummary": {
+    "name": "Bryan Gould",
+    "phone": "5615962177",
+    "dobOrAge": "48",
+    "zipcode": "33467",
+    "state": "FL",
+    "city": "Lake Worth",
+    "email": "aagould@bellsouth.net",
+    "dncStatus": "UNKNOWN",
+    "income": 3107000,
+    "lineType": "mobile",
+    "carrier": "CELLCO PARTNERSHIP DBA VERIZON WIRELESS - FL",
+    "normalizedCarrier": "Verizon Wireless",
+    "searchFilter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+    "dateScraped": "2026-03-10",
+    "linkedinUrl": "https://www.linkedin.com/in/ACwAAACutj8B67pH966-Tg4K4UUHyMQaMMzU0IE",
+    "zipProvenance": "verified_skip_trace",
+    "skipTracingDisposition": "clear_match"
+  }
+}

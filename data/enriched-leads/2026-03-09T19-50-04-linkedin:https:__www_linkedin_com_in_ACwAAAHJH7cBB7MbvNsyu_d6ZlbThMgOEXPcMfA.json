@@ -1,0 +1,162 @@
+{
+  "metadata": {
+    "savedAt": "2026-03-09T19:50:04.330Z",
+    "leadKey": "linkedin:https://www.linkedin.com/in/ACwAAAHJH7cBB7MbvNsyu-d6ZlbThMgOEXPcMfA"
+  },
+  "enrichedRow": {
+    "Name": "Stephanie L. Martz",
+    "Title": "Integration Lead",
+    "Company": "Sawdey Solution Services",
+    "Location": "Alexandria, Virginia, United States",
+    "LinkedIn URL": "https://www.linkedin.com/in/ACwAAAHJH7cBB7MbvNsyu-d6ZlbThMgOEXPcMfA",
+    "Email": "smartz@geico.com",
+    "Phone": "7203820688",
+    "First Name": "Stephanie",
+    "Last Name": "L. Martz",
+    "City": "Alexandria",
+    "State": "VA",
+    "Zip": "22304",
+    "Search Filter": "Location: Alexandria, Virginia | Changed Jobs (90 days)",
+    "_enriched": {
+      "firstName": "Stephanie",
+      "lastName": "Martz",
+      "zipCode": "22304",
+      "zipProvenance": "verified_skip_trace",
+      "gender": "female",
+      "genderConfidence": 98,
+      "phone": "7203820688",
+      "email": "smartz@geico.com",
+      "addressLine2": "VA",
+      "incomePreQual": {
+        "conservative": {
+          "min": 94000,
+          "max": 214000,
+          "p50": 154000
+        },
+        "upside": {
+          "min": 122000,
+          "max": 252000,
+          "p50": 187000
+        },
+        "estimate": {
+          "range": {
+            "min": 94000,
+            "max": 252000
+          },
+          "p50": 171000,
+          "confidence": 0.6,
+          "primaryDrivers": [
+            "career ladder: lead",
+            "company: Sawdey Solution Services"
+          ],
+          "riskFlags": []
+        },
+        "decision": {
+          "tier": "unknown",
+          "shouldContinueEnrichment": true,
+          "reason": "Income meets $60k threshold: Upside p50 ($187k) >= $60k minimum",
+          "band": "high",
+          "requiresStrongPositives": false,
+          "reasonCode": "INCOME_ABOVE_60K"
+        }
+      },
+      "skipTracingData": {
+        "Status": 200,
+        "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+        "Source": "tps_fsh_343_cch",
+        "Records": 1,
+        "Page": 1,
+        "PeopleDetails": [
+          {
+            "Name": "Stephanie Martz",
+            "Link": "https://www.truepeoplesearch.com/find/person/px28ln44l80n8r9n6nu49",
+            "Age": 52,
+            "Person ID": "px28ln44l80n8r9n6nu49",
+            "Lives in": "Alexandria, VA",
+            "Used to live in": "Superior CO, Springfield VA, Louisville C...",
+            "Related to": "Edwin Moritz, Alyssa Wohl, Erik Moritz, Pe..."
+          }
+        ],
+        "ageFromPersonDetails": "52"
+      },
+      "skipTracingDisposition": "clear_match",
+      "telnyxLookupData": {
+        "success": true,
+        "data": {
+          "data": {
+            "country_code": "US",
+            "national_format": "(720) 382-0688",
+            "phone_number": "+17203820688",
+            "fraud": null,
+            "carrier": {
+              "mobile_country_code": "",
+              "mobile_network_code": "",
+              "name": "Verizon Wireless:6006 - SVR/2",
+              "type": "mobile",
+              "error_code": null,
+              "normalized_carrier": "Verizon Wireless"
+            },
+            "caller_name": null,
+            "nnid_override": null,
+            "portability": {
+              "lrn": "303263XXXX",
+              "ported_status": "",
+              "ported_date": "",
+              "ocn": "6567",
+              "line_type": "mobile",
+              "spid": "",
+              "spid_carrier_name": "CELLCO PARTNERSHIP DBA VERIZON",
+              "spid_carrier_type": "",
+              "altspid": "",
+              "altspid_carrier_name": "",
+              "altspid_carrier_type": "",
+              "city": "DENVER",
+              "state": "Colorado"
+            },
+            "valid_number": true,
+            "record_type": "number_lookup"
+          }
+        }
+      },
+      "lineType": "mobile",
+      "carrierName": "Verizon Wireless:6006 - SVR/2",
+      "carrierType": "mobile",
+      "normalizedCarrier": "Verizon Wireless",
+      "decisionReason": "FULL_ENRICHMENT",
+      "decisionCodes": [
+        "FULL_ENRICHMENT"
+      ],
+      "decisionConfidence": 60,
+      "decisionAction": "full",
+      "enrichmentLevel": "full",
+      "dncStatus": "UNKNOWN",
+      "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+      "age": "52"
+    },
+    "Line Type": "mobile",
+    "Carrier": "Verizon Wireless:6006 - SVR/2",
+    "Normalized Carrier": "Verizon Wireless",
+    "Age": "52",
+    "Gender": "female",
+    "Gender Confidence": 98
+  },
+  "leadSummary": {
+    "name": "Stephanie L. Martz",
+    "phone": "7203820688",
+    "dobOrAge": "52",
+    "zipcode": "22304",
+    "state": "VA",
+    "city": "Alexandria",
+    "email": "smartz@geico.com",
+    "dncStatus": "UNKNOWN",
+    "income": 171000,
+    "lineType": "mobile",
+    "carrier": "Verizon Wireless:6006 - SVR/2",
+    "normalizedCarrier": "Verizon Wireless",
+    "searchFilter": "Location: Alexandria, Virginia | Changed Jobs (90 days)",
+    "dateScraped": "2026-03-09",
+    "linkedinUrl": "https://www.linkedin.com/in/ACwAAAHJH7cBB7MbvNsyu-d6ZlbThMgOEXPcMfA",
+    "zipProvenance": "verified_skip_trace",
+    "skipTracingDisposition": "clear_match"
+  }
+}

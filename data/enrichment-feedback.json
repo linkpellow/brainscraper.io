@@ -21,7 +21,1206 @@
       "confidence": 67,
       "decisionStage": "post_telnyx",
       "timestamp": "2026-03-08T02:38:36.468Z"
+    },
+    {
+      "leadId": "Shannon_Carter_unknown",
+      "skipped": false,
+      "reason": "FULL_ENRICHMENT",
+      "reasonCodes": [
+        "FULL_ENRICHMENT",
+        "SOFT_DOWNGRADE_SMALL_COMPANY"
+      ],
+      "confidence": 78,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-09T17:41:30.983Z"
+    },
+    {
+      "leadId": "Daniela_Grozeva_2023447353",
+      "skipped": false,
+      "reason": "FULL_ENRICHMENT",
+      "reasonCodes": [
+        "FULL_ENRICHMENT"
+      ],
+      "confidence": 60,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-09T17:41:31.386Z"
+    },
+    {
+      "leadId": "Shannon_Carter_unknown",
+      "skipped": false,
+      "reason": "FULL_ENRICHMENT",
+      "reasonCodes": [
+        "FULL_ENRICHMENT",
+        "SOFT_DOWNGRADE_SMALL_COMPANY"
+      ],
+      "confidence": 78,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-09T17:42:00.137Z"
+    },
+    {
+      "leadId": "Jane_Doe_unknown",
+      "skipped": true,
+      "reason": "LOW_CONFIDENCE",
+      "reasonCodes": [
+        "LOW_CONFIDENCE"
+      ],
+      "confidence": 0,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-10T18:21:13.643Z"
+    },
+    {
+      "leadId": "Andrew_Marusak_unknown",
+      "skipped": false,
+      "reason": "PARTIAL_ENRICHMENT",
+      "reasonCodes": [
+        "PARTIAL_ENRICHMENT"
+      ],
+      "confidence": 45,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-10T19:22:25.714Z"
+    },
+    {
+      "leadId": "Erin_Moore_unknown",
+      "skipped": false,
+      "reason": "FULL_ENRICHMENT",
+      "reasonCodes": [
+        "FULL_ENRICHMENT"
+      ],
+      "confidence": 83,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-10T19:22:26.322Z"
+    },
+    {
+      "leadId": "L_Allegro_Smith_7577234368",
+      "skipped": false,
+      "reason": "PARTIAL_ENRICHMENT",
+      "reasonCodes": [
+        "PARTIAL_ENRICHMENT"
+      ],
+      "confidence": 51,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-10T19:22:27.801Z"
+    },
+    {
+      "leadId": "Reggie_Holmes_unknown",
+      "skipped": false,
+      "reason": "FULL_ENRICHMENT",
+      "reasonCodes": [
+        "FULL_ENRICHMENT"
+      ],
+      "confidence": 93,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-10T19:22:28.204Z"
+    },
+    {
+      "leadId": "Asif_Bhavnagri_8042394434",
+      "skipped": false,
+      "reason": "PARTIAL_ENRICHMENT",
+      "reasonCodes": [
+        "PARTIAL_ENRICHMENT",
+        "SOFT_DOWNGRADE_FREE_EMAIL"
+      ],
+      "confidence": 36,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-10T19:22:29.491Z"
+    },
+    {
+      "leadId": "Ripley_Carroll_unknown",
+      "skipped": false,
+      "reason": "PARTIAL_ENRICHMENT",
+      "reasonCodes": [
+        "PARTIAL_ENRICHMENT"
+      ],
+      "confidence": 45,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-10T19:22:31.821Z"
+    },
+    {
+      "leadId": "Jamie_Ciesla_2622101025",
+      "skipped": false,
+      "reason": "FULL_ENRICHMENT",
+      "reasonCodes": [
+        "FULL_ENRICHMENT",
+        "SOFT_DOWNGRADE_FREE_EMAIL"
+      ],
+      "confidence": 63,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-10T19:22:33.058Z"
+    },
+    {
+      "leadId": "Allan_Fye_4127159525",
+      "skipped": false,
+      "reason": "FULL_ENRICHMENT",
+      "reasonCodes": [
+        "FULL_ENRICHMENT",
+        "SOFT_DOWNGRADE_FREE_EMAIL"
+      ],
+      "confidence": 63,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-10T19:22:35.165Z"
+    },
+    {
+      "leadId": "Paola_Navarro_6173087588",
+      "skipped": false,
+      "reason": "FULL_ENRICHMENT",
+      "reasonCodes": [
+        "FULL_ENRICHMENT"
+      ],
+      "confidence": 60,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-10T19:22:49.249Z"
+    },
+    {
+      "leadId": "Peter_M_S__unknown",
+      "skipped": false,
+      "reason": "FULL_ENRICHMENT",
+      "reasonCodes": [
+        "FULL_ENRICHMENT"
+      ],
+      "confidence": 83,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-10T19:22:51.202Z"
+    },
+    {
+      "leadId": "Tina_Leone_unknown",
+      "skipped": false,
+      "reason": "FULL_ENRICHMENT",
+      "reasonCodes": [
+        "FULL_ENRICHMENT"
+      ],
+      "confidence": 83,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-10T19:22:51.627Z"
+    },
+    {
+      "leadId": "Bahar_Shad_unknown",
+      "skipped": false,
+      "reason": "PARTIAL_ENRICHMENT",
+      "reasonCodes": [
+        "PARTIAL_ENRICHMENT"
+      ],
+      "confidence": 45,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-10T19:22:52.322Z"
+    },
+    {
+      "leadId": "Peter_Page_unknown",
+      "skipped": false,
+      "reason": "PARTIAL_ENRICHMENT",
+      "reasonCodes": [
+        "PARTIAL_ENRICHMENT"
+      ],
+      "confidence": 45,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-10T19:22:52.818Z"
+    },
+    {
+      "leadId": "Edgar_R__unknown",
+      "skipped": false,
+      "reason": "FULL_ENRICHMENT",
+      "reasonCodes": [
+        "FULL_ENRICHMENT"
+      ],
+      "confidence": 83,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-10T19:22:54.872Z"
+    },
+    {
+      "leadId": "Courtney_Ballantine_7039302505",
+      "skipped": false,
+      "reason": "FULL_ENRICHMENT",
+      "reasonCodes": [
+        "FULL_ENRICHMENT"
+      ],
+      "confidence": 60,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-10T19:22:57.173Z"
+    },
+    {
+      "leadId": "Raphael_Hernandez_unknown",
+      "skipped": false,
+      "reason": "PARTIAL_ENRICHMENT",
+      "reasonCodes": [
+        "PARTIAL_ENRICHMENT"
+      ],
+      "confidence": 55,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-10T19:22:59.068Z"
+    },
+    {
+      "leadId": "Marc_B__unknown",
+      "skipped": false,
+      "reason": "PARTIAL_ENRICHMENT",
+      "reasonCodes": [
+        "PARTIAL_ENRICHMENT"
+      ],
+      "confidence": 45,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-10T19:22:59.954Z"
+    },
+    {
+      "leadId": "Jack_Ambridge_unknown",
+      "skipped": false,
+      "reason": "FULL_ENRICHMENT",
+      "reasonCodes": [
+        "FULL_ENRICHMENT"
+      ],
+      "confidence": 83,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-10T19:23:00.303Z"
+    },
+    {
+      "leadId": "Terrance_Lasher_8044453515",
+      "skipped": false,
+      "reason": "PARTIAL_ENRICHMENT",
+      "reasonCodes": [
+        "PARTIAL_ENRICHMENT"
+      ],
+      "confidence": 51,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-10T19:23:01.691Z"
+    },
+    {
+      "leadId": "Alexandria_Spiker_3042883729",
+      "skipped": false,
+      "reason": "PARTIAL_ENRICHMENT",
+      "reasonCodes": [
+        "PARTIAL_ENRICHMENT"
+      ],
+      "confidence": 51,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-10T19:23:03.422Z"
+    },
+    {
+      "leadId": "Ludwig_Gaines_7033287526",
+      "skipped": true,
+      "reason": "AGE_OVER_59",
+      "reasonCodes": [
+        "AGE_OVER_59"
+      ],
+      "confidence": 37,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-10T19:23:05.962Z"
+    },
+    {
+      "leadId": "Tiffany_Gatewood_7576729277",
+      "skipped": false,
+      "reason": "FULL_ENRICHMENT",
+      "reasonCodes": [
+        "FULL_ENRICHMENT"
+      ],
+      "confidence": 84,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-10T19:23:08.136Z"
+    },
+    {
+      "leadId": "Yelser_Leon_unknown",
+      "skipped": false,
+      "reason": "FULL_ENRICHMENT",
+      "reasonCodes": [
+        "FULL_ENRICHMENT"
+      ],
+      "confidence": 83,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-10T19:23:10.166Z"
+    },
+    {
+      "leadId": "London_CPP_unknown",
+      "skipped": true,
+      "reason": "LOW_CONFIDENCE",
+      "reasonCodes": [
+        "LOW_CONFIDENCE"
+      ],
+      "confidence": 20,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-10T19:23:10.692Z"
+    },
+    {
+      "leadId": "Sam_Tate_unknown",
+      "skipped": false,
+      "reason": "PARTIAL_ENRICHMENT",
+      "reasonCodes": [
+        "PARTIAL_ENRICHMENT",
+        "SOFT_DOWNGRADE_SMALL_COMPANY"
+      ],
+      "confidence": 40,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-10T19:23:11.199Z"
+    },
+    {
+      "leadId": "Andrew_Marusak_2024806239",
+      "skipped": false,
+      "reason": "PARTIAL_ENRICHMENT",
+      "reasonCodes": [
+        "PARTIAL_ENRICHMENT",
+        "SOFT_DOWNGRADE_FREE_EMAIL"
+      ],
+      "confidence": 36,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-10T19:23:12.456Z"
+    },
+    {
+      "leadId": "Erin_Moore_2672589542",
+      "skipped": false,
+      "reason": "FULL_ENRICHMENT",
+      "reasonCodes": [
+        "FULL_ENRICHMENT"
+      ],
+      "confidence": 87,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-10T19:23:14.974Z"
+    },
+    {
+      "leadId": "L_Allegro_Smith_7577234368",
+      "skipped": false,
+      "reason": "PARTIAL_ENRICHMENT",
+      "reasonCodes": [
+        "PARTIAL_ENRICHMENT"
+      ],
+      "confidence": 51,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-10T19:23:17.654Z"
+    },
+    {
+      "leadId": "Reggie_Holmes_5403273294",
+      "skipped": true,
+      "reason": "AGE_OVER_59",
+      "reasonCodes": [
+        "AGE_OVER_59"
+      ],
+      "confidence": 63,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-10T19:23:18.760Z"
+    },
+    {
+      "leadId": "Asif_Bhavnagri_8042394434",
+      "skipped": false,
+      "reason": "PARTIAL_ENRICHMENT",
+      "reasonCodes": [
+        "PARTIAL_ENRICHMENT",
+        "SOFT_DOWNGRADE_FREE_EMAIL"
+      ],
+      "confidence": 36,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-10T19:23:21.346Z"
+    },
+    {
+      "leadId": "Ripley_Carroll_unknown",
+      "skipped": false,
+      "reason": "PARTIAL_ENRICHMENT",
+      "reasonCodes": [
+        "PARTIAL_ENRICHMENT"
+      ],
+      "confidence": 45,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-10T19:23:22.766Z"
+    },
+    {
+      "leadId": "Jamie_Ciesla_2622101025",
+      "skipped": false,
+      "reason": "FULL_ENRICHMENT",
+      "reasonCodes": [
+        "FULL_ENRICHMENT",
+        "SOFT_DOWNGRADE_FREE_EMAIL"
+      ],
+      "confidence": 63,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-10T19:23:23.904Z"
+    },
+    {
+      "leadId": "Allan_Fye_4127159525",
+      "skipped": false,
+      "reason": "FULL_ENRICHMENT",
+      "reasonCodes": [
+        "FULL_ENRICHMENT",
+        "SOFT_DOWNGRADE_FREE_EMAIL"
+      ],
+      "confidence": 63,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-10T19:23:26.361Z"
+    },
+    {
+      "leadId": "Paola_Navarro_6173087588",
+      "skipped": false,
+      "reason": "FULL_ENRICHMENT",
+      "reasonCodes": [
+        "FULL_ENRICHMENT"
+      ],
+      "confidence": 60,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-10T19:23:28.603Z"
+    },
+    {
+      "leadId": "Peter_M_S__unknown",
+      "skipped": false,
+      "reason": "FULL_ENRICHMENT",
+      "reasonCodes": [
+        "FULL_ENRICHMENT"
+      ],
+      "confidence": 83,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-10T19:23:30.129Z"
+    },
+    {
+      "leadId": "Tina_Leone_7037866037",
+      "skipped": false,
+      "reason": "FULL_ENRICHMENT",
+      "reasonCodes": [
+        "FULL_ENRICHMENT"
+      ],
+      "confidence": 87,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-10T19:23:31.332Z"
+    },
+    {
+      "leadId": "Bahar_Shad_unknown",
+      "skipped": false,
+      "reason": "PARTIAL_ENRICHMENT",
+      "reasonCodes": [
+        "PARTIAL_ENRICHMENT"
+      ],
+      "confidence": 45,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-10T19:23:33.233Z"
+    },
+    {
+      "leadId": "Peter_Page_3177409722",
+      "skipped": true,
+      "reason": "AGE_OVER_59",
+      "reasonCodes": [
+        "AGE_OVER_59"
+      ],
+      "confidence": 37,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-10T19:23:34.532Z"
+    },
+    {
+      "leadId": "Edgar_R__unknown",
+      "skipped": false,
+      "reason": "FULL_ENRICHMENT",
+      "reasonCodes": [
+        "FULL_ENRICHMENT"
+      ],
+      "confidence": 83,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-10T19:23:35.907Z"
+    },
+    {
+      "leadId": "Courtney_Ballantine_7039302505",
+      "skipped": false,
+      "reason": "FULL_ENRICHMENT",
+      "reasonCodes": [
+        "FULL_ENRICHMENT"
+      ],
+      "confidence": 60,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-10T19:23:36.972Z"
+    },
+    {
+      "leadId": "Raphael_Hernandez_unknown",
+      "skipped": false,
+      "reason": "PARTIAL_ENRICHMENT",
+      "reasonCodes": [
+        "PARTIAL_ENRICHMENT"
+      ],
+      "confidence": 55,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-10T19:23:38.422Z"
+    },
+    {
+      "leadId": "Marc_B__unknown",
+      "skipped": false,
+      "reason": "PARTIAL_ENRICHMENT",
+      "reasonCodes": [
+        "PARTIAL_ENRICHMENT"
+      ],
+      "confidence": 45,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-10T19:23:39.733Z"
+    },
+    {
+      "leadId": "Jack_Ambridge_unknown",
+      "skipped": false,
+      "reason": "FULL_ENRICHMENT",
+      "reasonCodes": [
+        "FULL_ENRICHMENT"
+      ],
+      "confidence": 83,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-10T19:23:40.314Z"
+    },
+    {
+      "leadId": "Terrance_Lasher_8044453515",
+      "skipped": false,
+      "reason": "PARTIAL_ENRICHMENT",
+      "reasonCodes": [
+        "PARTIAL_ENRICHMENT"
+      ],
+      "confidence": 51,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-10T19:23:41.302Z"
+    },
+    {
+      "leadId": "Alexandria_Spiker_3042883729",
+      "skipped": false,
+      "reason": "PARTIAL_ENRICHMENT",
+      "reasonCodes": [
+        "PARTIAL_ENRICHMENT"
+      ],
+      "confidence": 51,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-10T19:23:43.102Z"
+    },
+    {
+      "leadId": "Ludwig_Gaines_7033287526",
+      "skipped": true,
+      "reason": "AGE_OVER_59",
+      "reasonCodes": [
+        "AGE_OVER_59"
+      ],
+      "confidence": 37,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-10T19:23:45.024Z"
+    },
+    {
+      "leadId": "Tiffany_Gatewood_7576729277",
+      "skipped": false,
+      "reason": "FULL_ENRICHMENT",
+      "reasonCodes": [
+        "FULL_ENRICHMENT"
+      ],
+      "confidence": 84,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-10T19:23:47.183Z"
+    },
+    {
+      "leadId": "Yelser_Leon_unknown",
+      "skipped": false,
+      "reason": "FULL_ENRICHMENT",
+      "reasonCodes": [
+        "FULL_ENRICHMENT"
+      ],
+      "confidence": 83,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-10T19:23:48.466Z"
+    },
+    {
+      "leadId": "London_CPP_unknown",
+      "skipped": true,
+      "reason": "LOW_CONFIDENCE",
+      "reasonCodes": [
+        "LOW_CONFIDENCE"
+      ],
+      "confidence": 20,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-10T19:23:49.028Z"
+    },
+    {
+      "leadId": "Sam_Tate_7035654384",
+      "skipped": false,
+      "reason": "PARTIAL_ENRICHMENT",
+      "reasonCodes": [
+        "PARTIAL_ENRICHMENT",
+        "SOFT_DOWNGRADE_FREE_EMAIL",
+        "SOFT_DOWNGRADE_SMALL_COMPANY"
+      ],
+      "confidence": 31,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-10T19:23:50.031Z"
+    },
+    {
+      "leadId": "Jessica_Bauer_unknown",
+      "skipped": false,
+      "reason": "PARTIAL_ENRICHMENT",
+      "reasonCodes": [
+        "PARTIAL_ENRICHMENT"
+      ],
+      "confidence": 45,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-12T01:38:07.593Z"
+    },
+    {
+      "leadId": "Bobby_Rinko_2393400744",
+      "skipped": true,
+      "reason": "AGE_OVER_59",
+      "reasonCodes": [
+        "AGE_OVER_59"
+      ],
+      "confidence": 43,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-12T01:38:08.889Z"
+    },
+    {
+      "leadId": "Shaun_Libou_slibou_gmail_com",
+      "skipped": false,
+      "reason": "FULL_ENRICHMENT",
+      "reasonCodes": [
+        "FULL_ENRICHMENT",
+        "SOFT_DOWNGRADE_FREE_EMAIL"
+      ],
+      "confidence": 61,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-12T01:38:12.386Z"
+    },
+    {
+      "leadId": "William_Law_8134201990",
+      "skipped": false,
+      "reason": "FULL_ENRICHMENT",
+      "reasonCodes": [
+        "FULL_ENRICHMENT",
+        "SOFT_DOWNGRADE_FREE_EMAIL"
+      ],
+      "confidence": 63,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-12T01:38:14.409Z"
+    },
+    {
+      "leadId": "Chad_Risch_2319202799",
+      "skipped": false,
+      "reason": "FULL_ENRICHMENT",
+      "reasonCodes": [
+        "FULL_ENRICHMENT"
+      ],
+      "confidence": 84,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-12T01:38:15.662Z"
+    },
+    {
+      "leadId": "Ryan_Barry_2398503738",
+      "skipped": false,
+      "reason": "PARTIAL_ENRICHMENT",
+      "reasonCodes": [
+        "PARTIAL_ENRICHMENT",
+        "SOFT_DOWNGRADE_FREE_EMAIL"
+      ],
+      "confidence": 18,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-12T01:38:16.796Z"
+    },
+    {
+      "leadId": "Lisa_Maly_6086637630",
+      "skipped": false,
+      "reason": "FULL_ENRICHMENT",
+      "reasonCodes": [
+        "FULL_ENRICHMENT"
+      ],
+      "confidence": 60,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-12T01:38:17.958Z"
+    },
+    {
+      "leadId": "Daisy_Alvarez_5169965862",
+      "skipped": true,
+      "reason": "AGE_OVER_59",
+      "reasonCodes": [
+        "AGE_OVER_59"
+      ],
+      "confidence": 44,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-12T01:38:19.332Z"
+    },
+    {
+      "leadId": "Scott_Sundermeier_3303107859",
+      "skipped": false,
+      "reason": "PARTIAL_ENRICHMENT",
+      "reasonCodes": [
+        "PARTIAL_ENRICHMENT",
+        "SOFT_DOWNGRADE_FREE_EMAIL"
+      ],
+      "confidence": 36,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-12T01:38:20.581Z"
+    },
+    {
+      "leadId": "Abbey_Gadinsky_Snyder_unknown",
+      "skipped": false,
+      "reason": "FULL_ENRICHMENT",
+      "reasonCodes": [
+        "FULL_ENRICHMENT"
+      ],
+      "confidence": 83,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-12T01:38:21.107Z"
+    },
+    {
+      "leadId": "Simon_Reynolds_5616098987",
+      "skipped": true,
+      "reason": "AGE_OVER_59",
+      "reasonCodes": [
+        "AGE_OVER_59"
+      ],
+      "confidence": 37,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-12T01:38:22.293Z"
+    },
+    {
+      "leadId": "Saul_Saltares_4074629096",
+      "skipped": false,
+      "reason": "FULL_ENRICHMENT",
+      "reasonCodes": [
+        "FULL_ENRICHMENT",
+        "SOFT_DOWNGRADE_FREE_EMAIL"
+      ],
+      "confidence": 63,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-12T01:38:23.385Z"
+    },
+    {
+      "leadId": "KRIS_KOPP_7634394071",
+      "skipped": false,
+      "reason": "PARTIAL_ENRICHMENT",
+      "reasonCodes": [
+        "PARTIAL_ENRICHMENT",
+        "SOFT_DOWNGRADE_FREE_EMAIL"
+      ],
+      "confidence": 36,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-12T01:38:24.378Z"
+    },
+    {
+      "leadId": "Juan_Rubio_6616456144",
+      "skipped": true,
+      "reason": "AGE_OVER_59",
+      "reasonCodes": [
+        "AGE_OVER_59"
+      ],
+      "confidence": 44,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-12T01:38:25.623Z"
+    },
+    {
+      "leadId": "Sidney_Odums_7277420371",
+      "skipped": false,
+      "reason": "PARTIAL_ENRICHMENT",
+      "reasonCodes": [
+        "PARTIAL_ENRICHMENT",
+        "SOFT_DOWNGRADE_FREE_EMAIL"
+      ],
+      "confidence": 43,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-12T01:38:26.673Z"
+    },
+    {
+      "leadId": "Ava_Peacock_7723493204",
+      "skipped": false,
+      "reason": "FULL_ENRICHMENT",
+      "reasonCodes": [
+        "FULL_ENRICHMENT"
+      ],
+      "confidence": 69,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-12T01:38:28.440Z"
+    },
+    {
+      "leadId": "Dhillon_Patel_8138463178",
+      "skipped": false,
+      "reason": "FULL_ENRICHMENT",
+      "reasonCodes": [
+        "FULL_ENRICHMENT",
+        "SOFT_DOWNGRADE_FREE_EMAIL"
+      ],
+      "confidence": 50,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-12T01:38:29.491Z"
+    },
+    {
+      "leadId": "Amy_Vanz_unknown",
+      "skipped": true,
+      "reason": "INCOME_BELOW_60K",
+      "reasonCodes": [
+        "INCOME_BELOW_60K"
+      ],
+      "confidence": 45,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-12T01:38:29.906Z"
+    },
+    {
+      "leadId": "Aria_P__unknown",
+      "skipped": false,
+      "reason": "PARTIAL_ENRICHMENT",
+      "reasonCodes": [
+        "PARTIAL_ENRICHMENT"
+      ],
+      "confidence": 45,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-12T01:38:30.541Z"
+    },
+    {
+      "leadId": "Melissa_Morehouse_8135462312",
+      "skipped": false,
+      "reason": "PARTIAL_ENRICHMENT",
+      "reasonCodes": [
+        "PARTIAL_ENRICHMENT",
+        "SOFT_DOWNGRADE_FREE_EMAIL"
+      ],
+      "confidence": 36,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-12T01:38:31.703Z"
+    },
+    {
+      "leadId": "Jaime_Walsh_unknown",
+      "skipped": true,
+      "reason": "INCOME_BELOW_60K",
+      "reasonCodes": [
+        "INCOME_BELOW_60K"
+      ],
+      "confidence": 55,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-12T01:38:32.482Z"
+    },
+    {
+      "leadId": "Charlie_Alfaro_unknown",
+      "skipped": false,
+      "reason": "PARTIAL_ENRICHMENT",
+      "reasonCodes": [
+        "PARTIAL_ENRICHMENT"
+      ],
+      "confidence": 55,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-12T01:38:33.169Z"
+    },
+    {
+      "leadId": "Roarke_Rozar_9043258270",
+      "skipped": true,
+      "reason": "INCOME_BELOW_60K",
+      "reasonCodes": [
+        "INCOME_BELOW_60K"
+      ],
+      "confidence": 51,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-12T01:38:34.335Z"
+    },
+    {
+      "leadId": "Erica_Elliott_5615989373",
+      "skipped": false,
+      "reason": "PARTIAL_ENRICHMENT",
+      "reasonCodes": [
+        "PARTIAL_ENRICHMENT",
+        "SOFT_DOWNGRADE_FREE_EMAIL"
+      ],
+      "confidence": 36,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-12T01:38:35.362Z"
+    },
+    {
+      "leadId": "Jessica_Bauer_unknown",
+      "skipped": false,
+      "reason": "PARTIAL_ENRICHMENT",
+      "reasonCodes": [
+        "PARTIAL_ENRICHMENT"
+      ],
+      "confidence": 45,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-12T04:55:36.734Z"
+    },
+    {
+      "leadId": "Shaun_Libou_slibou_gmail_com",
+      "skipped": false,
+      "reason": "FULL_ENRICHMENT",
+      "reasonCodes": [
+        "FULL_ENRICHMENT",
+        "SOFT_DOWNGRADE_FREE_EMAIL"
+      ],
+      "confidence": 61,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-12T04:55:38.627Z"
+    },
+    {
+      "leadId": "Amy_Vanz_unknown",
+      "skipped": false,
+      "reason": "PARTIAL_ENRICHMENT",
+      "reasonCodes": [
+        "PARTIAL_ENRICHMENT"
+      ],
+      "confidence": 45,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-12T04:55:39.005Z"
+    },
+    {
+      "leadId": "Aria_P__unknown",
+      "skipped": false,
+      "reason": "PARTIAL_ENRICHMENT",
+      "reasonCodes": [
+        "PARTIAL_ENRICHMENT"
+      ],
+      "confidence": 45,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-12T04:55:39.636Z"
+    },
+    {
+      "leadId": "Jessica_Bauer_unknown",
+      "skipped": false,
+      "reason": "PARTIAL_ENRICHMENT",
+      "reasonCodes": [
+        "PARTIAL_ENRICHMENT"
+      ],
+      "confidence": 45,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-12T04:57:49.968Z"
+    },
+    {
+      "leadId": "Bobby_Rinko_2393400744",
+      "skipped": true,
+      "reason": "AGE_OVER_59",
+      "reasonCodes": [
+        "AGE_OVER_59"
+      ],
+      "confidence": 43,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-12T04:57:51.161Z"
+    },
+    {
+      "leadId": "Shaun_Libou_slibou_gmail_com",
+      "skipped": false,
+      "reason": "FULL_ENRICHMENT",
+      "reasonCodes": [
+        "FULL_ENRICHMENT",
+        "SOFT_DOWNGRADE_FREE_EMAIL"
+      ],
+      "confidence": 61,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-12T04:57:53.221Z"
+    },
+    {
+      "leadId": "William_Law_8134201990",
+      "skipped": false,
+      "reason": "FULL_ENRICHMENT",
+      "reasonCodes": [
+        "FULL_ENRICHMENT",
+        "SOFT_DOWNGRADE_FREE_EMAIL"
+      ],
+      "confidence": 63,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-12T04:57:54.153Z"
+    },
+    {
+      "leadId": "Chad_Risch_2319202799",
+      "skipped": false,
+      "reason": "FULL_ENRICHMENT",
+      "reasonCodes": [
+        "FULL_ENRICHMENT"
+      ],
+      "confidence": 84,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-12T04:57:55.005Z"
+    },
+    {
+      "leadId": "Ryan_Barry_2398503738",
+      "skipped": false,
+      "reason": "PARTIAL_ENRICHMENT",
+      "reasonCodes": [
+        "PARTIAL_ENRICHMENT",
+        "SOFT_DOWNGRADE_FREE_EMAIL"
+      ],
+      "confidence": 18,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-12T04:57:55.996Z"
+    },
+    {
+      "leadId": "Lisa_Maly_6086637630",
+      "skipped": false,
+      "reason": "FULL_ENRICHMENT",
+      "reasonCodes": [
+        "FULL_ENRICHMENT"
+      ],
+      "confidence": 60,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-12T04:57:56.857Z"
+    },
+    {
+      "leadId": "Daisy_Alvarez_5169965862",
+      "skipped": true,
+      "reason": "AGE_OVER_59",
+      "reasonCodes": [
+        "AGE_OVER_59"
+      ],
+      "confidence": 44,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-12T04:57:57.777Z"
+    },
+    {
+      "leadId": "Scott_Sundermeier_3303107859",
+      "skipped": false,
+      "reason": "PARTIAL_ENRICHMENT",
+      "reasonCodes": [
+        "PARTIAL_ENRICHMENT",
+        "SOFT_DOWNGRADE_FREE_EMAIL"
+      ],
+      "confidence": 36,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-12T04:57:58.596Z"
+    },
+    {
+      "leadId": "Abbey_Gadinsky_Snyder_unknown",
+      "skipped": false,
+      "reason": "FULL_ENRICHMENT",
+      "reasonCodes": [
+        "FULL_ENRICHMENT"
+      ],
+      "confidence": 83,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-12T04:57:58.901Z"
+    },
+    {
+      "leadId": "Simon_Reynolds_5616098987",
+      "skipped": true,
+      "reason": "AGE_OVER_59",
+      "reasonCodes": [
+        "AGE_OVER_59"
+      ],
+      "confidence": 37,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-12T04:58:00.014Z"
+    },
+    {
+      "leadId": "Saul_Saltares_4074629096",
+      "skipped": false,
+      "reason": "FULL_ENRICHMENT",
+      "reasonCodes": [
+        "FULL_ENRICHMENT",
+        "SOFT_DOWNGRADE_FREE_EMAIL"
+      ],
+      "confidence": 63,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-12T04:58:00.944Z"
+    },
+    {
+      "leadId": "KRIS_KOPP_7634394071",
+      "skipped": false,
+      "reason": "PARTIAL_ENRICHMENT",
+      "reasonCodes": [
+        "PARTIAL_ENRICHMENT",
+        "SOFT_DOWNGRADE_FREE_EMAIL"
+      ],
+      "confidence": 36,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-12T04:58:01.773Z"
+    },
+    {
+      "leadId": "Juan_Rubio_6616456144",
+      "skipped": true,
+      "reason": "AGE_OVER_59",
+      "reasonCodes": [
+        "AGE_OVER_59"
+      ],
+      "confidence": 44,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-12T04:58:02.757Z"
+    },
+    {
+      "leadId": "Sidney_Odums_7277420371",
+      "skipped": false,
+      "reason": "PARTIAL_ENRICHMENT",
+      "reasonCodes": [
+        "PARTIAL_ENRICHMENT",
+        "SOFT_DOWNGRADE_FREE_EMAIL"
+      ],
+      "confidence": 43,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-12T04:58:03.596Z"
+    },
+    {
+      "leadId": "Ava_Peacock_7723493204",
+      "skipped": false,
+      "reason": "FULL_ENRICHMENT",
+      "reasonCodes": [
+        "FULL_ENRICHMENT"
+      ],
+      "confidence": 69,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-12T04:58:04.308Z"
+    },
+    {
+      "leadId": "Dhillon_Patel_8138463178",
+      "skipped": false,
+      "reason": "FULL_ENRICHMENT",
+      "reasonCodes": [
+        "FULL_ENRICHMENT",
+        "SOFT_DOWNGRADE_FREE_EMAIL"
+      ],
+      "confidence": 50,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-12T04:58:04.986Z"
+    },
+    {
+      "leadId": "Amy_Vanz_unknown",
+      "skipped": true,
+      "reason": "INCOME_BELOW_60K",
+      "reasonCodes": [
+        "INCOME_BELOW_60K"
+      ],
+      "confidence": 45,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-12T04:58:05.375Z"
+    },
+    {
+      "leadId": "Aria_P__unknown",
+      "skipped": false,
+      "reason": "PARTIAL_ENRICHMENT",
+      "reasonCodes": [
+        "PARTIAL_ENRICHMENT"
+      ],
+      "confidence": 45,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-12T04:58:05.887Z"
+    },
+    {
+      "leadId": "Melissa_Morehouse_8135462312",
+      "skipped": false,
+      "reason": "PARTIAL_ENRICHMENT",
+      "reasonCodes": [
+        "PARTIAL_ENRICHMENT",
+        "SOFT_DOWNGRADE_FREE_EMAIL"
+      ],
+      "confidence": 36,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-12T04:58:12.774Z"
+    },
+    {
+      "leadId": "Jaime_Walsh_unknown",
+      "skipped": true,
+      "reason": "INCOME_BELOW_60K",
+      "reasonCodes": [
+        "INCOME_BELOW_60K"
+      ],
+      "confidence": 55,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-12T04:58:13.195Z"
+    },
+    {
+      "leadId": "Charlie_Alfaro_unknown",
+      "skipped": false,
+      "reason": "PARTIAL_ENRICHMENT",
+      "reasonCodes": [
+        "PARTIAL_ENRICHMENT"
+      ],
+      "confidence": 55,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-12T04:58:13.567Z"
+    },
+    {
+      "leadId": "Roarke_Rozar_9043258270",
+      "skipped": true,
+      "reason": "INCOME_BELOW_60K",
+      "reasonCodes": [
+        "INCOME_BELOW_60K"
+      ],
+      "confidence": 51,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-12T04:58:14.482Z"
+    },
+    {
+      "leadId": "Erica_Elliott_5615989373",
+      "skipped": false,
+      "reason": "PARTIAL_ENRICHMENT",
+      "reasonCodes": [
+        "PARTIAL_ENRICHMENT",
+        "SOFT_DOWNGRADE_FREE_EMAIL"
+      ],
+      "confidence": 36,
+      "decisionStage": "post_telnyx",
+      "timestamp": "2026-03-12T04:58:15.312Z"
     }
   ],
-  "lastUpdated": "2026-03-08T02:38:36.469Z"
+  "lastUpdated": "2026-03-12T04:58:15.312Z"
 }

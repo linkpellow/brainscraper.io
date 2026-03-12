@@ -1,0 +1,167 @@
+{
+  "metadata": {
+    "savedAt": "2026-03-10T02:04:22.869Z",
+    "leadKey": "linkedin:https://www.linkedin.com/in/ACwAAAZen50Bger9gdY8TchPrc172UwIe-dQ0yM"
+  },
+  "enrichedRow": {
+    "Name": "Joseph Toodzio",
+    "Title": "General Manager of Route Verticals",
+    "Company": "Cents",
+    "Location": "Coral Springs, Florida, United States",
+    "LinkedIn URL": "https://www.linkedin.com/in/ACwAAAZen50Bger9gdY8TchPrc172UwIe-dQ0yM",
+    "Email": "jtoodzio@aol.com",
+    "Phone": "5617035515",
+    "First Name": "Joseph",
+    "Last Name": "Toodzio",
+    "City": "Coral Springs",
+    "State": "FL",
+    "Zip": "33065",
+    "Search Filter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+    "_enriched": {
+      "firstName": "Joseph",
+      "lastName": "Toodzio",
+      "zipCode": "33065",
+      "zipProvenance": "verified_skip_trace",
+      "gender": "male",
+      "genderConfidence": 98,
+      "phone": "5617035515",
+      "email": "jtoodzio@aol.com",
+      "addressLine2": "FL",
+      "incomePreQual": {
+        "conservative": {
+          "min": 72000,
+          "max": 192000,
+          "p50": 132000
+        },
+        "upside": {
+          "min": 67000,
+          "max": 172000,
+          "p50": 132000
+        },
+        "estimate": {
+          "range": {
+            "min": 72000,
+            "max": 172000
+          },
+          "p50": 132000,
+          "confidence": 0.55,
+          "primaryDrivers": [
+            "career ladder: manager",
+            "manager role",
+            "company: Cents"
+          ],
+          "riskFlags": [
+            "Job title seniority unclear"
+          ]
+        },
+        "decision": {
+          "tier": "unknown",
+          "shouldContinueEnrichment": true,
+          "reason": "Income meets $60k threshold: Upside p50 ($132k) >= $60k minimum",
+          "band": "high",
+          "requiresStrongPositives": false,
+          "reasonCode": "INCOME_ABOVE_60K"
+        }
+      },
+      "skipTracingData": {
+        "Status": 200,
+        "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+        "Source": "tps_fsh_255_cch",
+        "Records": 1,
+        "Page": 1,
+        "PeopleDetails": [
+          {
+            "Name": "Joseph Toodzio",
+            "Link": "https://www.truepeoplesearch.com/find/person/pu6060n686ul4u946006",
+            "Age": 50,
+            "Person ID": "pu6060n686ul4u946006",
+            "Lives in": "Coral Springs, FL",
+            "Used to live in": "Boynton Beach FL, Delray Beach FL, Boca R...",
+            "Related to": "Andrew Toodzio, Emil Toodzio, Jennifer Too..."
+          }
+        ],
+        "ageFromPersonDetails": "50"
+      },
+      "skipTracingDisposition": "clear_match",
+      "skipTracingMatchType": "exact_location",
+      "telnyxLookupData": {
+        "success": true,
+        "data": {
+          "data": {
+            "country_code": "US",
+            "national_format": "(561) 703-5515",
+            "phone_number": "+15617035515",
+            "fraud": null,
+            "carrier": {
+              "mobile_country_code": "",
+              "mobile_network_code": "",
+              "name": "Verizon Wireless:6006 - SVR/2",
+              "type": "mobile",
+              "error_code": null,
+              "normalized_carrier": "Verizon Wireless"
+            },
+            "caller_name": null,
+            "nnid_override": null,
+            "portability": {
+              "lrn": "954270XXXX",
+              "ported_status": "",
+              "ported_date": "",
+              "ocn": "6502",
+              "line_type": "mobile",
+              "spid": "",
+              "spid_carrier_name": "CELLCO PARTNERSHIP DBA VERIZON",
+              "spid_carrier_type": "",
+              "altspid": "",
+              "altspid_carrier_name": "",
+              "altspid_carrier_type": "",
+              "city": "FTLAUDERDL",
+              "state": "Florida"
+            },
+            "valid_number": true,
+            "record_type": "number_lookup"
+          }
+        }
+      },
+      "lineType": "mobile",
+      "carrierName": "Verizon Wireless:6006 - SVR/2",
+      "carrierType": "mobile",
+      "normalizedCarrier": "Verizon Wireless",
+      "decisionReason": "FULL_ENRICHMENT",
+      "decisionCodes": [
+        "FULL_ENRICHMENT",
+        "SOFT_DOWNGRADE_FREE_EMAIL"
+      ],
+      "decisionConfidence": 63,
+      "decisionAction": "full",
+      "enrichmentLevel": "full",
+      "dncStatus": "UNKNOWN",
+      "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+      "age": "50"
+    },
+    "Line Type": "mobile",
+    "Carrier": "Verizon Wireless:6006 - SVR/2",
+    "Normalized Carrier": "Verizon Wireless",
+    "Age": "50",
+    "Gender": "male",
+    "Gender Confidence": 98
+  },
+  "leadSummary": {
+    "name": "Joseph Toodzio",
+    "phone": "5617035515",
+    "dobOrAge": "50",
+    "zipcode": "33065",
+    "state": "FL",
+    "city": "Coral Springs",
+    "email": "jtoodzio@aol.com",
+    "dncStatus": "UNKNOWN",
+    "income": 132000,
+    "lineType": "mobile",
+    "carrier": "Verizon Wireless:6006 - SVR/2",
+    "normalizedCarrier": "Verizon Wireless",
+    "searchFilter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+    "dateScraped": "2026-03-10",
+    "linkedinUrl": "https://www.linkedin.com/in/ACwAAAZen50Bger9gdY8TchPrc172UwIe-dQ0yM",
+    "zipProvenance": "verified_skip_trace",
+    "skipTracingDisposition": "clear_match"
+  }
+}

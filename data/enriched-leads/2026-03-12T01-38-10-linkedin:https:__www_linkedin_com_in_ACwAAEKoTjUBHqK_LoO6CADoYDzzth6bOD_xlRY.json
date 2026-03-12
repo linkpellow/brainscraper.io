@@ -1,0 +1,162 @@
+{
+  "metadata": {
+    "savedAt": "2026-03-12T01:38:10.080Z",
+    "leadKey": "linkedin:https://www.linkedin.com/in/ACwAAEKoTjUBHqK-LoO6CADoYDzzth6bOD_xlRY"
+  },
+  "enrichedRow": {
+    "Name": "Henrique Zingg",
+    "Title": "Real Estate Private Equity Intern",
+    "Company": "Project Destined",
+    "Location": "Miami, FL",
+    "LinkedIn URL": "https://www.linkedin.com/in/ACwAAEKoTjUBHqK-LoO6CADoYDzzth6bOD_xlRY",
+    "Email": "alfredo9574@att.net",
+    "Phone": "7864498854",
+    "First Name": "Henrique",
+    "Last Name": "Zingg",
+    "City": "Miami",
+    "State": "FL",
+    "Zip": "33129",
+    "Search Filter": "roi-test-fl-real-estate",
+    "_enriched": {
+      "firstName": "Henrique",
+      "lastName": "Zingg",
+      "zipCode": "33129",
+      "zipProvenance": "verified_skip_trace",
+      "gender": "male",
+      "genderConfidence": 98,
+      "phone": "7864498854",
+      "email": "alfredo9574@att.net",
+      "addressLine2": "FL",
+      "incomePreQual": {
+        "conservative": {
+          "min": 31000,
+          "max": 109000,
+          "p50": 70000
+        },
+        "upside": {
+          "min": 28000,
+          "max": 112000,
+          "p50": 70000
+        },
+        "estimate": {
+          "range": {
+            "min": 31000,
+            "max": 112000
+          },
+          "p50": 70000,
+          "confidence": 0.6,
+          "primaryDrivers": [
+            "career ladder: ic",
+            "company: Project Destined"
+          ],
+          "riskFlags": []
+        },
+        "decision": {
+          "tier": "unknown",
+          "shouldContinueEnrichment": true,
+          "reason": "Income meets $60k threshold: Upside p50 ($70k) >= $60k minimum",
+          "band": "high",
+          "requiresStrongPositives": false,
+          "reasonCode": "INCOME_ABOVE_60K"
+        }
+      },
+      "skipTracingData": {
+        "Status": 200,
+        "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+        "Source": "tps_fsh_267_cch",
+        "Records": 1,
+        "Page": 1,
+        "PeopleDetails": [
+          {
+            "Name": "Henrique Zingg",
+            "Link": "https://www.truepeoplesearch.com/find/person/pxr048nun94989r8n6229",
+            "Age": 80,
+            "Person ID": "pxr048nun94989r8n6229",
+            "Lives in": "Miami, FL",
+            "Used to live in": "",
+            "Related to": "Alex Ulivi, Alfredo Zingg, Alfredo Zinggre..."
+          }
+        ],
+        "ageFromPersonDetails": "80"
+      },
+      "skipTracingDisposition": "clear_match",
+      "skipTracingMatchType": "exact_location",
+      "age": "80",
+      "telnyxLookupData": {
+        "success": true,
+        "data": {
+          "data": {
+            "country_code": "US",
+            "national_format": "(786) 449-8854",
+            "phone_number": "+17864498854",
+            "fraud": null,
+            "carrier": {
+              "mobile_country_code": "",
+              "mobile_network_code": "",
+              "name": "Cingular Wireless/2",
+              "type": "mobile",
+              "error_code": null,
+              "normalized_carrier": "AT&T"
+            },
+            "caller_name": null,
+            "nnid_override": null,
+            "portability": {
+              "lrn": "954573XXXX",
+              "ported_status": "",
+              "ported_date": "",
+              "ocn": "6214",
+              "line_type": "mobile",
+              "spid": "",
+              "spid_carrier_name": "NEW CINGULAR WIRELESS PCS, LLC",
+              "spid_carrier_type": "",
+              "altspid": "",
+              "altspid_carrier_name": "",
+              "altspid_carrier_type": "",
+              "city": "DEERFLDBCH",
+              "state": "Florida"
+            },
+            "valid_number": true,
+            "record_type": "number_lookup"
+          }
+        }
+      },
+      "lineType": "mobile",
+      "carrierName": "Cingular Wireless/2",
+      "carrierType": "mobile",
+      "normalizedCarrier": "AT&T",
+      "decisionReason": "KILL_SWITCH",
+      "decisionCodes": [
+        "KILL_SWITCH"
+      ],
+      "decisionConfidence": 97,
+      "decisionAction": "skip",
+      "enrichmentLevel": "none",
+      "dncStatus": "UNKNOWN"
+    },
+    "Line Type": "mobile",
+    "Carrier": "Cingular Wireless/2",
+    "Normalized Carrier": "AT&T",
+    "Age": "80",
+    "Gender": "male",
+    "Gender Confidence": 98
+  },
+  "leadSummary": {
+    "name": "Henrique Zingg",
+    "phone": "7864498854",
+    "dobOrAge": "80",
+    "zipcode": "33129",
+    "state": "FL",
+    "city": "Miami",
+    "email": "alfredo9574@att.net",
+    "dncStatus": "UNKNOWN",
+    "income": 70000,
+    "lineType": "mobile",
+    "carrier": "Cingular Wireless/2",
+    "normalizedCarrier": "AT&T",
+    "searchFilter": "roi-test-fl-real-estate",
+    "dateScraped": "2026-03-12",
+    "linkedinUrl": "https://www.linkedin.com/in/ACwAAEKoTjUBHqK-LoO6CADoYDzzth6bOD_xlRY",
+    "zipProvenance": "verified_skip_trace",
+    "skipTracingDisposition": "clear_match"
+  }
+}

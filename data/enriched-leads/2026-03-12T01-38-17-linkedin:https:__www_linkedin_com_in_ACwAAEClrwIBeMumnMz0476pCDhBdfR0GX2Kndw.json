@@ -1,0 +1,163 @@
+{
+  "metadata": {
+    "savedAt": "2026-03-12T01:38:17.960Z",
+    "leadKey": "linkedin:https://www.linkedin.com/in/ACwAAEClrwIBeMumnMz0476pCDhBdfR0GX2Kndw"
+  },
+  "enrichedRow": {
+    "Name": "Lisa Maly",
+    "Title": "Principal, Capital Allocation & Real Asset Strategy",
+    "Company": "Modern Elite Enterprises / MOD Capital Funding f.k.a. Showcase Investment Properties",
+    "Location": "Palmetto, FL",
+    "LinkedIn URL": "https://www.linkedin.com/in/ACwAAEClrwIBeMumnMz0476pCDhBdfR0GX2Kndw",
+    "Email": "lisa@showcaseinvproperties.com",
+    "Phone": "6086637630",
+    "First Name": "Lisa",
+    "Last Name": "Maly",
+    "City": "Palmetto",
+    "State": "FL",
+    "Zip": "34221",
+    "Search Filter": "roi-test-fl-real-estate",
+    "_enriched": {
+      "firstName": "Lisa",
+      "lastName": "Maly",
+      "zipCode": "34221",
+      "zipProvenance": "verified_skip_trace",
+      "gender": "female",
+      "genderConfidence": 98,
+      "phone": "6086637630",
+      "email": "lisa@showcaseinvproperties.com",
+      "addressLine2": "FL",
+      "incomePreQual": {
+        "conservative": {
+          "min": 56000,
+          "max": 164000,
+          "p50": 110000
+        },
+        "upside": {
+          "min": 63000,
+          "max": 157000,
+          "p50": 121000
+        },
+        "estimate": {
+          "range": {
+            "min": 56000,
+            "max": 157000
+          },
+          "p50": 116000,
+          "confidence": 0.48,
+          "primaryDrivers": [
+            "career ladder: senior_ic",
+            "company: Modern Elite Enterprises / MOD Capital Funding f.k.a. Showcase Investment Properties"
+          ],
+          "riskFlags": [
+            "High-level title but company type may not support it"
+          ]
+        },
+        "decision": {
+          "tier": "unknown",
+          "shouldContinueEnrichment": true,
+          "reason": "Income meets $60k threshold: Upside p50 ($121k) >= $60k minimum",
+          "band": "high",
+          "requiresStrongPositives": false,
+          "reasonCode": "INCOME_ABOVE_60K"
+        }
+      },
+      "skipTracingData": {
+        "Status": 200,
+        "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+        "Source": "tps_fsh_305_cch",
+        "Records": 1,
+        "Page": 1,
+        "PeopleDetails": [
+          {
+            "Name": "Lisa Maly",
+            "Link": "https://www.truepeoplesearch.com/find/person/pn42rrr88969nu02lru4",
+            "Age": 54,
+            "Person ID": "pn42rrr88969nu02lru4",
+            "Lives in": "Palmetto, FL",
+            "Used to live in": "Odessa FL, Tarpon Springs FL, Belleair Be...",
+            "Related to": "Marlene Hilger"
+          }
+        ],
+        "ageFromPersonDetails": "54"
+      },
+      "skipTracingDisposition": "clear_match",
+      "skipTracingMatchType": "exact_location",
+      "phoneStateMismatch": true,
+      "telnyxLookupData": {
+        "success": true,
+        "data": {
+          "data": {
+            "country_code": "US",
+            "national_format": "(608) 663-7630",
+            "phone_number": "+16086637630",
+            "fraud": null,
+            "carrier": {
+              "mobile_country_code": "",
+              "mobile_network_code": "",
+              "name": "TDS METROCOM, LLC",
+              "type": "fixed line",
+              "error_code": null,
+              "normalized_carrier": ""
+            },
+            "caller_name": null,
+            "nnid_override": null,
+            "portability": {
+              "lrn": null,
+              "ported_status": "",
+              "ported_date": "",
+              "ocn": "7804",
+              "line_type": "fixed line",
+              "spid": "",
+              "spid_carrier_name": "TDS METROCOM, INC. - WI",
+              "spid_carrier_type": "",
+              "altspid": "",
+              "altspid_carrier_name": "",
+              "altspid_carrier_type": "",
+              "city": "MADISON",
+              "state": "Wisconsin"
+            },
+            "valid_number": true,
+            "record_type": "number_lookup"
+          }
+        }
+      },
+      "lineType": "fixed line",
+      "carrierName": "TDS METROCOM, LLC",
+      "carrierType": "fixed line",
+      "normalizedCarrier": "",
+      "decisionReason": "FULL_ENRICHMENT",
+      "decisionCodes": [
+        "FULL_ENRICHMENT"
+      ],
+      "decisionConfidence": 60,
+      "decisionAction": "full",
+      "enrichmentLevel": "full",
+      "dncStatus": "UNKNOWN"
+    },
+    "Line Type": "fixed line",
+    "Carrier": "TDS METROCOM, LLC",
+    "Gender": "female",
+    "Gender Confidence": 98
+  },
+  "leadSummary": {
+    "name": "Lisa Maly",
+    "phone": "6086637630",
+    "dobOrAge": "",
+    "zipcode": "34221",
+    "state": "FL",
+    "city": "Palmetto",
+    "email": "lisa@showcaseinvproperties.com",
+    "dncStatus": "UNKNOWN",
+    "income": 116000,
+    "lineType": "fixed line",
+    "carrier": "TDS METROCOM, LLC",
+    "normalizedCarrier": "",
+    "searchFilter": "roi-test-fl-real-estate",
+    "dateScraped": "2026-03-12",
+    "linkedinUrl": "https://www.linkedin.com/in/ACwAAEClrwIBeMumnMz0476pCDhBdfR0GX2Kndw",
+    "zipProvenance": "verified_skip_trace",
+    "skipTracingDisposition": "clear_match",
+    "phoneStateMismatch": true
+  }
+}

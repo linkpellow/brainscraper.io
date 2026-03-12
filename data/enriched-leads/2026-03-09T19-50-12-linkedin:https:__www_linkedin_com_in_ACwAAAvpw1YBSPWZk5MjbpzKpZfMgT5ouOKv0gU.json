@@ -1,0 +1,161 @@
+{
+  "metadata": {
+    "savedAt": "2026-03-09T19:50:12.815Z",
+    "leadKey": "linkedin:https://www.linkedin.com/in/ACwAAAvpw1YBSPWZk5MjbpzKpZfMgT5ouOKv0gU"
+  },
+  "enrichedRow": {
+    "Name": "Kaylin Schreiber",
+    "Title": "DHS Financial Operations Manager",
+    "Company": "Arlington County Government",
+    "Location": "Alexandria, Virginia, United States",
+    "LinkedIn URL": "https://www.linkedin.com/in/ACwAAAvpw1YBSPWZk5MjbpzKpZfMgT5ouOKv0gU",
+    "Email": "kaylingaal@gmail.com",
+    "Phone": "5405501056",
+    "First Name": "Kaylin",
+    "Last Name": "Schreiber",
+    "City": "Alexandria",
+    "State": "VA",
+    "Zip": "22305",
+    "Search Filter": "Location: Alexandria, Virginia | Changed Jobs (90 days)",
+    "_enriched": {
+      "firstName": "Kaylin",
+      "lastName": "Schreiber",
+      "zipCode": "22305",
+      "zipProvenance": "verified_skip_trace",
+      "phone": "5405501056",
+      "email": "kaylingaal@gmail.com",
+      "addressLine2": "VA",
+      "incomePreQual": {
+        "conservative": {
+          "min": 58000,
+          "max": 178000,
+          "p50": 118000
+        },
+        "upside": {
+          "min": 53000,
+          "max": 154000,
+          "p50": 118000
+        },
+        "estimate": {
+          "range": {
+            "min": 58000,
+            "max": 154000
+          },
+          "p50": 118000,
+          "confidence": 0.55,
+          "primaryDrivers": [
+            "career ladder: manager",
+            "manager role",
+            "company: Arlington County Government"
+          ],
+          "riskFlags": [
+            "Job title seniority unclear"
+          ]
+        },
+        "decision": {
+          "tier": "unknown",
+          "shouldContinueEnrichment": true,
+          "reason": "Income meets $60k threshold: Upside p50 ($118k) >= $60k minimum",
+          "band": "high",
+          "requiresStrongPositives": false,
+          "reasonCode": "INCOME_ABOVE_60K"
+        }
+      },
+      "skipTracingData": {
+        "Status": 200,
+        "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+        "Source": "tps_fsh_310_cch",
+        "Records": 1,
+        "Page": 1,
+        "PeopleDetails": [
+          {
+            "Name": "Kaylin Schreiber",
+            "Link": "https://www.truepeoplesearch.com/find/person/pxu888rnu44l40n0298rn",
+            "Age": 37,
+            "Person ID": "pxu888rnu44l40n0298rn",
+            "Lives in": "Alexandria, VA",
+            "Used to live in": "Norfolk VA, Williamsburg VA, Stephens Cit...",
+            "Related to": "Christian Schreiber, Donald Schreiber, Les..."
+          }
+        ],
+        "ageFromPersonDetails": "37"
+      },
+      "skipTracingDisposition": "clear_match",
+      "telnyxLookupData": {
+        "success": true,
+        "data": {
+          "data": {
+            "country_code": "US",
+            "national_format": "(540) 550-1056",
+            "phone_number": "+15405501056",
+            "fraud": null,
+            "carrier": {
+              "mobile_country_code": "",
+              "mobile_network_code": "",
+              "name": "T-Mobile US-SVR-10X/2",
+              "type": "mobile",
+              "error_code": null,
+              "normalized_carrier": ""
+            },
+            "caller_name": null,
+            "nnid_override": null,
+            "portability": {
+              "lrn": "540514XXXX",
+              "ported_status": "",
+              "ported_date": "",
+              "ocn": "6855",
+              "line_type": "mobile",
+              "spid": "",
+              "spid_carrier_name": "OMNIPOINT COMMUNICATIONS CAP O",
+              "spid_carrier_type": "",
+              "altspid": "",
+              "altspid_carrier_name": "",
+              "altspid_carrier_type": "",
+              "city": "WINCHESTER",
+              "state": "Virginia"
+            },
+            "valid_number": true,
+            "record_type": "number_lookup"
+          }
+        }
+      },
+      "lineType": "mobile",
+      "carrierName": "T-Mobile US-SVR-10X/2",
+      "carrierType": "mobile",
+      "normalizedCarrier": "",
+      "decisionReason": "FULL_ENRICHMENT",
+      "decisionCodes": [
+        "FULL_ENRICHMENT",
+        "SOFT_DOWNGRADE_FREE_EMAIL"
+      ],
+      "decisionConfidence": 63,
+      "decisionAction": "full",
+      "enrichmentLevel": "full",
+      "dncStatus": "UNKNOWN",
+      "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+      "age": "37"
+    },
+    "Line Type": "mobile",
+    "Carrier": "T-Mobile US-SVR-10X/2",
+    "Age": "37"
+  },
+  "leadSummary": {
+    "name": "Kaylin Schreiber",
+    "phone": "5405501056",
+    "dobOrAge": "37",
+    "zipcode": "22305",
+    "state": "VA",
+    "city": "Alexandria",
+    "email": "kaylingaal@gmail.com",
+    "dncStatus": "UNKNOWN",
+    "income": 118000,
+    "lineType": "mobile",
+    "carrier": "T-Mobile US-SVR-10X/2",
+    "normalizedCarrier": "",
+    "searchFilter": "Location: Alexandria, Virginia | Changed Jobs (90 days)",
+    "dateScraped": "2026-03-09",
+    "linkedinUrl": "https://www.linkedin.com/in/ACwAAAvpw1YBSPWZk5MjbpzKpZfMgT5ouOKv0gU",
+    "zipProvenance": "verified_skip_trace",
+    "skipTracingDisposition": "clear_match"
+  }
+}

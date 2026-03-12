@@ -1,0 +1,160 @@
+{
+  "metadata": {
+    "savedAt": "2026-03-09T19:49:49.844Z",
+    "leadKey": "linkedin:https://www.linkedin.com/in/ACwAABNgesgBo1xwnp8J89RIGB5dfTvF6foLfGw"
+  },
+  "enrichedRow": {
+    "Name": "Courtney Ballantine",
+    "Title": "Chief of Police",
+    "Company": "Georgetown University",
+    "Location": "Alexandria, Virginia, United States",
+    "LinkedIn URL": "https://www.linkedin.com/in/ACwAABNgesgBo1xwnp8J89RIGB5dfTvF6foLfGw",
+    "Email": "cballantine@msn.com",
+    "Phone": "7039302505",
+    "First Name": "Courtney",
+    "Last Name": "Ballantine",
+    "City": "Alexandria",
+    "State": "VA",
+    "Zip": "22309",
+    "Search Filter": "Location: Alexandria, Virginia | Changed Jobs (90 days)",
+    "_enriched": {
+      "firstName": "Courtney",
+      "lastName": "Ballantine",
+      "zipCode": "22309",
+      "zipProvenance": "verified_skip_trace",
+      "phone": "7039302505",
+      "email": "cballantine@msn.com",
+      "addressLine2": "VA",
+      "incomePreQual": {
+        "conservative": {
+          "min": 271000,
+          "max": 571000,
+          "p50": 421000
+        },
+        "upside": {
+          "min": 301000,
+          "max": 602000,
+          "p50": 463000
+        },
+        "estimate": {
+          "range": {
+            "min": 271000,
+            "max": 602000
+          },
+          "p50": 442000,
+          "confidence": 0.48,
+          "primaryDrivers": [
+            "career ladder: exec",
+            "company: Georgetown University"
+          ],
+          "riskFlags": [
+            "High-level title but company type may not support it"
+          ]
+        },
+        "decision": {
+          "tier": "unknown",
+          "shouldContinueEnrichment": true,
+          "reason": "Income meets $60k threshold: Upside p50 ($463k) >= $60k minimum",
+          "band": "high",
+          "requiresStrongPositives": false,
+          "reasonCode": "INCOME_ABOVE_60K"
+        }
+      },
+      "skipTracingData": {
+        "Status": 200,
+        "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+        "Source": "tps_fsh_364_cch",
+        "Records": 1,
+        "Page": 1,
+        "PeopleDetails": [
+          {
+            "Name": "Courtney Ballantine",
+            "Link": "https://www.truepeoplesearch.com/find/person/pnrr009ru494nnu92r6",
+            "Age": 47,
+            "Person ID": "pnrr009ru494nnu92r6",
+            "Lives in": "Alexandria, VA",
+            "Used to live in": "Nags Head NC, Norcross GA, Marietta GA, W...",
+            "Related to": "Charles Ballantine, Matthew Ballantine, Sa..."
+          }
+        ],
+        "ageFromPersonDetails": "47"
+      },
+      "skipTracingDisposition": "clear_match",
+      "telnyxLookupData": {
+        "success": true,
+        "data": {
+          "data": {
+            "country_code": "US",
+            "national_format": "(703) 930-2505",
+            "phone_number": "+17039302505",
+            "fraud": null,
+            "carrier": {
+              "mobile_country_code": "",
+              "mobile_network_code": "",
+              "name": "OMNIPOINT COMMUNICATIONS CAP OPERATIONS, LLC",
+              "type": "mobile",
+              "error_code": null,
+              "normalized_carrier": "T-Mobile USA"
+            },
+            "caller_name": null,
+            "nnid_override": null,
+            "portability": {
+              "lrn": null,
+              "ported_status": "",
+              "ported_date": "",
+              "ocn": "6664",
+              "line_type": "mobile",
+              "spid": "",
+              "spid_carrier_name": "SPRINT SPECTRUM L.P.",
+              "spid_carrier_type": "",
+              "altspid": "",
+              "altspid_carrier_name": "",
+              "altspid_carrier_type": "",
+              "city": "HERNDON",
+              "state": "Virginia"
+            },
+            "valid_number": true,
+            "record_type": "number_lookup"
+          }
+        }
+      },
+      "lineType": "mobile",
+      "carrierName": "OMNIPOINT COMMUNICATIONS CAP OPERATIONS, LLC",
+      "carrierType": "mobile",
+      "normalizedCarrier": "T-Mobile USA",
+      "decisionReason": "FULL_ENRICHMENT",
+      "decisionCodes": [
+        "FULL_ENRICHMENT"
+      ],
+      "decisionConfidence": 60,
+      "decisionAction": "full",
+      "enrichmentLevel": "full",
+      "dncStatus": "UNKNOWN",
+      "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+      "age": "47"
+    },
+    "Line Type": "mobile",
+    "Carrier": "OMNIPOINT COMMUNICATIONS CAP OPERATIONS, LLC",
+    "Normalized Carrier": "T-Mobile USA",
+    "Age": "47"
+  },
+  "leadSummary": {
+    "name": "Courtney Ballantine",
+    "phone": "7039302505",
+    "dobOrAge": "47",
+    "zipcode": "22309",
+    "state": "VA",
+    "city": "Alexandria",
+    "email": "cballantine@msn.com",
+    "dncStatus": "UNKNOWN",
+    "income": 442000,
+    "lineType": "mobile",
+    "carrier": "OMNIPOINT COMMUNICATIONS CAP OPERATIONS, LLC",
+    "normalizedCarrier": "T-Mobile USA",
+    "searchFilter": "Location: Alexandria, Virginia | Changed Jobs (90 days)",
+    "dateScraped": "2026-03-09",
+    "linkedinUrl": "https://www.linkedin.com/in/ACwAABNgesgBo1xwnp8J89RIGB5dfTvF6foLfGw",
+    "zipProvenance": "verified_skip_trace",
+    "skipTracingDisposition": "clear_match"
+  }
+}

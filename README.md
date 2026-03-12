@@ -2,6 +2,12 @@
 
 Internal tooling for lead enrichment, scrubbing, and operational workflows.
 
+## Run
+
+- **Dev:** `npm run dev`
+- **Production:** `npm run build` then `npm start` (custom server). With standalone build, use `npm run start:next` instead of `next start`.
+- **Deploy:** See [docs/maintenance.md](docs/maintenance.md) for Railway and dependency notes.
+
 ## Manual DNC token
 
 DNC scrubbing uses a **manually managed** JWT stored in server settings (persisted in `data/settings.json`). The Lead Generation UI lets you save and test the token without ever displaying the full value—only a masked preview is shown.

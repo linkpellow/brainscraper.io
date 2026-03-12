@@ -1,0 +1,158 @@
+{
+  "metadata": {
+    "savedAt": "2026-03-09T19:50:05.994Z",
+    "leadKey": "linkedin:https://www.linkedin.com/in/ACwAADyTnWwB-ovMg-ev2nI0UGXqVD4-SIIiNE0"
+  },
+  "enrichedRow": {
+    "Name": "Abdul (Razzaq) Karimzadah",
+    "Title": "Independent Contractor",
+    "Company": "Chesapeake Conservancy",
+    "Location": "Stafford, Virginia, United States",
+    "LinkedIn URL": "https://www.linkedin.com/in/ACwAADyTnWwB-ovMg-ev2nI0UGXqVD4-SIIiNE0",
+    "Email": "",
+    "Phone": "2408108003",
+    "First Name": "Abdul",
+    "Last Name": "(Razzaq) Karimzadah",
+    "City": "Stafford",
+    "State": "VA",
+    "Zip": "22554",
+    "Search Filter": "Location: Alexandria, Virginia | Changed Jobs (90 days)",
+    "_enriched": {
+      "firstName": "Abdul",
+      "lastName": "Karimzadah",
+      "zipCode": "22554",
+      "zipProvenance": "verified_skip_trace",
+      "phone": "2408108003",
+      "addressLine2": "VA",
+      "incomePreQual": {
+        "conservative": {
+          "min": 30000,
+          "max": 115000,
+          "p50": 70000
+        },
+        "upside": {
+          "min": 21000,
+          "max": 119000,
+          "p50": 70000
+        },
+        "estimate": {
+          "range": {
+            "min": 30000,
+            "max": 119000
+          },
+          "p50": 70000,
+          "confidence": 0.33,
+          "primaryDrivers": [
+            "company: Chesapeake Conservancy"
+          ],
+          "riskFlags": [
+            "Job title seniority unclear"
+          ]
+        },
+        "decision": {
+          "tier": "unknown",
+          "shouldContinueEnrichment": true,
+          "reason": "Income meets $60k threshold: Upside p50 ($70k) >= $60k minimum",
+          "band": "high",
+          "requiresStrongPositives": false,
+          "reasonCode": "INCOME_ABOVE_60K"
+        }
+      },
+      "skipTracingData": {
+        "Status": 200,
+        "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+        "Source": "tps_fsh_343_cch",
+        "Records": 1,
+        "Page": 1,
+        "PeopleDetails": [
+          {
+            "Name": "Abdul Karimzadah",
+            "Link": "https://www.truepeoplesearch.com/find/person/pxu8nu4nunn2lrru60nl9",
+            "Age": 36,
+            "Person ID": "pxu8nu4nunn2lrru60nl9",
+            "Lives in": "Stafford, VA",
+            "Used to live in": "Alexandria VA",
+            "Related to": "Malalai Karimzadah, Mohammad Karimzadah"
+          }
+        ],
+        "ageFromPersonDetails": "36"
+      },
+      "skipTracingDisposition": "clear_match",
+      "telnyxLookupData": {
+        "success": true,
+        "data": {
+          "data": {
+            "country_code": "US",
+            "national_format": "(240) 810-8003",
+            "phone_number": "+12408108003",
+            "fraud": null,
+            "carrier": {
+              "mobile_country_code": "",
+              "mobile_network_code": "",
+              "name": "OMNIPOINT COMMUNICATIONS CAP OPERATIONS, LLC",
+              "type": "mobile",
+              "error_code": null,
+              "normalized_carrier": "T-Mobile USA"
+            },
+            "caller_name": null,
+            "nnid_override": null,
+            "portability": {
+              "lrn": null,
+              "ported_status": "",
+              "ported_date": "",
+              "ocn": "6855",
+              "line_type": "mobile",
+              "spid": "",
+              "spid_carrier_name": "OMNIPOINT COMMUNICATIONS CAP O",
+              "spid_carrier_type": "",
+              "altspid": "",
+              "altspid_carrier_name": "",
+              "altspid_carrier_type": "",
+              "city": "WSNGTNZN10",
+              "state": "Maryland"
+            },
+            "valid_number": true,
+            "record_type": "number_lookup"
+          }
+        }
+      },
+      "lineType": "mobile",
+      "carrierName": "OMNIPOINT COMMUNICATIONS CAP OPERATIONS, LLC",
+      "carrierType": "mobile",
+      "normalizedCarrier": "T-Mobile USA",
+      "decisionReason": "PARTIAL_ENRICHMENT",
+      "decisionCodes": [
+        "PARTIAL_ENRICHMENT"
+      ],
+      "decisionConfidence": 51,
+      "decisionAction": "partial",
+      "enrichmentLevel": "partial",
+      "dncStatus": "UNKNOWN",
+      "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+      "age": "36"
+    },
+    "Line Type": "mobile",
+    "Carrier": "OMNIPOINT COMMUNICATIONS CAP OPERATIONS, LLC",
+    "Normalized Carrier": "T-Mobile USA",
+    "Age": "36"
+  },
+  "leadSummary": {
+    "name": "Abdul (Razzaq) Karimzadah",
+    "phone": "2408108003",
+    "dobOrAge": "36",
+    "zipcode": "22554",
+    "state": "VA",
+    "city": "Stafford",
+    "email": "",
+    "dncStatus": "UNKNOWN",
+    "income": 70000,
+    "lineType": "mobile",
+    "carrier": "OMNIPOINT COMMUNICATIONS CAP OPERATIONS, LLC",
+    "normalizedCarrier": "T-Mobile USA",
+    "searchFilter": "Location: Alexandria, Virginia | Changed Jobs (90 days)",
+    "dateScraped": "2026-03-09",
+    "linkedinUrl": "https://www.linkedin.com/in/ACwAADyTnWwB-ovMg-ev2nI0UGXqVD4-SIIiNE0",
+    "zipProvenance": "verified_skip_trace",
+    "skipTracingDisposition": "clear_match"
+  }
+}

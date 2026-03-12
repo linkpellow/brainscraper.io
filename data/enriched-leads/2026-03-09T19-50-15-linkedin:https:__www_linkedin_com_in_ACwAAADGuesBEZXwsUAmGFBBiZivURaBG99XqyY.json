@@ -1,0 +1,163 @@
+{
+  "metadata": {
+    "savedAt": "2026-03-09T19:50:15.957Z",
+    "leadKey": "linkedin:https://www.linkedin.com/in/ACwAAADGuesBEZXwsUAmGFBBiZivURaBG99XqyY"
+  },
+  "enrichedRow": {
+    "Name": "Joe Hammerstrom",
+    "Title": "Senior Vice President - Head of Construction Management",
+    "Company": "Foresta Holdings",
+    "Location": "Arlington, Virginia, United States",
+    "LinkedIn URL": "https://www.linkedin.com/in/ACwAAADGuesBEZXwsUAmGFBBiZivURaBG99XqyY",
+    "Email": "",
+    "Phone": "7039941924",
+    "First Name": "Joe",
+    "Last Name": "Hammerstrom",
+    "City": "Arlington",
+    "State": "VA",
+    "Zip": "22207",
+    "Search Filter": "Location: Alexandria, Virginia | Changed Jobs (90 days)",
+    "_enriched": {
+      "firstName": "Joe",
+      "lastName": "Hammerstrom",
+      "zipCode": "22207",
+      "zipProvenance": "verified_skip_trace",
+      "gender": "male",
+      "genderConfidence": 98,
+      "phone": "7039941924",
+      "addressLine2": "VA",
+      "incomePreQual": {
+        "conservative": {
+          "min": 1008000,
+          "max": 1308000,
+          "p50": 1158000
+        },
+        "upside": {
+          "min": 1111000,
+          "max": 1436000,
+          "p50": 1273000
+        },
+        "estimate": {
+          "range": {
+            "min": 1008000,
+            "max": 1436000
+          },
+          "p50": 1216000,
+          "confidence": 0.48,
+          "primaryDrivers": [
+            "career ladder: exec",
+            "company: Foresta Holdings"
+          ],
+          "riskFlags": [
+            "High-level title but company type may not support it"
+          ]
+        },
+        "decision": {
+          "tier": "unknown",
+          "shouldContinueEnrichment": true,
+          "reason": "Income meets $60k threshold: Upside p50 ($1273k) >= $60k minimum",
+          "band": "high",
+          "requiresStrongPositives": false,
+          "reasonCode": "INCOME_ABOVE_60K"
+        }
+      },
+      "skipTracingData": {
+        "Status": 200,
+        "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+        "Source": "tps_fsh_321_cch",
+        "Records": 1,
+        "Page": 1,
+        "PeopleDetails": [
+          {
+            "Name": "Joe Hammerstrom",
+            "Link": "https://www.truepeoplesearch.com/find/person/p4r8nr49url0r666r096",
+            "Age": 45,
+            "Person ID": "p4r8nr49url0r666r096",
+            "Lives in": "Arlington, VA",
+            "Used to live in": "Slatyfork WV, Blacksburg VA, Fairfax VA, ...",
+            "Related to": "Anita Light, Francesca Hammerstrom"
+          }
+        ],
+        "ageFromPersonDetails": "45"
+      },
+      "skipTracingDisposition": "clear_match",
+      "telnyxLookupData": {
+        "success": true,
+        "data": {
+          "data": {
+            "country_code": "US",
+            "national_format": "(703) 994-1924",
+            "phone_number": "+17039941924",
+            "fraud": null,
+            "carrier": {
+              "mobile_country_code": "",
+              "mobile_network_code": "",
+              "name": "Verizon Wireless:6006 - SVR/2",
+              "type": "mobile",
+              "error_code": null,
+              "normalized_carrier": "Verizon Wireless"
+            },
+            "caller_name": null,
+            "nnid_override": null,
+            "portability": {
+              "lrn": "571334XXXX",
+              "ported_status": "",
+              "ported_date": "",
+              "ocn": "6827",
+              "line_type": "mobile",
+              "spid": "",
+              "spid_carrier_name": "CELLCO PARTNERSHIP DBA VERIZON",
+              "spid_carrier_type": "",
+              "altspid": "",
+              "altspid_carrier_name": "",
+              "altspid_carrier_type": "",
+              "city": "HERNDON",
+              "state": "Virginia"
+            },
+            "valid_number": true,
+            "record_type": "number_lookup"
+          }
+        }
+      },
+      "lineType": "mobile",
+      "carrierName": "Verizon Wireless:6006 - SVR/2",
+      "carrierType": "mobile",
+      "normalizedCarrier": "Verizon Wireless",
+      "decisionReason": "FULL_ENRICHMENT",
+      "decisionCodes": [
+        "FULL_ENRICHMENT"
+      ],
+      "decisionConfidence": 84,
+      "decisionAction": "full",
+      "enrichmentLevel": "full",
+      "dncStatus": "UNKNOWN",
+      "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+      "age": "45"
+    },
+    "Line Type": "mobile",
+    "Carrier": "Verizon Wireless:6006 - SVR/2",
+    "Normalized Carrier": "Verizon Wireless",
+    "Age": "45",
+    "Gender": "male",
+    "Gender Confidence": 98
+  },
+  "leadSummary": {
+    "name": "Joe Hammerstrom",
+    "phone": "7039941924",
+    "dobOrAge": "45",
+    "zipcode": "22207",
+    "state": "VA",
+    "city": "Arlington",
+    "email": "",
+    "dncStatus": "UNKNOWN",
+    "income": 1216000,
+    "lineType": "mobile",
+    "carrier": "Verizon Wireless:6006 - SVR/2",
+    "normalizedCarrier": "Verizon Wireless",
+    "searchFilter": "Location: Alexandria, Virginia | Changed Jobs (90 days)",
+    "dateScraped": "2026-03-09",
+    "linkedinUrl": "https://www.linkedin.com/in/ACwAAADGuesBEZXwsUAmGFBBiZivURaBG99XqyY",
+    "zipProvenance": "verified_skip_trace",
+    "skipTracingDisposition": "clear_match"
+  }
+}

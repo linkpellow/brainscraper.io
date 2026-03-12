@@ -1,0 +1,165 @@
+{
+  "metadata": {
+    "savedAt": "2026-03-10T02:04:36.931Z",
+    "leadKey": "linkedin:https://www.linkedin.com/in/ACwAAExE_OIBa9RT8IzVy_RcvYPXzXcaCgOW8RM"
+  },
+  "enrichedRow": {
+    "Name": "Emmygell Recarte MBA",
+    "Title": "Admissions Director/ External Marketing",
+    "Company": "St. Andrew",
+    "Location": "Land O' Lakes, Florida, United States",
+    "LinkedIn URL": "https://www.linkedin.com/in/ACwAAExE_OIBa9RT8IzVy_RcvYPXzXcaCgOW8RM",
+    "Email": "emmygellrct8@gmail.com",
+    "Phone": "7863070541",
+    "First Name": "Emmygell",
+    "Last Name": "Recarte MBA",
+    "City": "Land O' Lakes",
+    "State": "FL",
+    "Zip": "33189",
+    "Search Filter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+    "_enriched": {
+      "firstName": "Emmygell",
+      "lastName": "Recarte",
+      "zipCode": "33189",
+      "zipProvenance": "verified_skip_trace",
+      "phone": "7863070541",
+      "email": "emmygellrct8@gmail.com",
+      "addressLine2": "FL",
+      "incomePreQual": {
+        "conservative": {
+          "min": 156000,
+          "max": 324000,
+          "p50": 240000
+        },
+        "upside": {
+          "min": 178000,
+          "max": 350000,
+          "p50": 269000
+        },
+        "estimate": {
+          "range": {
+            "min": 156000,
+            "max": 350000
+          },
+          "p50": 255000,
+          "confidence": 0.43,
+          "primaryDrivers": [
+            "career ladder: director",
+            "director role",
+            "company: St. Andrew"
+          ],
+          "riskFlags": [
+            "High-level title but company type may not support it",
+            "Job title seniority unclear"
+          ]
+        },
+        "decision": {
+          "tier": "unknown",
+          "shouldContinueEnrichment": true,
+          "reason": "Income meets $60k threshold: Upside p50 ($269k) >= $60k minimum",
+          "band": "high",
+          "requiresStrongPositives": false,
+          "reasonCode": "INCOME_ABOVE_60K"
+        }
+      },
+      "skipTracingData": {
+        "Status": 200,
+        "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+        "Source": "tps_fsh_272_cch",
+        "Records": 1,
+        "Page": 1,
+        "PeopleDetails": [
+          {
+            "Name": "Emmygell Recarte",
+            "Link": "https://www.truepeoplesearch.com/find/person/pxl86n826ur2u8u66r6nu",
+            "Age": 31,
+            "Person ID": "pxl86n826ur2u8u66r6nu",
+            "Lives in": "Cutler Bay, FL",
+            "Used to live in": "Land O Lakes FL",
+            "Related to": "Luz Recarte, Marco Recarte, Norma Recarte,..."
+          }
+        ],
+        "ageFromPersonDetails": "31"
+      },
+      "skipTracingDisposition": "clear_match",
+      "skipTracingMatchType": "name_only",
+      "telnyxLookupData": {
+        "success": true,
+        "data": {
+          "data": {
+            "country_code": "US",
+            "national_format": "(786) 307-0541",
+            "phone_number": "+17863070541",
+            "fraud": null,
+            "carrier": {
+              "mobile_country_code": "",
+              "mobile_network_code": "",
+              "name": "Cingular Wireless/2",
+              "type": "mobile",
+              "error_code": null,
+              "normalized_carrier": "AT&T"
+            },
+            "caller_name": null,
+            "nnid_override": null,
+            "portability": {
+              "lrn": "786266XXXX",
+              "ported_status": "",
+              "ported_date": "",
+              "ocn": "6214",
+              "line_type": "mobile",
+              "spid": "",
+              "spid_carrier_name": "NEW CINGULAR WIRELESS PCS, LLC",
+              "spid_carrier_type": "",
+              "altspid": "",
+              "altspid_carrier_name": "",
+              "altspid_carrier_type": "",
+              "city": "MIAMI",
+              "state": "Florida"
+            },
+            "valid_number": true,
+            "record_type": "number_lookup"
+          }
+        }
+      },
+      "lineType": "mobile",
+      "carrierName": "Cingular Wireless/2",
+      "carrierType": "mobile",
+      "normalizedCarrier": "AT&T",
+      "decisionReason": "FULL_ENRICHMENT",
+      "decisionCodes": [
+        "FULL_ENRICHMENT",
+        "SOFT_DOWNGRADE_FREE_EMAIL"
+      ],
+      "decisionConfidence": 63,
+      "decisionAction": "full",
+      "enrichmentLevel": "full",
+      "dncStatus": "UNKNOWN",
+      "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+      "age": "31"
+    },
+    "Line Type": "mobile",
+    "Carrier": "Cingular Wireless/2",
+    "Normalized Carrier": "AT&T",
+    "Age": "31"
+  },
+  "leadSummary": {
+    "name": "Emmygell Recarte MBA",
+    "phone": "7863070541",
+    "dobOrAge": "31",
+    "zipcode": "33189",
+    "state": "FL",
+    "city": "Land O' Lakes",
+    "email": "emmygellrct8@gmail.com",
+    "dncStatus": "UNKNOWN",
+    "income": 255000,
+    "lineType": "mobile",
+    "carrier": "Cingular Wireless/2",
+    "normalizedCarrier": "AT&T",
+    "searchFilter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+    "dateScraped": "2026-03-10",
+    "linkedinUrl": "https://www.linkedin.com/in/ACwAAExE_OIBa9RT8IzVy_RcvYPXzXcaCgOW8RM",
+    "zipProvenance": "verified_skip_trace",
+    "skipTracingDisposition": "clear_match",
+    "needsVerification": true
+  }
+}

@@ -1,0 +1,163 @@
+{
+  "metadata": {
+    "savedAt": "2026-03-10T02:04:48.156Z",
+    "leadKey": "linkedin:https://www.linkedin.com/in/ACwAAACa11QB-AahQ3nfzJcsdCEhra74DOykdOA"
+  },
+  "enrichedRow": {
+    "Name": "Kurt Bender",
+    "Title": "SVP and Chief Digital Officer",
+    "Company": "BWXT",
+    "Location": "Melbourne, Florida, United States",
+    "LinkedIn URL": "https://www.linkedin.com/in/ACwAAACa11QB-AahQ3nfzJcsdCEhra74DOykdOA",
+    "Email": "kurtanthony8769@yahoo.com",
+    "Phone": "2605829059",
+    "First Name": "Kurt",
+    "Last Name": "Bender",
+    "City": "Melbourne",
+    "State": "FL",
+    "Zip": "32940",
+    "Search Filter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+    "_enriched": {
+      "firstName": "Kurt",
+      "lastName": "Bender",
+      "zipCode": "32940",
+      "zipProvenance": "verified_skip_trace",
+      "phone": "2605829059",
+      "email": "kurtanthony8769@yahoo.com",
+      "addressLine2": "FL",
+      "incomePreQual": {
+        "conservative": {
+          "min": 926000,
+          "max": 1226000,
+          "p50": 1076000
+        },
+        "upside": {
+          "min": 1021000,
+          "max": 1346000,
+          "p50": 1183000
+        },
+        "estimate": {
+          "range": {
+            "min": 926000,
+            "max": 1346000
+          },
+          "p50": 1130000,
+          "confidence": 0.48,
+          "primaryDrivers": [
+            "career ladder: exec",
+            "company: BWXT"
+          ],
+          "riskFlags": [
+            "High-level title but company type may not support it"
+          ]
+        },
+        "decision": {
+          "tier": "unknown",
+          "shouldContinueEnrichment": true,
+          "reason": "Income meets $60k threshold: Upside p50 ($1183k) >= $60k minimum",
+          "band": "high",
+          "requiresStrongPositives": false,
+          "reasonCode": "INCOME_ABOVE_60K"
+        }
+      },
+      "skipTracingData": {
+        "Status": 200,
+        "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+        "Source": "tps_fsh_280_cch",
+        "Records": 1,
+        "Page": 1,
+        "PeopleDetails": [
+          {
+            "Name": "Kurt Bender",
+            "Link": "https://www.truepeoplesearch.com/find/person/pxrr48nr4r06802269ru9",
+            "Age": 48,
+            "Person ID": "pxrr48nr4r06802269ru9",
+            "Lives in": "Melbourne, FL",
+            "Used to live in": "Fort Wayne IN, Avilla IN, Kendallville IN",
+            "Related to": "Andrea Winkle, Cheryl Bender, John Bender,..."
+          }
+        ],
+        "ageFromPersonDetails": "48"
+      },
+      "skipTracingDisposition": "clear_match",
+      "skipTracingMatchType": "exact_location",
+      "telnyxLookupData": {
+        "success": true,
+        "data": {
+          "data": {
+            "country_code": "US",
+            "national_format": "(260) 582-9059",
+            "phone_number": "+12605829059",
+            "fraud": null,
+            "carrier": {
+              "mobile_country_code": "",
+              "mobile_network_code": "",
+              "name": "Cingular Wireless/2",
+              "type": "mobile",
+              "error_code": null,
+              "normalized_carrier": "AT&T"
+            },
+            "caller_name": null,
+            "nnid_override": null,
+            "portability": {
+              "lrn": "260249XXXX",
+              "ported_status": "",
+              "ported_date": "",
+              "ocn": "6534",
+              "line_type": "mobile",
+              "spid": "",
+              "spid_carrier_name": "NEW CINGULAR WIRELESS PCS, LLC",
+              "spid_carrier_type": "",
+              "altspid": "",
+              "altspid_carrier_name": "",
+              "altspid_carrier_type": "",
+              "city": "FORT WAYNE",
+              "state": "Indiana"
+            },
+            "valid_number": true,
+            "record_type": "number_lookup"
+          }
+        }
+      },
+      "lineType": "mobile",
+      "carrierName": "Cingular Wireless/2",
+      "carrierType": "mobile",
+      "normalizedCarrier": "AT&T",
+      "decisionReason": "FULL_ENRICHMENT",
+      "decisionCodes": [
+        "FULL_ENRICHMENT",
+        "SOFT_DOWNGRADE_FREE_EMAIL",
+        "SOFT_DOWNGRADE_SMALL_COMPANY"
+      ],
+      "decisionConfidence": 58,
+      "decisionAction": "full",
+      "enrichmentLevel": "full",
+      "dncStatus": "UNKNOWN",
+      "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+      "age": "48"
+    },
+    "Line Type": "mobile",
+    "Carrier": "Cingular Wireless/2",
+    "Normalized Carrier": "AT&T",
+    "Age": "48"
+  },
+  "leadSummary": {
+    "name": "Kurt Bender",
+    "phone": "2605829059",
+    "dobOrAge": "48",
+    "zipcode": "32940",
+    "state": "FL",
+    "city": "Melbourne",
+    "email": "kurtanthony8769@yahoo.com",
+    "dncStatus": "UNKNOWN",
+    "income": 1130000,
+    "lineType": "mobile",
+    "carrier": "Cingular Wireless/2",
+    "normalizedCarrier": "AT&T",
+    "searchFilter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+    "dateScraped": "2026-03-10",
+    "linkedinUrl": "https://www.linkedin.com/in/ACwAAACa11QB-AahQ3nfzJcsdCEhra74DOykdOA",
+    "zipProvenance": "verified_skip_trace",
+    "skipTracingDisposition": "clear_match"
+  }
+}

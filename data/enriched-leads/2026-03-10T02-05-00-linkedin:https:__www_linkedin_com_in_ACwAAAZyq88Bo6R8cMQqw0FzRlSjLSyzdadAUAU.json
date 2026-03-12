@@ -1,0 +1,163 @@
+{
+  "metadata": {
+    "savedAt": "2026-03-10T02:05:00.779Z",
+    "leadKey": "linkedin:https://www.linkedin.com/in/ACwAAAZyq88Bo6R8cMQqw0FzRlSjLSyzdadAUAU"
+  },
+  "enrichedRow": {
+    "Name": "Yael Sasonov",
+    "Title": "Community Hospitality Manager",
+    "Company": "EXPANSIVE",
+    "Location": "Miami, Florida, United States",
+    "LinkedIn URL": "https://www.linkedin.com/in/ACwAAAZyq88Bo6R8cMQqw0FzRlSjLSyzdadAUAU",
+    "Email": "ysasonov@gmail.com",
+    "Phone": "8608337050",
+    "First Name": "Yael",
+    "Last Name": "Sasonov",
+    "City": "Miami",
+    "State": "FL",
+    "Zip": "06117",
+    "Search Filter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+    "_enriched": {
+      "firstName": "Yael",
+      "lastName": "Sasonov",
+      "zipCode": "06117",
+      "zipProvenance": "verified_skip_trace",
+      "phone": "8608337050",
+      "email": "ysasonov@gmail.com",
+      "addressLine2": "FL",
+      "incomePreQual": {
+        "conservative": {
+          "min": 72000,
+          "max": 192000,
+          "p50": 132000
+        },
+        "upside": {
+          "min": 67000,
+          "max": 172000,
+          "p50": 132000
+        },
+        "estimate": {
+          "range": {
+            "min": 72000,
+            "max": 172000
+          },
+          "p50": 132000,
+          "confidence": 0.55,
+          "primaryDrivers": [
+            "career ladder: manager",
+            "manager role",
+            "company: EXPANSIVE"
+          ],
+          "riskFlags": [
+            "Job title seniority unclear"
+          ]
+        },
+        "decision": {
+          "tier": "unknown",
+          "shouldContinueEnrichment": true,
+          "reason": "Income meets $60k threshold: Upside p50 ($132k) >= $60k minimum",
+          "band": "high",
+          "requiresStrongPositives": false,
+          "reasonCode": "INCOME_ABOVE_60K"
+        }
+      },
+      "skipTracingData": {
+        "Status": 200,
+        "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+        "Source": "tps_fsh_400_cch",
+        "Records": 1,
+        "Page": 1,
+        "PeopleDetails": [
+          {
+            "Name": "Yael Sasonov",
+            "Link": "https://www.truepeoplesearch.com/find/person/pxl0ru04n2nrrn88l2229",
+            "Age": 37,
+            "Person ID": "pxl0ru04n2nrrn88l2229",
+            "Lives in": "North Miami, FL",
+            "Used to live in": "West Hartford CT, Los Angeles CA",
+            "Related to": "Emma Sasonov, Leon Sasonov, Marina Sasonov..."
+          }
+        ],
+        "ageFromPersonDetails": "37"
+      },
+      "skipTracingDisposition": "clear_match",
+      "skipTracingMatchType": "name_only",
+      "telnyxLookupData": {
+        "success": true,
+        "data": {
+          "data": {
+            "country_code": "US",
+            "national_format": "(860) 833-7050",
+            "phone_number": "+18608337050",
+            "fraud": null,
+            "carrier": {
+              "mobile_country_code": "",
+              "mobile_network_code": "",
+              "name": "METROPCS, INC.",
+              "type": "mobile",
+              "error_code": null,
+              "normalized_carrier": ""
+            },
+            "caller_name": null,
+            "nnid_override": null,
+            "portability": {
+              "lrn": null,
+              "ported_status": "",
+              "ported_date": "",
+              "ocn": "6664",
+              "line_type": "mobile",
+              "spid": "",
+              "spid_carrier_name": "SPRINT SPECTRUM L.P.",
+              "spid_carrier_type": "",
+              "altspid": "",
+              "altspid_carrier_name": "",
+              "altspid_carrier_type": "",
+              "city": "HARTFORD",
+              "state": "Connecticut"
+            },
+            "valid_number": true,
+            "record_type": "number_lookup"
+          }
+        }
+      },
+      "lineType": "mobile",
+      "carrierName": "METROPCS, INC.",
+      "carrierType": "mobile",
+      "normalizedCarrier": "",
+      "decisionReason": "FULL_ENRICHMENT",
+      "decisionCodes": [
+        "FULL_ENRICHMENT",
+        "SOFT_DOWNGRADE_FREE_EMAIL"
+      ],
+      "decisionConfidence": 63,
+      "decisionAction": "full",
+      "enrichmentLevel": "full",
+      "dncStatus": "UNKNOWN",
+      "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+      "age": "37"
+    },
+    "Line Type": "mobile",
+    "Carrier": "METROPCS, INC.",
+    "Age": "37"
+  },
+  "leadSummary": {
+    "name": "Yael Sasonov",
+    "phone": "8608337050",
+    "dobOrAge": "37",
+    "zipcode": "06117",
+    "state": "FL",
+    "city": "Miami",
+    "email": "ysasonov@gmail.com",
+    "dncStatus": "UNKNOWN",
+    "income": 132000,
+    "lineType": "mobile",
+    "carrier": "METROPCS, INC.",
+    "normalizedCarrier": "",
+    "searchFilter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+    "dateScraped": "2026-03-10",
+    "linkedinUrl": "https://www.linkedin.com/in/ACwAAAZyq88Bo6R8cMQqw0FzRlSjLSyzdadAUAU",
+    "zipProvenance": "verified_skip_trace",
+    "skipTracingDisposition": "clear_match",
+    "needsVerification": true
+  }
+}

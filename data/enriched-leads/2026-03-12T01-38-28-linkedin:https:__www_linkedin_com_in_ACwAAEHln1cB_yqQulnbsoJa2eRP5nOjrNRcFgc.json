@@ -1,0 +1,164 @@
+{
+  "metadata": {
+    "savedAt": "2026-03-12T01:38:28.442Z",
+    "leadKey": "linkedin:https://www.linkedin.com/in/ACwAAEHln1cB_yqQulnbsoJa2eRP5nOjrNRcFgc"
+  },
+  "enrichedRow": {
+    "Name": "Ava Peacock",
+    "Title": "Social Media and Content Specialist",
+    "Company": "John R. Wood Properties",
+    "Location": "Fort Myers, FL",
+    "LinkedIn URL": "https://www.linkedin.com/in/ACwAAEHln1cB_yqQulnbsoJa2eRP5nOjrNRcFgc",
+    "Email": "",
+    "Phone": "7723493204",
+    "First Name": "Ava",
+    "Last Name": "Peacock",
+    "City": "Fort Myers",
+    "State": "FL",
+    "Zip": "32259",
+    "Search Filter": "roi-test-fl-real-estate",
+    "_enriched": {
+      "firstName": "Ava",
+      "lastName": "Peacock",
+      "zipCode": "32259",
+      "zipProvenance": "verified_skip_trace",
+      "gender": "female",
+      "genderConfidence": 98,
+      "phone": "7723493204",
+      "addressLine2": "FL",
+      "incomePreQual": {
+        "conservative": {
+          "min": 31000,
+          "max": 109000,
+          "p50": 70000
+        },
+        "upside": {
+          "min": 28000,
+          "max": 112000,
+          "p50": 70000
+        },
+        "estimate": {
+          "range": {
+            "min": 31000,
+            "max": 112000
+          },
+          "p50": 70000,
+          "confidence": 0.82,
+          "primaryDrivers": [
+            "career ladder: ic",
+            "specialist role",
+            "company: John R. Wood Properties"
+          ],
+          "riskFlags": []
+        },
+        "decision": {
+          "tier": "unknown",
+          "shouldContinueEnrichment": true,
+          "reason": "Income meets $60k threshold: Upside p50 ($70k) >= $60k minimum",
+          "band": "high",
+          "requiresStrongPositives": false,
+          "reasonCode": "INCOME_ABOVE_60K"
+        }
+      },
+      "skipTracingData": {
+        "Status": 200,
+        "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+        "Source": "tps_fsh_366_cch",
+        "Records": 2,
+        "Page": 1,
+        "PeopleDetails": [
+          {
+            "Name": "Ava Peacock",
+            "Link": "https://www.truepeoplesearch.com/find/person/px46n98r2800nn4n2u2l4",
+            "Age": 22,
+            "Person ID": "px46n98r2800nn4n2u2l4",
+            "Lives in": "Saint Johns, FL",
+            "Used to live in": "Palm City FL",
+            "Related to": "Daniel Peacock, Katherine Peacock, Kate Pe..."
+          }
+        ],
+        "ageFromPersonDetails": "22"
+      },
+      "skipTracingDisposition": "clear_match",
+      "skipTracingMatchType": "name_only",
+      "telnyxLookupData": {
+        "success": true,
+        "data": {
+          "data": {
+            "country_code": "US",
+            "national_format": "(772) 349-3204",
+            "phone_number": "+17723493204",
+            "fraud": null,
+            "carrier": {
+              "mobile_country_code": "",
+              "mobile_network_code": "",
+              "name": "Cingular Wireless/2",
+              "type": "mobile",
+              "error_code": null,
+              "normalized_carrier": "AT&T"
+            },
+            "caller_name": null,
+            "nnid_override": null,
+            "portability": {
+              "lrn": "561319XXXX",
+              "ported_status": "",
+              "ported_date": "",
+              "ocn": "6214",
+              "line_type": "mobile",
+              "spid": "",
+              "spid_carrier_name": "NEW CINGULAR WIRELESS PCS, LLC",
+              "spid_carrier_type": "",
+              "altspid": "",
+              "altspid_carrier_name": "",
+              "altspid_carrier_type": "",
+              "city": "WPALMBEACH",
+              "state": "Florida"
+            },
+            "valid_number": true,
+            "record_type": "number_lookup"
+          }
+        }
+      },
+      "lineType": "mobile",
+      "carrierName": "Cingular Wireless/2",
+      "carrierType": "mobile",
+      "normalizedCarrier": "AT&T",
+      "decisionReason": "FULL_ENRICHMENT",
+      "decisionCodes": [
+        "FULL_ENRICHMENT"
+      ],
+      "decisionConfidence": 69,
+      "decisionAction": "full",
+      "enrichmentLevel": "full",
+      "dncStatus": "UNKNOWN",
+      "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+      "age": "22"
+    },
+    "Line Type": "mobile",
+    "Carrier": "Cingular Wireless/2",
+    "Normalized Carrier": "AT&T",
+    "Age": "22",
+    "Gender": "female",
+    "Gender Confidence": 98
+  },
+  "leadSummary": {
+    "name": "Ava Peacock",
+    "phone": "7723493204",
+    "dobOrAge": "22",
+    "zipcode": "32259",
+    "state": "FL",
+    "city": "Fort Myers",
+    "email": "",
+    "dncStatus": "UNKNOWN",
+    "income": 70000,
+    "lineType": "mobile",
+    "carrier": "Cingular Wireless/2",
+    "normalizedCarrier": "AT&T",
+    "searchFilter": "roi-test-fl-real-estate",
+    "dateScraped": "2026-03-12",
+    "linkedinUrl": "https://www.linkedin.com/in/ACwAAEHln1cB_yqQulnbsoJa2eRP5nOjrNRcFgc",
+    "zipProvenance": "verified_skip_trace",
+    "skipTracingDisposition": "clear_match",
+    "needsVerification": true
+  }
+}

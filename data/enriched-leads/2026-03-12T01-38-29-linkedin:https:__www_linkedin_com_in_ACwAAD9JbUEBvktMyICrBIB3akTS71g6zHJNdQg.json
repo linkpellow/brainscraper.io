@@ -1,0 +1,162 @@
+{
+  "metadata": {
+    "savedAt": "2026-03-12T01:38:29.493Z",
+    "leadKey": "linkedin:https://www.linkedin.com/in/ACwAAD9JbUEBvktMyICrBIB3akTS71g6zHJNdQg"
+  },
+  "enrichedRow": {
+    "Name": "Dhillon Patel",
+    "Title": "Incoming 2026 Real Estate Summer Analyst",
+    "Company": "Fortress Investment Group",
+    "Location": "Tampa, FL",
+    "LinkedIn URL": "https://www.linkedin.com/in/ACwAAD9JbUEBvktMyICrBIB3akTS71g6zHJNdQg",
+    "Email": "dhillkp@icloud.com",
+    "Phone": "8138463178",
+    "First Name": "Dhillon",
+    "Last Name": "Patel",
+    "City": "Tampa",
+    "State": "FL",
+    "Zip": "33613",
+    "Search Filter": "roi-test-fl-real-estate",
+    "_enriched": {
+      "firstName": "Dhillon",
+      "lastName": "Patel",
+      "zipCode": "33613",
+      "zipProvenance": "verified_skip_trace",
+      "phone": "8138463178",
+      "email": "dhillkp@icloud.com",
+      "addressLine2": "FL",
+      "incomePreQual": {
+        "conservative": {
+          "min": 31000,
+          "max": 109000,
+          "p50": 70000
+        },
+        "upside": {
+          "min": 28000,
+          "max": 112000,
+          "p50": 70000
+        },
+        "estimate": {
+          "range": {
+            "min": 31000,
+            "max": 112000
+          },
+          "p50": 70000,
+          "confidence": 0.55,
+          "primaryDrivers": [
+            "career ladder: ic",
+            "analyst role",
+            "company: Fortress Investment Group"
+          ],
+          "riskFlags": [
+            "Job title seniority unclear"
+          ]
+        },
+        "decision": {
+          "tier": "unknown",
+          "shouldContinueEnrichment": true,
+          "reason": "Income meets $60k threshold: Upside p50 ($70k) >= $60k minimum",
+          "band": "high",
+          "requiresStrongPositives": false,
+          "reasonCode": "INCOME_ABOVE_60K"
+        }
+      },
+      "skipTracingData": {
+        "Status": 200,
+        "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+        "Source": "tps_fsh_316_cch",
+        "Records": 1,
+        "Page": 1,
+        "PeopleDetails": [
+          {
+            "Name": "Dhillon Patel",
+            "Link": "https://www.truepeoplesearch.com/find/person/pxr4l4n4l6024u69r62u4",
+            "Age": 21,
+            "Person ID": "pxr4l4n4l6024u69r62u4",
+            "Lives in": "Tampa, FL",
+            "Used to live in": "",
+            "Related to": "Amrish Patel, Arvind Patel, Ila Patel, Jyo..."
+          }
+        ],
+        "ageFromPersonDetails": "21"
+      },
+      "skipTracingDisposition": "clear_match",
+      "skipTracingMatchType": "exact_location",
+      "telnyxLookupData": {
+        "success": true,
+        "data": {
+          "data": {
+            "country_code": "US",
+            "national_format": "(813) 846-3178",
+            "phone_number": "+18138463178",
+            "fraud": null,
+            "carrier": {
+              "mobile_country_code": "",
+              "mobile_network_code": "",
+              "name": "T-Mobile US-SVR-10X/2",
+              "type": "mobile",
+              "error_code": null,
+              "normalized_carrier": ""
+            },
+            "caller_name": null,
+            "nnid_override": null,
+            "portability": {
+              "lrn": "727271XXXX",
+              "ported_status": "",
+              "ported_date": "",
+              "ocn": "6701",
+              "line_type": "mobile",
+              "spid": "",
+              "spid_carrier_name": "AERIAL COMMUNICATIONS",
+              "spid_carrier_type": "",
+              "altspid": "",
+              "altspid_carrier_name": "",
+              "altspid_carrier_type": "",
+              "city": "NWPTRICHEY",
+              "state": "Florida"
+            },
+            "valid_number": true,
+            "record_type": "number_lookup"
+          }
+        }
+      },
+      "lineType": "mobile",
+      "carrierName": "T-Mobile US-SVR-10X/2",
+      "carrierType": "mobile",
+      "normalizedCarrier": "",
+      "decisionReason": "FULL_ENRICHMENT",
+      "decisionCodes": [
+        "FULL_ENRICHMENT",
+        "SOFT_DOWNGRADE_FREE_EMAIL"
+      ],
+      "decisionConfidence": 50,
+      "decisionAction": "full",
+      "enrichmentLevel": "full",
+      "dncStatus": "UNKNOWN",
+      "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+      "age": "21"
+    },
+    "Line Type": "mobile",
+    "Carrier": "T-Mobile US-SVR-10X/2",
+    "Age": "21"
+  },
+  "leadSummary": {
+    "name": "Dhillon Patel",
+    "phone": "8138463178",
+    "dobOrAge": "21",
+    "zipcode": "33613",
+    "state": "FL",
+    "city": "Tampa",
+    "email": "dhillkp@icloud.com",
+    "dncStatus": "UNKNOWN",
+    "income": 70000,
+    "lineType": "mobile",
+    "carrier": "T-Mobile US-SVR-10X/2",
+    "normalizedCarrier": "",
+    "searchFilter": "roi-test-fl-real-estate",
+    "dateScraped": "2026-03-12",
+    "linkedinUrl": "https://www.linkedin.com/in/ACwAAD9JbUEBvktMyICrBIB3akTS71g6zHJNdQg",
+    "zipProvenance": "verified_skip_trace",
+    "skipTracingDisposition": "clear_match"
+  }
+}

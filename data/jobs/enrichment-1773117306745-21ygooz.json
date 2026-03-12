@@ -1,0 +1,15 @@
+{
+  "jobId": "enrichment-1773117306745-21ygooz",
+  "type": "enrichment",
+  "status": "pending",
+  "progress": {
+    "current": 0,
+    "total": 1,
+    "percentage": 0
+  },
+  "startedAt": "2026-03-10T04:35:06.745Z",
+  "metadata": {
+    "source": "verify-enrichment-batch",
+    "leadCount": 1
+  }
+}

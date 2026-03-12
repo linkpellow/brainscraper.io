@@ -1,0 +1,190 @@
+{
+  "metadata": {
+    "savedAt": "2026-03-12T01:38:25.625Z",
+    "leadKey": "linkedin:https://www.linkedin.com/in/ACwAAAYkfMwBy68RUfiA06Aoiif34wttQKaB-3o"
+  },
+  "enrichedRow": {
+    "Name": "Juan Pablo Rubio",
+    "Title": "Miami Pre-Construction & Investment Advisor",
+    "Company": "eXp Realty",
+    "Location": "Miami, FL",
+    "LinkedIn URL": "https://www.linkedin.com/in/ACwAAAYkfMwBy68RUfiA06Aoiif34wttQKaB-3o",
+    "Email": "jrubio2903@cox.net",
+    "Phone": "6616456144",
+    "First Name": "Juan",
+    "Last Name": "Pablo Rubio",
+    "City": "Miami",
+    "State": "FL",
+    "Zip": "33183",
+    "Search Filter": "roi-test-fl-real-estate",
+    "_enriched": {
+      "firstName": "Juan",
+      "lastName": "Rubio",
+      "zipCode": "33183",
+      "zipProvenance": "verified_skip_trace",
+      "gender": "male",
+      "genderConfidence": 98,
+      "phone": "6616456144",
+      "email": "jrubio2903@cox.net",
+      "addressLine2": "FL",
+      "incomePreQual": {
+        "conservative": {
+          "min": 30000,
+          "max": 115000,
+          "p50": 70000
+        },
+        "upside": {
+          "min": 21000,
+          "max": 119000,
+          "p50": 70000
+        },
+        "estimate": {
+          "range": {
+            "min": 30000,
+            "max": 119000
+          },
+          "p50": 70000,
+          "confidence": 0.55,
+          "primaryDrivers": [
+            "advisor role",
+            "company: eXp Realty"
+          ],
+          "riskFlags": [
+            "Job title seniority unclear"
+          ]
+        },
+        "decision": {
+          "tier": "unknown",
+          "shouldContinueEnrichment": true,
+          "reason": "Income meets $60k threshold: Upside p50 ($70k) >= $60k minimum",
+          "band": "high",
+          "requiresStrongPositives": false,
+          "reasonCode": "INCOME_ABOVE_60K"
+        }
+      },
+      "skipTracingData": {
+        "Status": 200,
+        "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+        "Source": "tps_fsh_465_cch",
+        "Records": 96,
+        "Page": 1,
+        "PeopleDetails": [
+          {
+            "Name": "Juan Rubio Sr",
+            "Link": "https://www.truepeoplesearch.com/find/person/px609u0l8rlrr02rrr646",
+            "Age": 90,
+            "Person ID": "px609u0l8rlrr02rrr646",
+            "Lives in": "Miami, FL",
+            "Used to live in": "Santa Clarita CA, Valencia CA, Los Angele...",
+            "Related to": "Zaida Rubio, Agripino Rubio, Elizabeth Arr..."
+          }
+        ],
+        "ageFromPersonDetails": "90"
+      },
+      "skipTracingDisposition": "ambiguous_used_first",
+      "skipTracingCandidatesForReview": [
+        {
+          "Name": "Juan Rubio Sr",
+          "Link": "https://www.truepeoplesearch.com/find/person/px609u0l8rlrr02rrr646",
+          "Age": 90,
+          "Person ID": "px609u0l8rlrr02rrr646",
+          "Lives in": "Miami, FL",
+          "Used to live in": "Santa Clarita CA, Valencia CA, Los Angele...",
+          "Related to": "Zaida Rubio, Agripino Rubio, Elizabeth Arr..."
+        },
+        {
+          "Name": "Juan Rubio",
+          "Link": "https://www.truepeoplesearch.com/find/person/pxulu94u9u4668l8r0640",
+          "Age": 57,
+          "Person ID": "pxulu94u9u4668l8r0640",
+          "Lives in": "Miami, FL",
+          "Used to live in": "North Miami FL, Miami Beach FL, Downey CA...",
+          "Related to": "Ana Campbell, Denisse Quan, Elena Quan, An..."
+        }
+      ],
+      "skipTracingMatchType": "ambiguous_used_first",
+      "phoneStateMismatch": true,
+      "age": "90",
+      "telnyxLookupData": {
+        "success": true,
+        "data": {
+          "data": {
+            "country_code": "US",
+            "national_format": "(661) 645-6144",
+            "phone_number": "+16616456144",
+            "fraud": null,
+            "carrier": {
+              "mobile_country_code": "",
+              "mobile_network_code": "",
+              "name": "Verizon Wireless:6006 - SVR/2",
+              "type": "mobile",
+              "error_code": null,
+              "normalized_carrier": "Verizon Wireless"
+            },
+            "caller_name": null,
+            "nnid_override": null,
+            "portability": {
+              "lrn": "805832XXXX",
+              "ported_status": "",
+              "ported_date": "",
+              "ocn": "6006",
+              "line_type": "mobile",
+              "spid": "",
+              "spid_carrier_name": "CELLCO PARTNERSHIP DBA VERIZON",
+              "spid_carrier_type": "",
+              "altspid": "",
+              "altspid_carrier_name": "",
+              "altspid_carrier_type": "",
+              "city": "OXNARD",
+              "state": "California"
+            },
+            "valid_number": true,
+            "record_type": "number_lookup"
+          }
+        }
+      },
+      "lineType": "mobile",
+      "carrierName": "Verizon Wireless:6006 - SVR/2",
+      "carrierType": "mobile",
+      "normalizedCarrier": "Verizon Wireless",
+      "decisionReason": "AGE_OVER_59",
+      "decisionCodes": [
+        "AGE_OVER_59"
+      ],
+      "decisionConfidence": 44,
+      "decisionAction": "skip",
+      "enrichmentLevel": "none",
+      "dncStatus": "UNKNOWN",
+      "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box."
+    },
+    "Line Type": "mobile",
+    "Carrier": "Verizon Wireless:6006 - SVR/2",
+    "Normalized Carrier": "Verizon Wireless",
+    "Age": "90",
+    "Gender": "male",
+    "Gender Confidence": 98
+  },
+  "leadSummary": {
+    "name": "Juan Pablo Rubio",
+    "phone": "6616456144",
+    "dobOrAge": "90",
+    "zipcode": "33183",
+    "state": "FL",
+    "city": "Miami",
+    "email": "jrubio2903@cox.net",
+    "dncStatus": "UNKNOWN",
+    "income": 70000,
+    "lineType": "mobile",
+    "carrier": "Verizon Wireless:6006 - SVR/2",
+    "normalizedCarrier": "Verizon Wireless",
+    "searchFilter": "roi-test-fl-real-estate",
+    "dateScraped": "2026-03-12",
+    "linkedinUrl": "https://www.linkedin.com/in/ACwAAAYkfMwBy68RUfiA06Aoiif34wttQKaB-3o",
+    "zipProvenance": "verified_skip_trace",
+    "skipTracingDisposition": "ambiguous_used_first",
+    "enrichmentStopReason": "Ambiguous match – first candidate used (verify before contact)",
+    "reviewBucket": "ambiguous_identity",
+    "needsVerification": true,
+    "phoneStateMismatch": true
+  }
+}

@@ -1,13 +1,13 @@
 'use client';
 
 import Sidebar from './Sidebar';
-import NeuralPinFieldBackground from './NeuralPinFieldBackground';
+import AsciiNeuronBackground from './AsciiNeuronBackground';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen relative overflow-hidden w-full">
-      {/* WebGL Neural Pin Field Background */}
-      <NeuralPinFieldBackground />
+      {/* Low-cost ASCII neural background */}
+      <AsciiNeuronBackground />
 
       {/* Sidebar */}
       <Sidebar />

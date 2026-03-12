@@ -1,0 +1,158 @@
+{
+  "metadata": {
+    "savedAt": "2026-03-09T19:49:54.765Z",
+    "leadKey": "linkedin:https://www.linkedin.com/in/ACwAAD24-dgBhcF1J85zCIxmZ0tlj5ojGyysWdQ"
+  },
+  "enrichedRow": {
+    "Name": "Alexandria Spiker",
+    "Title": "Teaching Assistant: LDR 401",
+    "Company": "West Virginia University",
+    "Location": "Morgantown, West Virginia, United States",
+    "LinkedIn URL": "https://www.linkedin.com/in/ACwAAD24-dgBhcF1J85zCIxmZ0tlj5ojGyysWdQ",
+    "Email": "",
+    "Phone": "3042883729",
+    "First Name": "Alexandria",
+    "Last Name": "Spiker",
+    "City": "Morgantown",
+    "State": "WV",
+    "Zip": "26508",
+    "Search Filter": "Location: Alexandria, Virginia | Changed Jobs (90 days)",
+    "_enriched": {
+      "firstName": "Alexandria",
+      "lastName": "Spiker",
+      "zipCode": "26508",
+      "zipProvenance": "verified_skip_trace",
+      "phone": "3042883729",
+      "addressLine2": "WV",
+      "incomePreQual": {
+        "conservative": {
+          "min": 31000,
+          "max": 109000,
+          "p50": 70000
+        },
+        "upside": {
+          "min": 28000,
+          "max": 112000,
+          "p50": 70000
+        },
+        "estimate": {
+          "range": {
+            "min": 31000,
+            "max": 112000
+          },
+          "p50": 70000,
+          "confidence": 0.82,
+          "primaryDrivers": [
+            "career ladder: ic",
+            "assistant role",
+            "company: West Virginia University"
+          ],
+          "riskFlags": []
+        },
+        "decision": {
+          "tier": "unknown",
+          "shouldContinueEnrichment": true,
+          "reason": "Income meets $60k threshold: Upside p50 ($70k) >= $60k minimum",
+          "band": "high",
+          "requiresStrongPositives": false,
+          "reasonCode": "INCOME_ABOVE_60K"
+        }
+      },
+      "skipTracingData": {
+        "Status": 200,
+        "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+        "Source": "tps_fsh_294_cch",
+        "Records": 1,
+        "Page": 1,
+        "PeopleDetails": [
+          {
+            "Name": "Alexandria Spiker",
+            "Link": "https://www.truepeoplesearch.com/find/person/pxnn8u4l424080lnl02lr",
+            "Age": 22,
+            "Person ID": "pxnn8u4l424080lnl02lr",
+            "Lives in": "Morgantown, WV",
+            "Used to live in": "Orem UT, Duck Creek Village UT, Kanab UT",
+            "Related to": "Arthur Speicher, Austin Spiker, Autumn Spi..."
+          }
+        ],
+        "ageFromPersonDetails": "22"
+      },
+      "skipTracingDisposition": "clear_match",
+      "telnyxLookupData": {
+        "success": true,
+        "data": {
+          "data": {
+            "country_code": "US",
+            "national_format": "(304) 288-3729",
+            "phone_number": "+13042883729",
+            "fraud": null,
+            "carrier": {
+              "mobile_country_code": "",
+              "mobile_network_code": "",
+              "name": "Cingular Wireless/2",
+              "type": "mobile",
+              "error_code": null,
+              "normalized_carrier": "AT&T"
+            },
+            "caller_name": null,
+            "nnid_override": null,
+            "portability": {
+              "lrn": "681212XXXX",
+              "ported_status": "",
+              "ported_date": "",
+              "ocn": "6534",
+              "line_type": "mobile",
+              "spid": "",
+              "spid_carrier_name": "NEW CINGULAR WIRELESS PCS, LLC",
+              "spid_carrier_type": "",
+              "altspid": "",
+              "altspid_carrier_name": "",
+              "altspid_carrier_type": "",
+              "city": "MORGANTOWN",
+              "state": "West Virginia"
+            },
+            "valid_number": true,
+            "record_type": "number_lookup"
+          }
+        }
+      },
+      "lineType": "mobile",
+      "carrierName": "Cingular Wireless/2",
+      "carrierType": "mobile",
+      "normalizedCarrier": "AT&T",
+      "decisionReason": "PARTIAL_ENRICHMENT",
+      "decisionCodes": [
+        "PARTIAL_ENRICHMENT"
+      ],
+      "decisionConfidence": 51,
+      "decisionAction": "partial",
+      "enrichmentLevel": "partial",
+      "dncStatus": "UNKNOWN",
+      "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+      "age": "22"
+    },
+    "Line Type": "mobile",
+    "Carrier": "Cingular Wireless/2",
+    "Normalized Carrier": "AT&T",
+    "Age": "22"
+  },
+  "leadSummary": {
+    "name": "Alexandria Spiker",
+    "phone": "3042883729",
+    "dobOrAge": "22",
+    "zipcode": "26508",
+    "state": "WV",
+    "city": "Morgantown",
+    "email": "",
+    "dncStatus": "UNKNOWN",
+    "income": 70000,
+    "lineType": "mobile",
+    "carrier": "Cingular Wireless/2",
+    "normalizedCarrier": "AT&T",
+    "searchFilter": "Location: Alexandria, Virginia | Changed Jobs (90 days)",
+    "dateScraped": "2026-03-09",
+    "linkedinUrl": "https://www.linkedin.com/in/ACwAAD24-dgBhcF1J85zCIxmZ0tlj5ojGyysWdQ",
+    "zipProvenance": "verified_skip_trace",
+    "skipTracingDisposition": "clear_match"
+  }
+}

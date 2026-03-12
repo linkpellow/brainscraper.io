@@ -1,0 +1,167 @@
+{
+  "metadata": {
+    "savedAt": "2026-03-10T02:04:15.261Z",
+    "leadKey": "linkedin:https://www.linkedin.com/in/ACwAAACvcSEBU_QjEag4OJXyx5DVf6YocsXy5Pk"
+  },
+  "enrichedRow": {
+    "Name": "Jen Ramey",
+    "Title": "VP of Customer Acquisition",
+    "Company": "Caesars Sportsbook & Casino",
+    "Location": "Tampa, Florida, United States",
+    "LinkedIn URL": "https://www.linkedin.com/in/ACwAAACvcSEBU_QjEag4OJXyx5DVf6YocsXy5Pk",
+    "Email": "lezhot69@msn.com",
+    "Phone": "9109340444",
+    "First Name": "Jen",
+    "Last Name": "Ramey",
+    "City": "Tampa",
+    "State": "FL",
+    "Zip": "28460",
+    "Search Filter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+    "_enriched": {
+      "firstName": "Jen",
+      "lastName": "Ramey",
+      "zipCode": "28460",
+      "zipProvenance": "verified_skip_trace",
+      "gender": "female",
+      "genderConfidence": 98,
+      "phone": "9109340444",
+      "email": "lezhot69@msn.com",
+      "addressLine2": "FL",
+      "incomePreQual": {
+        "conservative": {
+          "min": 172000,
+          "max": 472000,
+          "p50": 322000
+        },
+        "upside": {
+          "min": 192000,
+          "max": 461000,
+          "p50": 355000
+        },
+        "estimate": {
+          "range": {
+            "min": 172000,
+            "max": 461000
+          },
+          "p50": 338000,
+          "confidence": 0.7,
+          "primaryDrivers": [
+            "career ladder: exec",
+            "customer role",
+            "company: Caesars Sportsbook & Casino"
+          ],
+          "riskFlags": [
+            "High-level title but company type may not support it"
+          ]
+        },
+        "decision": {
+          "tier": "unknown",
+          "shouldContinueEnrichment": true,
+          "reason": "Income meets $60k threshold: Upside p50 ($355k) >= $60k minimum",
+          "band": "high",
+          "requiresStrongPositives": false,
+          "reasonCode": "INCOME_ABOVE_60K"
+        }
+      },
+      "skipTracingData": {
+        "Status": 200,
+        "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+        "Source": "tps_fsh_481_cch",
+        "Records": 8,
+        "Page": 1,
+        "PeopleDetails": [
+          {
+            "Name": "Jen Ramey",
+            "Link": "https://www.truepeoplesearch.com/find/person/px9l66n0n8980nnl48u0l",
+            "Age": 53,
+            "Person ID": "px9l66n0n8980nnl48u0l",
+            "Lives in": "Sneads Ferry, NC",
+            "Used to live in": "Tampa, FL, Ayden NC, Winterville NC, Rale...",
+            "Related to": "Chance Ricks, Everett Ricks, James Ricks, ..."
+          }
+        ],
+        "ageFromPersonDetails": "53"
+      },
+      "skipTracingDisposition": "clear_match",
+      "skipTracingMatchType": "name_only",
+      "telnyxLookupData": {
+        "success": true,
+        "data": {
+          "data": {
+            "country_code": "US",
+            "national_format": "(910) 934-0444",
+            "phone_number": "+19109340444",
+            "fraud": null,
+            "carrier": {
+              "mobile_country_code": "",
+              "mobile_network_code": "",
+              "name": "UNITED STATES CELLULAR - NC",
+              "type": "mobile",
+              "error_code": null,
+              "normalized_carrier": "U.S. Cellular"
+            },
+            "caller_name": null,
+            "nnid_override": null,
+            "portability": {
+              "lrn": null,
+              "ported_status": "",
+              "ported_date": "",
+              "ocn": "6282",
+              "line_type": "mobile",
+              "spid": "",
+              "spid_carrier_name": "UNITED STATES CELLULAR CORP. -",
+              "spid_carrier_type": "",
+              "altspid": "",
+              "altspid_carrier_name": "",
+              "altspid_carrier_type": "",
+              "city": "JACKSONVL",
+              "state": "North Carolina"
+            },
+            "valid_number": true,
+            "record_type": "number_lookup"
+          }
+        }
+      },
+      "lineType": "mobile",
+      "carrierName": "UNITED STATES CELLULAR - NC",
+      "carrierType": "mobile",
+      "normalizedCarrier": "U.S. Cellular",
+      "decisionReason": "FULL_ENRICHMENT",
+      "decisionCodes": [
+        "FULL_ENRICHMENT"
+      ],
+      "decisionConfidence": 87,
+      "decisionAction": "full",
+      "enrichmentLevel": "full",
+      "dncStatus": "UNKNOWN",
+      "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+      "age": "53"
+    },
+    "Line Type": "mobile",
+    "Carrier": "UNITED STATES CELLULAR - NC",
+    "Normalized Carrier": "U.S. Cellular",
+    "Age": "53",
+    "Gender": "female",
+    "Gender Confidence": 98
+  },
+  "leadSummary": {
+    "name": "Jen Ramey",
+    "phone": "9109340444",
+    "dobOrAge": "53",
+    "zipcode": "28460",
+    "state": "FL",
+    "city": "Tampa",
+    "email": "lezhot69@msn.com",
+    "dncStatus": "UNKNOWN",
+    "income": 338000,
+    "lineType": "mobile",
+    "carrier": "UNITED STATES CELLULAR - NC",
+    "normalizedCarrier": "U.S. Cellular",
+    "searchFilter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+    "dateScraped": "2026-03-10",
+    "linkedinUrl": "https://www.linkedin.com/in/ACwAAACvcSEBU_QjEag4OJXyx5DVf6YocsXy5Pk",
+    "zipProvenance": "verified_skip_trace",
+    "skipTracingDisposition": "clear_match",
+    "needsVerification": true
+  }
+}

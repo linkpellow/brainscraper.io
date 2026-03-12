@@ -1,0 +1,166 @@
+{
+  "metadata": {
+    "savedAt": "2026-03-10T02:04:26.313Z",
+    "leadKey": "linkedin:https://www.linkedin.com/in/ACwAABUTTuYBHo_IP0l9kNGKoehzcxC-aK3RCNM"
+  },
+  "enrichedRow": {
+    "Name": "Melissa Racicot",
+    "Title": "Senior Director of Credentialing",
+    "Company": "MedPro Healthcare Staffing",
+    "Location": "Fort Lauderdale, Florida, United States",
+    "LinkedIn URL": "https://www.linkedin.com/in/ACwAABUTTuYBHo_IP0l9kNGKoehzcxC-aK3RCNM",
+    "Email": "melfladhammer@gmail.com",
+    "Phone": "6087995325",
+    "First Name": "Melissa",
+    "Last Name": "Racicot",
+    "City": "Fort Lauderdale",
+    "State": "FL",
+    "Zip": "33308",
+    "Search Filter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+    "_enriched": {
+      "firstName": "Melissa",
+      "lastName": "Racicot",
+      "zipCode": "33308",
+      "zipProvenance": "verified_skip_trace",
+      "gender": "female",
+      "genderConfidence": 98,
+      "phone": "6087995325",
+      "email": "melfladhammer@gmail.com",
+      "addressLine2": "FL",
+      "incomePreQual": {
+        "conservative": {
+          "min": 98000,
+          "max": 266000,
+          "p50": 182000
+        },
+        "upside": {
+          "min": 113000,
+          "max": 265000,
+          "p50": 204000
+        },
+        "estimate": {
+          "range": {
+            "min": 98000,
+            "max": 265000
+          },
+          "p50": 193000,
+          "confidence": 0.7,
+          "primaryDrivers": [
+            "career ladder: director",
+            "director role",
+            "company: MedPro Healthcare Staffing"
+          ],
+          "riskFlags": [
+            "High-level title but company type may not support it"
+          ]
+        },
+        "decision": {
+          "tier": "unknown",
+          "shouldContinueEnrichment": true,
+          "reason": "Income meets $60k threshold: Upside p50 ($204k) >= $60k minimum",
+          "band": "high",
+          "requiresStrongPositives": false,
+          "reasonCode": "INCOME_ABOVE_60K"
+        }
+      },
+      "skipTracingData": {
+        "Status": 200,
+        "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+        "Source": "tps_fsh_374_cch",
+        "Records": 1,
+        "Page": 1,
+        "PeopleDetails": [
+          {
+            "Name": "Melissa Racicot",
+            "Link": "https://www.truepeoplesearch.com/find/person/pxl84066n4092u0nn8u9r",
+            "Age": 44,
+            "Person ID": "pxl84066n4092u0nn8u9r",
+            "Lives in": "Fort Lauderdale, FL",
+            "Used to live in": "Holmen WI, West Salem WI, Onalaska WI, La...",
+            "Related to": "Joseph Racicot, Lynne Racicot, Marsha Wohl..."
+          }
+        ],
+        "ageFromPersonDetails": "44"
+      },
+      "skipTracingDisposition": "clear_match",
+      "skipTracingMatchType": "exact_location",
+      "telnyxLookupData": {
+        "success": true,
+        "data": {
+          "data": {
+            "country_code": "US",
+            "national_format": "(608) 799-5325",
+            "phone_number": "+16087995325",
+            "fraud": null,
+            "carrier": {
+              "mobile_country_code": "",
+              "mobile_network_code": "",
+              "name": "T-Mobile US-SVR-10X/2",
+              "type": "mobile",
+              "error_code": null,
+              "normalized_carrier": ""
+            },
+            "caller_name": null,
+            "nnid_override": null,
+            "portability": {
+              "lrn": "608515XXXX",
+              "ported_status": "",
+              "ported_date": "",
+              "ocn": "6529",
+              "line_type": "mobile",
+              "spid": "",
+              "spid_carrier_name": "T-MOBILE USA, INC.",
+              "spid_carrier_type": "",
+              "altspid": "",
+              "altspid_carrier_name": "",
+              "altspid_carrier_type": "",
+              "city": "MADISON",
+              "state": "Wisconsin"
+            },
+            "valid_number": true,
+            "record_type": "number_lookup"
+          }
+        }
+      },
+      "lineType": "mobile",
+      "carrierName": "T-Mobile US-SVR-10X/2",
+      "carrierType": "mobile",
+      "normalizedCarrier": "",
+      "decisionReason": "FULL_ENRICHMENT",
+      "decisionCodes": [
+        "FULL_ENRICHMENT",
+        "SOFT_DOWNGRADE_FREE_EMAIL"
+      ],
+      "decisionConfidence": 63,
+      "decisionAction": "full",
+      "enrichmentLevel": "full",
+      "dncStatus": "UNKNOWN",
+      "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+      "age": "44"
+    },
+    "Line Type": "mobile",
+    "Carrier": "T-Mobile US-SVR-10X/2",
+    "Age": "44",
+    "Gender": "female",
+    "Gender Confidence": 98
+  },
+  "leadSummary": {
+    "name": "Melissa Racicot",
+    "phone": "6087995325",
+    "dobOrAge": "44",
+    "zipcode": "33308",
+    "state": "FL",
+    "city": "Fort Lauderdale",
+    "email": "melfladhammer@gmail.com",
+    "dncStatus": "UNKNOWN",
+    "income": 193000,
+    "lineType": "mobile",
+    "carrier": "T-Mobile US-SVR-10X/2",
+    "normalizedCarrier": "",
+    "searchFilter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+    "dateScraped": "2026-03-10",
+    "linkedinUrl": "https://www.linkedin.com/in/ACwAABUTTuYBHo_IP0l9kNGKoehzcxC-aK3RCNM",
+    "zipProvenance": "verified_skip_trace",
+    "skipTracingDisposition": "clear_match"
+  }
+}

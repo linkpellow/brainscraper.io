@@ -1,0 +1,167 @@
+{
+  "metadata": {
+    "savedAt": "2026-03-10T02:04:38.328Z",
+    "leadKey": "linkedin:https://www.linkedin.com/in/ACwAAAYH5-UBip62Z59m2J_U_1lhvEZwRHyN7do"
+  },
+  "enrichedRow": {
+    "Name": "Ben Galin",
+    "Title": "Sr. Product Strategy Director- Coordinated Care",
+    "Company": "Bamboo Health",
+    "Location": "Estero, Florida, United States",
+    "LinkedIn URL": "https://www.linkedin.com/in/ACwAAAYH5-UBip62Z59m2J_U_1lhvEZwRHyN7do",
+    "Email": "bgalin@hotmail.com",
+    "Phone": "5616854444",
+    "First Name": "Ben",
+    "Last Name": "Galin",
+    "City": "Estero",
+    "State": "FL",
+    "Zip": "33928",
+    "Search Filter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+    "_enriched": {
+      "firstName": "Ben",
+      "lastName": "Galin",
+      "zipCode": "33928",
+      "zipProvenance": "verified_skip_trace",
+      "gender": "male",
+      "genderConfidence": 98,
+      "phone": "5616854444",
+      "email": "bgalin@hotmail.com",
+      "addressLine2": "FL",
+      "incomePreQual": {
+        "conservative": {
+          "min": 204000,
+          "max": 372000,
+          "p50": 288000
+        },
+        "upside": {
+          "min": 232000,
+          "max": 414000,
+          "p50": 323000
+        },
+        "estimate": {
+          "range": {
+            "min": 204000,
+            "max": 414000
+          },
+          "p50": 305000,
+          "confidence": 0.7,
+          "primaryDrivers": [
+            "career ladder: director",
+            "director role",
+            "company: Bamboo Health"
+          ],
+          "riskFlags": [
+            "High-level title but company type may not support it"
+          ]
+        },
+        "decision": {
+          "tier": "unknown",
+          "shouldContinueEnrichment": true,
+          "reason": "Income meets $60k threshold: Upside p50 ($323k) >= $60k minimum",
+          "band": "high",
+          "requiresStrongPositives": false,
+          "reasonCode": "INCOME_ABOVE_60K"
+        }
+      },
+      "skipTracingData": {
+        "Status": 200,
+        "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+        "Source": "tps_fsh_668_cch",
+        "Records": 1,
+        "Page": 1,
+        "PeopleDetails": [
+          {
+            "Name": "Ben Galin",
+            "Link": "https://www.truepeoplesearch.com/find/person/p4l0r2n694292rr492r0",
+            "Age": 48,
+            "Person ID": "p4l0r2n694292rr492r0",
+            "Lives in": "Estero, FL",
+            "Used to live in": "Boynton Beach FL, Wellington FL, Harrison...",
+            "Related to": "Alene Galin, Ira Galin, Jesus Mora, Kami G..."
+          }
+        ],
+        "ageFromPersonDetails": "48"
+      },
+      "skipTracingDisposition": "clear_match",
+      "skipTracingMatchType": "exact_location",
+      "telnyxLookupData": {
+        "success": true,
+        "data": {
+          "data": {
+            "country_code": "US",
+            "national_format": "(561) 685-4444",
+            "phone_number": "+15616854444",
+            "fraud": null,
+            "carrier": {
+              "mobile_country_code": "",
+              "mobile_network_code": "",
+              "name": "Verizon Wireless:6006 - SVR/2",
+              "type": "mobile",
+              "error_code": null,
+              "normalized_carrier": "Verizon Wireless"
+            },
+            "caller_name": null,
+            "nnid_override": null,
+            "portability": {
+              "lrn": "561676XXXX",
+              "ported_status": "",
+              "ported_date": "",
+              "ocn": "6502",
+              "line_type": "mobile",
+              "spid": "",
+              "spid_carrier_name": "CELLCO PARTNERSHIP DBA VERIZON",
+              "spid_carrier_type": "",
+              "altspid": "",
+              "altspid_carrier_name": "",
+              "altspid_carrier_type": "",
+              "city": "WPALMBEACH",
+              "state": "Florida"
+            },
+            "valid_number": true,
+            "record_type": "number_lookup"
+          }
+        }
+      },
+      "lineType": "mobile",
+      "carrierName": "Verizon Wireless:6006 - SVR/2",
+      "carrierType": "mobile",
+      "normalizedCarrier": "Verizon Wireless",
+      "decisionReason": "FULL_ENRICHMENT",
+      "decisionCodes": [
+        "FULL_ENRICHMENT",
+        "SOFT_DOWNGRADE_FREE_EMAIL"
+      ],
+      "decisionConfidence": 63,
+      "decisionAction": "full",
+      "enrichmentLevel": "full",
+      "dncStatus": "UNKNOWN",
+      "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+      "age": "48"
+    },
+    "Line Type": "mobile",
+    "Carrier": "Verizon Wireless:6006 - SVR/2",
+    "Normalized Carrier": "Verizon Wireless",
+    "Age": "48",
+    "Gender": "male",
+    "Gender Confidence": 98
+  },
+  "leadSummary": {
+    "name": "Ben Galin",
+    "phone": "5616854444",
+    "dobOrAge": "48",
+    "zipcode": "33928",
+    "state": "FL",
+    "city": "Estero",
+    "email": "bgalin@hotmail.com",
+    "dncStatus": "UNKNOWN",
+    "income": 305000,
+    "lineType": "mobile",
+    "carrier": "Verizon Wireless:6006 - SVR/2",
+    "normalizedCarrier": "Verizon Wireless",
+    "searchFilter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+    "dateScraped": "2026-03-10",
+    "linkedinUrl": "https://www.linkedin.com/in/ACwAAAYH5-UBip62Z59m2J_U_1lhvEZwRHyN7do",
+    "zipProvenance": "verified_skip_trace",
+    "skipTracingDisposition": "clear_match"
+  }
+}

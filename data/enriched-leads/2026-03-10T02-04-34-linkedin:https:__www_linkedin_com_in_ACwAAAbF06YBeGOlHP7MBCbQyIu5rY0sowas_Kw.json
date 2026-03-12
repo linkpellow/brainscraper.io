@@ -1,0 +1,166 @@
+{
+  "metadata": {
+    "savedAt": "2026-03-10T02:04:34.473Z",
+    "leadKey": "linkedin:https://www.linkedin.com/in/ACwAAAbF06YBeGOlHP7MBCbQyIu5rY0sowas_Kw"
+  },
+  "enrichedRow": {
+    "Name": "Blaine Patterson",
+    "Title": "Vice President of Business Development",
+    "Company": "Teamworks",
+    "Location": "Tampa, Florida, United States",
+    "LinkedIn URL": "https://www.linkedin.com/in/ACwAAAbF06YBeGOlHP7MBCbQyIu5rY0sowas_Kw",
+    "Email": "blainep22@gmail.com",
+    "Phone": "4129530526",
+    "First Name": "Blaine",
+    "Last Name": "Patterson",
+    "City": "Tampa",
+    "State": "FL",
+    "Zip": "33602",
+    "Search Filter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+    "_enriched": {
+      "firstName": "Blaine",
+      "lastName": "Patterson",
+      "zipCode": "33602",
+      "zipProvenance": "verified_skip_trace",
+      "gender": "female",
+      "genderConfidence": 92,
+      "phone": "4129530526",
+      "email": "blainep22@gmail.com",
+      "addressLine2": "FL",
+      "incomePreQual": {
+        "conservative": {
+          "min": 520000,
+          "max": 820000,
+          "p50": 670000
+        },
+        "upside": {
+          "min": 574000,
+          "max": 899000,
+          "p50": 737000
+        },
+        "estimate": {
+          "range": {
+            "min": 520000,
+            "max": 899000
+          },
+          "p50": 703000,
+          "confidence": 0.48,
+          "primaryDrivers": [
+            "career ladder: exec",
+            "company: Teamworks"
+          ],
+          "riskFlags": [
+            "High-level title but company type may not support it"
+          ]
+        },
+        "decision": {
+          "tier": "unknown",
+          "shouldContinueEnrichment": true,
+          "reason": "Income meets $60k threshold: Upside p50 ($737k) >= $60k minimum",
+          "band": "high",
+          "requiresStrongPositives": false,
+          "reasonCode": "INCOME_ABOVE_60K"
+        }
+      },
+      "skipTracingData": {
+        "Status": 200,
+        "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+        "Source": "tps_fsh_471_cch",
+        "Records": 1,
+        "Page": 1,
+        "PeopleDetails": [
+          {
+            "Name": "Blaine Patterson",
+            "Link": "https://www.truepeoplesearch.com/find/person/px286nnl984248n4n984u",
+            "Age": 48,
+            "Person ID": "px286nnl984248n4n984u",
+            "Lives in": "Tampa, FL",
+            "Used to live in": "Brookhaven GA, Dallas TX, Wexford PA, Sav...",
+            "Related to": "Carol Patterson, Darrell Patterson, Giovan..."
+          }
+        ],
+        "ageFromPersonDetails": "48"
+      },
+      "skipTracingDisposition": "clear_match",
+      "skipTracingMatchType": "exact_location",
+      "telnyxLookupData": {
+        "success": true,
+        "data": {
+          "data": {
+            "country_code": "US",
+            "national_format": "(412) 953-0526",
+            "phone_number": "+14129530526",
+            "fraud": null,
+            "carrier": {
+              "mobile_country_code": "",
+              "mobile_network_code": "",
+              "name": "NEW CINGULAR WIRELESS PCS, LLC - IL",
+              "type": "mobile",
+              "error_code": null,
+              "normalized_carrier": "AT&T"
+            },
+            "caller_name": null,
+            "nnid_override": null,
+            "portability": {
+              "lrn": null,
+              "ported_status": "",
+              "ported_date": "",
+              "ocn": "6534",
+              "line_type": "mobile",
+              "spid": "",
+              "spid_carrier_name": "NEW CINGULAR WIRELESS PCS, LLC",
+              "spid_carrier_type": "",
+              "altspid": "",
+              "altspid_carrier_name": "",
+              "altspid_carrier_type": "",
+              "city": "PTTSBGZON1",
+              "state": "Pennsylvania"
+            },
+            "valid_number": true,
+            "record_type": "number_lookup"
+          }
+        }
+      },
+      "lineType": "mobile",
+      "carrierName": "NEW CINGULAR WIRELESS PCS, LLC - IL",
+      "carrierType": "mobile",
+      "normalizedCarrier": "AT&T",
+      "decisionReason": "PARTIAL_ENRICHMENT",
+      "decisionCodes": [
+        "PARTIAL_ENRICHMENT",
+        "SOFT_DOWNGRADE_FREE_EMAIL"
+      ],
+      "decisionConfidence": 36,
+      "decisionAction": "partial",
+      "enrichmentLevel": "partial",
+      "dncStatus": "UNKNOWN",
+      "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+      "age": "48"
+    },
+    "Line Type": "mobile",
+    "Carrier": "NEW CINGULAR WIRELESS PCS, LLC - IL",
+    "Normalized Carrier": "AT&T",
+    "Age": "48",
+    "Gender": "female",
+    "Gender Confidence": 92
+  },
+  "leadSummary": {
+    "name": "Blaine Patterson",
+    "phone": "4129530526",
+    "dobOrAge": "48",
+    "zipcode": "33602",
+    "state": "FL",
+    "city": "Tampa",
+    "email": "blainep22@gmail.com",
+    "dncStatus": "UNKNOWN",
+    "income": 703000,
+    "lineType": "mobile",
+    "carrier": "NEW CINGULAR WIRELESS PCS, LLC - IL",
+    "normalizedCarrier": "AT&T",
+    "searchFilter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+    "dateScraped": "2026-03-10",
+    "linkedinUrl": "https://www.linkedin.com/in/ACwAAAbF06YBeGOlHP7MBCbQyIu5rY0sowas_Kw",
+    "zipProvenance": "verified_skip_trace",
+    "skipTracingDisposition": "clear_match"
+  }
+}

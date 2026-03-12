@@ -1,0 +1,162 @@
+{
+  "metadata": {
+    "savedAt": "2026-03-09T19:50:14.463Z",
+    "leadKey": "linkedin:https://www.linkedin.com/in/ACwAAAFVNXIBwdpbgwY05bqR9XUbjLF17STm7ik"
+  },
+  "enrichedRow": {
+    "Name": "Miguel A. Garcia",
+    "Title": "Senior Land Use Planner",
+    "Company": "American Real Estate Partners (AREP)",
+    "Location": "Great Falls, Virginia, United States",
+    "LinkedIn URL": "https://www.linkedin.com/in/ACwAAAFVNXIBwdpbgwY05bqR9XUbjLF17STm7ik",
+    "Email": "miguelalonsogarcia@gmail.com",
+    "Phone": "7035686257",
+    "First Name": "Miguel",
+    "Last Name": "A. Garcia",
+    "City": "Great Falls",
+    "State": "VA",
+    "Zip": "22066",
+    "Search Filter": "Location: Alexandria, Virginia | Changed Jobs (90 days)",
+    "_enriched": {
+      "firstName": "Miguel",
+      "lastName": "Garcia",
+      "zipCode": "22066",
+      "zipProvenance": "verified_skip_trace",
+      "gender": "male",
+      "genderConfidence": 98,
+      "phone": "7035686257",
+      "email": "miguelalonsogarcia@gmail.com",
+      "addressLine2": "VA",
+      "incomePreQual": {
+        "conservative": {
+          "min": 56000,
+          "max": 164000,
+          "p50": 110000
+        },
+        "upside": {
+          "min": 52000,
+          "max": 143000,
+          "p50": 110000
+        },
+        "estimate": {
+          "range": {
+            "min": 56000,
+            "max": 143000
+          },
+          "p50": 110000,
+          "confidence": 0.6,
+          "primaryDrivers": [
+            "career ladder: senior_ic",
+            "company: American Real Estate Partners (AREP)"
+          ],
+          "riskFlags": []
+        },
+        "decision": {
+          "tier": "unknown",
+          "shouldContinueEnrichment": true,
+          "reason": "Income meets $60k threshold: Upside p50 ($110k) >= $60k minimum",
+          "band": "high",
+          "requiresStrongPositives": false,
+          "reasonCode": "INCOME_ABOVE_60K"
+        }
+      },
+      "skipTracingData": {
+        "Status": 200,
+        "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+        "Source": "tps_fsh_319_cch",
+        "Records": 3,
+        "Page": 1,
+        "PeopleDetails": [
+          {
+            "Name": "Miguel Garcia",
+            "Link": "https://www.truepeoplesearch.com/find/person/p620ll9r0r8r209lll24",
+            "Age": 44,
+            "Person ID": "p620ll9r0r8r209lll24",
+            "Lives in": "Great Falls, VA",
+            "Used to live in": "Washington DC, Alexandria VA, Springfield...",
+            "Related to": "Fatima Sanchez, Jeannine Garcia, Maurilio ..."
+          }
+        ],
+        "ageFromPersonDetails": "44"
+      },
+      "skipTracingDisposition": "clear_match",
+      "telnyxLookupData": {
+        "success": true,
+        "data": {
+          "data": {
+            "country_code": "US",
+            "national_format": "(703) 568-6257",
+            "phone_number": "+17035686257",
+            "fraud": null,
+            "carrier": {
+              "mobile_country_code": "",
+              "mobile_network_code": "",
+              "name": "T-Mobile US-SVR-10X/2",
+              "type": "mobile",
+              "error_code": null,
+              "normalized_carrier": ""
+            },
+            "caller_name": null,
+            "nnid_override": null,
+            "portability": {
+              "lrn": "571331XXXX",
+              "ported_status": "",
+              "ported_date": "",
+              "ocn": "6855",
+              "line_type": "mobile",
+              "spid": "",
+              "spid_carrier_name": "OMNIPOINT COMMUNICATIONS CAP O",
+              "spid_carrier_type": "",
+              "altspid": "",
+              "altspid_carrier_name": "",
+              "altspid_carrier_type": "",
+              "city": "WSNGTNZN17",
+              "state": "Virginia"
+            },
+            "valid_number": true,
+            "record_type": "number_lookup"
+          }
+        }
+      },
+      "lineType": "mobile",
+      "carrierName": "T-Mobile US-SVR-10X/2",
+      "carrierType": "mobile",
+      "normalizedCarrier": "",
+      "decisionReason": "FULL_ENRICHMENT",
+      "decisionCodes": [
+        "FULL_ENRICHMENT",
+        "SOFT_DOWNGRADE_FREE_EMAIL"
+      ],
+      "decisionConfidence": 63,
+      "decisionAction": "full",
+      "enrichmentLevel": "full",
+      "dncStatus": "UNKNOWN",
+      "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+      "age": "44"
+    },
+    "Line Type": "mobile",
+    "Carrier": "T-Mobile US-SVR-10X/2",
+    "Age": "44",
+    "Gender": "male",
+    "Gender Confidence": 98
+  },
+  "leadSummary": {
+    "name": "Miguel A. Garcia",
+    "phone": "7035686257",
+    "dobOrAge": "44",
+    "zipcode": "22066",
+    "state": "VA",
+    "city": "Great Falls",
+    "email": "miguelalonsogarcia@gmail.com",
+    "dncStatus": "UNKNOWN",
+    "income": 110000,
+    "lineType": "mobile",
+    "carrier": "T-Mobile US-SVR-10X/2",
+    "normalizedCarrier": "",
+    "searchFilter": "Location: Alexandria, Virginia | Changed Jobs (90 days)",
+    "dateScraped": "2026-03-09",
+    "linkedinUrl": "https://www.linkedin.com/in/ACwAAAFVNXIBwdpbgwY05bqR9XUbjLF17STm7ik",
+    "zipProvenance": "verified_skip_trace",
+    "skipTracingDisposition": "clear_match"
+  }
+}

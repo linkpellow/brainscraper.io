@@ -1,0 +1,160 @@
+{
+  "metadata": {
+    "savedAt": "2026-03-10T02:05:03.740Z",
+    "leadKey": "linkedin:https://www.linkedin.com/in/ACwAAAaxtwoB86TDFCyt94WQPEiM0TcbuGMuvpk"
+  },
+  "enrichedRow": {
+    "Name": "Keith Holland",
+    "Title": "Senior Vice President",
+    "Company": "SouthernTier Telecom",
+    "Location": "West Palm Beach, Florida, United States",
+    "LinkedIn URL": "https://www.linkedin.com/in/ACwAAAaxtwoB86TDFCyt94WQPEiM0TcbuGMuvpk",
+    "Email": "slotline21@mail.com",
+    "Phone": "5612996246",
+    "First Name": "Keith",
+    "Last Name": "Holland",
+    "City": "West Palm Beach",
+    "State": "FL",
+    "Zip": "33411",
+    "Search Filter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+    "_enriched": {
+      "firstName": "Keith",
+      "lastName": "Holland",
+      "zipCode": "33411",
+      "zipProvenance": "verified_skip_trace",
+      "phone": "5612996246",
+      "email": "slotline21@mail.com",
+      "addressLine2": "FL",
+      "incomePreQual": {
+        "conservative": {
+          "min": 3788000,
+          "max": 4088000,
+          "p50": 3938000
+        },
+        "upside": {
+          "min": 4169000,
+          "max": 4494000,
+          "p50": 4332000
+        },
+        "estimate": {
+          "range": {
+            "min": 3788000,
+            "max": 4494000
+          },
+          "p50": 4135000,
+          "confidence": 0.48,
+          "primaryDrivers": [
+            "career ladder: exec",
+            "company: SouthernTier Telecom"
+          ],
+          "riskFlags": [
+            "High-level title but company type may not support it"
+          ]
+        },
+        "decision": {
+          "tier": "unknown",
+          "shouldContinueEnrichment": true,
+          "reason": "Income meets $60k threshold: Upside p50 ($4332k) >= $60k minimum",
+          "band": "high",
+          "requiresStrongPositives": false,
+          "reasonCode": "INCOME_ABOVE_60K"
+        }
+      },
+      "skipTracingData": {
+        "Status": 200,
+        "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+        "Source": "tps_fsh_427_cch",
+        "Records": 4,
+        "Page": 1,
+        "PeopleDetails": [
+          {
+            "Name": "Keith Holland Sr",
+            "Link": "https://www.truepeoplesearch.com/find/person/px62n8r2r692n80r402u0",
+            "Age": 56,
+            "Person ID": "px62n8r2r692n80r402u0",
+            "Lives in": "West Palm Beach, FL",
+            "Used to live in": "Loxahatchee FL, Spring TX, Pompano Beach ...",
+            "Related to": "Shirley Holland, Andrew Grant, Arlene Holl..."
+          }
+        ],
+        "ageFromPersonDetails": "56"
+      },
+      "skipTracingDisposition": "clear_match",
+      "skipTracingMatchType": "exact_location",
+      "telnyxLookupData": {
+        "success": true,
+        "data": {
+          "data": {
+            "country_code": "US",
+            "national_format": "(561) 299-6246",
+            "phone_number": "+15612996246",
+            "fraud": null,
+            "carrier": {
+              "mobile_country_code": "",
+              "mobile_network_code": "",
+              "name": "T-Mobile US-SVR-10X/2",
+              "type": "mobile",
+              "error_code": null,
+              "normalized_carrier": ""
+            },
+            "caller_name": null,
+            "nnid_override": null,
+            "portability": {
+              "lrn": "561306XXXX",
+              "ported_status": "",
+              "ported_date": "",
+              "ocn": "6889",
+              "line_type": "mobile",
+              "spid": "",
+              "spid_carrier_name": "OMNIPOINT MIAMI E LICENSE, LLC",
+              "spid_carrier_type": "",
+              "altspid": "",
+              "altspid_carrier_name": "",
+              "altspid_carrier_type": "",
+              "city": "DELRAY BCH",
+              "state": "Florida"
+            },
+            "valid_number": true,
+            "record_type": "number_lookup"
+          }
+        }
+      },
+      "lineType": "mobile",
+      "carrierName": "T-Mobile US-SVR-10X/2",
+      "carrierType": "mobile",
+      "normalizedCarrier": "",
+      "decisionReason": "FULL_ENRICHMENT",
+      "decisionCodes": [
+        "FULL_ENRICHMENT"
+      ],
+      "decisionConfidence": 87,
+      "decisionAction": "full",
+      "enrichmentLevel": "full",
+      "dncStatus": "UNKNOWN",
+      "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+      "age": "56"
+    },
+    "Line Type": "mobile",
+    "Carrier": "T-Mobile US-SVR-10X/2",
+    "Age": "56"
+  },
+  "leadSummary": {
+    "name": "Keith Holland",
+    "phone": "5612996246",
+    "dobOrAge": "56",
+    "zipcode": "33411",
+    "state": "FL",
+    "city": "West Palm Beach",
+    "email": "slotline21@mail.com",
+    "dncStatus": "UNKNOWN",
+    "income": 4135000,
+    "lineType": "mobile",
+    "carrier": "T-Mobile US-SVR-10X/2",
+    "normalizedCarrier": "",
+    "searchFilter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+    "dateScraped": "2026-03-10",
+    "linkedinUrl": "https://www.linkedin.com/in/ACwAAAaxtwoB86TDFCyt94WQPEiM0TcbuGMuvpk",
+    "zipProvenance": "verified_skip_trace",
+    "skipTracingDisposition": "clear_match"
+  }
+}

@@ -1,0 +1,163 @@
+{
+  "metadata": {
+    "savedAt": "2026-03-12T01:38:24.380Z",
+    "leadKey": "linkedin:https://www.linkedin.com/in/ACwAAAYG7PgB7M7wJnfDpqQyyMfFbp7pa40HdGA"
+  },
+  "enrichedRow": {
+    "Name": "KRIS KOPP",
+    "Title": "Real Estate Agent",
+    "Company": "EXIT Gulf Coast Realty",
+    "Location": "Punta Gorda, FL",
+    "LinkedIn URL": "https://www.linkedin.com/in/ACwAAAYG7PgB7M7wJnfDpqQyyMfFbp7pa40HdGA",
+    "Email": "kvlkopp@hotmail.com",
+    "Phone": "7634394071",
+    "First Name": "KRIS",
+    "Last Name": "KOPP",
+    "City": "Punta Gorda",
+    "State": "FL",
+    "Zip": "54025",
+    "Search Filter": "roi-test-fl-real-estate",
+    "_enriched": {
+      "firstName": "KRIS",
+      "lastName": "KOPP",
+      "zipCode": "54025",
+      "zipProvenance": "verified_skip_trace",
+      "phone": "7634394071",
+      "email": "kvlkopp@hotmail.com",
+      "addressLine2": "FL",
+      "incomePreQual": {
+        "conservative": {
+          "min": 30000,
+          "max": 115000,
+          "p50": 70000
+        },
+        "upside": {
+          "min": 21000,
+          "max": 119000,
+          "p50": 70000
+        },
+        "estimate": {
+          "range": {
+            "min": 30000,
+            "max": 119000
+          },
+          "p50": 70000,
+          "confidence": 0.33,
+          "primaryDrivers": [
+            "company: EXIT Gulf Coast Realty"
+          ],
+          "riskFlags": [
+            "Job title seniority unclear"
+          ]
+        },
+        "decision": {
+          "tier": "unknown",
+          "shouldContinueEnrichment": true,
+          "reason": "Income meets $60k threshold: Upside p50 ($70k) >= $60k minimum",
+          "band": "high",
+          "requiresStrongPositives": false,
+          "reasonCode": "INCOME_ABOVE_60K"
+        }
+      },
+      "skipTracingData": {
+        "Status": 200,
+        "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+        "Source": "tps_fsh_282_cch",
+        "Records": 1,
+        "Page": 1,
+        "PeopleDetails": [
+          {
+            "Name": "Kris Kopp",
+            "Link": "https://www.truepeoplesearch.com/find/person/p4rn9n0469nr6u4l0rl9",
+            "Age": 47,
+            "Person ID": "p4rn9n0469nr6u4l0rl9",
+            "Lives in": "Somerset, WI",
+            "Used to live in": "Punta Gorda FL, Isanti MN, Osceola WI, Hu...",
+            "Related to": "Vicki Kopp, Ava Kopp, Curtis Kopp, Lily Ko..."
+          }
+        ],
+        "ageFromPersonDetails": "47"
+      },
+      "skipTracingDisposition": "clear_match",
+      "skipTracingMatchType": "name_only",
+      "phoneStateMismatch": true,
+      "telnyxLookupData": {
+        "success": true,
+        "data": {
+          "data": {
+            "country_code": "US",
+            "national_format": "(763) 439-4071",
+            "phone_number": "+17634394071",
+            "fraud": null,
+            "carrier": {
+              "mobile_country_code": "",
+              "mobile_network_code": "",
+              "name": "T-Mobile US-SVR-10X/2",
+              "type": "mobile",
+              "error_code": null,
+              "normalized_carrier": ""
+            },
+            "caller_name": null,
+            "nnid_override": null,
+            "portability": {
+              "lrn": "763439XXXX",
+              "ported_status": "",
+              "ported_date": "",
+              "ocn": "6701",
+              "line_type": "mobile",
+              "spid": "",
+              "spid_carrier_name": "AERIAL COMMUNICATIONS",
+              "spid_carrier_type": "",
+              "altspid": "",
+              "altspid_carrier_name": "",
+              "altspid_carrier_type": "",
+              "city": "TWINCITIES",
+              "state": "Minnesota"
+            },
+            "valid_number": true,
+            "record_type": "number_lookup"
+          }
+        }
+      },
+      "lineType": "mobile",
+      "carrierName": "T-Mobile US-SVR-10X/2",
+      "carrierType": "mobile",
+      "normalizedCarrier": "",
+      "decisionReason": "PARTIAL_ENRICHMENT",
+      "decisionCodes": [
+        "PARTIAL_ENRICHMENT",
+        "SOFT_DOWNGRADE_FREE_EMAIL"
+      ],
+      "decisionConfidence": 36,
+      "decisionAction": "partial",
+      "enrichmentLevel": "partial",
+      "dncStatus": "UNKNOWN",
+      "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+      "age": "47"
+    },
+    "Line Type": "mobile",
+    "Carrier": "T-Mobile US-SVR-10X/2",
+    "Age": "47"
+  },
+  "leadSummary": {
+    "name": "KRIS KOPP",
+    "phone": "7634394071",
+    "dobOrAge": "47",
+    "zipcode": "54025",
+    "state": "FL",
+    "city": "Punta Gorda",
+    "email": "kvlkopp@hotmail.com",
+    "dncStatus": "UNKNOWN",
+    "income": 70000,
+    "lineType": "mobile",
+    "carrier": "T-Mobile US-SVR-10X/2",
+    "normalizedCarrier": "",
+    "searchFilter": "roi-test-fl-real-estate",
+    "dateScraped": "2026-03-12",
+    "linkedinUrl": "https://www.linkedin.com/in/ACwAAAYG7PgB7M7wJnfDpqQyyMfFbp7pa40HdGA",
+    "zipProvenance": "verified_skip_trace",
+    "skipTracingDisposition": "clear_match",
+    "needsVerification": true,
+    "phoneStateMismatch": true
+  }
+}

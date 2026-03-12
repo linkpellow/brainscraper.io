@@ -1,0 +1,164 @@
+{
+  "metadata": {
+    "savedAt": "2026-03-10T02:04:19.604Z",
+    "leadKey": "linkedin:https://www.linkedin.com/in/ACwAABv67bUB7ZJx00bIq_wFZ3dfSKdgE3Knpfk"
+  },
+  "enrichedRow": {
+    "Name": "Viviana Pichardo",
+    "Title": "School Based Behavioral Health Counselor",
+    "Company": "Drug Abuse Treatment Association, Inc",
+    "Location": "Boca Raton, Florida, United States",
+    "LinkedIn URL": "https://www.linkedin.com/in/ACwAABv67bUB7ZJx00bIq_wFZ3dfSKdgE3Knpfk",
+    "Email": "pichivv@gmail.com",
+    "Phone": "3057538219",
+    "First Name": "Viviana",
+    "Last Name": "Pichardo",
+    "City": "Boca Raton",
+    "State": "FL",
+    "Zip": "33433",
+    "Search Filter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+    "_enriched": {
+      "firstName": "Viviana",
+      "lastName": "Pichardo",
+      "zipCode": "33433",
+      "zipProvenance": "verified_skip_trace",
+      "gender": "female",
+      "genderConfidence": 90,
+      "phone": "3057538219",
+      "email": "pichivv@gmail.com",
+      "addressLine2": "FL",
+      "incomePreQual": {
+        "conservative": {
+          "min": 38000,
+          "max": 128000,
+          "p50": 83000
+        },
+        "upside": {
+          "min": 34000,
+          "max": 132000,
+          "p50": 83000
+        },
+        "estimate": {
+          "range": {
+            "min": 38000,
+            "max": 132000
+          },
+          "p50": 83000,
+          "confidence": 0.33,
+          "primaryDrivers": [
+            "company: Drug Abuse Treatment Association, Inc"
+          ],
+          "riskFlags": [
+            "Job title seniority unclear"
+          ]
+        },
+        "decision": {
+          "tier": "unknown",
+          "shouldContinueEnrichment": true,
+          "reason": "Income meets $60k threshold: Upside p50 ($83k) >= $60k minimum",
+          "band": "high",
+          "requiresStrongPositives": false,
+          "reasonCode": "INCOME_ABOVE_60K"
+        }
+      },
+      "skipTracingData": {
+        "Status": 200,
+        "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+        "Source": "tps_fsh_364_cch",
+        "Records": 1,
+        "Page": 1,
+        "PeopleDetails": [
+          {
+            "Name": "Viviana Pichardo",
+            "Link": "https://www.truepeoplesearch.com/find/person/pxn4lurn28r8n9489296l",
+            "Age": 34,
+            "Person ID": "pxn4lurn28r8n9489296l",
+            "Lives in": "Boca Raton, FL",
+            "Used to live in": "Coconut Creek FL, Miami Lakes FL, Halland...",
+            "Related to": "Jose Pichardo, Scott Rockwell, Stefania Pi..."
+          }
+        ],
+        "ageFromPersonDetails": "34"
+      },
+      "skipTracingDisposition": "clear_match",
+      "skipTracingMatchType": "exact_location",
+      "telnyxLookupData": {
+        "success": true,
+        "data": {
+          "data": {
+            "country_code": "US",
+            "national_format": "(305) 753-8219",
+            "phone_number": "+13057538219",
+            "fraud": null,
+            "carrier": {
+              "mobile_country_code": "",
+              "mobile_network_code": "",
+              "name": "T-Mobile US-SVR-10X/2",
+              "type": "mobile",
+              "error_code": null,
+              "normalized_carrier": ""
+            },
+            "caller_name": null,
+            "nnid_override": null,
+            "portability": {
+              "lrn": "786281XXXX",
+              "ported_status": "",
+              "ported_date": "",
+              "ocn": "6889",
+              "line_type": "mobile",
+              "spid": "",
+              "spid_carrier_name": "OMNIPOINT MIAMI E LICENSE, LLC",
+              "spid_carrier_type": "",
+              "altspid": "",
+              "altspid_carrier_name": "",
+              "altspid_carrier_type": "",
+              "city": "MIAMI",
+              "state": "Florida"
+            },
+            "valid_number": true,
+            "record_type": "number_lookup"
+          }
+        }
+      },
+      "lineType": "mobile",
+      "carrierName": "T-Mobile US-SVR-10X/2",
+      "carrierType": "mobile",
+      "normalizedCarrier": "",
+      "decisionReason": "PARTIAL_ENRICHMENT",
+      "decisionCodes": [
+        "PARTIAL_ENRICHMENT",
+        "SOFT_DOWNGRADE_FREE_EMAIL"
+      ],
+      "decisionConfidence": 43,
+      "decisionAction": "partial",
+      "enrichmentLevel": "partial",
+      "dncStatus": "UNKNOWN",
+      "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+      "age": "34"
+    },
+    "Line Type": "mobile",
+    "Carrier": "T-Mobile US-SVR-10X/2",
+    "Age": "34",
+    "Gender": "female",
+    "Gender Confidence": 90
+  },
+  "leadSummary": {
+    "name": "Viviana Pichardo",
+    "phone": "3057538219",
+    "dobOrAge": "34",
+    "zipcode": "33433",
+    "state": "FL",
+    "city": "Boca Raton",
+    "email": "pichivv@gmail.com",
+    "dncStatus": "UNKNOWN",
+    "income": 83000,
+    "lineType": "mobile",
+    "carrier": "T-Mobile US-SVR-10X/2",
+    "normalizedCarrier": "",
+    "searchFilter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+    "dateScraped": "2026-03-10",
+    "linkedinUrl": "https://www.linkedin.com/in/ACwAABv67bUB7ZJx00bIq_wFZ3dfSKdgE3Knpfk",
+    "zipProvenance": "verified_skip_trace",
+    "skipTracingDisposition": "clear_match"
+  }
+}

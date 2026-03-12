@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Users, Sparkles, ListTodo, Settings, LogOut, FileText, Activity, ClipboardList } from 'lucide-react';
+import { Users, Sparkles, ListTodo, Settings, LogOut } from 'lucide-react';
 import BackgroundJobs from './BackgroundJobs';
 import { useState } from 'react';
 
@@ -28,11 +28,6 @@ export default function Sidebar() {
       href: '/',
       label: 'Lead Generation',
       icon: Sparkles,
-    },
-    {
-      href: '/warn',
-      label: 'WARN Lists',
-      icon: ClipboardList,
     },
     {
       href: '/enrichment-queue',

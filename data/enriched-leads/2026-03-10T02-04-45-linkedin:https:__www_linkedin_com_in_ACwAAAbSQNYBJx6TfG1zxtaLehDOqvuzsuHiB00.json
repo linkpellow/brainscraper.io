@@ -1,0 +1,167 @@
+{
+  "metadata": {
+    "savedAt": "2026-03-10T02:04:45.821Z",
+    "leadKey": "linkedin:https://www.linkedin.com/in/ACwAAAbSQNYBJx6TfG1zxtaLehDOqvuzsuHiB00"
+  },
+  "enrichedRow": {
+    "Name": "Kyle Newton",
+    "Title": "Account Executive",
+    "Company": "Basis Theory",
+    "Location": "Tampa, Florida, United States",
+    "LinkedIn URL": "https://www.linkedin.com/in/ACwAAAbSQNYBJx6TfG1zxtaLehDOqvuzsuHiB00",
+    "Email": "anabaez2616@gmail.com",
+    "Phone": "9043152498",
+    "First Name": "Kyle",
+    "Last Name": "Newton",
+    "City": "Tampa",
+    "State": "FL",
+    "Zip": "33610",
+    "Search Filter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+    "_enriched": {
+      "firstName": "Kyle",
+      "lastName": "Newton",
+      "zipCode": "33610",
+      "zipProvenance": "verified_skip_trace",
+      "gender": "male",
+      "genderConfidence": 98,
+      "phone": "9043152498",
+      "email": "anabaez2616@gmail.com",
+      "addressLine2": "FL",
+      "incomePreQual": {
+        "conservative": {
+          "min": 660000,
+          "max": 960000,
+          "p50": 810000
+        },
+        "upside": {
+          "min": 729000,
+          "max": 1054000,
+          "p50": 891000
+        },
+        "estimate": {
+          "range": {
+            "min": 660000,
+            "max": 1054000
+          },
+          "p50": 851000,
+          "confidence": 0.7,
+          "primaryDrivers": [
+            "career ladder: exec",
+            "executive role",
+            "company: Basis Theory"
+          ],
+          "riskFlags": [
+            "High-level title but company type may not support it"
+          ]
+        },
+        "decision": {
+          "tier": "unknown",
+          "shouldContinueEnrichment": true,
+          "reason": "Income meets $60k threshold: Upside p50 ($891k) >= $60k minimum",
+          "band": "high",
+          "requiresStrongPositives": false,
+          "reasonCode": "INCOME_ABOVE_60K"
+        }
+      },
+      "skipTracingData": {
+        "Status": 200,
+        "Message": "state_1; Use the /person_details_by_ID endpoint to gather more info!",
+        "Source": "tps_fsh_338_cch",
+        "Records": 1,
+        "Page": 1,
+        "PeopleDetails": [
+          {
+            "Name": "Kyle Newton",
+            "Link": "https://www.truepeoplesearch.com/find/person/pxr8l9unl48l8u269rn00",
+            "Age": 35,
+            "Person ID": "pxr8l9unl48l8u269rn00",
+            "Lives in": "Tampa, FL",
+            "Used to live in": "",
+            "Related to": "Victoria Newton"
+          }
+        ],
+        "ageFromPersonDetails": "35"
+      },
+      "skipTracingDisposition": "clear_match",
+      "skipTracingMatchType": "exact_location",
+      "telnyxLookupData": {
+        "success": true,
+        "data": {
+          "data": {
+            "country_code": "US",
+            "national_format": "(904) 315-2498",
+            "phone_number": "+19043152498",
+            "fraud": null,
+            "carrier": {
+              "mobile_country_code": "",
+              "mobile_network_code": "",
+              "name": "Verizon Wireless:6006 - SVR/2",
+              "type": "mobile",
+              "error_code": null,
+              "normalized_carrier": "Verizon Wireless"
+            },
+            "caller_name": null,
+            "nnid_override": null,
+            "portability": {
+              "lrn": "904477XXXX",
+              "ported_status": "",
+              "ported_date": "",
+              "ocn": "6502",
+              "line_type": "mobile",
+              "spid": "",
+              "spid_carrier_name": "CELLCO PARTNERSHIP DBA VERIZON",
+              "spid_carrier_type": "",
+              "altspid": "",
+              "altspid_carrier_name": "",
+              "altspid_carrier_type": "",
+              "city": "JACKSONVL",
+              "state": "Florida"
+            },
+            "valid_number": true,
+            "record_type": "number_lookup"
+          }
+        }
+      },
+      "lineType": "mobile",
+      "carrierName": "Verizon Wireless:6006 - SVR/2",
+      "carrierType": "mobile",
+      "normalizedCarrier": "Verizon Wireless",
+      "decisionReason": "FULL_ENRICHMENT",
+      "decisionCodes": [
+        "FULL_ENRICHMENT",
+        "SOFT_DOWNGRADE_FREE_EMAIL"
+      ],
+      "decisionConfidence": 63,
+      "decisionAction": "full",
+      "enrichmentLevel": "full",
+      "dncStatus": "UNKNOWN",
+      "dncReason": "DNC access token not configured. Paste a fresh DNC access token in the Lead Generation token box.",
+      "age": "35"
+    },
+    "Line Type": "mobile",
+    "Carrier": "Verizon Wireless:6006 - SVR/2",
+    "Normalized Carrier": "Verizon Wireless",
+    "Age": "35",
+    "Gender": "male",
+    "Gender Confidence": 98
+  },
+  "leadSummary": {
+    "name": "Kyle Newton",
+    "phone": "9043152498",
+    "dobOrAge": "35",
+    "zipcode": "33610",
+    "state": "FL",
+    "city": "Tampa",
+    "email": "anabaez2616@gmail.com",
+    "dncStatus": "UNKNOWN",
+    "income": 851000,
+    "lineType": "mobile",
+    "carrier": "Verizon Wireless:6006 - SVR/2",
+    "normalizedCarrier": "Verizon Wireless",
+    "searchFilter": "Location: Bonita Springs, FL | Changed Jobs (90 days)",
+    "dateScraped": "2026-03-10",
+    "linkedinUrl": "https://www.linkedin.com/in/ACwAAAbSQNYBJx6TfG1zxtaLehDOqvuzsuHiB00",
+    "zipProvenance": "verified_skip_trace",
+    "skipTracingDisposition": "clear_match"
+  }
+}
