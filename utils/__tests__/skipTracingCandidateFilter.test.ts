@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { filterSkipTracingCandidates } from '@/utils/enrichment/skipTracingCandidateFilter';
+import {
+  filterSkipTracingCandidates,
+  rankCandidatesByLocationMatch,
+  getSurvivorStates,
+} from '@/utils/enrichment/skipTracingCandidateFilter';
 
 describe('skip tracing candidate filter', () => {
   it('treats full state names and abbreviations as the same state', () => {
@@ -153,5 +157,50 @@ describe('skip tracing candidate filter', () => {
     expect(result.disposition).toBe('clear_match');
     expect(result.survivors).toEqual(peopleDetails);
     expect(result.matchType).toBe('name_only');
+  });
+
+  describe('rankCandidatesByLocationMatch', () => {
+    it('puts city+state match first, then state-only', () => {
+      const survivors = [
+        { Name: 'Jane Doe', 'Lives in': 'Orlando, FL', 'Person ID': 'j1' },
+        { Name: 'Jane Doe', 'Lives in': 'Tampa, FL', 'Person ID': 'j2' },
+      ];
+      const ranked = rankCandidatesByLocationMatch(survivors, 'Orlando', 'FL');
+      expect(ranked).toHaveLength(2);
+      expect(ranked[0]['Person ID']).toBe('j1');
+      expect(ranked[1]['Person ID']).toBe('j2');
+    });
+
+    it('returns same order when no location requested', () => {
+      const survivors = [
+        { Name: 'A B', 'Lives in': 'Austin, TX', 'Person ID': '1' },
+        { Name: 'A B', 'Lives in': 'Dallas, TX', 'Person ID': '2' },
+      ];
+      const ranked = rankCandidatesByLocationMatch(survivors);
+      expect(ranked).toHaveLength(2);
+    });
+  });
+
+  describe('getSurvivorStates', () => {
+    it('returns distinct states from survivors', () => {
+      const survivors = [
+        { Name: 'John Smith', 'Lives in': 'Austin, TX', 'Person ID': '1' },
+        { Name: 'John Smith', 'Lives in': 'Denver, CO', 'Person ID': '2' },
+      ];
+      const states = getSurvivorStates(survivors);
+      expect(states.size).toBe(2);
+      expect(states.has('TX')).toBe(true);
+      expect(states.has('CO')).toBe(true);
+    });
+
+    it('returns one state when all in same state', () => {
+      const survivors = [
+        { Name: 'Jane Doe', 'Lives in': 'Tampa, FL', 'Person ID': '1' },
+        { Name: 'Jane Doe', 'Lives in': 'Orlando, FL', 'Person ID': '2' },
+      ];
+      const states = getSurvivorStates(survivors);
+      expect(states.size).toBe(1);
+      expect(states.has('FL')).toBe(true);
+    });
   });
 });

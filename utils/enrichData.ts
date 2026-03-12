@@ -18,6 +18,7 @@ import {
   type DecisionResult,
   type DecisionStage,
 } from './enrichment/decisionEngine';
+import { normalizeUsStateCode } from './usState';
 
 /**
  * Detailed progress information for real-time tracking
@@ -54,13 +55,13 @@ export type EnrichmentStrictness = 'strict' | 'balanced' | 'volume';
 const STRICTNESS_VALID: EnrichmentStrictness[] = ['strict', 'balanced', 'volume'];
 
 export function getStrictness(options?: { strictness?: EnrichmentStrictness }): EnrichmentStrictness {
-  const raw = options?.strictness ?? process.env.ENRICHMENT_STRICTNESS ?? 'strict';
+  const raw = options?.strictness ?? process.env.ENRICHMENT_STRICTNESS ?? 'volume';
   const normalized = String(raw).toLowerCase().trim() as EnrichmentStrictness;
-  return STRICTNESS_VALID.includes(normalized) ? normalized : 'strict';
+  return STRICTNESS_VALID.includes(normalized) ? normalized : 'volume';
 }
 
 /** Skip-tracing match outcome for strict single-candidate policy. */
-export type SkipTracingDisposition = 'clear_match' | 'ambiguous' | 'no_exact_match' | 'common_name_blocked' | 'abbreviated_last_common_first_blocked' | 'ambiguous_used_first';
+export type SkipTracingDisposition = 'clear_match' | 'ambiguous' | 'no_exact_match' | 'common_name_blocked' | 'abbreviated_last_common_first_blocked' | 'ambiguous_used_first' | 'ambiguous_multiple_states_saved_for_review' | 'no_location_skipped';
 
 export interface EnrichmentResult {
   email?: string;
@@ -79,6 +80,8 @@ export interface EnrichmentResult {
   firstName?: string;
   lastName?: string;
   skipTracingData?: unknown;
+  /** When ambiguous and candidates span multiple states, full list for manual review. */
+  skipTracingCandidatesForReview?: any[];
   telnyxLookupData?: unknown;
   incomeData?: unknown;
   companyData?: unknown;
@@ -101,6 +104,8 @@ export interface EnrichmentResult {
   canContact?: boolean; // Whether lead can be contacted (not DNC)
   dncReason?: string; // Reason for DNC status
   dncLastChecked?: string; // ISO date string of last DNC check
+  /** True when area code suggests a different state than lead; for review only. */
+  phoneStateMismatch?: boolean;
   incomePreQual?: {
     conservative: {
       min: number;
@@ -160,6 +165,10 @@ function getPhoneDiscoveryFailureMessage(disposition: SkipTracingDisposition | u
       return 'Gatekeep failed: Common first name with abbreviated last name – skipped';
     case 'ambiguous_used_first':
       return 'Gatekeep: Ambiguous match – first candidate used (verify before contact)';
+    case 'ambiguous_multiple_states_saved_for_review':
+      return 'Multiple candidates in different states – verify before contact';
+    case 'no_location_skipped':
+      return 'Skipped: No location (state or city) for skip-tracing';
     default:
       return 'Gatekeep failed: No phone number found';
   }
@@ -1234,6 +1243,21 @@ function addError(result: EnrichmentResult, error: string): void {
   }
 }
 
+function normalizePhoneForStorage(rawPhone: unknown): string | null {
+  if (!rawPhone || typeof rawPhone !== 'string') {
+    return null;
+  }
+
+  let cleaned = rawPhone.replace(/[^\d+]/g, '');
+  if (cleaned.startsWith('+1')) {
+    cleaned = cleaned.substring(2);
+  } else if (cleaned.startsWith('+')) {
+    cleaned = cleaned.substring(1);
+  }
+
+  return cleaned.length >= 10 ? cleaned : null;
+}
+
 /**
  * Helper: Checks if we have all critical data (phone, email, DOB, address)
  * Note: Must be defined after hasDOBOrAge and hasAddressData
@@ -1445,7 +1469,8 @@ export async function enrichRow(
   const lastName = extractLastName(row, headers);
   const city = extractCity(row, headers);
   let state = extractState(row, headers);
-  
+  state = state ? normalizeUsStateCode(state) : null;
+
   console.log(`[ENRICH_ROW] STEP 1: Extracted LinkedIn data:`, {
     firstName: firstName || 'MISSING',
     lastName: lastName || 'MISSING',
@@ -1692,25 +1717,30 @@ export async function enrichRow(
   });
 
   // STEP 3: Phone Discovery (Skip-tracing - PHONE ONLY, not age yet)
-  // CRITICAL: Only run if income pre-qual passed (income >= $60k)
-  // This prevents spending money on skip-tracing for unqualified leads
+  // Strict mode enforces income hard-gates; balanced/volume continue with advisory flags.
   const hasName = firstName && lastName;
   const hasEmail = !!email;
+  const strictIncomeGate = strictness === 'strict' && !incomePreQualShouldContinue;
   
   console.log(`[ENRICH_ROW] STEP 3: Skip-tracing check:`, {
     hasPhone: !!phone,
     hasEmail,
     hasName,
     incomePreQualPassed: incomePreQualShouldContinue,
-    willRunSkipTracing: !phone && (hasEmail || hasName) && incomePreQualShouldContinue,
+    strictIncomeGate,
+    willRunSkipTracing: !phone && (hasEmail || hasName) && !strictIncomeGate,
   });
   
   // STEP 3: Phone discovery (skip-tracing). Strictness: strict = skip common-name/ambiguous when weak; balanced/volume = allow state-only and ambiguous-use-first with review flags.
   // Skip phone discovery if income pre-qual rejected the lead
-  if (!incomePreQualShouldContinue) {
+  if (strictIncomeGate) {
     console.log(`[ENRICH_ROW] STEP 3: 🚫 Skipping phone discovery - income pre-qualification rejected lead (income < $60k)`);
     onProgress?.('phone-discovery', undefined, ['Skipped: Income < $60k']);
-  } else if (!phone && hasName) {
+  } else if (!phone && hasName && !state && !city) {
+    result.skipTracingDisposition = 'no_location_skipped';
+    console.log(`[ENRICH_ROW] STEP 3: Skipping phone discovery - no location (state or city) for skip-tracing`);
+    onProgress?.('phone-discovery', undefined, ['Skipped: No location (state or city) for skip-tracing']);
+  } else if (!phone && hasName && (state || city)) {
     const cleanedFirstName = cleanNameForAPI(firstName);
     const cleanedLastName = cleanNameForAPI(lastName);
     const fullName = `${cleanedFirstName} ${cleanedLastName}`.trim();
@@ -1799,7 +1829,7 @@ export async function enrichRow(
           // Strict candidate filter: exact name + location match; 0 or 2+ survivors = no spend
           let responseData: any = null;
           if (actualData.PeopleDetails && Array.isArray(actualData.PeopleDetails) && actualData.PeopleDetails.length > 0) {
-            const { filterSkipTracingCandidates } = await import('./enrichment/skipTracingCandidateFilter');
+            const { filterSkipTracingCandidates, rankCandidatesByLocationMatch, getSurvivorStates } = await import('./enrichment/skipTracingCandidateFilter');
             const { survivors, disposition, matchType } = filterSkipTracingCandidates(
               actualData.PeopleDetails,
               cleanedFirstName,
@@ -1817,15 +1847,27 @@ export async function enrichRow(
               }, ['No exact skip-tracing match']);
             } else if (disposition === 'ambiguous') {
               if (strictness === 'balanced' || strictness === 'volume') {
-                responseData = survivors[0];
-                (result.skipTracingData as any).PeopleDetails = [survivors[0]];
+                const survivorStates = getSurvivorStates(survivors);
+                const ranked = rankCandidatesByLocationMatch(survivors, city || undefined, state || undefined);
+                responseData = ranked[0];
+                // Preserve alternatives for manual QA while still moving the lead forward.
+                result.skipTracingCandidatesForReview = survivors;
+                (result.skipTracingData as any).PeopleDetails = [ranked[0]];
                 result.skipTracingDisposition = 'ambiguous_used_first';
                 result.skipTracingMatchType = 'ambiguous_used_first';
-                console.log(`[ENRICH_ROW] STEP 3: ambiguous_used_first - using first of ${survivors.length} (verify before contact)`);
-                onProgress?.('phone-discovery', {
-                  city: city || undefined,
-                  state: state || undefined,
-                }, ['Ambiguous – first candidate used (verify before contact)']);
+                if (state && survivorStates.size > 1) {
+                  console.log(`[ENRICH_ROW] STEP 3: ambiguous_multi_state_used_first - using best-ranked of ${survivors.length} (verify before contact)`);
+                  onProgress?.('phone-discovery', {
+                    city: city || undefined,
+                    state: state || undefined,
+                  }, ['Multiple candidates in different states – first candidate used (verify before contact)']);
+                } else {
+                  console.log(`[ENRICH_ROW] STEP 3: ambiguous_used_first - using best-ranked of ${survivors.length} (verify before contact)`);
+                  onProgress?.('phone-discovery', {
+                    city: city || undefined,
+                    state: state || undefined,
+                  }, ['Ambiguous – first candidate used (verify before contact)']);
+                }
               } else {
                 console.log(`[ENRICH_ROW] STEP 3: skiptrace_ambiguous - ${survivors.length} matches, not calling person-details`);
                 onProgress?.('phone-discovery', {
@@ -1919,7 +1961,7 @@ export async function enrichRow(
                   console.log(`[ENRICH_ROW] STEP 3: Processing ${personDetails['All Phone Details'].length} phone details`);
                   // Prefer wireless phones, then most recently reported
                   const phones = personDetails['All Phone Details']
-                    .filter((p: any) => p.phone_number)
+                    .filter((p: any) => p.phone_number || p.phone || p['Phone Number'] || p.telephone)
                     .sort((a: any, b: any) => {
                       // Prefer wireless
                       if (a.phone_type === 'Wireless' && b.phone_type !== 'Wireless') return -1;
@@ -1931,25 +1973,19 @@ export async function enrichRow(
                     });
                   
                   if (phones.length > 0) {
-                    const phoneNumber = phones[0].phone_number;
+                    const phoneNumber = phones[0].phone_number || phones[0].phone || phones[0]['Phone Number'] || phones[0].telephone;
                     console.log(`[ENRICH_ROW] STEP 3: Selected phone from All Phone Details:`, {
                       phoneNumber,
                       phoneType: phones[0].phone_type,
                       lastReported: phones[0].last_reported,
                     });
-                    // Clean phone: remove all non-digits except leading +
-                    phone = String(phoneNumber).replace(/[^\d+]/g, '');
-                    // Remove leading + if present (US numbers)
-                    if (phone.startsWith('+1')) {
-                      phone = phone.substring(2);
-                    } else if (phone.startsWith('+')) {
-                      phone = phone.substring(1);
-                    }
-                    if (phone.length >= 10) {
-                      result.phone = phone;
+                    const normalizedPhone = normalizePhoneForStorage(String(phoneNumber));
+                    if (normalizedPhone) {
+                      phone = normalizedPhone;
+                      result.phone = normalizedPhone;
                       console.log(`[ENRICH_ROW] ✅ STEP 3: Got phone from person details: ${phone.substring(0, 5)}... (${phones[0].phone_type})`);
                     } else {
-                      console.log(`[ENRICH_ROW] ⚠️  STEP 3: Phone from person details invalid length (${phone.length}): ${phone}`);
+                      console.log(`[ENRICH_ROW] ⚠️  STEP 3: Phone from person details invalid: ${String(phoneNumber)}`);
                     }
                   } else {
                     console.log(`[ENRICH_ROW] ⚠️  STEP 3: No valid phones found in All Phone Details array`);
@@ -1963,19 +1999,13 @@ export async function enrichRow(
                   const telephone = personDetails['Person Details'][0].Telephone;
                   console.log(`[ENRICH_ROW] STEP 3: Checking Person Details Telephone field:`, telephone || 'NOT_FOUND');
                   if (telephone) {
-                    // Clean phone: remove all non-digits except leading +
-                    phone = String(telephone).replace(/[^\d+]/g, '');
-                    // Remove leading + if present (US numbers)
-                    if (phone.startsWith('+1')) {
-                      phone = phone.substring(2);
-                    } else if (phone.startsWith('+')) {
-                      phone = phone.substring(1);
-                    }
-                    if (phone.length >= 10) {
-                      result.phone = phone;
+                    const normalizedPhone = normalizePhoneForStorage(String(telephone));
+                    if (normalizedPhone) {
+                      phone = normalizedPhone;
+                      result.phone = normalizedPhone;
                       console.log(`[ENRICH_ROW] ✅ STEP 3: Got phone from Person Details: ${phone.substring(0, 5)}...`);
                     } else {
-                      console.log(`[ENRICH_ROW] ⚠️  STEP 3: Person Details Telephone invalid length (${phone.length}): ${phone}`);
+                      console.log(`[ENRICH_ROW] ⚠️  STEP 3: Person Details Telephone invalid: ${String(telephone)}`);
                     }
                   }
                 } else if (!phone) {
@@ -1985,6 +2015,20 @@ export async function enrichRow(
                     isArray: Array.isArray(personDetails['Person Details']),
                     length: personDetails['Person Details']?.length || 0,
                   });
+                }
+
+                // Schema-flex fallback for alternate person-details payload formats.
+                if (!phone) {
+                  const personExtracted = extractContactFromNestedData(personDetails, phone, email);
+                  if (personExtracted.phone) {
+                    phone = personExtracted.phone;
+                    result.phone = personExtracted.phone;
+                    console.log(`[ENRICH_ROW] ✅ STEP 3: Got phone from person-details nested fallback: ${personExtracted.phone.substring(0, 5)}...`);
+                  }
+                  if (personExtracted.email && !email) {
+                    email = personExtracted.email;
+                    result.email = personExtracted.email ?? undefined;
+                  }
                 }
                 
                 // Extract state from Current Address Details List
@@ -2121,7 +2165,15 @@ export async function enrichRow(
             email: email || undefined,
             zipCode: zipCode || undefined,
           });
-        
+
+          // Optional: flag when area code suggests different state (review only)
+          if (result.phone && state) {
+            const { checkPhoneStateConsistency } = await import('./enrichment/phoneStateCheck');
+            if (checkPhoneStateConsistency(result.phone, state) === 'mismatch') {
+              result.phoneStateMismatch = true;
+            }
+          }
+
         // Extract address if bundled (optional)
           const addressData = responseData || actualData;
           if (addressData?.address || addressData?.addressLine1) {
@@ -2151,9 +2203,37 @@ export async function enrichRow(
       console.log(`[ENRICH_ROW] PHASE 3: Preserved email from row: ${emailStr.substring(0, 10)}...`);
     }
   }
+
+  // STEP 3B: Deterministic email fallback for max viable yield.
+  // If name/location path did not produce a phone but we have an email, query by-email.
+  if (!phone && email) {
+    console.log(`[ENRICH_ROW] STEP 3B: Running skip-tracing email fallback for ${firstName} ${lastName}`);
+    const emailUrl = `/api/skip-tracing?email=${encodeURIComponent(email)}`;
+    const emailResult = await callAPIWithConfig(emailUrl, {}, 'Skip-tracing (Email Fallback)', callAPIImpl);
+
+    if (emailResult.data && !emailResult.error) {
+      const emailData = emailResult.data.data || emailResult.data;
+      const extractedFromEmail = extractContactFromNestedData(emailData, phone, email);
+
+      if (extractedFromEmail.phone && !phone) {
+        phone = extractedFromEmail.phone;
+        result.phone = extractedFromEmail.phone;
+        console.log(`[ENRICH_ROW] ✅ STEP 3B: Email fallback recovered phone: ${extractedFromEmail.phone.substring(0, 5)}...`);
+      } else {
+        console.log(`[ENRICH_ROW] ⚠️ STEP 3B: Email fallback returned no phone`);
+      }
+
+      if (extractedFromEmail.email && !result.email) {
+        result.email = extractedFromEmail.email;
+      }
+    } else {
+      console.log(`[ENRICH_ROW] ⚠️ STEP 3B: Email fallback API error: ${emailResult.error || 'unknown'}`);
+    }
+  }
   
-  // AGE FILTER CHECK - only use STEP 3 age when we have a single chosen candidate (clear_match)
+  // AGE FILTER CHECK - strict mode hard-gates age > 59; balanced/volume only flag for review.
   let ageOver59 = false;
+  const strictAgeGate = strictness === 'strict';
   const skipTracingDataForAge = result.skipTracingData as any;
 
   const hasSingleSkipTracingCandidate = (result.skipTracingDisposition === 'clear_match' || result.skipTracingDisposition === 'ambiguous_used_first');
@@ -2162,12 +2242,12 @@ export async function enrichRow(
     if (step3Age) {
       const ageNum = parseInt(String(step3Age), 10);
       if (!isNaN(ageNum) && ageNum > 59) {
-        ageOver59 = true;
+        ageOver59 = strictAgeGate;
         result.age = String(step3Age); // Store age for reference
-        console.log(`[ENRICH_ROW] 🚫 AGE FILTER: Age ${ageNum} > 59 detected in STEP 3 - skipping Telnyx and age enrichment (cost savings)`);
+        console.log(`[ENRICH_ROW] ${strictAgeGate ? '🚫' : '⚠️'} AGE FILTER: Age ${ageNum} > 59 detected in STEP 3 - ${strictAgeGate ? 'skipping Telnyx and age enrichment' : 'advisory only in non-strict mode'}`);
         onProgress?.('gatekeep', {
           phone: phone || undefined,
-        }, [`Age ${ageNum} > 59 - filtered out (cost savings)`]);
+        }, [strictAgeGate ? `Age ${ageNum} > 59 - filtered out (cost savings)` : `Age ${ageNum} > 59 - verify campaign fit before contact`]);
       }
     }
   }
@@ -2176,12 +2256,12 @@ export async function enrichRow(
   if (!ageOver59 && skipTracingDataForAge?.ageFromPersonDetails) {
     const ageNum = parseInt(String(skipTracingDataForAge.ageFromPersonDetails), 10);
     if (!isNaN(ageNum) && ageNum > 59) {
-      ageOver59 = true;
+      ageOver59 = strictAgeGate;
       result.age = String(skipTracingDataForAge.ageFromPersonDetails);
-      console.log(`[ENRICH_ROW] 🚫 AGE FILTER: Age ${ageNum} > 59 detected from person details - skipping Telnyx and age enrichment (cost savings)`);
+      console.log(`[ENRICH_ROW] ${strictAgeGate ? '🚫' : '⚠️'} AGE FILTER: Age ${ageNum} > 59 detected from person details - ${strictAgeGate ? 'skipping Telnyx and age enrichment' : 'advisory only in non-strict mode'}`);
       onProgress?.('gatekeep', {
         phone: phone || undefined,
-      }, [`Age ${ageNum} > 59 - filtered out (cost savings)`]);
+      }, [strictAgeGate ? `Age ${ageNum} > 59 - filtered out (cost savings)` : `Age ${ageNum} > 59 - verify campaign fit before contact`]);
     }
   }
   
@@ -2189,12 +2269,12 @@ export async function enrichRow(
   if (!ageOver59 && skipTracingDataForAge?.Age) {
     const ageNum = parseInt(String(skipTracingDataForAge.Age), 10);
     if (!isNaN(ageNum) && ageNum > 59) {
-      ageOver59 = true;
+      ageOver59 = strictAgeGate;
       result.age = String(skipTracingDataForAge.Age);
-      console.log(`[ENRICH_ROW] 🚫 AGE FILTER: Age ${ageNum} > 59 detected in skip-tracing data - skipping Telnyx and age enrichment (cost savings)`);
+      console.log(`[ENRICH_ROW] ${strictAgeGate ? '🚫' : '⚠️'} AGE FILTER: Age ${ageNum} > 59 detected in skip-tracing data - ${strictAgeGate ? 'skipping Telnyx and age enrichment' : 'advisory only in non-strict mode'}`);
       onProgress?.('gatekeep', {
         phone: phone || undefined,
-      }, [`Age ${ageNum} > 59 - filtered out (cost savings)`]);
+      }, [strictAgeGate ? `Age ${ageNum} > 59 - filtered out (cost savings)` : `Age ${ageNum} > 59 - verify campaign fit before contact`]);
     }
   }
   
@@ -2356,9 +2436,17 @@ export async function enrichRow(
   ) : false;
   
   // Apply decision engine result (overrides traditional gatekeep if more confident)
-  if (finalDecision.action === 'skip' && finalDecision.confidence >= 85) {
+  // In balanced/volume, avoid hard-skipping solely on low-income signals.
+  const strictDecisionSkip = strictness === 'strict';
+  const lowIncomeOnlySkip =
+    Array.isArray(result.decisionCodes) &&
+    result.decisionCodes.length > 0 &&
+    result.decisionCodes.every((code) => code === 'INCOME_BELOW_60K');
+  if (finalDecision.action === 'skip' && finalDecision.confidence >= 85 && (strictDecisionSkip || !lowIncomeOnlySkip)) {
     console.log(`[DECISION_ENGINE] Overriding gatekeep - skipping enrichment (confidence: ${finalDecision.confidence})`);
     shouldContinue = false;
+  } else if (!strictDecisionSkip && lowIncomeOnlySkip && finalDecision.action === 'skip') {
+    console.log(`[DECISION_ENGINE] Non-strict mode: preserving lead flow despite low-income-only skip`);
   } else if (finalDecision.action === 'partial' && finalDecision.confidence >= 70) {
     // Partial enrichment: only free/cheap operations
     console.log(`[DECISION_ENGINE] Partial enrichment mode (confidence: ${finalDecision.confidence})`);
@@ -2368,7 +2456,7 @@ export async function enrichRow(
   // Income pre-qualification decision was already applied at STEP 2.5
   // If it rejected the lead, phone discovery was skipped, so we shouldn't reach here
   // But double-check for safety
-  if (shouldContinue && result.incomePreQual && !result.incomePreQual.decision.shouldContinueEnrichment) {
+  if (strictness === 'strict' && shouldContinue && result.incomePreQual && !result.incomePreQual.decision.shouldContinueEnrichment) {
     console.log(`[ENRICH_ROW] STEP 5: Income pre-qualification already rejected lead at STEP 2.5 - should not reach here`);
     shouldContinue = false;
   }
@@ -2785,68 +2873,13 @@ export async function enrichData(
       }
     }
 
-    // CRITICAL: Save immediately after enrichment to ensure data persistence
-    // Filter: Only save leads with valid phone numbers AND age <= 59 (exclude email-only leads and age > 59)
+    // CRITICAL: Save immediately after enrichment to ensure data persistence.
+    // Do not hard-drop here; contact/export layers can apply stricter campaign filters.
     try {
       const leadSummary = extractLeadSummary(enrichedRow, enrichment);
-      const phone = (leadSummary.phone || '').trim().replace(/\D/g, '');
-      
-      // Check age filter (age > 59 should be filtered out)
-      const ageStr = leadSummary.dobOrAge || '';
-      let ageNum: number | null = null;
-      
-      // Try to parse age from dobOrAge
-      if (ageStr) {
-        // If it's a number, use it directly
-        const parsed = parseInt(String(ageStr).trim(), 10);
-        if (!isNaN(parsed) && parsed > 0 && parsed < 150) {
-          ageNum = parsed;
-        } else {
-          // Try to calculate from DOB
-          try {
-            const dob = new Date(ageStr);
-            if (!isNaN(dob.getTime())) {
-              const today = new Date();
-              let calculatedAge = today.getFullYear() - dob.getFullYear();
-              const monthDiff = today.getMonth() - dob.getMonth();
-              if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
-                calculatedAge--;
-              }
-              if (calculatedAge > 0 && calculatedAge < 150) {
-                ageNum = calculatedAge;
-              }
-            }
-          } catch {
-            // Couldn't parse as date, skip age check
-          }
-        }
-      }
-      
-      // Filter: require phone number AND age between 19-59 (inclusive)
-      // Keep leads with age >= 19 AND age <= 59
-      // Filter out: age < 19 OR age > 59
-      // If age unknown, allow through (will be filtered at aggregation if needed)
-      const hasValidPhone = phone.length >= 10;
-      let ageFilterPassed = true; // Default to true if age unknown
-      
-      if (ageNum !== null) {
-        // Age is known - check if it's in valid range (19-59)
-        ageFilterPassed = ageNum >= 19 && ageNum <= 59;
-        if (!ageFilterPassed) {
-          if (ageNum < 19) {
-            console.log(`🚫 [ENRICH_DATA] Skipping lead "${leadName}" - age ${ageNum} < 19 (filtered out for cost savings)`);
-          } else {
-            console.log(`🚫 [ENRICH_DATA] Skipping lead "${leadName}" - age ${ageNum} > 59 (filtered out for cost savings)`);
-          }
-        }
-      }
-      
-      if (hasValidPhone && ageFilterPassed) {
-        saveEnrichedLeadImmediate(enrichedRow, leadSummary);
-        console.log(`💾 [ENRICH_DATA] Saved lead immediately: ${leadName}${ageNum !== null ? ` (age ${ageNum})` : ' (age unknown)'}`);
-      } else if (!hasValidPhone) {
-        console.log(`🚫 [ENRICH_DATA] Skipping lead "${leadName}" - no valid phone number (email-only leads excluded)`);
-      }
+      saveEnrichedLeadImmediate(enrichedRow, leadSummary);
+      const phoneDigits = (leadSummary.phone || '').replace(/\D/g, '');
+      console.log(`💾 [ENRICH_DATA] Saved lead immediately: ${leadName}${phoneDigits.length >= 10 ? '' : ' (no verified phone yet)'}`);
     } catch (saveError) {
       console.error(`❌ [ENRICH_DATA] Failed to save lead ${leadName}:`, saveError);
       // Continue processing even if save fails - don't lose the enrichment

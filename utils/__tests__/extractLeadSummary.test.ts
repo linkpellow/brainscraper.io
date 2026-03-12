@@ -52,4 +52,26 @@ describe('extractLeadSummary', () => {
     expect(summary.enrichmentStopReason).toBeUndefined();
     expect(summary.reviewBucket).toBeUndefined();
   });
+
+  it('maps ambiguous_multiple_states_saved_for_review to review bucket and needsVerification', () => {
+    const row: EnrichedRow = { Name: 'John Smith', State: 'TX' };
+    const enriched: EnrichmentResult = {
+      skipTracingDisposition: 'ambiguous_multiple_states_saved_for_review',
+      skipTracingCandidatesForReview: [{ Name: 'John Smith', 'Lives in': 'Austin, TX' }, { Name: 'John Smith', 'Lives in': 'Denver, CO' }],
+    };
+    const summary = extractLeadSummary(row, enriched);
+    expect(summary.enrichmentStopReason).toBe('Multiple candidates in different states – verify before contact');
+    expect(summary.reviewBucket).toBe('ambiguous_identity');
+    expect(summary.needsVerification).toBe(true);
+  });
+
+  it('maps no_location_skipped to enrichment stop reason', () => {
+    const row: EnrichedRow = { Name: 'Jane Doe' };
+    const enriched: EnrichmentResult = {
+      skipTracingDisposition: 'no_location_skipped',
+    };
+    const summary = extractLeadSummary(row, enriched);
+    expect(summary.enrichmentStopReason).toBe('Skipped: No location (state or city) for skip-tracing');
+    expect(summary.reviewBucket).toBeUndefined();
+  });
 });

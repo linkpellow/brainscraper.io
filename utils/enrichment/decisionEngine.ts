@@ -484,9 +484,9 @@ export function makeEnrichmentDecision(
   const confidenceScore = confidenceResult.score;
   
   // Step 3: Evaluate income band
-  const incomeBand = signals.estimatedIncome 
+  const incomeBand = signals.estimatedIncome
     ? evaluateIncomeBand(signals.estimatedIncome)
-    : { band: 'low' as const, confidence: 0, requiresStrongPositives: false }; // No income data = low (reject)
+    : { band: 'unknown' as const, confidence: 0, requiresStrongPositives: false }; // No income data = advisory, not auto-reject
   
   // Step 4: Determine action based on confidence and income
   let action: DecisionAction = 'full';
@@ -512,7 +512,7 @@ export function makeEnrichmentDecision(
       stage,
       signals: confidenceResult.components.filter(c => c.contribution < 5).map(c => c.name.toUpperCase()),
     });
-  } else if (incomeBand.band === 'low') {
+  } else if (signals.estimatedIncome && incomeBand.band === 'low') {
     action = 'skip';
     enrichmentLevel = 'none';
     estimatedValue = 'low';

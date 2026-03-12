@@ -125,3 +125,53 @@ export function filterSkipTracingCandidates(
   if (nameOnlySurvivors.length === 0) return { survivors: [], disposition: 'no_exact_match' };
   return { survivors: nameOnlySurvivors, disposition: 'ambiguous' };
 }
+
+/**
+ * Score a single candidate by location match strength for ranking.
+ * 3 = city + state match, 2 = state only, 1 = name-only (no state match or no requested state).
+ */
+function scoreCandidateByLocation(
+  candidate: any,
+  reqCity: string,
+  reqState: string
+): number {
+  const livesIn = candidate['Lives in'] || candidate.livesIn || '';
+  const { city: candCityRaw, state: candState } = parseLivesIn(livesIn);
+  const candCity = candCityRaw ? normalizeCityForCompare(candCityRaw) : '';
+  if (reqCity && reqState && candCity === reqCity && candState === reqState) return 3;
+  if (reqState && candState === reqState) return 2;
+  return 1;
+}
+
+/**
+ * Rank ambiguous survivors by location match (best first).
+ * Uses same normalization as filter. Stable sort when scores tie.
+ */
+export function rankCandidatesByLocationMatch(
+  survivors: any[],
+  requestedCity?: string,
+  requestedState?: string
+): any[] {
+  if (!survivors || survivors.length <= 1) return survivors;
+  const reqCity = requestedCity ? normalizeCityForCompare(requestedCity) : '';
+  const reqState = requestedState ? normalizeState(requestedState) : '';
+  return [...survivors].sort((a, b) => {
+    const scoreA = scoreCandidateByLocation(a, reqCity, reqState);
+    const scoreB = scoreCandidateByLocation(b, reqCity, reqState);
+    return scoreB - scoreA;
+  });
+}
+
+/**
+ * Returns the set of distinct states among survivors (from "Lives in" / livesIn).
+ * Used to detect when ambiguous candidates span multiple states.
+ */
+export function getSurvivorStates(survivors: any[]): Set<string> {
+  const states = new Set<string>();
+  for (const p of survivors) {
+    const livesIn = p['Lives in'] || p.livesIn || '';
+    const { state: candState } = parseLivesIn(livesIn);
+    if (candState) states.add(candState);
+  }
+  return states;
+}

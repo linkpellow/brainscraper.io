@@ -13,10 +13,10 @@ describe('getStrictness', () => {
     }
   });
 
-  it('defaults to strict when no options and no env', () => {
+  it('defaults to volume when no options and no env', () => {
     delete process.env.ENRICHMENT_STRICTNESS;
-    expect(getStrictness()).toBe('strict');
-    expect(getStrictness(undefined)).toBe('strict');
+    expect(getStrictness()).toBe('volume');
+    expect(getStrictness(undefined)).toBe('volume');
   });
 
   it('uses options.strictness when provided', () => {
@@ -37,9 +37,9 @@ describe('getStrictness', () => {
     expect(getStrictness({ strictness: 'strict' })).toBe('strict');
   });
 
-  it('invalid env falls back to strict', () => {
+  it('invalid env falls back to volume', () => {
     process.env.ENRICHMENT_STRICTNESS = 'invalid';
-    expect(getStrictness()).toBe('strict');
+    expect(getStrictness()).toBe('volume');
     process.env.ENRICHMENT_STRICTNESS = 'BALANCED'; // normalized to lowercase
     expect(getStrictness()).toBe('balanced');
   });
