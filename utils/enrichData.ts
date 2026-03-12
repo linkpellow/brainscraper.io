@@ -103,6 +103,7 @@ export interface EnrichmentResult {
   skipTracingData?: unknown;
   /** When ambiguous and candidates span multiple states, full list for manual review. */
   skipTracingCandidatesForReview?: any[];
+  phoneDiscoveryAttempted?: boolean;
   telnyxLookupData?: unknown;
   incomeData?: unknown;
   companyData?: unknown;
@@ -266,6 +267,7 @@ export function wasChargeablePhoneDiscoveryAttempt(params: {
   if (disposition && NON_CHARGEABLE_PHONE_DISCOVERY_DISPOSITIONS.has(disposition)) {
     return false;
   }
+  if (enrichment.phoneDiscoveryAttempted) return true;
   if (enrichment.skipTracingData) return true;
   if (disposition) return true;
   if ((enrichment.error || '').toLowerCase().includes('skip-tracing')) return true;
@@ -1924,6 +1926,7 @@ export async function enrichRow(
       zipCode && zipProvenance === 'verified_row'
         ? zipCode
         : '';
+    result.phoneDiscoveryAttempted = true;
 
     console.log(`[ENRICH_ROW] STEP 3: Calling skip-tracing API for phone discovery:`, {
       name: fullName,

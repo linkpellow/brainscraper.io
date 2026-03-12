@@ -68,6 +68,19 @@ describe('enrichment stop-loss controls', () => {
     ).toBe(true);
   });
 
+  it('treats explicit phoneDiscoveryAttempted as chargeable even when payload is empty', () => {
+    const enrichment: EnrichmentResult = {
+      phoneDiscoveryAttempted: true,
+    };
+    expect(
+      wasChargeablePhoneDiscoveryAttempt({
+        stations: new Set(['linkedin', 'phone-discovery']),
+        hadValidPhoneBefore: false,
+        enrichment,
+      })
+    ).toBe(true);
+  });
+
   it('triggers main stop-loss when recovery drops below threshold after minimum attempts', () => {
     const trigger = evaluateStopLossTrigger({
       config: {
