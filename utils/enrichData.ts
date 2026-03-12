@@ -172,6 +172,137 @@ export interface EnrichedData {
   rows: EnrichedRow[];
   rowCount: number;
   columnCount: number;
+  stopLoss?: EnrichmentStopLossSummary;
+}
+
+export interface EnrichmentStopLossConfig {
+  enabled: boolean;
+  earlyMinAttempts: number;
+  earlyMinPhoneRecoveryRate: number;
+  minAttempts: number;
+  minPhoneRecoveryRate: number;
+}
+
+export interface EnrichmentStopLossSummary {
+  triggered: boolean;
+  reason?: string;
+  attemptedChargeable: number;
+  recoveredChargeable: number;
+  phoneRecoveryRate: number;
+  stoppedAfterRow: number;
+  remainingRowsSkipped: number;
+  config: Omit<EnrichmentStopLossConfig, 'enabled'>;
+}
+
+type StopLossTrigger = {
+  reason: string;
+  phoneRecoveryRate: number;
+};
+
+const NON_CHARGEABLE_PHONE_DISCOVERY_DISPOSITIONS = new Set<SkipTracingDisposition>([
+  'no_location_skipped',
+  'common_name_blocked',
+  'abbreviated_last_common_first_blocked',
+]);
+
+const DEFAULT_STOP_LOSS_CONFIG: EnrichmentStopLossConfig = {
+  enabled: true,
+  earlyMinAttempts: 12,
+  earlyMinPhoneRecoveryRate: 0.2,
+  minAttempts: 25,
+  minPhoneRecoveryRate: 0.5,
+};
+
+function parsePositiveInt(raw: string | undefined, fallback: number): number {
+  if (!raw) return fallback;
+  const parsed = Number(raw);
+  if (!Number.isFinite(parsed) || parsed <= 0) return fallback;
+  return Math.floor(parsed);
+}
+
+function parseRate(raw: string | undefined, fallback: number): number {
+  if (!raw) return fallback;
+  const parsed = Number(raw);
+  if (!Number.isFinite(parsed)) return fallback;
+  if (parsed <= 0 || parsed > 1) return fallback;
+  return parsed;
+}
+
+export function getStopLossConfig(stations: Set<EnrichmentStation>): EnrichmentStopLossConfig {
+  const enabledRaw = process.env.ENRICH_STOP_LOSS_ENABLED;
+  const globallyEnabled = enabledRaw === undefined ? true : enabledRaw.toLowerCase() !== 'false';
+
+  return {
+    enabled: globallyEnabled && stations.has('phone-discovery'),
+    earlyMinAttempts: parsePositiveInt(
+      process.env.ENRICH_STOP_LOSS_EARLY_MIN_ATTEMPTS,
+      DEFAULT_STOP_LOSS_CONFIG.earlyMinAttempts
+    ),
+    earlyMinPhoneRecoveryRate: parseRate(
+      process.env.ENRICH_STOP_LOSS_EARLY_MIN_PHONE_RECOVERY_RATE,
+      DEFAULT_STOP_LOSS_CONFIG.earlyMinPhoneRecoveryRate
+    ),
+    minAttempts: parsePositiveInt(
+      process.env.ENRICH_STOP_LOSS_MIN_ATTEMPTS,
+      DEFAULT_STOP_LOSS_CONFIG.minAttempts
+    ),
+    minPhoneRecoveryRate: parseRate(
+      process.env.ENRICH_STOP_LOSS_MIN_PHONE_RECOVERY_RATE,
+      DEFAULT_STOP_LOSS_CONFIG.minPhoneRecoveryRate
+    ),
+  };
+}
+
+export function wasChargeablePhoneDiscoveryAttempt(params: {
+  stations: Set<EnrichmentStation>;
+  hadValidPhoneBefore: boolean;
+  enrichment: EnrichmentResult;
+}): boolean {
+  const { stations, hadValidPhoneBefore, enrichment } = params;
+  if (!stations.has('phone-discovery')) return false;
+  if (hadValidPhoneBefore) return false;
+
+  const disposition = enrichment.skipTracingDisposition;
+  if (disposition && NON_CHARGEABLE_PHONE_DISCOVERY_DISPOSITIONS.has(disposition)) {
+    return false;
+  }
+  if (enrichment.skipTracingData) return true;
+  if (disposition) return true;
+  if ((enrichment.error || '').toLowerCase().includes('skip-tracing')) return true;
+  return false;
+}
+
+export function evaluateStopLossTrigger(params: {
+  config: EnrichmentStopLossConfig;
+  attemptedChargeable: number;
+  recoveredChargeable: number;
+}): StopLossTrigger | null {
+  const { config, attemptedChargeable, recoveredChargeable } = params;
+  if (!config.enabled || attemptedChargeable <= 0) return null;
+
+  const phoneRecoveryRate = recoveredChargeable / attemptedChargeable;
+
+  if (
+    attemptedChargeable >= config.earlyMinAttempts &&
+    phoneRecoveryRate < config.earlyMinPhoneRecoveryRate
+  ) {
+    return {
+      phoneRecoveryRate,
+      reason: `Early stop-loss: phone recovery ${(phoneRecoveryRate * 100).toFixed(1)}% below ${(config.earlyMinPhoneRecoveryRate * 100).toFixed(1)}% after ${attemptedChargeable} chargeable attempts`,
+    };
+  }
+
+  if (
+    attemptedChargeable >= config.minAttempts &&
+    phoneRecoveryRate < config.minPhoneRecoveryRate
+  ) {
+    return {
+      phoneRecoveryRate,
+      reason: `Stop-loss: phone recovery ${(phoneRecoveryRate * 100).toFixed(1)}% below ${(config.minPhoneRecoveryRate * 100).toFixed(1)}% after ${attemptedChargeable} chargeable attempts`,
+    };
+  }
+
+  return null;
 }
 
 function getPhoneDiscoveryFailureMessage(disposition: SkipTracingDisposition | undefined): string {
@@ -2715,6 +2846,14 @@ export async function enrichData(
 ): Promise<EnrichedData> {
   const stationConfig = getExecutionStations(enabledStations);
   const stations = stationConfig.stations;
+  const stopLossConfig = getStopLossConfig(stations);
+  const stopLossState = {
+    triggered: false,
+    reason: undefined as string | undefined,
+    attemptedChargeable: 0,
+    recoveredChargeable: 0,
+    stoppedAfterRow: data.rows.length,
+  };
   if (stationConfig.issues.length > 0) {
     console.warn(
       '[ENRICH_DATA] Dropping stations with missing dependencies:',
@@ -2761,6 +2900,7 @@ export async function enrichData(
     }
     
     const enrichedRow: EnrichedRow = { ...row };
+    const hadValidPhoneBefore = !!normalizePhoneForStorage(extractPhone(row, data.headers));
 
     // Enhanced progress callback
     const reportProgress = (step: EnrichmentProgress['step'], stepDetails?: EnrichmentProgress['stepDetails'], errors?: string[]) => {
@@ -2910,6 +3050,51 @@ export async function enrichData(
       onProgress(i + 1, data.rows.length);
     }
 
+    const chargeableAttempt = wasChargeablePhoneDiscoveryAttempt({
+      stations,
+      hadValidPhoneBefore,
+      enrichment,
+    });
+    if (chargeableAttempt) {
+      stopLossState.attemptedChargeable += 1;
+      const recoveredPhone = normalizePhoneForStorage(extractPhone(enrichedRow, data.headers));
+      if (recoveredPhone) {
+        stopLossState.recoveredChargeable += 1;
+      }
+
+      const stopLossTrigger = evaluateStopLossTrigger({
+        config: stopLossConfig,
+        attemptedChargeable: stopLossState.attemptedChargeable,
+        recoveredChargeable: stopLossState.recoveredChargeable,
+      });
+
+      if (stopLossTrigger) {
+        stopLossState.triggered = true;
+        stopLossState.reason = stopLossTrigger.reason;
+        stopLossState.stoppedAfterRow = i + 1;
+        console.warn(
+          `[ENRICH_DATA] ${stopLossTrigger.reason}. Processed ${i + 1}/${data.rows.length}.`,
+          {
+            attemptedChargeable: stopLossState.attemptedChargeable,
+            recoveredChargeable: stopLossState.recoveredChargeable,
+            phoneRecoveryRate: Number((stopLossTrigger.phoneRecoveryRate * 100).toFixed(2)),
+          }
+        );
+
+        if (onDetailedProgress) {
+          onDetailedProgress({
+            current: i + 1,
+            total: data.rows.length,
+            leadName: 'Batch Guard',
+            step: 'complete',
+            errors: [stopLossTrigger.reason],
+            stepDetails: {},
+            timestamp: Date.now(),
+          });
+        }
+        break;
+      }
+    }
   }
 
   // Route enriched leads to configured destination
@@ -2924,5 +3109,26 @@ export async function enrichData(
   return {
     ...data,
     rows: enrichedRows,
+    stopLoss: {
+      triggered: stopLossState.triggered,
+      reason: stopLossState.reason,
+      attemptedChargeable: stopLossState.attemptedChargeable,
+      recoveredChargeable: stopLossState.recoveredChargeable,
+      phoneRecoveryRate:
+        stopLossState.attemptedChargeable > 0
+          ? stopLossState.recoveredChargeable / stopLossState.attemptedChargeable
+          : 0,
+      stoppedAfterRow: stopLossState.stoppedAfterRow,
+      remainingRowsSkipped:
+        stopLossState.triggered && stopLossState.stoppedAfterRow < data.rows.length
+          ? data.rows.length - stopLossState.stoppedAfterRow
+          : 0,
+      config: {
+        earlyMinAttempts: stopLossConfig.earlyMinAttempts,
+        earlyMinPhoneRecoveryRate: stopLossConfig.earlyMinPhoneRecoveryRate,
+        minAttempts: stopLossConfig.minAttempts,
+        minPhoneRecoveryRate: stopLossConfig.minPhoneRecoveryRate,
+      },
+    },
   };
 }

@@ -172,6 +172,9 @@ export async function POST(request: NextRequest) {
           undefined,
           effectiveStations ? new Set(effectiveStations) : undefined
         );
+        const stopLossMetadata = enriched.stopLoss?.triggered
+          ? { stopLoss: enriched.stopLoss }
+          : {};
         const leadSummaries = enriched.rows.map((row: { _enriched?: unknown }) =>
           extractLeadSummary(row as Parameters<typeof extractLeadSummary>[0], row._enriched as Parameters<typeof extractLeadSummary>[1])
         );
@@ -188,6 +191,7 @@ export async function POST(request: NextRequest) {
           resultsStored: true,
           resultCount: enriched.rows.length,
           ...(effectiveStations ? { enabledStations: effectiveStations } : {}),
+          ...stopLossMetadata,
         });
         return NextResponse.json({
           success: true,
@@ -195,6 +199,7 @@ export async function POST(request: NextRequest) {
           message: 'Enrichment completed',
           sync: true,
           enrichedCount: enriched.rows.length,
+          ...(enriched.stopLoss?.triggered ? { stopLoss: enriched.stopLoss } : {}),
         });
       } catch (syncError) {
         const errMsg = syncError instanceof Error ? syncError.message : 'Enrichment failed';

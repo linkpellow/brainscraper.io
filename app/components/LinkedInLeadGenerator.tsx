@@ -758,11 +758,21 @@ export default function LinkedInLeadGenerator() {
       });
       console.log(`✨ [ENRICH_LIST] Filtered to ${summaries.length} leads with phone (removed ${allSummaries.length - summaries.length} email-only leads)`);
       setLeadSummaries(summaries);
+      const skippedByStopLoss = Math.max(leadList.length - allSummaries.length, 0);
       setBatchOutcome({
-        total: allSummaries.length,
+        total: leadList.length,
         successful: summaries.length,
-        filtered: allSummaries.length - summaries.length,
+        filtered: (allSummaries.length - summaries.length) + skippedByStopLoss,
       });
+      if (enriched.stopLoss?.triggered) {
+        const stopLossMessage = `Batch guard activated: ${enriched.stopLoss.reason || 'low phone recovery'}. Processed ${allSummaries.length}/${leadList.length} leads to prevent excess API spend.`;
+        setError(stopLossMessage);
+        setEnrichmentErrors(prev =>
+          mergeUniqueEnrichmentErrors(prev, [
+            { lead: 'Batch Guard', error: stopLossMessage, timestamp: Date.now() },
+          ])
+        );
+      }
 
       // Save enriched leads to localStorage for the enriched leads page
       try {
@@ -2119,11 +2129,21 @@ export default function LinkedInLeadGenerator() {
       });
       console.log(`✨ [ENRICH] Lead summaries: ${summaries.length} (filtered from ${allSummaries.length} - removed ${allSummaries.length - summaries.length} email-only leads)`);
       setLeadSummaries(summaries);
+      const skippedByStopLoss = Math.max(results.length - allSummaries.length, 0);
       setBatchOutcome({
-        total: allSummaries.length,
+        total: results.length,
         successful: summaries.length,
-        filtered: allSummaries.length - summaries.length,
+        filtered: (allSummaries.length - summaries.length) + skippedByStopLoss,
       });
+      if (enriched.stopLoss?.triggered) {
+        const stopLossMessage = `Batch guard activated: ${enriched.stopLoss.reason || 'low phone recovery'}. Processed ${allSummaries.length}/${results.length} leads to prevent excess API spend.`;
+        setError(stopLossMessage);
+        setEnrichmentErrors(prev =>
+          mergeUniqueEnrichmentErrors(prev, [
+            { lead: 'Batch Guard', error: stopLossMessage, timestamp: Date.now() },
+          ])
+        );
+      }
       
       // Load existing enriched leads from disk (incremental saves)
       try {

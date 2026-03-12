@@ -93,12 +93,16 @@ export const enrichLeadsFunction = inngest.createFunction(
 
       // Mark as completed
       await step.run('mark-completed', async () => {
+        const stopLossMetadata = enriched.stopLoss?.triggered
+          ? { stopLoss: enriched.stopLoss }
+          : {};
         await completeJob(jobId, {
           enrichedCount: enriched.rows.length,
           totalLeads: parsedData.rows.length,
           resultsStored: true,
           resultCount: enriched.rows.length,
           ...(normalizedStations ? { enabledStations: normalizedStations } : {}),
+          ...stopLossMetadata,
         });
         return { success: true };
       });
