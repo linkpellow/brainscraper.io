@@ -103,6 +103,23 @@ function isDefinitiveFilterError(message: string): boolean {
   );
 }
 
+function mergeUniqueEnrichmentErrors(
+  prev: Array<{ lead: string; error: string; timestamp: number }>,
+  incoming: Array<{ lead: string; error: string; timestamp: number }>
+) {
+  const seen = new Set(prev.map((entry) => `${entry.lead}::${entry.error}`));
+  const next = [...prev];
+
+  for (const entry of incoming) {
+    const key = `${entry.lead}::${entry.error}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    next.push(entry);
+  }
+
+  return next;
+}
+
 /**
  * Extracts structured source details from LinkedIn search parameters
  */
@@ -530,6 +547,9 @@ export default function LinkedInLeadGenerator() {
     setError(null);
     setEnrichedData(null);
     setLeadSummaries([]);
+    setEnrichmentErrors([]);
+    setDetailedProgress(null);
+    setEnrichmentProgress({ current: 0, total: 1 });
     setBatchOutcome({ total: 1, successful: 0, filtered: 0 });
     setWorkflowStep('enriching');
     initializeAPIProgress();
@@ -650,6 +670,10 @@ export default function LinkedInLeadGenerator() {
     setError(null);
     setEnrichedData(null);
     setLeadSummaries([]);
+    setEnrichmentErrors([]);
+    setDetailedProgress(null);
+    setEnrichmentProgress({ current: 0, total: leadList.length });
+    setBatchOutcome({ total: leadList.length, successful: 0, filtered: 0 });
     setWorkflowStep('enriching');
     initializeAPIProgress();
 
@@ -2011,6 +2035,9 @@ export default function LinkedInLeadGenerator() {
     setError(null);
     setEnrichedData(null);
     setLeadSummaries([]);
+    setEnrichmentErrors([]);
+    setDetailedProgress(null);
+    setEnrichmentProgress({ current: 0, total: results.length });
     setBatchOutcome({ total: results.length, successful: 0, filtered: 0 });
     setWorkflowStep('enriching');
     initializeAPIProgress();
@@ -2048,14 +2075,16 @@ export default function LinkedInLeadGenerator() {
         // Track errors
         if (detailedProgress.errors && detailedProgress.errors.length > 0) {
           console.warn(`✨ [ENRICH] Errors for ${detailedProgress.leadName}:`, detailedProgress.errors);
-          setEnrichmentErrors(prev => [
-            ...prev,
-            ...detailedProgress.errors!.map(err => ({
-              lead: detailedProgress.leadName || 'Unknown',
-              error: err,
-              timestamp: detailedProgress.timestamp
-            }))
-          ]);
+          setEnrichmentErrors(prev =>
+            mergeUniqueEnrichmentErrors(
+              prev,
+              detailedProgress.errors!.map(err => ({
+                lead: detailedProgress.leadName || 'Unknown',
+                error: err,
+                timestamp: detailedProgress.timestamp
+              }))
+            )
+          );
         }
         
         setEnrichmentProgress({ current: detailedProgress.current, total: detailedProgress.total });
