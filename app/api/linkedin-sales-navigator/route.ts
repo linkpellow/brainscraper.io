@@ -25,6 +25,22 @@ function appendKeywordTerm(target: string[], value: unknown): void {
   }
 }
 
+function isAccountFrozenError(rawError: string): boolean {
+  const normalized = rawError.toLowerCase();
+  const explicitFreezePhrase =
+    normalized.includes('account frozen') ||
+    normalized.includes('account is frozen') ||
+    normalized.includes('account has been frozen') ||
+    normalized.includes('frozen account');
+
+  // Require both terms when no explicit phrase exists to avoid false positives
+  // from generic provider cooldown text (for example, "wait 60 mins").
+  const hasFrozenWord = normalized.includes('frozen');
+  const hasAccountWord = normalized.includes('account');
+
+  return explicitFreezePhrase || (hasFrozenWord && hasAccountWord);
+}
+
 /**
  * Realtime LinkedIn Sales Navigator Data API endpoint
  * Uses RapidAPI realtime-linkedin-sales-navigator-data
@@ -191,7 +207,7 @@ export async function POST(request: NextRequest) {
     let attemptedViaUrl = false;
     let appliedCurrentCompanyFilter = false;
     let appliedPastCompanyFilter = false;
-    if (requiresFilters && !isPeopleLeadSearch && searchParams.location && RAPIDAPI_KEY) {
+    if (requiresFilters && searchParams.location && RAPIDAPI_KEY) {
       const locationText = String(searchParams.location);
       
       try {
@@ -527,6 +543,19 @@ export async function POST(request: NextRequest) {
               appendKeywordTerm(keywordTermsForUrl, titleKeywords);
               keywordsForUrl = sanitizeKeywordTerm(keywordTermsForUrl.join(' '));
               logger.log(`📝 Using keywords for title search: "${titleKeywords.substring(0, 50)}..."`);
+            }
+          }
+          
+          // CRITICAL: Never send COMPANY_HEADCOUNT with selectionType EXCLUDED — that means "exclude self-employed"
+          // and returns the opposite of what the user wants. Force INCLUDED for all headcount filters.
+          for (const f of filtersForUrl) {
+            if (f.type === 'COMPANY_HEADCOUNT' && f.values?.length) {
+              for (const v of f.values) {
+                if (v.selectionType === 'EXCLUDED') {
+                  v.selectionType = 'INCLUDED';
+                  logger.log(`👥 Normalized COMPANY_HEADCOUNT selectionType to INCLUDED (was EXCLUDED for id:${v.id})`);
+                }
+              }
             }
           }
           
@@ -882,7 +911,7 @@ export async function POST(request: NextRequest) {
         // 2. Check cache (fast, previously discovered)
         // 3. Discover via json_to_url API (accurate, slower)
         // 4. Fallback to keywords (always works)
-        if (requestBody.location && !isPeopleLeadSearch) {
+        if (requestBody.location) {
           const locationText = String(requestBody.location);
           
           // Strategy 1: Check static mappings first (fastest)
@@ -1034,7 +1063,7 @@ export async function POST(request: NextRequest) {
         }
         
         if (requestBody.location && isPeopleLeadSearch) {
-          logger.log('📍 People search location is using keyword + post-filter matching to avoid provider filter/via_url throttling');
+          logger.log('📍 People search: location filter applied (REGION/via_url when discovery succeeds)');
         }
         
         // Changed jobs filter
@@ -1816,10 +1845,8 @@ export async function POST(request: NextRequest) {
             fullResponse: data
           });
           
-          // Detect account freeze errors (frozen, 60 mins, etc.)
-          const isAccountFrozen = errorMessage.toLowerCase().includes('frozen') || 
-                                 errorMessage.toLowerCase().includes('60 mins') ||
-                                 errorMessage.toLowerCase().includes('account system');
+          // Detect only explicit account-freeze signals.
+          const isAccountFrozen = isAccountFrozenError(errorMessage);
           
           // Log account freeze with detailed timestamps
           if (isAccountFrozen) {
@@ -1850,7 +1877,7 @@ export async function POST(request: NextRequest) {
           // Format user-friendly message
           let userMessage: string;
           if (isAccountFrozen) {
-            // Extract freeze duration if available (e.g., "60 mins")
+            // Extract freeze duration if available.
             const freezeMatch = errorMessage.match(/(\d+)\s*(mins?|minutes?|hours?)/i);
             const freezeDuration = freezeMatch ? `${freezeMatch[1]} ${freezeMatch[2]}` : '60 minutes';
             userMessage = `Account frozen for ${freezeDuration} due to too many requests. Please wait before trying again.`;
@@ -1914,10 +1941,8 @@ export async function POST(request: NextRequest) {
             fullResponse: data
           });
           
-          // Detect account freeze errors
-          const isAccountFrozen = errorMessage.toLowerCase().includes('frozen') || 
-                                 errorMessage.toLowerCase().includes('60 mins') ||
-                                 errorMessage.toLowerCase().includes('account system');
+          // Detect only explicit account-freeze signals.
+          const isAccountFrozen = isAccountFrozenError(errorMessage);
           
           // Check if this is a 403 error, rate limit, or account freeze
           const is403Error = errorMessage.includes('403') || 

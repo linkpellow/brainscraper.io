@@ -68,6 +68,20 @@ function normalizeName(name: string): string {
   return namePart.replace(/\.$/, '').trim();
 }
 
+function isAccountFrozenMessage(message: string): boolean {
+  const normalized = message.toLowerCase();
+  const explicitFreezePhrase =
+    normalized.includes('account frozen') ||
+    normalized.includes('account is frozen') ||
+    normalized.includes('account has been frozen') ||
+    normalized.includes('frozen account');
+
+  const hasFrozenWord = normalized.includes('frozen');
+  const hasAccountWord = normalized.includes('account');
+
+  return explicitFreezePhrase || (hasFrozenWord && hasAccountWord);
+}
+
 /**
  * Extracts structured source details from LinkedIn search parameters
  */
@@ -927,7 +941,7 @@ export default function LinkedInLeadGenerator() {
         
         // Check for account freeze in error message
         const errorMsg = result.message || result.error || 'Failed to process request';
-        if (errorMsg.toLowerCase().includes('frozen') || errorMsg.toLowerCase().includes('60 mins')) {
+        if (isAccountFrozenMessage(errorMsg)) {
           const freezeMatch = errorMsg.match(/(\d+)\s*(mins?|minutes?|hours?)/i);
           const freezeDuration = freezeMatch ? parseInt(freezeMatch[1], 10) * 60 : 3600; // Convert to seconds
           const freezeDurationMinutes = Math.ceil(freezeDuration / 60);
@@ -1275,22 +1289,21 @@ export default function LinkedInLeadGenerator() {
                                errorMessage.includes('429') || 
                                errorMessage.includes('Rate limit');
             
-            if (isRateLimit) {
-              consecutive429Errors++;
-              const match = errorMessage.match(/RATE_LIMIT:(\d+):/);
-              const retryAfterSeconds = match ? parseInt(match[1], 10) : 60;
+	            if (isRateLimit) {
+	              consecutive429Errors++;
+	              const match = errorMessage.match(/RATE_LIMIT:(\d+):/);
+	              const retryAfterSeconds = match ? parseInt(match[1], 10) : 60;
+                const LONG_WAIT_THRESHOLD_SECONDS = 10;
               
               // Circuit breaker: if too many consecutive 429s across pages, stop early
-              if (consecutive429Errors >= CIRCUIT_BREAKER_THRESHOLD) {
-                console.error(`📄 [PAGINATION] 🔴 Circuit breaker triggered: ${consecutive429Errors} consecutive rate limits. Stopping pagination.`);
-                setError(`Rate limit exceeded multiple times. Please wait ${retryAfterSeconds} seconds before trying again.`);
-                // Set retry expiration time for countdown
-                setRetryAfterExpiration(Date.now() + (retryAfterSeconds * 1000));
-                setScrapingProgress(prev => ({ 
-                  ...prev, 
-                  status: 'error', 
-                  currentOperation: `Circuit breaker: too many rate limits` 
-                }));
+	              if (consecutive429Errors >= CIRCUIT_BREAKER_THRESHOLD) {
+	                console.error(`📄 [PAGINATION] 🔴 Circuit breaker triggered: ${consecutive429Errors} consecutive rate limits. Stopping pagination.`);
+	                setError(`Rate limit exceeded multiple times. Please wait ${retryAfterSeconds} seconds before trying again.`);
+	                setScrapingProgress(prev => ({ 
+	                  ...prev, 
+	                  status: 'error', 
+	                  currentOperation: `Circuit breaker: too many rate limits` 
+	                }));
                 
                 // Return partial results
                 if (allResults.length > 0) {
@@ -1301,7 +1314,25 @@ export default function LinkedInLeadGenerator() {
                 return; // Exit gracefully
               }
               
-              if (retryCount < maxRetries) {
+                if (retryAfterSeconds > LONG_WAIT_THRESHOLD_SECONDS) {
+                  // Fail fast on long provider cooldowns instead of blocking UI with long sleeps.
+                  console.warn(`📄 [PAGINATION] ⏭️ Long rate limit window (${retryAfterSeconds}s). Stopping retries to keep UI responsive.`);
+                  setError(`Provider rate limit is active (${retryAfterSeconds}s). Try again shortly.`);
+                  setScrapingProgress(prev => ({
+                    ...prev,
+                    status: 'error',
+                    currentOperation: `Rate limited - stopped retries (provider window ${retryAfterSeconds}s)`
+                  }));
+
+                  if (allResults.length > 0) {
+                    console.log(`📄 [PAGINATION] Returning ${allResults.length} leads collected before long rate-limit window`);
+                    setResults(allResults);
+                    setWorkflowStep('results');
+                  }
+                  return;
+                }
+
+	              if (retryCount < maxRetries) {
                 // Industry-standard exponential backoff with jitter
                 // Formula: retryAfter + (base * 2^retryCount) + random jitter (0-25%)
                 // This prevents thundering herd and respects server's Retry-After header
@@ -1326,16 +1357,14 @@ export default function LinkedInLeadGenerator() {
                 // Adaptive delay increase for subsequent pages (circuit breaker pattern)
                 baseDelayMs = Math.min(baseDelayMs * 1.5, 10000); // Max 10 seconds between pages
                 continue; // Retry
-              } else {
-                // Max retries exceeded - stop gracefully with partial results
-                console.error(`📄 [PAGINATION] ❌ Rate limit exceeded after ${maxRetries} retries. Stopping pagination.`);
-                const finalRetryAfter = retryAfterSeconds;
-                setError(`Rate limit exceeded. Please wait ${finalRetryAfter} seconds before trying again.`);
-                // Set retry expiration time for countdown
-                setRetryAfterExpiration(Date.now() + (finalRetryAfter * 1000));
-                setScrapingProgress(prev => ({ 
-                  ...prev, 
-                  status: 'error', 
+	              } else {
+	                // Max retries exceeded - stop gracefully with partial results
+	                console.error(`📄 [PAGINATION] ❌ Rate limit exceeded after ${maxRetries} retries. Stopping pagination.`);
+	                const finalRetryAfter = retryAfterSeconds;
+	                setError(`Rate limit exceeded. Please wait ${finalRetryAfter} seconds before trying again.`);
+	                setScrapingProgress(prev => ({ 
+	                  ...prev, 
+	                  status: 'error', 
                   currentOperation: `Rate limited - please wait ${finalRetryAfter}s` 
                 }));
                 
@@ -1545,9 +1574,7 @@ export default function LinkedInLeadGenerator() {
       const errorMessage = result.message || result.error || result.data?.message || result.data?.error || 'API request failed';
       
       // Detect account freeze separately (should NOT retry - it's a 60-minute block)
-      const isAccountFrozen = errorMessage.toLowerCase().includes('frozen') || 
-                             errorMessage.toLowerCase().includes('60 mins') ||
-                             errorMessage.toLowerCase().includes('account system');
+      const isAccountFrozen = isAccountFrozenMessage(errorMessage);
       
       // Regular rate limits (can retry with backoff)
       const isRateLimit = result.isRateLimit || 
@@ -1589,9 +1616,7 @@ export default function LinkedInLeadGenerator() {
       const errorMessage = result.message || result.error || result.details?.message || result.details?.error || 'Failed to fetch page';
       
       // Check for account freeze first (should stop immediately, no retries)
-      const isAccountFrozen = errorMessage.toLowerCase().includes('frozen') || 
-                             errorMessage.toLowerCase().includes('60 mins') ||
-                             errorMessage.toLowerCase().includes('account system');
+      const isAccountFrozen = isAccountFrozenMessage(errorMessage);
       
       if (isAccountFrozen) {
         const freezeMatch = errorMessage.match(/(\d+)\s*(mins?|minutes?|hours?)/i);
